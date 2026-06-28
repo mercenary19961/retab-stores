@@ -10,7 +10,7 @@
 **Industry:** E-commerce — premium dates (تمور) retail in Saudi Arabia
 **Type:** Online store (storefront + admin/back-office), currently **migrating off [Zid](https://zid.sa)** to a custom Laravel build
 **Stack:** Laravel 12 + Inertia.js v3 + React 19 + TypeScript + TailwindCSS v4 (official `laravel/react-starter-kit` v1.0.1; Inertia upgraded v2→v3 on 2026-06-28)
-**DB:** SQLite in local dev — MySQL planned for production (switch via `DB_CONNECTION`)
+**DB:** Local dev runs on **XAMPP MariaDB 10.4.32** (`127.0.0.1:3307`, db `retab-stores`) — note: MariaDB, _not_ MySQL (XAMPP bundles MariaDB under the "mysql" folder/service name, hence the confusion). **MySQL 8 planned for production** (switch via `DB_CONNECTION`); dev↔prod engine parity is a pending decision (see Foundation).
 **Mailer:** _TBD_ — likely Resend (mirroring Sky Amman), decision pending
 **Architecture:** Single-service monolith (Laravel serves everything via Inertia). SSR build-time scaffolding present; runtime SSR not yet wired (see Build Progress).
 **Hosting:** _TBD_ — likely Railway (FrankenPHP) behind Cloudflare, mirroring Sky Amman
@@ -146,7 +146,7 @@ database/migrations/            → starter-kit defaults only so far
 - **Start (all-in-one):** `composer run dev` — runs `php artisan serve` + queue listener + `npm run dev` concurrently.
 - **Or separately:** `php artisan serve` + `npm run dev`.
 - **URL:** `http://localhost:8000`
-- **Database:** SQLite (`database/database.sqlite`). Reset: `php artisan migrate:fresh --seed`.
+- **Database:** XAMPP **MariaDB 10.4.32** on `127.0.0.1:3307`, db `retab-stores` (user `root`, empty password) — set in `.env`. Reset: `php artisan migrate:fresh --seed`. ⚠️ `php artisan db:show` errors on MariaDB (queries `performance_schema.session_status`, which it doesn't expose) — cosmetic only; use `migrate:status` / `db:table <name>` to inspect.
 - **Build:** `npm run build` (client only) — or `npm run build:ssr` once runtime SSR is wired.
 - **Backend tests:** `php artisan test` (PHPUnit, in-memory SQLite).
 - **Mail in dev:** default `MAIL_MAILER=log` writes to `storage/logs/laravel.log` — no provider key needed.
@@ -199,7 +199,7 @@ After completing any task that touches code, end the reply with a **one-line sug
 - [x] **Inertia v2 → v3 upgrade** (2026-06-28) — `inertia-laravel` v2.0.24→**v3.1.0**, `@inertiajs/react` ^2.0→**^3.0** (3.5.0). Done up front, before any feature work, so the major bump stays cheap and the project matches Sky Amman's v3. Changes: applied v3's `resolvePageComponent(…).then(m => m.default)` unwrap in `app.tsx` + `ssr.jsx` (v3 dropped default-export auto-unwrap — the one real breaking change that hit the scaffold). Blade `@inertia`/`@inertiaHead` directives unchanged (still valid in v3); no axios/qs/lodash in the scaffold so those v3 dep-removals were transparent (`npm` pruned 12 transitive packages). The PHP-8.3 concern in the docs was about the starter-kit _template_, not Inertia (v3 needs only PHP 8.2). **Verified:** `npm run build` ✓ + `php artisan test` ✓ (26 passed, 63 assertions). ⚠️ Browser-side hydration not yet smoke-tested in a real browser.
 
 ### Foundation (TODO)
-- [ ] **Decisions:** theme (keep dark-mode toggle vs. single branded theme) · payment gateway (Moyasar/Tap/HyperPay + Tabby/Tamara) · MySQL + hosting (Railway?) · mail (Resend?)
+- [ ] **Decisions:** theme (keep dark-mode toggle vs. single branded theme) · payment gateway (Moyasar/Tap/HyperPay + Tabby/Tamara) · **dev↔prod DB parity** (dev is XAMPP MariaDB 10.4 — old/EOL; prod planned MySQL 8 — match engines via Docker `mysql:8`, or knowingly accept the gap?) · hosting (Railway?) · mail (Resend?)
 - [ ] **Arabic-first bilingual + RTL** (locale middleware, fonts, i18n bundles) — port from Sky Amman, flip default to AR
 - [ ] **E-commerce schema** (products/categories/variants/inventory/cart/orders/payments/addresses) — design + migrations + models
 - [ ] **Zid data migration** path (export → import catalogue + customers + order history)
@@ -216,7 +216,8 @@ After completing any task that touches code, end the reply with a **one-line sug
 - [ ] Automated tests + CI (PHPUnit / Vitest / Playwright), branch protection on `main`
 - [ ] Production deploy (MySQL, env vars, data-seeding migrations), Cloudflare DNS + Turnstile keys, mail domain verification
 
-> **Last updated:** 2026-06-28 — **Project scaffolded, CLAUDE.md established, then Inertia upgraded v2 → v3.**
+> **Last updated:** 2026-06-28 — **Project scaffolded, CLAUDE.md established, Inertia upgraded v2 → v3, local DB pointed at XAMPP MariaDB.**
+> - **Local DB configured + migrated:** `.env` points at XAMPP **MariaDB 10.4.32** (`127.0.0.1:3307`, db `retab-stores`, root / empty password); ran `php artisan migrate` (users/cache/jobs + sessions tables created). Confirmed the engine is **MariaDB**, not MySQL — XAMPP ships MariaDB under the "mysql" name (binary `C:\xampp\mysql\bin\mysqld.exe`, service `mysql`); TablePlus was just the client used to create the DB. `APP_KEY` already present from scaffold. Flagged dev↔prod DB parity (prod planned MySQL 8) as a pending decision.
 > - **Inertia v2 → v3 upgrade** (on branch `construction_phase`, before any feature work): `inertia-laravel` v2.0.24→v3.1.0, `@inertiajs/react` ^2.0→^3.0 (3.5.0). Verified the doc's "v2 vs v3" framing against both lockfiles (Sky Amman really is v3.0.4) and confirmed v3 needs only PHP 8.2 — the PHP-8.3 pin was about the scaffolding template, not Inertia. Only the scaffold's `resolvePageComponent` resolve needed changing (v3 dropped default-export auto-unwrap → added `.then(m => m.default)` in `app.tsx`/`ssr.jsx`, mirroring Sky Amman). Build + 26 tests green. This resolves the former "Inertia is v2 here" divergence from Sky Amman.
 > - Scaffolded `retab-stores` with the official Laravel 12 React starter kit (Inertia v2 + React 19 + TS + Tailwind v4, PHP 8.2 / starter kit v1.0.1). Added `.npmrc` before install to dodge the `NODE_ENV=production` devDep trap; production build verified clean. Git on `main`, `origin` → `mercenary19961/retab-stores` (dual-push to the client repo to be added once it exists).
 > - Wrote this `CLAUDE.md` adopting Sky Amman's conventions (Build Progress checklist, `> Last updated:` log, commit convention + commit-suggestion rule, code-quality rules) and set **Sky Amman as the reference project**, with an explicit "don't blindly copy" list (Inertia **v2** not v3, lowercase `pages/` + modular routes, shadcn/Radix base, no i18n/Turnstile/admin yet).
