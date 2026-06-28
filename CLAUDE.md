@@ -9,7 +9,7 @@
 **Store:** Retab Stores
 **Industry:** E-commerce — premium dates (تمور) retail in Saudi Arabia
 **Type:** Online store (storefront + admin/back-office), currently **migrating off [Zid](https://zid.sa)** to a custom Laravel build
-**Stack:** Laravel 12 + Inertia.js v2 + React 19 + TypeScript + TailwindCSS v4 (official `laravel/react-starter-kit` v1.0.1)
+**Stack:** Laravel 12 + Inertia.js v3 + React 19 + TypeScript + TailwindCSS v4 (official `laravel/react-starter-kit` v1.0.1; Inertia upgraded v2→v3 on 2026-06-28)
 **DB:** SQLite in local dev — MySQL planned for production (switch via `DB_CONNECTION`)
 **Mailer:** _TBD_ — likely Resend (mirroring Sky Amman), decision pending
 **Architecture:** Single-service monolith (Laravel serves everything via Inertia). SSR build-time scaffolding present; runtime SSR not yet wired (see Build Progress).
@@ -31,7 +31,7 @@ Sky Amman's `CLAUDE.md` is large — read targeted sections via Grep / `offset`+
 
 This project is the **official Laravel React starter kit**, scaffolded fresh; Sky Amman was a hand-rolled setup. Concrete divergences to respect:
 
-- **Inertia is v2 here** (`inertiajs/inertia-laravel` v2.0.24, `@inertiajs/react` ^2.0) — Sky Amman is on v3. So Sky Amman's v3-specific notes do **not** apply verbatim: e.g. the 419/CSRF auto-reload listener event name (`httpException` in v3) and the `resolvePageComponent` `.default` unwrap are v3 concerns. Check the actual v2 API before porting that code.
+- **Inertia is now v3 here too** (`inertiajs/inertia-laravel` v3.1.0, `@inertiajs/react` ^3.0) — _formerly a divergence (scaffold shipped v2), resolved by the v2→v3 upgrade on 2026-06-28._ It now **matches Sky Amman (v3)**, so Sky Amman's Inertia patterns **port cleanly**: the 419/CSRF auto-reload listener is `router.on('httpException', …)` (v2's `invalid` was renamed), and the `resolvePageComponent` `.default` unwrap is **already applied** in `app.tsx` + `ssr.jsx` (v3 dropped auto-unwrap of the page module's default export). Note retab uses lowercase `./pages/` paths, not Sky Amman's `./Pages/`.
 - **Lowercase, kebab file layout:** `resources/js/pages/` (not `Pages/`), `resources/js/layouts/`, `resources/js/components/` (+ shadcn-style Radix UI primitives under `components/ui/`), and **modular route files** (`routes/auth.php`, `routes/settings.php`, `routes/web.php`). Path-adjust any Sky Amman snippet accordingly.
 - **shadcn/Radix UI is the component base** here (`@radix-ui/*`, `class-variance-authority`, `tailwind-merge`, `tailwindcss-animate`) — Sky Amman hand-built its components.
 - **No bilingual/i18n, Turnstile, CMS, or admin** exist yet — those are Sky Amman patterns to **port deliberately**, not assume.
@@ -51,7 +51,7 @@ The store is **already live and selling on Zid** (hosted SaaS). We are rebuildin
 ## Tech Stack (as scaffolded — real versions)
 
 - **Backend:** Laravel `v12.62.0`, PHP `^8.2` (starter kit pinned to v1.0.1 because latest requires PHP 8.3), PHPUnit `11.5`, Ziggy `v2.6.3`
-- **Inertia:** `inertiajs/inertia-laravel` `v2.0.24` + `@inertiajs/react` `^2.0`
+- **Inertia:** `inertiajs/inertia-laravel` `v3.1.0` + `@inertiajs/react` `^3.0` (installed `3.5.0`) — upgraded from v2 on 2026-06-28 (see Build Progress → Construction phase). Requires only PHP 8.2, so the starter-kit-v1.0.1 / PHP 8.2 pin was never a blocker for Inertia itself.
 - **Frontend:** React `19`, TypeScript `^5.7`, Vite `^6`, Tailwind CSS `^4` (`@tailwindcss/vite`), `lucide-react`, Radix UI primitives, `clsx`/`tailwind-merge`/`cva`
 - **What the starter kit already gives us:** auth flow (login / register / forgot+reset password / email verify / confirm password), `dashboard`, `settings` (profile / password / appearance), an `AppLayout`, and a `welcome` landing page. **SSR entry `resources/js/ssr.jsx` + `npm run build:ssr` exist** (runtime not enabled yet).
 - **`.npmrc`** holds `production=false` — **do not delete it.** The user's shell has a global `NODE_ENV=production` that otherwise makes `npm install` silently drop devDependencies. (The starter kit dodges the worst of it by listing build deps under `dependencies`, but keep the guard.)
@@ -190,10 +190,13 @@ After completing any task that touches code, end the reply with a **one-line sug
 ## Build Progress
 
 ### Scaffold (DONE — 2026-06-28)
-- [x] `laravel new retab-stores --react --phpunit --database=sqlite` — Laravel 12 + Inertia v2 + React 19 + TS + Tailwind v4 (starter kit v1.0.1)
+- [x] `laravel new retab-stores --react --phpunit --database=sqlite` — Laravel 12 + Inertia v2 + React 19 + TS + Tailwind v4 (starter kit v1.0.1) — _Inertia later upgraded v2→v3, see Construction phase_
 - [x] `.npmrc` (`production=false`), `npm install`, production build verified
 - [x] Git on `main`, `origin` → `mercenary19961/retab-stores`
 - [x] This `CLAUDE.md` (conventions + maintenance pattern established, Sky Amman set as reference project)
+
+### Construction phase (in progress — branch `construction_phase`)
+- [x] **Inertia v2 → v3 upgrade** (2026-06-28) — `inertia-laravel` v2.0.24→**v3.1.0**, `@inertiajs/react` ^2.0→**^3.0** (3.5.0). Done up front, before any feature work, so the major bump stays cheap and the project matches Sky Amman's v3. Changes: applied v3's `resolvePageComponent(…).then(m => m.default)` unwrap in `app.tsx` + `ssr.jsx` (v3 dropped default-export auto-unwrap — the one real breaking change that hit the scaffold). Blade `@inertia`/`@inertiaHead` directives unchanged (still valid in v3); no axios/qs/lodash in the scaffold so those v3 dep-removals were transparent (`npm` pruned 12 transitive packages). The PHP-8.3 concern in the docs was about the starter-kit _template_, not Inertia (v3 needs only PHP 8.2). **Verified:** `npm run build` ✓ + `php artisan test` ✓ (26 passed, 63 assertions). ⚠️ Browser-side hydration not yet smoke-tested in a real browser.
 
 ### Foundation (TODO)
 - [ ] **Decisions:** theme (keep dark-mode toggle vs. single branded theme) · payment gateway (Moyasar/Tap/HyperPay + Tabby/Tamara) · MySQL + hosting (Railway?) · mail (Resend?)
@@ -213,7 +216,8 @@ After completing any task that touches code, end the reply with a **one-line sug
 - [ ] Automated tests + CI (PHPUnit / Vitest / Playwright), branch protection on `main`
 - [ ] Production deploy (MySQL, env vars, data-seeding migrations), Cloudflare DNS + Turnstile keys, mail domain verification
 
-> **Last updated:** 2026-06-28 — **Project scaffolded + CLAUDE.md established.**
+> **Last updated:** 2026-06-28 — **Project scaffolded, CLAUDE.md established, then Inertia upgraded v2 → v3.**
+> - **Inertia v2 → v3 upgrade** (on branch `construction_phase`, before any feature work): `inertia-laravel` v2.0.24→v3.1.0, `@inertiajs/react` ^2.0→^3.0 (3.5.0). Verified the doc's "v2 vs v3" framing against both lockfiles (Sky Amman really is v3.0.4) and confirmed v3 needs only PHP 8.2 — the PHP-8.3 pin was about the scaffolding template, not Inertia. Only the scaffold's `resolvePageComponent` resolve needed changing (v3 dropped default-export auto-unwrap → added `.then(m => m.default)` in `app.tsx`/`ssr.jsx`, mirroring Sky Amman). Build + 26 tests green. This resolves the former "Inertia is v2 here" divergence from Sky Amman.
 > - Scaffolded `retab-stores` with the official Laravel 12 React starter kit (Inertia v2 + React 19 + TS + Tailwind v4, PHP 8.2 / starter kit v1.0.1). Added `.npmrc` before install to dodge the `NODE_ENV=production` devDep trap; production build verified clean. Git on `main`, `origin` → `mercenary19961/retab-stores` (dual-push to the client repo to be added once it exists).
 > - Wrote this `CLAUDE.md` adopting Sky Amman's conventions (Build Progress checklist, `> Last updated:` log, commit convention + commit-suggestion rule, code-quality rules) and set **Sky Amman as the reference project**, with an explicit "don't blindly copy" list (Inertia **v2** not v3, lowercase `pages/` + modular routes, shadcn/Radix base, no i18n/Turnstile/admin yet).
 > - **SSR noted as the immediate next task:** build-time scaffolding (`ssr.jsx` + `build:ssr`) is present, but runtime SSR (config/inertia.php toggle + graceful-fallback gateway + prod sidecar) still needs wiring — to be ported from Sky Amman.
