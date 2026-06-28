@@ -13,7 +13,9 @@ createServer((page) =>
             const pages = import.meta.glob('./pages/**/*.tsx', {
                 eager: true,
             });
-            return pages[`./pages/${name}.tsx`];
+            // Inertia v3 no longer auto-unwraps the default export — return the
+            // component itself, not the module object.
+            return pages[`./pages/${name}.tsx`].default;
         },
         // prettier-ignore
         setup: ({ App, props }) => <App {...props} />,
