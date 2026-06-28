@@ -157,13 +157,13 @@ database/migrations/            → starter-kit defaults only so far
 ## Git & Deploy
 
 - `origin` is wired to **your** repo: `https://github.com/mercenary19961/retab-stores.git`.
-- **Dual-push (one `git push` → both repos)** once the client repo exists + you're a collaborator on it:
+- **Dual-push is ACTIVE** (configured 2026-06-28) — one `git push` → **both** repos. The client repo **`https://github.com/retab-dates-dev/retab-website.git`** is the **Railway production source** (currently empty — first push to populate it is pending). Configured via:
   ```bash
-  git remote set-url --add --push origin https://github.com/mercenary19961/retab-stores.git
-  git remote set-url --add --push origin https://github.com/CLIENT-ACCOUNT/retab-stores.git
-  git remote -v   # expect 1 fetch URL + 2 push URLs
+  git remote set-url --add --push origin https://github.com/mercenary19961/retab-stores.git    # re-add own repo FIRST
+  git remote set-url --add --push origin https://github.com/retab-dates-dev/retab-website.git   # client / prod repo
+  git remote -v   # → 1 fetch URL + 2 push URLs
   ```
-  ⚠️ The **first** `--add --push` line (re-adding your own repo) is required — adding any explicit push URL drops the implicit default, so without it pushes would go **only** to the client repo.
+  ⚠️ The **first** `--add --push` line (re-adding your own repo) is required — adding any explicit push URL drops the implicit default, so without it pushes would go **only** to the client repo. Read access to the client repo is verified (`git ls-remote` → exit 0). Because **every** push hits both URLs, once Railway watches the client repo's `main`, any push of `main` will deploy to production.
 - Commit/push **only when the user asks** (don't auto-push). Branch off `main` for feature work.
 
 ---
@@ -204,7 +204,7 @@ After completing any task that touches code, end the reply with a **one-line sug
 - [ ] **E-commerce schema** (products/categories/variants/inventory/cart/orders/payments/addresses) — design + migrations + models
 - [ ] **Zid data migration** path (export → import catalogue + customers + order history)
 - [ ] Security hardening (Turnstile, SecurityHeaders/CSP, rate limits, `URL::forceScheme` + trustProxies) — port from Sky Amman
-- [ ] Push to GitHub (`git push -u origin main`) + add the client repo as the 2nd push URL
+- [x] Pushed to GitHub (`origin`) + **dual-push to client repo `retab-dates-dev/retab-website` configured** (Railway prod source). ⏳ Client repo still empty — first push to populate it is pending.
 
 ### Storefront + Admin (TODO)
 - [ ] Storefront: catalogue, product detail, cart, checkout, order confirmation, customer account
@@ -216,7 +216,8 @@ After completing any task that touches code, end the reply with a **one-line sug
 - [ ] Automated tests + CI (PHPUnit / Vitest / Playwright), branch protection on `main`
 - [ ] Production deploy (MySQL, env vars, data-seeding migrations), Cloudflare DNS + Turnstile keys, mail domain verification
 
-> **Last updated:** 2026-06-28 — **Project scaffolded, CLAUDE.md established, Inertia upgraded v2 → v3, local DB pointed at XAMPP MariaDB.**
+> **Last updated:** 2026-06-28 — **Scaffold + CLAUDE.md, Inertia v2 → v3, local DB → XAMPP MariaDB, dual-push to client repo wired.**
+> - **Dual-push to client repo configured:** added `https://github.com/retab-dates-dev/retab-website.git` as a 2nd push URL on `origin` (now 1 fetch + 2 push URLs) — this is the **Railway production source**. Read access verified (`ls-remote` exit 0); repo is empty so first push will populate it. Chose dual-push (one `git push` → both repos) over a separate `client` remote.
 > - **Local DB configured + migrated:** `.env` points at XAMPP **MariaDB 10.4.32** (`127.0.0.1:3307`, db `retab-stores`, root / empty password); ran `php artisan migrate` (users/cache/jobs + sessions tables created). Confirmed the engine is **MariaDB**, not MySQL — XAMPP ships MariaDB under the "mysql" name (binary `C:\xampp\mysql\bin\mysqld.exe`, service `mysql`); TablePlus was just the client used to create the DB. `APP_KEY` already present from scaffold. Flagged dev↔prod DB parity (prod planned MySQL 8) as a pending decision.
 > - **Inertia v2 → v3 upgrade** (on branch `construction_phase`, before any feature work): `inertia-laravel` v2.0.24→v3.1.0, `@inertiajs/react` ^2.0→^3.0 (3.5.0). Verified the doc's "v2 vs v3" framing against both lockfiles (Sky Amman really is v3.0.4) and confirmed v3 needs only PHP 8.2 — the PHP-8.3 pin was about the scaffolding template, not Inertia. Only the scaffold's `resolvePageComponent` resolve needed changing (v3 dropped default-export auto-unwrap → added `.then(m => m.default)` in `app.tsx`/`ssr.jsx`, mirroring Sky Amman). Build + 26 tests green. This resolves the former "Inertia is v2 here" divergence from Sky Amman.
 > - Scaffolded `retab-stores` with the official Laravel 12 React starter kit (Inertia v2 + React 19 + TS + Tailwind v4, PHP 8.2 / starter kit v1.0.1). Added `.npmrc` before install to dodge the `NODE_ENV=production` devDep trap; production build verified clean. Git on `main`, `origin` → `mercenary19961/retab-stores` (dual-push to the client repo to be added once it exists).
