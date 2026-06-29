@@ -68,7 +68,8 @@ The store is **already live and selling on Zid** (hosted SaaS). We are rebuildin
 - OTO **does** return live per-carrier rates via `checkOTODeliveryFee` (POST origin/destination/weight; auth = refresh-token→access-token, cached). Used **internally** for cost/carrier selection — NOT shown as the customer price.
 
 ### Products & Inventory — DECIDED
-- **Inventory tracked by quantity (units in stock).** Weight is **descriptive only** — shown in the product title/description per product, NOT a structured field (shipping is flat, so weight never drives cost). Variants optional per product; all stock is unit-quantity.
+- **Inventory tracked by quantity (units in stock).** Weight is **descriptive only** — shown in the product title/description per product, NOT a structured field (shipping is flat, so weight never drives cost).
+- **No variants (DECIDED)** — each sellable item = one product = one SMACC SKU (keeps the Excel import 1:1). All stock is unit-quantity on the product.
 
 ### Coupons — DECIDED (+ one POSTPONED)
 - Admin-controlled coupon system (reuse + extend hardrock's `Coupon`).
@@ -82,14 +83,34 @@ The store is **already live and selling on Zid** (hosted SaaS). We are rebuildin
    - **If confirmed:** deduct stock → alert OTO to pick up → WhatsApp customer "confirmed, courier coming."
 4. **Cancellation:** customer may cancel **only before** admin confirms → notify customer **indirectly** (don't incentivize cancelling).
 
-### WhatsApp + Marketing — route PENDING
-- Need the **WhatsApp Business API** for: order/confirmation/apology messages (**Utility** templates — cheap), monthly marketing blasts (**Marketing** templates — pricier, **require explicit opt-in consent**), and loyalty notifications.
-- Client runs **Meta ads** → synergy: WhatsApp is a Meta product (managed in Meta Business Manager); **click-to-WhatsApp ads** start chats + open the free 24h window. Messaging still has its own per-message cost.
-- ⚠️ **PENDING route:** Meta Cloud API (direct) vs BSP (Unifonic [Saudi] / Twilio / 360dialog).
+### Returns & exchanges — policy from current site (to replicate)
+Source: retabstore.com policy. **Defect/damage-only** (matches food/perishable norms):
+- **Eligibility:** ONLY for product **defects/damage** (عيوب / تمور تالفة). Excludes late receipt, shipping-company faults, and used/tampered products.
+- **Window:** request within **3 days** of receiving the product → requires tracking **`delivered_at`** on orders.
+- **Channel (current):** **WhatsApp** (returns dept +966 50 384 5356) with **photos** + order number + contact details.
+- **Condition:** returned items in good condition with **original labels + packaging**.
+- **Shipping fees:** **non-refundable** EXCEPT when the dates arrived **damaged**.
+- **Resolution:** after inspection, exchange or **refund within 14 days**.
+- **Build implication — returns module:** model as a **separate entity** (not just an order status): `return_requests` (order_id, user_id, status [requested/approved/rejected/exchanged/refunded], reason, resolved_at, admin_notes) + `return_items` (partial returns) + attached **photos** (media). Enforce 3-day window via `delivered_at`; refund via the payment gateway (card→Moyasar, Tamara→Tamara); shipping fee refunded only if damaged. Customer files in-account (with photos) → admin reviews → resolves; mirror WhatsApp touchpoints.
+- **Also implies:** a **content/legal pages** capability (bilingual) for the policy page itself + about/contact (port Sky Amman's Site Content CRUD pattern).
+
+### WhatsApp + Marketing — DECIDED: direct Meta Cloud API
+- Use the **direct Meta Cloud API** (no BSP) — lowest cost, full control, under the same Meta Business Manager as the client's ads. We build the integration in Laravel (send + webhooks for delivery/read status).
+- **Message types:** order confirmation / apology+suggest / "courier coming" / loyalty = **Utility** templates; monthly offers = **Marketing** templates (**opt-in required**). All business-initiated messages outside a customer's 24h reply window MUST be **Meta-approved templates** (free text only inside the 24h window).
+- **Admin "marketing" section = two parts:** (a) **template manager** — compose + submit to Meta + track approval status (or manage templates in Meta Business Manager initially); (b) **campaign sender** — pick an approved template → fill variables → send to the opt-in segment → track delivery via webhook.
+- **Guardrails:** marketing only to opted-in contacts; plan for Meta's template-approval lag; respect Meta's daily conversation limits + quality rating.
+- Synergy: **click-to-WhatsApp ads** from the client's Meta campaigns start chats + open the free 24h window.
 
 ### Loyalty — DECIDED
 - **5 confirmed purchases → 15% discount coupon**; customer notified + incentivized (WhatsApp).
 - Confirmed buyers → added to the **monthly WhatsApp marketing list** (must capture opt-in consent at/after purchase).
+
+### Customers, accounts & engagement — DECIDED
+- **Account creation at checkout** (if not signed in) via any of: **WhatsApp** (phone OTP via WhatsApp), **Google** (OAuth — reuse hardrock's Socialite), **email** (email+password). Minimal at signup; user **completes profile later** (name, city, phone, email…).
+- **Identity model:** `users` has **nullable** name/email/phone/password (a user may have only a phone, or only Google); a `social_accounts` table links providers to one account; `otp_verifications` for phone/WhatsApp sign-in.
+- **OTP delivery = WhatsApp only (DECIDED)** — no SMS provider. Phone verification is via WhatsApp OTP; sign-in methods = **WhatsApp / Google / email**.
+- **Reviews** (+ helpful votes; bilingual) and **wishlist** (per user) — reuse hardrock patterns.
+- **Loyalty/points tracker:** count of confirmed purchases on the user; shown on the **customer's account** (progress to reward) AND the **admin** customer view; drives the 5→15% coupon. Count-based for v1, extensible to points-per-spend.
 
 ### POS integration (SMACC / سماك) — NO API; daily Excel export→import (DECIDED)
 - Physical store's POS is **SMACC** ("سماك" = how S-M-A-C-C is pronounced), by **Arab Sea Information Systems** (`arabsea.com`) — major KSA accounting/POS/inventory/e-invoicing platform.
@@ -107,7 +128,7 @@ The store is **already live and selling on Zid** (hosted SaaS). We are rebuildin
 ### Open decisions (blocking schema design)
 1. ~~Payment capture model~~ — ✅ DECIDED (hybrid: cards immediate-capture, Tamara auth→capture; see Payments).
 2. ~~POS / inventory~~ — ✅ SMACC by Arab Sea, **no API** → daily Excel export→import; SMACC = ledger of record, website = daily mirror + admin confirm-step backstop (see POS section).
-3. **WhatsApp route** (Cloud API vs BSP) — *recommendation: direct Meta Cloud API.*
+3. ~~WhatsApp route~~ — ✅ direct Meta Cloud API (see WhatsApp section).
 4. ~~Shipping flat rate~~ — ✅ single flat GCC rate.
 
 ---
@@ -161,9 +182,14 @@ These are the conventions we're adopting (most proven in Sky Amman). Where a pat
 
 ---
 
-## Database Schema (PLANNED — nothing e-commerce built yet)
+## Database Schema (IN PROGRESS — built in batches on `construction_phase`)
 
-Only the starter-kit defaults exist so far (`users`, `cache`, `jobs`, plus auth tables). The e-commerce schema is **not designed yet** — proposed core tables to flesh out during foundation:
+> **Source of truth = the migrations** in `database/migrations/` (this section is the roadmap; full table doc refreshed when all batches land). Conventions: bilingual `_ar`/`_en` columns (AR required, EN nullable, app falls back to AR); quantity `stock`; **no variants**; `smacc_sku` import key; soft-deletes on products + users.
+>
+> **Built + migrated:** Batch 1 catalog (`categories`, `products`, `product_images`) · Batch 2 accounts (`users` extended, `social_accounts`, `otp_verifications`, `addresses`).
+> **Remaining:** cart, orders (+ state machine, `delivered_at`) + order_items + order_activities, payments, coupons (+ redemptions) + loyalty_rewards, returns (+ return_items + photos), reviews (+ helpful votes), wishlist, content pages, whatsapp_messages, notifications, demand_events, settings, activity_logs.
+
+Proposed core tables (original roadmap):
 
 - `products`, `categories` (+ pivot), `product_variants` (size/weight/grade — relevant for dates), `product_images`
 - `inventory` / stock tracking, `prices` (incl. sale price), maybe `coupons`/`discounts`
