@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'oto' => [
+        'refresh_token' => env('OTO_REFRESH_TOKEN'),
+        'base_url' => env('OTO_BASE_URL', 'https://api.tryoto.com/rest/v2'),
+        'origin_city' => env('OTO_ORIGIN_CITY', 'Riyadh'),
+        'webhook_secret' => env('OTO_WEBHOOK_SECRET'),
+    ],
+
 ];
