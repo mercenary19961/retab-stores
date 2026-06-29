@@ -182,14 +182,25 @@ These are the conventions we're adopting (most proven in Sky Amman). Where a pat
 
 ---
 
-## Database Schema (IN PROGRESS — built in batches on `construction_phase`)
+## Database Schema (BUILT — schema v1 complete on `construction_phase`)
 
-> **Source of truth = the migrations** in `database/migrations/` (this section is the roadmap; full table doc refreshed when all batches land). Conventions: bilingual `_ar`/`_en` columns (AR required, EN nullable, app falls back to AR); quantity `stock`; **no variants**; `smacc_sku` import key; soft-deletes on products + users.
+> **Source of truth = the migrations** in `database/migrations/` (`2026_06_29_1000xx_*`) + Eloquent models in `app/Models/`. Migrated clean on **MariaDB (dev)** and **SQLite (tests)**; 26 tests green. Conventions: bilingual `_ar`/`_en` (AR required, EN nullable, app falls back to AR); quantity `stock` (no variants); `smacc_sku` import key; soft-deletes on `products` + `users`; money `decimal(10,2)` SAR; **order/payment/coupon/return state are backed enums** in `app/Enums/`.
 >
-> **Built + migrated:** Batch 1 catalog (`categories`, `products`, `product_images`) · Batch 2 accounts (`users` extended, `social_accounts`, `otp_verifications`, `addresses`).
-> **Remaining:** cart, orders (+ state machine, `delivered_at`) + order_items + order_activities, payments, coupons (+ redemptions) + loyalty_rewards, returns (+ return_items + photos), reviews (+ helpful votes), wishlist, content pages, whatsapp_messages, notifications, demand_events, settings, activity_logs.
+> **Tables by domain:**
+> - **Catalog:** `categories`, `products`, `product_images`
+> - **Accounts:** `users` (extended: phone, role, locale, admin_theme, whatsapp_opt_in, confirmed_purchases_count; name/email/password now nullable), `social_accounts` (Google/OAuth), `otp_verifications` (WhatsApp OTP), `addresses` (GCC)
+> - **Cart:** `carts`, `cart_items`
+> - **Orders:** `orders` (state machine via `OrderStatus`; `delivered_at`; OTO + payment fields), `order_items` (snapshots), `order_activities` (append-only audit)
+> - **Payments:** `payments` (auth/capture/void/refund ledger)
+> - **Coupons/Loyalty:** `coupons` (admin-controlled; `channel`/`source`), `coupon_redemptions`, `loyalty_rewards` (5 buys → 15%)
+> - **Returns:** `order_returns` (defect-only; photos; `ReturnStatus`), `return_items`
+> - **Engagement:** `reviews`, `review_helpful_votes`, `wishlists`
+> - **Platform:** `content_pages` (bilingual CMS), `whatsapp_messages` (Cloud API log), `notifications` (Laravel bell), `demand_events` (unavailable analytics), `settings` (`Setting::get/set`), `activity_logs` (admin audit + undo)
+> - **Enums (`app/Enums/`):** `OrderStatus` (+enforced transitions), `PaymentStatus`, `PaymentMethod`, `CouponType`, `PaymentTransactionType`, `ReturnStatus`
+>
+> **Deliberately NOT built (schema-ready, deferred):** product variants (1 product = 1 SMACC SKU); QR in-store coupons; the payment/shipping/WhatsApp **service** layer (gateways/OTO/Cloud-API clients) — that's the next phase.
 
-Proposed core tables (original roadmap):
+_Original roadmap (superseded by the BUILT inventory above — kept for historical context):_
 
 - `products`, `categories` (+ pivot), `product_variants` (size/weight/grade — relevant for dates), `product_images`
 - `inventory` / stock tracking, `prices` (incl. sale price), maybe `coupons`/`discounts`
@@ -291,7 +302,7 @@ After completing any task that touches code, end the reply with a **one-line sug
 ### Foundation (TODO)
 - [ ] **Decisions:** theme (keep dark-mode toggle vs. single branded theme) · payment gateway (Moyasar/Tap/HyperPay + Tabby/Tamara) · **dev↔prod DB parity** (dev is XAMPP MariaDB 10.4 — old/EOL; prod planned MySQL 8 — match engines via Docker `mysql:8`, or knowingly accept the gap?) · hosting (Railway?) · mail (Resend?)
 - [ ] **Arabic-first bilingual + RTL** (locale middleware, fonts, i18n bundles) — port from Sky Amman, flip default to AR
-- [ ] **E-commerce schema** (products/categories/variants/inventory/cart/orders/payments/addresses) — design + migrations + models
+- [x] **E-commerce schema** — built on `construction_phase`: 28 tables + 6 enums + Eloquent models, migrated on MariaDB + SQLite, 26 tests green (see Database Schema). _Service/gateway layer next._
 - [ ] **Zid data migration** path (export → import catalogue + customers + order history)
 - [ ] Security hardening (Turnstile, SecurityHeaders/CSP, rate limits, `URL::forceScheme` + trustProxies) — port from Sky Amman
 - [x] Pushed to GitHub (`origin`) + **dual-push to client repo `retab-dates-dev/retab-website` configured** (Railway prod source). ⏳ Client repo still empty — first push to populate it is pending.

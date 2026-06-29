@@ -50,6 +50,16 @@ class Product extends Model
         return $this->hasMany(ProductImage::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
     /**
      * True when a sale price is set and actually below the regular price.
      */
