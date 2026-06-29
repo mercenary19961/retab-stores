@@ -42,4 +42,11 @@ return [
         'webhook_secret' => env('OTO_WEBHOOK_SECRET'),
     ],
 
+    'moyasar' => [
+        'secret_key' => env('MOYASAR_SECRET_KEY'),
+        'base_url' => env('MOYASAR_BASE_URL', 'https://api.moyasar.com/v1'),
+        'currency' => env('MOYASAR_CURRENCY', 'SAR'),
+        'webhook_secret' => env('MOYASAR_WEBHOOK_SECRET'),
+    ],
+
 ];
