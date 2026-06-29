@@ -48,6 +48,70 @@ The store is **already live and selling on Zid** (hosted SaaS). We are rebuildin
 
 ---
 
+## E-commerce Requirements & Decisions (client brief — 2026-06-29)
+
+> Captured from the client brief. **Reference implementation:** `c:\Users\sabba\Desktop\projects\hardrock-ecom-demo\` — a mature Laravel 12 + Inertia **v2** e-commerce backend we built that ALREADY implements OTO shipping, Tamara, coupons, order activities, admin activity-log/undo, optimistic locking, roles (admin/editor), bilingual AR/EN, and notifications. Retab **adapts** these into a **tighter** build (gateway abstractions, thin controllers + service layer, explicit order state machine). Read hardrock-ecom-demo's files for proven patterns before building (e.g. `app/Services/Shipping/*`, `app/Services/Payments/*`).
+
+### Payments — DECIDED
+- **Cards via Moyasar** (mada + Visa/MC + Apple Pay + STC Pay) **+ Tamara (BNPL)**. **No COD, no cash** — every order is prepaid online.
+- Both sit behind a `PaymentGateway` interface (mirror hardrock's `ShippingGateway` pattern); Tamara reuses hardrock's `TamaraClient`.
+- **Capture model — DECIDED (hybrid per method):**
+  - **Cards (Moyasar) = immediate capture** at checkout; **refund** on customer-cancel or admin-reject. Deliberately avoids any Moyasar delayed-capture dependency.
+  - **Tamara = authorize at checkout, capture on admin confirmation**; **void** the authorization if cancelled/out-of-stock (Tamara supports auth→capture natively).
+  - Both expose `authorize / capture / void / refund` via the `PaymentGateway` interface; the order flow calls the right one per method + state.
+  - SLA: admin confirms within ~24–48h (Tamara auth expires); dashboard flags orders nearing auth-expiry.
+  - ⚠️ Trade-off: rejected **card** orders incur a real refund (fee + "money in/out" UX) — acceptable while out-of-stock rejections stay rare (depends on inventory accuracy / أسماك sync); revisit (cards→delayed capture, if Moyasar supports it) if they become common.
+
+### Shipping — DECIDED
+- **OTO (Tryoto) aggregator** for fulfillment (reuse hardrock `ShippingGateway`→`OtoGateway`/`OtoClient` + `OtoWebhookController`). **GCC countries only. No Aramex, no DHL** (filter out).
+- **Customer pays a SINGLE FIXED flat shipping price** across all GCC, regardless of OTO's actual carrier cost (DECIDED — client accepts absorbing the cross-GCC cost difference). One configurable number in admin.
+- OTO **does** return live per-carrier rates via `checkOTODeliveryFee` (POST origin/destination/weight; auth = refresh-token→access-token, cached). Used **internally** for cost/carrier selection — NOT shown as the customer price.
+
+### Products & Inventory — DECIDED
+- **Inventory tracked by quantity (units in stock).** Weight is **descriptive only** — shown in the product title/description per product, NOT a structured field (shipping is flat, so weight never drives cost). Variants optional per product; all stock is unit-quantity.
+
+### Coupons — DECIDED (+ one POSTPONED)
+- Admin-controlled coupon system (reuse + extend hardrock's `Coupon`).
+- ⏸ **POSTPONED — QR-code coupons redeemable at the PHYSICAL store** (client used to issue a QR after 5 purchases for an in-store discount). Design later: signed **single-use** token, atomic redemption (optimistic locking), validated either by أسماك or a standalone cashier "redeem" web page (decoupled from أسماك). Revisit after core build.
+
+### Order flow (client's required flow)
+1. Customer orders → pays (prepaid) → payment confirmed.
+2. Admin notified via **email + WhatsApp + admin-panel notification**.
+3. Admin/editor checks inventory & issues, then **confirms**:
+   - **If unavailable:** button to WhatsApp the customer (apologize + suggest similar products + "back soon"); the event is logged/notified + stored for **analytics** + shown on the dashboard.
+   - **If confirmed:** deduct stock → alert OTO to pick up → WhatsApp customer "confirmed, courier coming."
+4. **Cancellation:** customer may cancel **only before** admin confirms → notify customer **indirectly** (don't incentivize cancelling).
+
+### WhatsApp + Marketing — route PENDING
+- Need the **WhatsApp Business API** for: order/confirmation/apology messages (**Utility** templates — cheap), monthly marketing blasts (**Marketing** templates — pricier, **require explicit opt-in consent**), and loyalty notifications.
+- Client runs **Meta ads** → synergy: WhatsApp is a Meta product (managed in Meta Business Manager); **click-to-WhatsApp ads** start chats + open the free 24h window. Messaging still has its own per-message cost.
+- ⚠️ **PENDING route:** Meta Cloud API (direct) vs BSP (Unifonic [Saudi] / Twilio / 360dialog).
+
+### Loyalty — DECIDED
+- **5 confirmed purchases → 15% discount coupon**; customer notified + incentivized (WhatsApp).
+- Confirmed buyers → added to the **monthly WhatsApp marketing list** (must capture opt-in consent at/after purchase).
+
+### POS integration (SMACC / سماك) — NO API; daily Excel export→import (DECIDED)
+- Physical store's POS is **SMACC** ("سماك" = how S-M-A-C-C is pronounced), by **Arab Sea Information Systems** (`arabsea.com`) — major KSA accounting/POS/inventory/e-invoicing platform.
+- ⚠️ **Arab Sea confirmed: NO API integration.** Only path = **export SMACC inventory to Excel**, then **import into our admin** to re-baseline website stock.
+- **Inventory model (DECIDED):** **SMACC = ledger of record**; website = **daily-synced mirror** + soft reservations for in-flight online orders. Website stock is **advisory** between imports; the **per-order admin confirm-step is the real backstop** (stale stock → at worst an apology, never a bad fulfillment).
+- 🔑 **Critical rule:** online sales MUST be reflected in SMACC before each export, or every import "refills" already-sold units → upward drift + overselling. Website generates a **daily "online sales" report** so the admin batch-adjusts SMACC, then exports.
+- **Daily routine:** (1) website → today's online sales; (2) admin reflects them in SMACC; (3) export SMACC → Excel; (4) import to admin (diff/preview → apply).
+- **Import design:** match rows by stable key → products store **`smacc_sku`/barcode**; **diff/preview** before apply (flag unmatched rows); transactional; logged + undoable (reuse `ActivityLogService`); idempotent.
+- **Mitigate the daily-commitment risk:** "stock last synced: Xh ago" indicator + banner/alert if no import in >24h; low-stock buffer; one-drag import. **Ask Arab Sea:** can SMACC schedule/email the export? → enables auto-ingest of the file (still not live sync).
+- Knock-on: staler mirror → more out-of-stock rejections → more captured-card refunds (see Payments). Daily import keeps that low.
+
+### Admin panel & i18n — DECIDED
+- **Storefront AR-first** then EN; **admin panel EN-first** then AR. Admin panel supports **dark + light themes**.
+
+### Open decisions (blocking schema design)
+1. ~~Payment capture model~~ — ✅ DECIDED (hybrid: cards immediate-capture, Tamara auth→capture; see Payments).
+2. ~~POS / inventory~~ — ✅ SMACC by Arab Sea, **no API** → daily Excel export→import; SMACC = ledger of record, website = daily mirror + admin confirm-step backstop (see POS section).
+3. **WhatsApp route** (Cloud API vs BSP) — *recommendation: direct Meta Cloud API.*
+4. ~~Shipping flat rate~~ — ✅ single flat GCC rate.
+
+---
+
 ## Tech Stack (as scaffolded — real versions)
 
 - **Backend:** Laravel `v12.62.0`, PHP `^8.2` (starter kit pinned to v1.0.1 because latest requires PHP 8.3), PHPUnit `11.5`, Ziggy `v2.6.3`
