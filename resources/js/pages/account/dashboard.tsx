@@ -93,9 +93,10 @@ export default function AccountDashboard({
                         </div>
                     )}
 
-                    <Link href="/account/profile" className="mt-4 inline-block text-sm text-[#2f4f4f] underline">
-                        تعديل البيانات
-                    </Link>
+                    <div className="mt-4 flex flex-col gap-1 text-sm">
+                        <Link href="/account/profile" className="text-[#2f4f4f] underline">تعديل البيانات</Link>
+                        <Link href="/wishlist" className="text-[#2f4f4f] underline">المفضلة</Link>
+                    </div>
                 </section>
 
                 {/* Orders */}

@@ -3,7 +3,9 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 use App\Http\Controllers\Webhooks\OtoWebhookController;
 use App\Http\Controllers\Webhooks\TamaraWebhookController;
@@ -42,6 +44,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('account', [AccountController::class, 'dashboard'])->name('account.dashboard');
     Route::get('account/profile', [AccountController::class, 'editProfile'])->name('account.profile.edit');
     Route::patch('account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
+
+    // Reviews (verified-purchase) + helpful votes.
+    Route::post('products/{product:slug}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::post('reviews/{review}/helpful', [ReviewController::class, 'helpful'])->name('reviews.helpful');
+
+    // Wishlist.
+    Route::get('wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('wishlist/{product:slug}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
 require __DIR__.'/admin.php';

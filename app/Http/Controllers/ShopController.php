@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Review;
+use App\Models\ReviewHelpfulVote;
+use App\Models\Wishlist;
+use App\Services\ReviewService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,11 +42,23 @@ class ShopController
         ]);
     }
 
-    public function show(Product $product): Response
+    public function show(Request $request, Product $product, ReviewService $reviewService): Response
     {
         abort_unless($product->is_active, 404);
 
         $product->load('category:id,name_ar,name_en,slug');
+        $user = $request->user();
+
+        $reviews = Review::where('product_id', $product->id)
+            ->where('is_approved', true)
+            ->with('user:id,name')
+            ->latest()
+            ->get();
+
+        // Which of these reviews the current user has marked helpful.
+        $votedIds = $user
+            ? ReviewHelpfulVote::where('user_id', $user->id)->whereIn('review_id', $reviews->pluck('id'))->pluck('review_id')->all()
+            : [];
 
         return Inertia::render('shop/product', [
             'product' => [
@@ -59,6 +75,28 @@ class ShopController
                 'in_stock' => $product->stock > 0,
                 'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
             ],
+            'reviews' => [
+                'summary' => [
+                    'count' => $reviews->count(),
+                    'average' => round((float) $reviews->avg('rating'), 1),
+                ],
+                'items' => $reviews->map(fn (Review $r) => [
+                    'id' => $r->id,
+                    'rating' => $r->rating,
+                    'title' => $r->title,
+                    'body' => $r->body,
+                    'author' => $r->user?->name ?? 'عميل',
+                    'helpful_count' => $r->helpful_count,
+                    'voted' => in_array($r->id, $votedIds, true),
+                    'is_mine' => $user && $r->user_id === $user->id,
+                    'date' => $r->created_at?->toDateString(),
+                ])->values(),
+                'can_review' => $user ? (bool) $reviewService->eligibleOrderId($user, $product->id) : false,
+            ],
+            'wishlisted' => $user
+                ? Wishlist::where('user_id', $user->id)->where('product_id', $product->id)->exists()
+                : false,
+            'authed' => (bool) $user,
         ]);
     }
 
