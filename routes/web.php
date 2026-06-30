@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 use App\Http\Controllers\Webhooks\OtoWebhookController;
@@ -10,6 +11,12 @@ use Inertia\Inertia;
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
+
+// Cart.
+Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
+Route::post('/cart', [CartController::class, 'add'])->name('cart.add');
+Route::patch('/cart/items/{item}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/items/{item}', [CartController::class, 'remove'])->name('cart.remove');
 
 // Server-to-server webhooks (CSRF-exempt via the webhooks/* rule).
 Route::post('/webhooks/oto', [OtoWebhookController::class, 'handle'])->name('webhooks.oto');

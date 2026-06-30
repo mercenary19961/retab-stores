@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import StoreLayout from '@/layouts/store-layout';
 
 interface Product {
@@ -58,6 +58,9 @@ export default function ShopProduct({ product }: { product: Product }) {
                         {product.in_stock ? (
                             <button
                                 type="button"
+                                onClick={() =>
+                                    router.post('/cart', { product_id: product.id, quantity: 1 }, { preserveScroll: true })
+                                }
                                 className="rounded-lg bg-[#2f4f4f] px-6 py-3 font-semibold text-white transition hover:bg-[#264141]"
                             >
                                 أضف إلى السلة

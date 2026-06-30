@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 
 interface Category {
@@ -8,6 +8,8 @@ interface Category {
 }
 
 export default function StoreLayout({ children, categories = [] }: PropsWithChildren<{ categories?: Category[] }>) {
+    const cartCount = (usePage().props as { cart?: { count?: number } }).cart?.count ?? 0;
+
     return (
         <div dir="rtl" lang="ar" className="min-h-screen bg-[#faf8f5] font-sans text-[#1f2937]">
             <header className="bg-[#2f4f4f] text-white">
@@ -15,6 +17,9 @@ export default function StoreLayout({ children, categories = [] }: PropsWithChil
                     <Link href="/" className="text-2xl font-bold">رطاب للتمور</Link>
                     <nav className="flex gap-5 text-sm">
                         <Link href="/" className="hover:underline">الرئيسية</Link>
+                        <Link href="/cart" className="hover:underline">
+                            السلة{cartCount > 0 ? ` (${cartCount})` : ''}
+                        </Link>
                         <Link href="/login" className="hover:underline">حسابي</Link>
                     </nav>
                 </div>
