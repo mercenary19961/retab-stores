@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProductController;
 use Illuminate\Support\Facades\Route;
 
 // Back-office (EN-first). Staff only — admin or editor.
@@ -11,4 +12,6 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::post('orders/{order:order_number}/unavailable', [OrderController::class, 'markUnavailable'])->name('orders.unavailable');
     Route::post('orders/{order:order_number}/ship', [OrderController::class, 'ship'])->name('orders.ship');
     Route::post('orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
+    Route::resource('products', ProductController::class)->except(['show']);
 });

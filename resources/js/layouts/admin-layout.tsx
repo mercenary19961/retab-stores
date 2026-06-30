@@ -8,6 +8,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
     { label: 'Orders', href: '/admin/orders' },
+    { label: 'Products', href: '/admin/products' },
 ];
 
 export default function AdminLayout({ children, title }: PropsWithChildren<{ title?: string }>) {
