@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 use App\Http\Controllers\Webhooks\OtoWebhookController;
@@ -17,6 +18,11 @@ Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
 Route::post('/cart', [CartController::class, 'add'])->name('cart.add');
 Route::patch('/cart/items/{item}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/items/{item}', [CartController::class, 'remove'])->name('cart.remove');
+
+// Checkout.
+Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::get('/orders/{order:order_number}', [CheckoutController::class, 'confirmation'])->name('orders.show');
 
 // Server-to-server webhooks (CSRF-exempt via the webhooks/* rule).
 Route::post('/webhooks/oto', [OtoWebhookController::class, 'handle'])->name('webhooks.oto');

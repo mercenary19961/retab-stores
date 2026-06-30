@@ -53,7 +53,8 @@ The store is **already live and selling on Zid** (hosted SaaS). We are rebuildin
 > Captured from the client brief. **Reference implementation:** `c:\Users\sabba\Desktop\projects\hardrock-ecom-demo\` — a mature Laravel 12 + Inertia **v2** e-commerce backend we built that ALREADY implements OTO shipping, Tamara, coupons, order activities, admin activity-log/undo, optimistic locking, roles (admin/editor), bilingual AR/EN, and notifications. Retab **adapts** these into a **tighter** build (gateway abstractions, thin controllers + service layer, explicit order state machine). Read hardrock-ecom-demo's files for proven patterns before building (e.g. `app/Services/Shipping/*`, `app/Services/Payments/*`).
 
 ### Payments — DECIDED
-- **Cards via Moyasar** (mada + Visa/MC + Apple Pay + STC Pay) **+ Tamara (BNPL)**. **No COD, no cash** — every order is prepaid online.
+- **Cards via Moyasar** (mada + Visa/MC + Apple Pay + STC Pay) **+ Tamara (BNPL)** **+ bank transfer** (manual transfer to the store's **Al Rajhi** IBAN, **admin-verified** — added 2026-06-30 to match the client's current site). **No COD, no cash** — every order is prepaid (online gateway or verified bank transfer).
+- **Store entity + bank** (from client): legal name **شركة مصنع رطاب الوطن للتمور**; Al Rajhi IBAN `SA9780000145608010008130` (acct `145608010008130`). Stored in `settings` (`bank_*`, `legal_name`); the IBAN is a public receiving account (fine to display).
 - Both sit behind a `PaymentGateway` interface (mirror hardrock's `ShippingGateway` pattern); Tamara reuses hardrock's `TamaraClient`.
 - **Capture model — DECIDED (hybrid per method):**
   - **Cards (Moyasar) = immediate capture** at checkout; **refund** on customer-cancel or admin-reject. Deliberately avoids any Moyasar delayed-capture dependency.

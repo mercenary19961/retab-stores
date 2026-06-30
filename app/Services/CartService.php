@@ -67,6 +67,12 @@ class CartService
         $item->delete();
     }
 
+    /** Empty a cart (after its order is placed). */
+    public function clear(Cart $cart): void
+    {
+        $cart->items()->delete();
+    }
+
     /**
      * @return array{items: \Illuminate\Support\Collection, count: int, subtotal: float}
      */
