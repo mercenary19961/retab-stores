@@ -49,4 +49,13 @@ return [
         'webhook_secret' => env('MOYASAR_WEBHOOK_SECRET'),
     ],
 
+    'tamara' => [
+        'api_token' => env('TAMARA_API_TOKEN'),
+        'notification_token' => env('TAMARA_NOTIFICATION_TOKEN'),
+        'base_url' => env('TAMARA_BASE_URL', 'https://api.tamara.co'),
+        'country' => env('TAMARA_COUNTRY', 'SA'),
+        'instalments' => env('TAMARA_INSTALMENTS', 3),
+        'currency' => env('TAMARA_CURRENCY', 'SAR'),
+    ],
+
 ];

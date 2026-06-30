@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Payments\MoyasarGateway;
 use App\Services\Payments\PaymentGateway;
+use App\Services\Payments\Tamara\TamaraClient;
 use App\Services\Shipping\Oto\OtoClient;
 use App\Services\Shipping\Oto\OtoGateway;
 use App\Services\Shipping\ShippingGateway;
@@ -38,6 +39,13 @@ class AppServiceProvider extends ServiceProvider
             webhookToken: (string) config('services.moyasar.webhook_secret'),
             successUrl: rtrim((string) config('app.url'), '/') . '/checkout/success',
             callbackUrl: rtrim((string) config('app.url'), '/') . '/webhooks/moyasar',
+        ));
+
+        // Tamara BNPL — authorize at checkout, capture at admin confirmation.
+        $this->app->singleton(TamaraClient::class, fn () => new TamaraClient(
+            apiToken: (string) config('services.tamara.api_token'),
+            notificationToken: (string) config('services.tamara.notification_token'),
+            baseUrl: rtrim((string) config('services.tamara.base_url'), '/'),
         ));
     }
 
