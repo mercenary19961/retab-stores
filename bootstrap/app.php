@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        $middleware->alias([
+            'staff' => \App\Http\Middleware\EnsureUserIsStaff::class,
+        ]);
+
         // Server-to-server webhooks (OTO, payment gateways) can't carry a CSRF token.
         $middleware->validateCsrfTokens(except: [
             'webhooks/*',
