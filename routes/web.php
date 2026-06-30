@@ -1,14 +1,15 @@
 <?php
 
+use App\Http\Controllers\ShopController;
 use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 use App\Http\Controllers\Webhooks\OtoWebhookController;
 use App\Http\Controllers\Webhooks\TamaraWebhookController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+// Storefront (AR-first).
+Route::get('/', [ShopController::class, 'index'])->name('home');
+Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
 
 // Server-to-server webhooks (CSRF-exempt via the webhooks/* rule).
 Route::post('/webhooks/oto', [OtoWebhookController::class, 'handle'])->name('webhooks.oto');
