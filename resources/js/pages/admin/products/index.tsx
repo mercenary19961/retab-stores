@@ -5,6 +5,7 @@ import AdminLayout from '@/layouts/admin-layout';
 interface ProductRow {
     id: number;
     name_ar: string;
+    image: string | null;
     sku: string;
     category: string | null;
     price: number;
@@ -114,8 +115,15 @@ export default function ProductsIndex({
                         {products.data.map((p) => (
                             <tr key={p.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
                                 <td className="px-4 py-3">
-                                    {p.name_ar}
-                                    {p.is_featured && <span className="ms-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">Featured</span>}
+                                    <div className="flex items-center gap-2">
+                                        {p.image ? (
+                                            <img src={p.image} alt="" className="h-9 w-9 rounded object-cover" />
+                                        ) : (
+                                            <div className="flex h-9 w-9 items-center justify-center rounded bg-neutral-100 text-sm dark:bg-neutral-800">🌴</div>
+                                        )}
+                                        <span>{p.name_ar}</span>
+                                        {p.is_featured && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">Featured</span>}
+                                    </div>
                                 </td>
                                 <td className="px-4 py-3 font-mono text-neutral-500">{p.sku}</td>
                                 <td className="px-4 py-3">{p.category ?? '—'}</td>

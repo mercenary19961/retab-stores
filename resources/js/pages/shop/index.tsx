@@ -16,6 +16,7 @@ interface ProductCard {
     effective_price: number;
     on_sale: boolean;
     is_featured: boolean;
+    image: string | null;
     category: { name_ar: string; slug: string } | null;
 }
 
@@ -43,9 +44,13 @@ export default function ShopIndex({
                             href={`/products/${p.slug}`}
                             className="group rounded-lg border border-gray-200 bg-white p-3 transition hover:shadow-md"
                         >
-                            <div className="mb-3 flex aspect-square items-center justify-center rounded-md bg-[#f1ede7] text-4xl">
-                                🌴
-                            </div>
+                            {p.image ? (
+                                <img src={p.image} alt={p.name_ar} className="mb-3 aspect-square w-full rounded-md object-cover" />
+                            ) : (
+                                <div className="mb-3 flex aspect-square items-center justify-center rounded-md bg-[#f1ede7] text-4xl">
+                                    🌴
+                                </div>
+                            )}
                             <h3 className="line-clamp-2 text-sm font-semibold">{p.name_ar}</h3>
                             <div className="mt-2 flex items-center gap-2">
                                 {p.on_sale ? (

@@ -50,6 +50,15 @@ class Product extends Model
         return $this->hasMany(ProductImage::class);
     }
 
+    /**
+     * The primary image (or the first by sort order). Expects `images` loaded.
+     */
+    public function primaryImage(): ?ProductImage
+    {
+        return $this->images->firstWhere('is_primary', true)
+            ?? $this->images->sortBy('sort_order')->first();
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);

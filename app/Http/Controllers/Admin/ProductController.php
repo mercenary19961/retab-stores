@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\Media;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -23,7 +24,7 @@ class ProductController extends Controller
         $categoryId = $request->query('category');
 
         $products = Product::query()
-            ->with('category:id,name_ar')
+            ->with(['category:id,name_ar', 'images'])
             ->when($search, fn ($q) => $q->where(fn ($w) => $w
                 ->where('name_ar', 'like', "%{$search}%")
                 ->orWhere('name_en', 'like', "%{$search}%")
@@ -35,6 +36,7 @@ class ProductController extends Controller
             ->through(fn (Product $p) => [
                 'id' => $p->id,
                 'name_ar' => $p->name_ar,
+                'image' => Media::url($p->primaryImage()?->path),
                 'sku' => $p->sku,
                 'category' => $p->category?->name_ar,
                 'price' => (float) $p->price,
@@ -71,6 +73,8 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
+        $product->load('images');
+
         return Inertia::render('admin/products/form', [
             'product' => [
                 'id' => $product->id,
@@ -89,6 +93,11 @@ class ProductController extends Controller
                 'low_stock_threshold' => $product->low_stock_threshold,
                 'is_active' => $product->is_active,
                 'is_featured' => $product->is_featured,
+                'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
+                    'id' => $img->id,
+                    'url' => Media::url($img->path),
+                    'is_primary' => $img->is_primary,
+                ]),
             ],
             'categories' => $this->categoryOptions(),
         ]);

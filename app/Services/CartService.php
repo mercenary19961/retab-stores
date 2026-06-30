@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
@@ -71,6 +72,42 @@ class CartService
     public function clear(Cart $cart): void
     {
         $cart->items()->delete();
+    }
+
+    /**
+     * Fold a guest's session cart into the user's cart at login, so items added
+     * before signing in aren't lost. Same product in both → quantities combine.
+     * No-op when there's no guest cart. Call right after Auth::login().
+     */
+    public function mergeGuestInto(User $user): void
+    {
+        $token = Session::get('cart_token');
+        if (! $token) {
+            return;
+        }
+
+        $guest = Cart::where('session_token', $token)->with('items')->first();
+        if ($guest && $guest->items->isNotEmpty()) {
+            $userCart = Cart::firstOrCreate(['user_id' => $user->id]);
+
+            $existing = $userCart->items()->pluck('id', 'product_id'); // product_id => item id
+
+            foreach ($guest->items as $item) {
+                if ($existing->has($item->product_id)) {
+                    CartItem::whereKey($existing->get($item->product_id))->increment('quantity', $item->quantity);
+                } else {
+                    $userCart->items()->create([
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                    ]);
+                }
+            }
+
+            $guest->delete(); // cascades cart_items
+        }
+
+        Session::forget('cart_token');
     }
 
     /**

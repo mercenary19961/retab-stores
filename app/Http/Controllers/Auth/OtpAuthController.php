@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Auth\OtpService;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -19,6 +20,7 @@ class OtpAuthController extends Controller
 {
     public function __construct(
         protected OtpService $otp,
+        protected CartService $cart,
     ) {}
 
     public function create()
@@ -68,6 +70,8 @@ class OtpAuthController extends Controller
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();
+
+        $this->cart->mergeGuestInto($user);
 
         return redirect()->intended(route('account.dashboard'));
     }

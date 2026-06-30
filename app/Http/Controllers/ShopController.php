@@ -8,6 +8,7 @@ use App\Models\Review;
 use App\Models\ReviewHelpfulVote;
 use App\Models\Wishlist;
 use App\Services\ReviewService;
+use App\Support\Media;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,7 +28,7 @@ class ShopController
         $activeCategory = $request->query('category');
 
         $query = Product::where('is_active', true)
-            ->with('category:id,name_ar,name_en,slug')
+            ->with(['category:id,name_ar,name_en,slug', 'images'])
             ->orderByDesc('is_featured')
             ->latest();
 
@@ -46,8 +47,13 @@ class ShopController
     {
         abort_unless($product->is_active, 404);
 
-        $product->load('category:id,name_ar,name_en,slug');
+        $product->load('category:id,name_ar,name_en,slug', 'images');
         $user = $request->user();
+
+        $images = $product->images->sortBy('sort_order')
+            ->map(fn ($img) => Media::url($img->path))
+            ->filter()
+            ->values();
 
         $reviews = Review::where('product_id', $product->id)
             ->where('is_approved', true)
@@ -74,6 +80,7 @@ class ShopController
                 'on_sale' => $product->isOnSale(),
                 'in_stock' => $product->stock > 0,
                 'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
+                'images' => $images,
             ],
             'reviews' => [
                 'summary' => [
@@ -114,6 +121,7 @@ class ShopController
             'effective_price' => $product->effectivePrice(),
             'on_sale' => $product->isOnSale(),
             'is_featured' => (bool) $product->is_featured,
+            'image' => Media::url($product->primaryImage()?->path),
             'category' => $product->category?->only('name_ar', 'slug'),
         ];
     }

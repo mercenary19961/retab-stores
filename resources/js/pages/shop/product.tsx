@@ -15,6 +15,7 @@ interface Product {
     on_sale: boolean;
     in_stock: boolean;
     category: { name_ar: string; name_en: string | null; slug: string } | null;
+    images: string[];
 }
 
 interface ReviewItem {
@@ -72,7 +73,20 @@ export default function ShopProduct({
             </nav>
 
             <div className="grid gap-8 md:grid-cols-2">
-                <div className="flex aspect-square items-center justify-center rounded-lg bg-[#f1ede7] text-7xl">🌴</div>
+                {product.images.length > 0 ? (
+                    <div className="space-y-3">
+                        <img src={product.images[0]} alt={product.name_ar} className="aspect-square w-full rounded-lg object-cover" />
+                        {product.images.length > 1 && (
+                            <div className="grid grid-cols-4 gap-2">
+                                {product.images.slice(1, 5).map((url) => (
+                                    <img key={url} src={url} alt="" className="aspect-square w-full rounded object-cover" />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex aspect-square items-center justify-center rounded-lg bg-[#f1ede7] text-7xl">🌴</div>
+                )}
 
                 <div>
                     <div className="flex items-start justify-between gap-3">

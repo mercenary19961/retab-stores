@@ -1,10 +1,16 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 
 interface Category {
     id: number;
     name_ar: string;
+}
+
+interface ProductImage {
+    id: number;
+    url: string | null;
+    is_primary: boolean;
 }
 
 interface Product {
@@ -24,6 +30,7 @@ interface Product {
     low_stock_threshold: number | null;
     is_active: boolean;
     is_featured: boolean;
+    images?: ProductImage[];
 }
 
 export default function ProductForm({ product, categories }: { product: Product | null; categories: Category[] }) {
@@ -54,6 +61,18 @@ export default function ProductForm({ product, categories }: { product: Product 
         } else {
             post('/admin/products');
         }
+    };
+
+    const imageForm = useForm<{ images: File[] }>({ images: [] });
+
+    const uploadImages = (e: FormEvent) => {
+        e.preventDefault();
+        if (!product || imageForm.data.images.length === 0) return;
+        imageForm.post(`/admin/products/${product.id}/images`, {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => imageForm.reset('images'),
+        });
     };
 
     const text = (name: keyof typeof data, label: string, opts: { required?: boolean; type?: string; placeholder?: string } = {}) => (
@@ -159,6 +178,63 @@ export default function ProductForm({ product, categories }: { product: Product 
                     </Link>
                 </div>
             </form>
+
+            {/* Images — only after the product exists (kept outside the text form). */}
+            {editing && (
+                <section className="mt-6 max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <h2 className="font-bold">Images</h2>
+
+                    {product.images && product.images.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                            {product.images.map((img) => (
+                                <div key={img.id} className={`relative overflow-hidden rounded-lg border ${img.is_primary ? 'border-neutral-900 dark:border-white' : 'border-neutral-200 dark:border-neutral-700'}`}>
+                                    {img.url && <img src={img.url} alt="" className="aspect-square w-full object-cover" />}
+                                    <div className="flex items-center justify-between gap-1 p-1 text-xs">
+                                        {img.is_primary ? (
+                                            <span className="font-semibold text-neutral-900 dark:text-white">Primary</span>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => router.put(`/admin/products/${product.id}/images/${img.id}/primary`, {}, { preserveScroll: true })}
+                                                className="text-blue-600 hover:underline dark:text-blue-400"
+                                            >
+                                                Set primary
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => router.delete(`/admin/products/${product.id}/images/${img.id}`, { preserveScroll: true })}
+                                            className="text-red-600 hover:underline dark:text-red-400"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-neutral-400">No images yet.</p>
+                    )}
+
+                    <form onSubmit={uploadImages} className="flex items-center gap-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            multiple
+                            onChange={(e) => imageForm.setData('images', Array.from(e.target.files ?? []))}
+                            className="text-sm"
+                        />
+                        <button
+                            type="submit"
+                            disabled={imageForm.processing || imageForm.data.images.length === 0}
+                            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-neutral-900"
+                        >
+                            Upload
+                        </button>
+                    </form>
+                    {imageForm.errors.images && <p className="text-xs text-red-500">{imageForm.errors.images}</p>}
+                </section>
+            )}
         </AdminLayout>
     );
 }
