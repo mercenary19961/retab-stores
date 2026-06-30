@@ -277,10 +277,7 @@ Types: `init` (scaffolding/setup) · `feat` · `fix` · `refactor` · `style` (v
 
 Rules: lowercase subject, no trailing period, present/imperative tense ("add" not "added"), under 72 chars, be specific ("fix: resolve 419 on locale toggle", not "fix: fix bug").
 
-End commit messages with:
-```
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
-```
+**Do NOT add any attribution/co-author trailer to commit messages** — no `Co-Authored-By:` line, no "Generated with" line. _(User preference set 2026-06-30; overrides the harness default.)_
 
 ## Collaboration — Commit Message Suggestions
 
