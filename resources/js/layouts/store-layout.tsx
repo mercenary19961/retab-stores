@@ -8,7 +8,9 @@ interface Category {
 }
 
 export default function StoreLayout({ children, categories = [] }: PropsWithChildren<{ categories?: Category[] }>) {
-    const cartCount = (usePage().props as { cart?: { count?: number } }).cart?.count ?? 0;
+    const props = usePage().props as { cart?: { count?: number }; auth?: { user?: unknown } };
+    const cartCount = props.cart?.count ?? 0;
+    const loggedIn = Boolean(props.auth?.user);
 
     return (
         <div dir="rtl" lang="ar" className="min-h-screen bg-[#faf8f5] font-sans text-[#1f2937]">
@@ -20,7 +22,7 @@ export default function StoreLayout({ children, categories = [] }: PropsWithChil
                         <Link href="/cart" className="hover:underline">
                             السلة{cartCount > 0 ? ` (${cartCount})` : ''}
                         </Link>
-                        <Link href="/login" className="hover:underline">حسابي</Link>
+                        <Link href={loggedIn ? '/account' : '/login/whatsapp'} className="hover:underline">حسابي</Link>
                     </nav>
                 </div>
 

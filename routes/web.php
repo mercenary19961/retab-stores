@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ShopController;
@@ -36,6 +37,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    // Customer account (storefront, AR-first).
+    Route::get('account', [AccountController::class, 'dashboard'])->name('account.dashboard');
+    Route::get('account/profile', [AccountController::class, 'editProfile'])->name('account.profile.edit');
+    Route::patch('account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
 });
 
 require __DIR__.'/admin.php';

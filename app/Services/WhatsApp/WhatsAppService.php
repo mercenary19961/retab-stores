@@ -32,6 +32,9 @@ class WhatsAppService
     // Internal admin alert.
     public const T_ADMIN_NEW_ORDER = 'admin_new_order';
 
+    // Authentication (WhatsApp OTP sign-in).
+    public const T_OTP = 'otp';
+
     public function __construct(
         protected WhatsAppGateway $gateway,
     ) {}
@@ -73,6 +76,15 @@ class WhatsAppService
             $order->customer_name ?? '',
             $code,
         ], purpose: 'loyalty', order: $order, userId: $reward->user_id);
+    }
+
+    /**
+     * Send a one-time sign-in code. The plaintext code is sent to WhatsApp but
+     * NEVER persisted — the ledger row redacts it.
+     */
+    public function sendOtp(string $phone, string $code): ?WhatsappMessage
+    {
+        return $this->dispatch($phone, self::T_OTP, [$code], purpose: 'otp', category: 'authentication', redactParams: true);
     }
 
     /** New order needs attention — alert every configured admin recipient. */
@@ -122,6 +134,7 @@ class WhatsAppService
         ?Order $order = null,
         ?int $userId = null,
         string $category = 'utility',
+        bool $redactParams = false,
     ): ?WhatsappMessage {
         $to = $this->normalize($to);
         if ($to === null) {
@@ -138,7 +151,7 @@ class WhatsAppService
             'category' => $category,
             'purpose' => $purpose,
             'status' => 'queued',
-            'payload' => ['language' => $language, 'params' => $params],
+            'payload' => ['language' => $language, 'params' => $redactParams ? ['***'] : $params],
         ]);
 
         try {
