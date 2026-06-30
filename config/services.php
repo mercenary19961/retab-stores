@@ -58,4 +58,18 @@ return [
         'currency' => env('TAMARA_CURRENCY', 'SAR'),
     ],
 
+    // WhatsApp Cloud API (direct Meta, no BSP). driver=log in dev (no network);
+    // driver=cloud sends live. admin_recipients = comma-separated E.164 numbers
+    // that receive the new-order alerts.
+    'whatsapp' => [
+        'driver' => env('WHATSAPP_DRIVER', 'log'),
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'base_url' => env('WHATSAPP_BASE_URL', 'https://graph.facebook.com/v21.0'),
+        'app_secret' => env('WHATSAPP_APP_SECRET'),          // X-Hub-Signature-256 verification
+        'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),      // webhook GET handshake
+        'default_language' => env('WHATSAPP_DEFAULT_LANGUAGE', 'ar'),
+        'admin_recipients' => env('WHATSAPP_ADMIN_RECIPIENTS'),
+    ],
+
 ];

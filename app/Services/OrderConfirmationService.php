@@ -23,6 +23,13 @@ use Illuminate\Support\Facades\Log;
  */
 class OrderConfirmationService
 {
+    /**
+     * The loyalty reward issued by the most recent confirm(), or null. Lets the
+     * caller (admin OrderController) fire the loyalty WhatsApp without coupling
+     * this service — or LoyaltyService — to the messaging layer.
+     */
+    public ?\App\Models\LoyaltyReward $issuedReward = null;
+
     public function __construct(
         protected TamaraService $tamara,
         protected LoyaltyService $loyalty,
@@ -74,7 +81,7 @@ class OrderConfirmationService
         $order->refresh();
 
         // Count the confirmed purchase toward loyalty (issues the 5→15% reward).
-        $this->loyalty->recordConfirmedPurchase($order);
+        $this->issuedReward = $this->loyalty->recordConfirmedPurchase($order);
 
         return $order;
     }

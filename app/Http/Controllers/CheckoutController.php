@@ -21,6 +21,7 @@ class CheckoutController
     public function __construct(
         protected CartService $cart,
         protected CheckoutService $checkout,
+        protected \App\Services\WhatsApp\WhatsAppService $whatsapp,
     ) {}
 
     public function show()
@@ -79,6 +80,9 @@ class CheckoutController
 
         $this->cart->clear($cart);
         $request->session()->push('placed_orders', $order->order_number);
+
+        // Alert staff that a new order needs attention (verify transfer / check stock).
+        $this->whatsapp->notifyAdminsNewOrder($order);
 
         if (in_array($data['payment_method'], ['card', 'tamara'], true)) {
             try {

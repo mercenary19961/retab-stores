@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\OrderConfirmationService;
 use App\Services\Shipping\ShippingService;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -21,6 +22,7 @@ class OrderController extends Controller
     public function __construct(
         protected OrderConfirmationService $confirmation,
         protected ShippingService $shipping,
+        protected WhatsAppService $whatsapp,
     ) {}
 
     public function index(Request $request)
@@ -109,6 +111,12 @@ class OrderController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        // Best-effort notifications (never block the confirmation).
+        $this->whatsapp->notifyOrderConfirmed($order);
+        if ($this->confirmation->issuedReward) {
+            $this->whatsapp->notifyLoyaltyReward($order, $this->confirmation->issuedReward);
+        }
+
         return back()->with('success', 'تم تأكيد الطلب وخصم المخزون.');
     }
 
@@ -124,6 +132,8 @@ class OrderController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        $this->whatsapp->notifyOrderUnavailable($order);
+
         return back()->with('success', 'تم تحديد الطلب كغير متوفر وإلغاء الحجز المالي.');
     }
 
@@ -134,6 +144,8 @@ class OrderController extends Controller
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        $this->whatsapp->notifyOrderShipped($order->refresh());
 
         return back()->with('success', 'تم إنشاء الشحنة وطلب الاستلام من الناقل.');
     }

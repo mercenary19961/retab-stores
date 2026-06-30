@@ -8,6 +8,9 @@ use App\Services\Payments\Tamara\TamaraClient;
 use App\Services\Shipping\Oto\OtoClient;
 use App\Services\Shipping\Oto\OtoGateway;
 use App\Services\Shipping\ShippingGateway;
+use App\Services\WhatsApp\CloudApiGateway;
+use App\Services\WhatsApp\LogGateway;
+use App\Services\WhatsApp\WhatsAppGateway;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -47,6 +50,20 @@ class AppServiceProvider extends ServiceProvider
             notificationToken: (string) config('services.tamara.notification_token'),
             baseUrl: rtrim((string) config('services.tamara.base_url'), '/'),
         ));
+
+        // WhatsApp Cloud API. Defaults to the log driver (no creds needed in dev);
+        // set WHATSAPP_DRIVER=cloud in production to send live.
+        $this->app->singleton(WhatsAppGateway::class, function () {
+            if (config('services.whatsapp.driver') === 'cloud') {
+                return new CloudApiGateway(
+                    token: (string) config('services.whatsapp.token'),
+                    phoneNumberId: (string) config('services.whatsapp.phone_number_id'),
+                    baseUrl: rtrim((string) config('services.whatsapp.base_url'), '/'),
+                );
+            }
+
+            return new LogGateway();
+        });
     }
 
     /**
