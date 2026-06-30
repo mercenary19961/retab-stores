@@ -162,9 +162,13 @@ These are the conventions we're adopting (most proven in Sky Amman). Where a pat
 - Arabic web font (e.g. IBM Plex Sans Arabic / Tajawal) + Latin font, swapped via `html[dir="rtl"]`.
 - Pattern: pass both locale bundles from the controller, pick client-side; **stored content always wins over i18n fallbacks**.
 
-### File Storage — **(to build)**
-- Centralize uploads through a single `Media::storeFile()`-style helper (randomized filename, server-side type+MIME validation). Never write public files directly.
-- For ephemeral hosting (Railway): seeded/structural images go in git under `public/`; runtime uploads need durable storage (S3/R2) — **product images especially** (don't rely on the container FS).
+### File Storage — **(BUILT — media layer + product images)**
+- **Single upload path = `App\Support\Media`** (`storeImage()` / `url()` / `delete()`): validates extension AND MIME, randomizes the filename (UUID), stores public on the **`media` disk**. **Never write public files directly** — always go through `Media` (same rule as `Setting::set()`).
+- **Storage provider — DECIDED: Cloudflare R2** (S3-compatible, **zero egress fees**, fits the planned Cloudflare stack). Wired as the `r2` disk in `config/filesystems.php` via Laravel's **s3 driver** (`region: auto`, path-style endpoint) — no R2-specific code, so swapping to real S3 is an env change. The active disk is chosen by **`MEDIA_DISK`** env: defaults to the local **`public`** disk in dev (no creds; run `php artisan storage:link` once), set **`MEDIA_DISK=r2`** in production (Railway's FS is ephemeral — uploads MUST NOT live on the container disk).
+  - Prod env (Railway only, never commit): `MEDIA_DISK=r2`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT` (`https://<account-id>.r2.cloudflarestorage.com`), `R2_URL` (public bucket / custom domain).
+  - **Cost:** R2 free tier = **10 GB storage + 1M writes + 10M reads per month**, then **$0.015/GB-month**, **$4.50/M writes**, **$0.36/M reads**, **$0 egress**. A dates catalogue (hundreds of images, ~sub-GB) sits in the free tier indefinitely; egress being free is the reason it beats S3 for an image-heavy storefront.
+- **Product images BUILT** on this: `product_images` (path/alt/sort/is_primary) managed via `Admin\ProductImageController` (upload/delete/set-primary on dedicated multipart-POST endpoints — separate from the product text form to avoid PUT-multipart issues); first image auto-primary; deleting the primary promotes the next. Storefront catalogue/product + admin list/edit render via `Media::url()` with a 🌴 placeholder fallback.
+- **Still pending (same media layer):** return-request photos (returns module) and review photos. Seeded/structural images (logo, etc.) still go in git under `public/`.
 
 ### Auth & Security — **(harden before launch)**
 - Session-based auth (starter kit default). Use `Auth::id()`/`Auth::user()`, never the `auth()` helper in new code (Sky Amman convention).
