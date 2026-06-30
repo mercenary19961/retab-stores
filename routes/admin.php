@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\StockImportController;
 use Illuminate\Support\Facades\Route;
 
 // Back-office (EN-first). Staff only — admin or editor.
@@ -14,4 +15,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::post('orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 
     Route::resource('products', ProductController::class)->except(['show']);
+
+    Route::get('stock-import', [StockImportController::class, 'index'])->name('stock-import.index');
+    Route::post('stock-import/preview', [StockImportController::class, 'preview'])->name('stock-import.preview');
+    Route::post('stock-import/apply', [StockImportController::class, 'apply'])->name('stock-import.apply');
+    Route::post('stock-import/{activityLog}/undo', [StockImportController::class, 'undo'])->name('stock-import.undo');
 });
