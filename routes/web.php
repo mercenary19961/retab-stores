@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 use App\Http\Controllers\Webhooks\OtoWebhookController;
+use App\Http\Controllers\Webhooks\TamaraWebhookController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -12,6 +13,7 @@ Route::get('/', function () {
 // Server-to-server webhooks (CSRF-exempt via the webhooks/* rule).
 Route::post('/webhooks/oto', [OtoWebhookController::class, 'handle'])->name('webhooks.oto');
 Route::post('/webhooks/moyasar', [MoyasarWebhookController::class, 'handle'])->name('webhooks.moyasar');
+Route::post('/webhooks/tamara', [TamaraWebhookController::class, 'handle'])->name('webhooks.tamara');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
