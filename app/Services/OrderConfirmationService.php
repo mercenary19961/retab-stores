@@ -25,6 +25,7 @@ class OrderConfirmationService
 {
     public function __construct(
         protected TamaraService $tamara,
+        protected LoyaltyService $loyalty,
     ) {}
 
     /**
@@ -70,7 +71,12 @@ class OrderConfirmationService
             );
         });
 
-        return $order->refresh();
+        $order->refresh();
+
+        // Count the confirmed purchase toward loyalty (issues the 5→15% reward).
+        $this->loyalty->recordConfirmedPurchase($order);
+
+        return $order;
     }
 
     /**

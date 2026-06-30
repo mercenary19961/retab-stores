@@ -38,7 +38,7 @@ class CheckoutService
         return DB::transaction(function () use ($cart, $customer, $shippingAddress, $couponCode) {
             [$subtotal, $lines] = $this->buildLines($cart);
 
-            [$coupon, $discount] = $this->resolveCoupon($couponCode, $subtotal);
+            [$coupon, $discount] = $this->resolveCoupon($couponCode, $subtotal, $cart->user_id);
 
             $shippingFee = (float) Setting::get(self::SHIPPING_FEE_KEY, 0);
             $total = round($subtotal - $discount + $shippingFee, 2);
@@ -117,7 +117,7 @@ class CheckoutService
     /**
      * @return array{0: ?Coupon, 1: float}
      */
-    private function resolveCoupon(?string $couponCode, float $subtotal): array
+    private function resolveCoupon(?string $couponCode, float $subtotal, ?int $userId): array
     {
         if (! $couponCode) {
             return [null, 0.0];
@@ -126,6 +126,11 @@ class CheckoutService
         $coupon = Coupon::where('code', $couponCode)->first();
         if (! $coupon || ! $coupon->isValid($subtotal)) {
             throw new \RuntimeException('Invalid or expired coupon.');
+        }
+
+        // A user-bound coupon (e.g. a loyalty reward) is only valid for its owner.
+        if ($coupon->user_id !== null && $coupon->user_id !== $userId) {
+            throw new \RuntimeException('This coupon is not available for your account.');
         }
 
         return [$coupon, $coupon->discountFor($subtotal)];

@@ -26,6 +26,7 @@ class Coupon extends Model
         'expires_at',
         'is_active',
         'created_by',
+        'user_id',
     ];
 
     protected $casts = [
@@ -49,6 +50,12 @@ class Coupon extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** When set, the coupon is restricted to this customer (e.g. a loyalty reward). */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

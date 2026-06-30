@@ -100,6 +100,17 @@ class OrderConfirmationServiceTest extends TestCase
         ]);
     }
 
+    public function test_confirm_counts_the_purchase_toward_loyalty(): void
+    {
+        $user = \App\Models\User::factory()->create();
+        $product = $this->makeProduct();
+        $order = $this->makeOrder($product, ['user_id' => $user->id], 1);
+
+        $this->service()->confirm($order);
+
+        $this->assertSame(1, $user->fresh()->confirmed_purchases_count);
+    }
+
     public function test_customer_can_cancel_before_confirmation(): void
     {
         $product = $this->makeProduct();
