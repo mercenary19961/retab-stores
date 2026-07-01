@@ -65,7 +65,7 @@ export default function OrderShow({ order, can }: { order: Order; can: Can }) {
     const [busy, setBusy] = useState(false);
     const [note, setNote] = useState('');
 
-    const action = (verb: string, data: Record<string, unknown> = {}, confirmMsg?: string) => {
+    const action = (verb: string, data: Record<string, string> = {}, confirmMsg?: string) => {
         if (confirmMsg && !window.confirm(confirmMsg)) return;
         router.post(`/admin/orders/${order.order_number}/${verb}`, data, {
             preserveScroll: true,
