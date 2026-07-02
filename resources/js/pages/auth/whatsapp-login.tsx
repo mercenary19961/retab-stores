@@ -1,18 +1,26 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Turnstile, type TurnstileHandle } from '@/components/turnstile';
 import StoreLayout from '@/layouts/store-layout';
 
 export default function WhatsAppLogin() {
     const { t } = useTranslation();
     const [step, setStep] = useState<'phone' | 'code'>('phone');
-    const { data, setData, post, processing, errors, reset } = useForm({ phone: '', code: '' });
+    const turnstileRef = useRef<TurnstileHandle>(null);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        phone: '',
+        code: '',
+        'cf-turnstile-response': '',
+    });
 
     const sendCode = (e: FormEvent) => {
         e.preventDefault();
         post('/login/whatsapp/send', {
             preserveScroll: true,
             onSuccess: () => setStep('code'),
+            // Tokens are single-use — re-arm the widget after a rejected submit.
+            onError: () => turnstileRef.current?.reset(),
         });
     };
 
@@ -47,6 +55,11 @@ export default function WhatsAppLogin() {
                                 />
                                 {errors.phone && <span className="text-xs text-red-500">{errors.phone}</span>}
                             </label>
+                            <Turnstile
+                                ref={turnstileRef}
+                                onVerify={(token) => setData('cf-turnstile-response', token)}
+                                onExpire={() => setData('cf-turnstile-response', '')}
+                            />
                             <button
                                 type="submit"
                                 disabled={processing}

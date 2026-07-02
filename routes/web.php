@@ -18,6 +18,7 @@ use Inertia\Inertia;
 // Locale toggle — fetch POST from LanguageContext, persists to session (no Inertia visit).
 Route::post('/locale/{locale}', [LocaleController::class, 'set'])
     ->whereIn('locale', ['ar', 'en'])
+    ->middleware('throttle:30,1')
     ->name('locale.set');
 
 // Storefront (AR-first).
@@ -25,15 +26,15 @@ Route::get('/', [ShopController::class, 'index'])->name('home');
 Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show'])->name('pages.show');
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
 
-// Cart.
+// Cart (public POSTs — rate-limited against scripted abuse).
 Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
-Route::post('/cart', [CartController::class, 'add'])->name('cart.add');
-Route::patch('/cart/items/{item}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/items/{item}', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart', [CartController::class, 'add'])->middleware('throttle:60,1')->name('cart.add');
+Route::patch('/cart/items/{item}', [CartController::class, 'update'])->middleware('throttle:60,1')->name('cart.update');
+Route::delete('/cart/items/{item}', [CartController::class, 'remove'])->middleware('throttle:60,1')->name('cart.remove');
 
 // Checkout.
 Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
 Route::get('/orders/{order:order_number}', [CheckoutController::class, 'confirmation'])->name('orders.show');
 
 // Server-to-server webhooks (CSRF-exempt via the webhooks/* rule).
@@ -54,16 +55,16 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
 
     // Reviews (verified-purchase) + helpful votes.
-    Route::post('products/{product:slug}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-    Route::post('reviews/{review}/helpful', [ReviewController::class, 'helpful'])->name('reviews.helpful');
+    Route::post('products/{product:slug}/reviews', [ReviewController::class, 'store'])->middleware('throttle:10,1')->name('reviews.store');
+    Route::post('reviews/{review}/helpful', [ReviewController::class, 'helpful'])->middleware('throttle:30,1')->name('reviews.helpful');
 
     // Wishlist.
     Route::get('wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('wishlist/{product:slug}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('wishlist/{product:slug}/toggle', [WishlistController::class, 'toggle'])->middleware('throttle:30,1')->name('wishlist.toggle');
 
     // Returns (defect/damage only, within 3 days of delivery, with photos).
     Route::get('orders/{order:order_number}/return', [ReturnController::class, 'create'])->name('returns.create');
-    Route::post('orders/{order:order_number}/return', [ReturnController::class, 'store'])->name('returns.store');
+    Route::post('orders/{order:order_number}/return', [ReturnController::class, 'store'])->middleware('throttle:5,1')->name('returns.store');
 });
 
 require __DIR__.'/admin.php';

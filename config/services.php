@@ -58,6 +58,13 @@ return [
         'currency' => env('TAMARA_CURRENCY', 'SAR'),
     ],
 
+    // Cloudflare Turnstile (bot gate on public forms). Both keys unset in dev →
+    // the widget renders nothing and TurnstileVerifier no-ops.
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
     // WhatsApp Cloud API (direct Meta, no BSP). driver=log in dev (no network);
     // driver=cloud sends live. admin_recipients = comma-separated E.164 numbers
     // that receive the new-order alerts.

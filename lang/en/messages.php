@@ -27,6 +27,10 @@ return [
         'updated' => 'Your details have been updated.',
     ],
 
+    'security' => [
+        'verify_failed' => 'We couldn’t verify you’re not a robot. Please try again.',
+    ],
+
     'otp' => [
         'rate_limited' => 'Please wait a moment before requesting a new code.',
         'invalid' => 'The code is incorrect or has expired.',

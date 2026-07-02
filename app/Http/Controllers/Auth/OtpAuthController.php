@@ -28,11 +28,17 @@ class OtpAuthController extends Controller
         return Inertia::render('auth/whatsapp-login');
     }
 
-    public function send(Request $request)
+    public function send(Request $request, \App\Services\TurnstileVerifier $turnstile)
     {
         $data = $request->validate([
             'phone' => ['required', 'string', 'max:20'],
         ]);
+
+        // Bot gate — every OTP send costs a real WhatsApp message. The verifier
+        // no-ops while TURNSTILE_SECRET_KEY is unset (dev/staging).
+        if (! $turnstile->verify($request->input('cf-turnstile-response'), $request->ip())) {
+            return back()->withErrors(['phone' => __('messages.security.verify_failed')]);
+        }
 
         try {
             $this->otp->request($data['phone']);

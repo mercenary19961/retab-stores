@@ -71,6 +71,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Behind Cloudflare + Railway's proxy every generated URL must be https;
+        // pairs with the locked trustProxies CIDRs in bootstrap/app.php.
+        if ($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }
