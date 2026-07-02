@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\WishlistController;
@@ -58,6 +59,10 @@ Route::middleware(['auth'])->group(function () {
     // Wishlist.
     Route::get('wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
     Route::post('wishlist/{product:slug}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+
+    // Returns (defect/damage only, within 3 days of delivery, with photos).
+    Route::get('orders/{order:order_number}/return', [ReturnController::class, 'create'])->name('returns.create');
+    Route::post('orders/{order:order_number}/return', [ReturnController::class, 'store'])->name('returns.store');
 });
 
 require __DIR__.'/admin.php';

@@ -189,6 +189,49 @@ class TamaraService
         $order->forceFill(['payment_status' => PaymentStatus::Voided])->save();
     }
 
+    /**
+     * Refund (full or partial) a captured Tamara order. Records a Refund ledger
+     * row and moves payment_status to Refunded/PartiallyRefunded. Amount in SAR.
+     */
+    public function refund(Order $order, float $amount): void
+    {
+        if ($order->payment_gateway !== 'tamara' || ! $order->gateway_reference) {
+            throw new \RuntimeException('Order has no Tamara payment to refund.');
+        }
+        if (! in_array($order->payment_status, [PaymentStatus::Paid, PaymentStatus::PartiallyRefunded], true)) {
+            throw new \RuntimeException('Only captured Tamara orders can be refunded.');
+        }
+
+        $remote = $this->client->refund($order->gateway_reference, [
+            'total_amount' => $this->money($amount),
+            'comment' => "Return refund for order {$order->order_number}",
+        ]);
+
+        // Direct create (not recordTransaction): the ledger must carry the actual
+        // refunded amount, which may be partial — recordTransaction assumes total.
+        Payment::create([
+            'order_id' => $order->id,
+            'gateway' => 'tamara',
+            'gateway_transaction_id' => $order->gateway_reference . '-refund-' . now()->format('YmdHis'),
+            'type' => PaymentTransactionType::Refund,
+            'amount' => round($amount, 2),
+            'currency' => $this->currency(),
+            'status' => 'succeeded',
+            'raw' => $remote,
+        ]);
+
+        $refunded = (float) Payment::where('order_id', $order->id)
+            ->where('type', PaymentTransactionType::Refund->value)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+
+        $order->forceFill([
+            'payment_status' => $refunded >= (float) $order->total
+                ? PaymentStatus::Refunded
+                : PaymentStatus::PartiallyRefunded,
+        ])->save();
+    }
+
     private function markAuthorized(Order $order): void
     {
         $order->forceFill([

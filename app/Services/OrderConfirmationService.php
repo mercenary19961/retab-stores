@@ -33,6 +33,7 @@ class OrderConfirmationService
     public function __construct(
         protected TamaraService $tamara,
         protected LoyaltyService $loyalty,
+        protected \App\Services\Payments\PaymentService $payments,
     ) {}
 
     /**
@@ -162,11 +163,23 @@ class OrderConfirmationService
         }
 
         if ($order->payment_status === PaymentStatus::Paid) {
-            // TODO: PaymentService::refund — captured card needs a real Moyasar refund.
-            Log::info('Card refund required', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-            ]);
+            if ($order->payment_gateway === 'tamara') {
+                $this->tamara->refund($order, (float) $order->total);
+
+                return;
+            }
+
+            // Captured card → full Moyasar refund. Best-effort: a gateway hiccup
+            // must not block the unavailable-flow; it's flagged for manual retry.
+            try {
+                $this->payments->refund($order, (float) $order->total);
+            } catch (\Throwable $e) {
+                Log::error('Card refund failed — refund manually from the Moyasar dashboard', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 }

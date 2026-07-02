@@ -146,6 +146,56 @@ class PaymentService
         return false;
     }
 
+    /**
+     * Refund (full or partial) a captured card payment via Moyasar. Records a
+     * Refund ledger row and moves payment_status to Refunded/PartiallyRefunded.
+     * Amount is in SAR (major units).
+     */
+    public function refund(Order $order, float $amount): Payment
+    {
+        $capture = Payment::where('order_id', $order->id)
+            ->where('gateway', 'moyasar')
+            ->where('type', PaymentTransactionType::Capture->value)
+            ->where('status', 'succeeded')
+            ->first();
+
+        if (! $capture) {
+            throw new \RuntimeException('No captured card payment to refund.');
+        }
+
+        $normalized = $this->gateway->refundPayment($capture->gateway_transaction_id, (int) round($amount * 100));
+
+        $refund = Payment::create([
+            'order_id' => $order->id,
+            'gateway' => 'moyasar',
+            'gateway_transaction_id' => $capture->gateway_transaction_id . '-refund-' . now()->format('YmdHis'),
+            'type' => PaymentTransactionType::Refund,
+            'amount' => round($amount, 2),
+            'currency' => $this->configuredCurrency(),
+            'status' => 'succeeded',
+            'raw' => $normalized->raw,
+        ]);
+
+        $this->applyRefundStatus($order);
+
+        return $refund;
+    }
+
+    /** Refunded when the refund ledger covers the order total, else partial. */
+    private function applyRefundStatus(Order $order): void
+    {
+        $refunded = (float) Payment::where('order_id', $order->id)
+            ->where('type', PaymentTransactionType::Refund->value)
+            ->where('status', 'succeeded')
+            ->sum('amount');
+
+        $order->forceFill([
+            'payment_status' => $refunded >= (float) $order->total
+                ? PaymentStatus::Refunded
+                : PaymentStatus::PartiallyRefunded,
+        ])->save();
+    }
+
     private function markOrderPaid(Order $order): void
     {
         if ($order->payment_status === PaymentStatus::Paid) {

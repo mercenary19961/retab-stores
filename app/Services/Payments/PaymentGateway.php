@@ -37,4 +37,10 @@ interface PaymentGateway
      * Constant-time check that a webhook/callback secret matches ours.
      */
     public function verifyWebhookToken(?string $token): bool;
+
+    /**
+     * Refund a captured payment (full or partial). Amount is in MINOR units
+     * (halalas). Returns the provider's post-refund payment state.
+     */
+    public function refundPayment(string $paymentId, int $amount): NormalizedPayment;
 }

@@ -17,7 +17,17 @@ interface Bank {
     iban: string;
 }
 
-export default function OrderConfirmation({ order, bank }: { order: Order; bank: Bank | null }) {
+export default function OrderConfirmation({
+    order,
+    bank,
+    canReturn,
+    orderReturn,
+}: {
+    order: Order;
+    bank: Bank | null;
+    canReturn?: boolean;
+    orderReturn?: { status: string } | null;
+}) {
     const { t } = useTranslation();
     const currency = t('common.currency');
 
@@ -48,7 +58,22 @@ export default function OrderConfirmation({ order, bank }: { order: Order; bank:
                     <p className="mt-4 text-gray-600">{t('order.noBank')}</p>
                 )}
 
-                <Link href="/" className="mt-6 inline-block text-[#2f4f4f] underline">
+                {orderReturn && (
+                    <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        {t('returns.statusLabel')}: <b>{t(`returns.status.${orderReturn.status}`, orderReturn.status)}</b>
+                    </p>
+                )}
+
+                {canReturn && !orderReturn && (
+                    <Link
+                        href={`/orders/${order.order_number}/return`}
+                        className="mt-4 inline-block rounded-lg border border-[#2f4f4f] px-5 py-2 text-sm font-semibold text-[#2f4f4f] transition hover:bg-[#2f4f4f] hover:text-white"
+                    >
+                        {t('returns.requestButton', { days: 3 })}
+                    </Link>
+                )}
+
+                <Link href="/" className="mt-6 block text-[#2f4f4f] underline">
                     {t('order.backToStore')}
                 </Link>
             </div>

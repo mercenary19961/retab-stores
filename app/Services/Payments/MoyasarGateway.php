@@ -116,6 +116,21 @@ class MoyasarGateway implements PaymentGateway
         return hash_equals($this->webhookToken, $token);
     }
 
+    public function refundPayment(string $paymentId, int $amount): NormalizedPayment
+    {
+        $response = $this->client()->post("/payments/{$paymentId}/refund", [
+            'amount' => $amount,
+        ]);
+
+        if (! $response->successful()) {
+            throw new RuntimeException(
+                "Moyasar refund {$paymentId} failed: " . $response->status() . ' ' . $response->body()
+            );
+        }
+
+        return $this->normalize($response->json());
+    }
+
     /**
      * Map a Moyasar payment object into our provider-agnostic shape.
      */

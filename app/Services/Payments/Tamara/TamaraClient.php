@@ -87,6 +87,18 @@ class TamaraClient
         return $response->json();
     }
 
+    /** Refund (full or partial) a captured order. Amounts in MAJOR units. */
+    public function refund(string $orderId, array $payload): array
+    {
+        $response = $this->client()->post('/payments/simplified-refund', array_merge(['order_id' => $orderId], $payload));
+
+        if (! $response->successful()) {
+            throw new RuntimeException("Tamara refund {$orderId} failed: " . $response->status() . ' ' . $response->body());
+        }
+
+        return $response->json() ?? [];
+    }
+
     /** Cancel/void an order's authorisation (Retab: when we can't fulfill). */
     public function cancel(string $orderId, array $payload): array
     {

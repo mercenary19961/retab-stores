@@ -126,6 +126,8 @@ class CheckoutController
             ];
         }
 
+        $latestReturn = $order->returns()->latest()->first();
+
         return Inertia::render('shop/order-confirmation', [
             'order' => [
                 'order_number' => $order->order_number,
@@ -135,6 +137,12 @@ class CheckoutController
                 'total' => (float) $order->total,
             ],
             'bank' => $bank,
+            // Defect/damage returns: offer the form only to the signed-in owner
+            // while the order is delivered + inside the 3-day window.
+            'canReturn' => $request->user()
+                && $order->user_id === $request->user()->id
+                && app(\App\Services\ReturnService::class)->canRequest($order),
+            'orderReturn' => $latestReturn ? ['status' => $latestReturn->status->value] : null,
         ]);
     }
 }

@@ -29,8 +29,12 @@ class WhatsAppService
 
     public const T_LOYALTY_REWARD = 'loyalty_reward';
 
-    // Internal admin alert.
+    public const T_RETURN_UPDATE = 'return_update';
+
+    // Internal admin alerts.
     public const T_ADMIN_NEW_ORDER = 'admin_new_order';
+
+    public const T_ADMIN_RETURN_REQUESTED = 'admin_return_requested';
 
     // Authentication (WhatsApp OTP sign-in).
     public const T_OTP = 'otp';
@@ -85,6 +89,31 @@ class WhatsAppService
     public function sendOtp(string $phone, string $code): ?WhatsappMessage
     {
         return $this->dispatch($phone, self::T_OTP, [$code], purpose: 'otp', category: 'authentication', redactParams: true);
+    }
+
+    /** Return request moved (approved / rejected / exchanged / refunded). */
+    public function notifyReturnUpdate(\App\Models\OrderReturn $return): ?WhatsappMessage
+    {
+        $order = $return->order;
+
+        return $this->dispatch($order?->customer_phone, self::T_RETURN_UPDATE, [
+            $order?->customer_name ?? '',
+            $order?->order_number ?? '',
+            $return->status->value,
+        ], purpose: 'return_update', order: $order, userId: $return->user_id);
+    }
+
+    /** A defect/damage return was filed — alert every configured admin recipient. */
+    public function notifyAdminsReturnRequested(\App\Models\OrderReturn $return): void
+    {
+        $order = $return->order;
+
+        foreach ($this->adminRecipients() as $recipient) {
+            $this->dispatch($recipient, self::T_ADMIN_RETURN_REQUESTED, [
+                $order?->order_number ?? '',
+                Str::limit($return->reason, 120),
+            ], purpose: 'admin_return_requested', order: $order, category: 'utility');
+        }
     }
 
     /** New order needs attention — alert every configured admin recipient. */

@@ -57,6 +57,11 @@ class MoyasarPaymentTest extends TestCase
             {
                 return $token === 'secret';
             }
+
+            public function refundPayment(string $paymentId, int $amount): NormalizedPayment
+            {
+                return $this->payment;
+            }
         };
 
         return new PaymentService($gateway);
