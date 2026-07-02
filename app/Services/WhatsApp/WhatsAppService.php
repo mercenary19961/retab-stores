@@ -91,6 +91,27 @@ class WhatsAppService
         return $this->dispatch($phone, self::T_OTP, [$code], purpose: 'otp', category: 'authentication', redactParams: true);
     }
 
+    /**
+     * One marketing-campaign message to an opted-in customer. Uses the
+     * template's OWN language (campaigns may be authored in either locale)
+     * and links the ledger row to the campaign for delivery stats.
+     */
+    public function sendCampaignMessage(\App\Models\User $user, \App\Models\WhatsappCampaign $campaign): ?WhatsappMessage
+    {
+        $template = $campaign->template;
+
+        return $this->dispatch(
+            $user->phone,
+            $template->name,
+            array_map('strval', $campaign->params ?? []),
+            purpose: 'campaign',
+            userId: $user->id,
+            category: 'marketing',
+            campaignId: $campaign->id,
+            language: $template->language,
+        );
+    }
+
     /** Return request moved (approved / rejected / exchanged / refunded). */
     public function notifyReturnUpdate(\App\Models\OrderReturn $return): ?WhatsappMessage
     {
@@ -164,17 +185,20 @@ class WhatsAppService
         ?int $userId = null,
         string $category = 'utility',
         bool $redactParams = false,
+        ?int $campaignId = null,
+        ?string $language = null,
     ): ?WhatsappMessage {
         $to = $this->normalize($to);
         if ($to === null) {
             return null; // no recipient — nothing to send (e.g. guest without phone)
         }
 
-        $language = (string) config('services.whatsapp.default_language', 'ar');
+        $language ??= (string) config('services.whatsapp.default_language', 'ar');
 
         $message = WhatsappMessage::create([
             'user_id' => $userId ?? $order?->user_id,
             'order_id' => $order?->id,
+            'campaign_id' => $campaignId,
             'recipient' => $to,
             'template' => $template,
             'category' => $category,

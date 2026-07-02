@@ -23,6 +23,12 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');
     Route::put('products/{product}/images/{image}/primary', [ProductImageController::class, 'setPrimary'])->name('products.images.primary');
 
+    // WhatsApp marketing — template registry + campaign sender.
+    Route::get('marketing', [\App\Http\Controllers\Admin\MarketingController::class, 'index'])->name('marketing.index');
+    Route::post('marketing/templates', [\App\Http\Controllers\Admin\MarketingController::class, 'storeTemplate'])->name('marketing.templates.store');
+    Route::put('marketing/templates/{template}', [\App\Http\Controllers\Admin\MarketingController::class, 'updateTemplate'])->name('marketing.templates.update');
+    Route::post('marketing/campaigns', [\App\Http\Controllers\Admin\MarketingController::class, 'storeCampaign'])->name('marketing.campaigns.store');
+
     // Customer directory (read-only).
     Route::get('customers', [\App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('customers.index');
     Route::get('customers/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'show'])->name('customers.show');

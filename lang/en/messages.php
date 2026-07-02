@@ -47,6 +47,15 @@ return [
         'invalid_transition' => 'This action is not allowed in the return’s current state.',
     ],
 
+    'marketing' => [
+        'template_saved' => 'Template saved.',
+        'campaign_queued' => 'Campaign queued for sending.',
+        'already_sent' => 'This campaign was already sent.',
+        'template_not_approved' => 'Only Meta-approved templates can be sent.',
+        'no_audience' => 'No customers are opted in to the marketing list.',
+        'params_mismatch' => 'The number of variables does not match the template.',
+    ],
+
     'admin' => [
         'settings_saved' => 'Settings saved.',
         'page_saved' => 'Page saved.',
