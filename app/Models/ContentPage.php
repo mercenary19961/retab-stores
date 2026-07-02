@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @mixin IdeHelperContentPage
+ */
 class ContentPage extends Model
 {
     protected $fillable = [

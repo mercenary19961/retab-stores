@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @mixin IdeHelperOrderActivity
+ */
 class OrderActivity extends Model
 {
     public const UPDATED_AT = null; // append-only log: created_at only

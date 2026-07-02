@@ -79,7 +79,9 @@ class CheckoutController
         }
 
         $this->cart->clear($cart);
-        $request->session()->push('placed_orders', $order->order_number);
+        /** @var \Illuminate\Session\Store $session — push() lives on Store, not the Session contract the docblock advertises */
+        $session = $request->session();
+        $session->push('placed_orders', $order->order_number);
 
         // Alert staff that a new order needs attention (verify transfer / check stock).
         $this->whatsapp->notifyAdminsNewOrder($order);

@@ -6,6 +6,9 @@ use App\Enums\PaymentTransactionType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @mixin IdeHelperPayment
+ */
 class Payment extends Model
 {
     protected $fillable = [
