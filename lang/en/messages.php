@@ -1,0 +1,72 @@
+<?php
+
+/*
+ * Custom flash / error strings surfaced to users (storefront + admin), resolved
+ * through __('messages.*') so they follow the request locale. Mirror ar/messages.php.
+ */
+
+return [
+
+    'cart' => [
+        'added' => 'Added to cart',
+        'empty' => 'Your cart is empty.',
+    ],
+
+    'review' => [
+        'posted' => 'Your review has been posted. Thank you!',
+        'only_purchased' => 'You can only review products you have purchased.',
+        'no_self_vote' => 'You can’t vote on your own review.',
+        'anonymous' => 'Customer',
+    ],
+
+    'payment' => [
+        'init_failed' => 'Could not start online payment. You can pay by bank transfer.',
+    ],
+
+    'profile' => [
+        'updated' => 'Your details have been updated.',
+    ],
+
+    'security' => [
+        'verify_failed' => 'We couldn’t verify you’re not a robot. Please try again.',
+    ],
+
+    'otp' => [
+        'rate_limited' => 'Please wait a moment before requesting a new code.',
+        'invalid' => 'The code is incorrect or has expired.',
+    ],
+
+    'returns' => [
+        'filed' => 'Your return request was received. We will review it and get back to you soon.',
+        'not_yours' => 'This order does not belong to you.',
+        'not_delivered' => 'Returns can only be requested after delivery.',
+        'window_expired' => 'The return window (3 days from delivery) has expired.',
+        'already_filed' => 'A return request already exists for this order.',
+        'no_items' => 'Select at least one item to return.',
+        'invalid_items' => 'The return items are invalid.',
+        'invalid_transition' => 'This action is not allowed in the return’s current state.',
+    ],
+
+    'admin' => [
+        'settings_saved' => 'Settings saved.',
+        'page_saved' => 'Page saved.',
+        'return_approved' => 'Return request approved.',
+        'return_rejected' => 'Return request rejected.',
+        'return_exchanged' => 'Return closed as an exchange.',
+        'return_refunded' => 'Refund executed and return closed.',
+        'order_confirmed' => 'Order confirmed and stock deducted.',
+        'order_unavailable' => 'Order marked unavailable and the payment hold released.',
+        'shipment_created' => 'Shipment created and carrier pickup requested.',
+        'order_cancelled' => 'Order cancelled.',
+        'images_uploaded' => 'Images uploaded.',
+        'image_deleted' => 'Image deleted.',
+        'primary_image_set' => 'Primary image set.',
+        'product_created' => 'Product added.',
+        'product_updated' => 'Product updated.',
+        'product_deleted' => 'Product deleted.',
+        'import_expired' => 'The import file has expired. Please upload it again.',
+        'import_applied' => 'Stock updated: :count products.',
+        'import_undone' => 'Import undone and previous stock restored.',
+    ],
+
+];

@@ -45,6 +45,16 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'locale' => session('locale', 'ar'),
+            // Null while unset → the Turnstile widget renders nothing (dev).
+            'turnstileSiteKey' => config('services.turnstile.site_key'),
+            'cart' => [
+                'count' => app(\App\Services\CartService::class)->count(),
+            ],
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+            ],
         ]);
     }
 }

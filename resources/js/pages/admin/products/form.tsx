@@ -1,0 +1,240 @@
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { type FormEvent } from 'react';
+import AdminLayout from '@/layouts/admin-layout';
+
+interface Category {
+    id: number;
+    name_ar: string;
+}
+
+interface ProductImage {
+    id: number;
+    url: string | null;
+    is_primary: boolean;
+}
+
+interface Product {
+    id: number;
+    category_id: number;
+    name_ar: string;
+    name_en: string | null;
+    slug: string | null;
+    description_ar: string | null;
+    description_en: string | null;
+    price: number;
+    sale_price: number | null;
+    sku: string;
+    smacc_sku: string | null;
+    barcode: string | null;
+    stock: number;
+    low_stock_threshold: number | null;
+    is_active: boolean;
+    is_featured: boolean;
+    images?: ProductImage[];
+}
+
+export default function ProductForm({ product, categories }: { product: Product | null; categories: Category[] }) {
+    const editing = product !== null;
+
+    const { data, setData, post, put, processing, errors } = useForm({
+        category_id: product?.category_id ?? categories[0]?.id ?? '',
+        name_ar: product?.name_ar ?? '',
+        name_en: product?.name_en ?? '',
+        slug: product?.slug ?? '',
+        description_ar: product?.description_ar ?? '',
+        description_en: product?.description_en ?? '',
+        price: product?.price ?? '',
+        sale_price: product?.sale_price ?? '',
+        sku: product?.sku ?? '',
+        smacc_sku: product?.smacc_sku ?? '',
+        barcode: product?.barcode ?? '',
+        stock: product?.stock ?? 0,
+        low_stock_threshold: product?.low_stock_threshold ?? '',
+        is_active: product?.is_active ?? true,
+        is_featured: product?.is_featured ?? false,
+    });
+
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        if (editing) {
+            put(`/admin/products/${product.id}`);
+        } else {
+            post('/admin/products');
+        }
+    };
+
+    const imageForm = useForm<{ images: File[] }>({ images: [] });
+
+    const uploadImages = (e: FormEvent) => {
+        e.preventDefault();
+        if (!product || imageForm.data.images.length === 0) return;
+        imageForm.post(`/admin/products/${product.id}/images`, {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => imageForm.reset('images'),
+        });
+    };
+
+    const text = (name: keyof typeof data, label: string, opts: { required?: boolean; type?: string; placeholder?: string } = {}) => (
+        <label className="block">
+            <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                {label}
+                {opts.required && <span className="text-red-500"> *</span>}
+            </span>
+            <input
+                type={opts.type ?? 'text'}
+                value={data[name] as string | number}
+                placeholder={opts.placeholder}
+                onChange={(e) => setData(name, e.target.value)}
+                className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+            />
+            {errors[name] && <span className="text-xs text-red-500">{errors[name]}</span>}
+        </label>
+    );
+
+    return (
+        <AdminLayout>
+            <Head title={editing ? `Edit ${product.name_ar}` : 'New product'} />
+
+            <Link href="/admin/products" className="text-sm text-neutral-500 hover:underline">← Products</Link>
+            <h1 className="mb-6 mt-1 text-2xl font-bold">{editing ? 'Edit product' : 'New product'}</h1>
+
+            <form onSubmit={submit} className="max-w-3xl space-y-6">
+                <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <h2 className="font-bold">Details</h2>
+                    <label className="block">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-300">Category *</span>
+                        <select
+                            value={data.category_id}
+                            onChange={(e) => setData('category_id', Number(e.target.value))}
+                            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+                        >
+                            {categories.map((c) => (
+                                <option key={c.id} value={c.id}>{c.name_ar}</option>
+                            ))}
+                        </select>
+                        {errors.category_id && <span className="text-xs text-red-500">{errors.category_id}</span>}
+                    </label>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {text('name_ar', 'Name (Arabic)', { required: true })}
+                        {text('name_en', 'Name (English)')}
+                    </div>
+                    {text('slug', 'Slug', { placeholder: 'auto-generated if blank' })}
+                    <label className="block">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-300">Description (Arabic)</span>
+                        <textarea
+                            value={data.description_ar}
+                            onChange={(e) => setData('description_ar', e.target.value)}
+                            rows={3}
+                            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+                        />
+                    </label>
+                    <label className="block">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-300">Description (English)</span>
+                        <textarea
+                            value={data.description_en}
+                            onChange={(e) => setData('description_en', e.target.value)}
+                            rows={3}
+                            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+                        />
+                    </label>
+                </section>
+
+                <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <h2 className="font-bold">Pricing & inventory</h2>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {text('price', 'Price (SAR)', { required: true, type: 'number' })}
+                        {text('sale_price', 'Sale price (SAR)', { type: 'number' })}
+                        {text('sku', 'SKU', { required: true })}
+                        {text('smacc_sku', 'SMACC SKU')}
+                        {text('barcode', 'Barcode')}
+                        {text('stock', 'Stock', { required: true, type: 'number' })}
+                        {text('low_stock_threshold', 'Low-stock threshold', { type: 'number' })}
+                    </div>
+                </section>
+
+                <section className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <h2 className="font-bold">Visibility</h2>
+                    <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} />
+                        Active (visible in the storefront)
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={data.is_featured} onChange={(e) => setData('is_featured', e.target.checked)} />
+                        Featured
+                    </label>
+                </section>
+
+                <div className="flex gap-3">
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="rounded-lg bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
+                    >
+                        {editing ? 'Save changes' : 'Create product'}
+                    </button>
+                    <Link href="/admin/products" className="rounded-lg border border-neutral-300 px-6 py-2.5 text-sm dark:border-neutral-700">
+                        Cancel
+                    </Link>
+                </div>
+            </form>
+
+            {/* Images — only after the product exists (kept outside the text form). */}
+            {editing && (
+                <section className="mt-6 max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <h2 className="font-bold">Images</h2>
+
+                    {product.images && product.images.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                            {product.images.map((img) => (
+                                <div key={img.id} className={`relative overflow-hidden rounded-lg border ${img.is_primary ? 'border-neutral-900 dark:border-white' : 'border-neutral-200 dark:border-neutral-700'}`}>
+                                    {img.url && <img src={img.url} alt="" className="aspect-square w-full object-cover" />}
+                                    <div className="flex items-center justify-between gap-1 p-1 text-xs">
+                                        {img.is_primary ? (
+                                            <span className="font-semibold text-neutral-900 dark:text-white">Primary</span>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => router.put(`/admin/products/${product.id}/images/${img.id}/primary`, {}, { preserveScroll: true })}
+                                                className="text-blue-600 hover:underline dark:text-blue-400"
+                                            >
+                                                Set primary
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => router.delete(`/admin/products/${product.id}/images/${img.id}`, { preserveScroll: true })}
+                                            className="text-red-600 hover:underline dark:text-red-400"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-neutral-400">No images yet.</p>
+                    )}
+
+                    <form onSubmit={uploadImages} className="flex items-center gap-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                        <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            multiple
+                            onChange={(e) => imageForm.setData('images', Array.from(e.target.files ?? []))}
+                            className="text-sm"
+                        />
+                        <button
+                            type="submit"
+                            disabled={imageForm.processing || imageForm.data.images.length === 0}
+                            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-neutral-900"
+                        >
+                            Upload
+                        </button>
+                    </form>
+                    {imageForm.errors.images && <p className="text-xs text-red-500">{imageForm.errors.images}</p>}
+                </section>
+            )}
+        </AdminLayout>
+    );
+}

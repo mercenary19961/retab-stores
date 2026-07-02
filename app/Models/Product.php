@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @mixin IdeHelperProduct
+ */
 class Product extends Model
 {
     use SoftDeletes;
@@ -48,6 +51,25 @@ class Product extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class);
+    }
+
+    /**
+     * The primary image (or the first by sort order). Expects `images` loaded.
+     */
+    public function primaryImage(): ?ProductImage
+    {
+        return $this->images->firstWhere('is_primary', true)
+            ?? $this->images->sortBy('sort_order')->first();
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
     }
 
     /**

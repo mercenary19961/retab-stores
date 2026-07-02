@@ -1,10 +1,12 @@
 import '../css/app.css';
+import './i18n';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 import { route as routeFn } from 'ziggy-js';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { initializeTheme } from './hooks/use-appearance';
 
 declare global {
@@ -26,7 +28,13 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
+        const locale = (props.initialPage.props as { locale?: 'ar' | 'en' }).locale;
+
+        root.render(
+            <LanguageProvider initialLocale={locale}>
+                <App {...props} />
+            </LanguageProvider>,
+        );
     },
     progress: {
         color: '#4B5563',
