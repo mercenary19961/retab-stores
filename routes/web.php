@@ -21,6 +21,10 @@ Route::post('/locale/{locale}', [LocaleController::class, 'set'])
     ->middleware('throttle:30,1')
     ->name('locale.set');
 
+// Crawler endpoints (routes, not static files — absolute URLs per environment).
+Route::get('/sitemap.xml', [\App\Http\Controllers\SeoController::class, 'sitemap'])->name('seo.sitemap');
+Route::get('/robots.txt', [\App\Http\Controllers\SeoController::class, 'robots'])->name('seo.robots');
+
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');
 Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show'])->name('pages.show');

@@ -18,6 +18,7 @@ interface Product {
     in_stock: boolean;
     category: { name_ar: string; name_en: string | null; slug: string } | null;
     images: string[];
+    url: string;
 }
 
 interface ReviewItem {
@@ -64,9 +65,33 @@ export default function ShopProduct({
     const name = localized(product, 'name');
     const description = localized(product, 'description');
 
+    // Product/Offer structured data for rich results (rendered server-side once
+    // runtime SSR is on; CSP allows inline scripts for exactly this).
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name,
+        description: description || name,
+        image: product.images,
+        offers: {
+            '@type': 'Offer',
+            url: product.url,
+            price: product.effective_price.toFixed(2),
+            priceCurrency: 'SAR',
+            availability: product.in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        },
+    };
+
     return (
         <StoreLayout>
-            <Head title={name} />
+            <Head title={name}>
+                <meta name="description" content={(description || name).slice(0, 160)} />
+                <meta property="og:title" content={name} />
+                <meta property="og:type" content="product" />
+                <meta property="og:url" content={product.url} />
+                {product.images[0] && <meta property="og:image" content={product.images[0]} />}
+                <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+            </Head>
 
             <nav className="mb-6 text-sm text-gray-500">
                 <Link href="/" className="hover:underline">{t('common.home')}</Link>

@@ -76,5 +76,12 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
+
+        // Override Inertia's SSR gateway with one that applies connect/response
+        // timeouts, so a hung/unreachable SSR sidecar falls back to client-side
+        // rendering instead of 502ing the site. Bound in boot() (not register())
+        // so it wins over Inertia's own register()-time binding regardless of
+        // provider order (Sky Amman pattern).
+        $this->app->bind(\Inertia\Ssr\Gateway::class, \App\Ssr\TimeoutHttpGateway::class);
     }
 }

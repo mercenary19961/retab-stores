@@ -38,7 +38,11 @@ export default function ShopIndex({
 
     return (
         <StoreLayout categories={categories}>
-            <Head title={t('shop.headTitle')} />
+            <Head title={t('shop.headTitle')}>
+                <meta name="description" content={t('shop.metaDescription')} />
+                <meta property="og:title" content={t('shop.headTitle')} />
+                <meta property="og:type" content="website" />
+            </Head>
 
             <h1 className="mb-6 text-2xl font-bold">{t('shop.heading')}</h1>
 

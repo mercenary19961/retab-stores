@@ -25,6 +25,7 @@ const en = {
         headTitle: 'Retab Dates — Premium Dates',
         heading: 'Our Products',
         empty: 'No products in this category.',
+        metaDescription: 'Premium dates from Retab Alwatan factory — Sukkari, Khalas, Ajwa and more. GCC-wide delivery.',
     },
     product: {
         addToCart: 'Add to cart',

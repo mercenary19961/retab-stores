@@ -81,6 +81,7 @@ class ShopController
                 'in_stock' => $product->stock > 0,
                 'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
                 'images' => $images,
+                'url' => route('shop.product', $product->slug), // absolute, for JSON-LD/OG
             ],
             'reviews' => [
                 'summary' => [

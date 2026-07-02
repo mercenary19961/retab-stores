@@ -1,8 +1,7 @@
-import { usePage } from '@inertiajs/react';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type Language = 'ar' | 'en';
+export type Language = 'ar' | 'en';
 
 interface LanguageContextType {
     language: Language;
@@ -13,14 +12,13 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
+export function LanguageProvider({ children, initialLocale }: { children: ReactNode; initialLocale?: Language }) {
     const { i18n } = useTranslation();
-    // Seed from the server-shared session locale so hard reloads preserve the
-    // choice. AR-first default. The session cookie is the single source of
-    // truth — no localStorage involved.
-    const serverLocale = ((usePage().props as { locale?: Language }).locale ?? 'ar') as Language;
-
-    const [language, setLanguageState] = useState<Language>(serverLocale);
+    // Seeded from the server-shared session locale, passed down by app.tsx /
+    // ssr.jsx (the provider sits ABOVE <App>, so usePage() is unavailable here —
+    // calling it crashes the SSR render). AR-first default; the session cookie
+    // is the single source of truth — no localStorage involved.
+    const [language, setLanguageState] = useState<Language>(initialLocale ?? 'ar');
     const isRTL = language === 'ar';
 
     useEffect(() => {

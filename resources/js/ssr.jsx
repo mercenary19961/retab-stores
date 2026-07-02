@@ -4,11 +4,16 @@ createInertiaApp
 } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import ReactDOMServer from 'react-dom/server';
-import './i18n';
+import i18n from './i18n';
 import { LanguageProvider } from './contexts/LanguageContext';
 
-createServer((page) =>
-    createInertiaApp({
+createServer((page) => {
+    // renderToString runs no effects, so LanguageContext can't apply the locale
+    // server-side — set it here from the shared session locale so SSR output
+    // matches what the client will hydrate.
+    i18n.changeLanguage(page.props?.locale ?? 'ar');
+
+    return createInertiaApp({
         page,
         render: ReactDOMServer.renderToString,
         resolve: (name) => {
@@ -21,9 +26,9 @@ createServer((page) =>
         },
         // prettier-ignore
         setup: ({ App, props }) => (
-            <LanguageProvider>
+            <LanguageProvider initialLocale={page.props?.locale}>
                 <App {...props} />
             </LanguageProvider>
         ),
-    }),
-);
+    });
+});
