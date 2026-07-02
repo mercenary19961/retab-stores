@@ -6,6 +6,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Arabic-first typography: under RTL, Tajawal leads the sans stack. Tailwind
+ * v4's `font-sans` utility resolves var(--font-sans), so overriding the token
+ * here cascades into every font-sans element ([dir] attr set from the session
+ * locale in app.blade.php). Latin text inside RTL pages falls back cleanly.
+ */
+html[dir='rtl'] {
+    --font-sans:
+        'Tajawal', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
 @theme {
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
