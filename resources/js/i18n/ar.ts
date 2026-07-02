@@ -129,6 +129,11 @@ const ar = {
         changeNumber: 'تغيير الرقم',
         useEmail: 'الدخول بالبريد الإلكتروني بدلاً من ذلك',
     },
+    footer: {
+        returnsPolicy: 'سياسة الاسترجاع',
+        about: 'من نحن',
+        contact: 'تواصل معنا',
+    },
     returns: {
         title: 'طلب إرجاع',
         windowNote: 'الإرجاع متاح لعيوب أو تلف المنتج فقط، خلال {{days}} أيام من الاستلام.',

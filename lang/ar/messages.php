@@ -44,6 +44,8 @@ return [
     ],
 
     'admin' => [
+        'settings_saved' => 'تم حفظ الإعدادات.',
+        'page_saved' => 'تم حفظ الصفحة.',
         'return_approved' => 'تمت الموافقة على طلب الإرجاع.',
         'return_rejected' => 'تم رفض طلب الإرجاع.',
         'return_exchanged' => 'تم إغلاق الإرجاع كاستبدال.',

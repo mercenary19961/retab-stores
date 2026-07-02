@@ -22,6 +22,7 @@ Route::post('/locale/{locale}', [LocaleController::class, 'set'])
 
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');
+Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show'])->name('pages.show');
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
 
 // Cart.

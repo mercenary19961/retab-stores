@@ -23,6 +23,13 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');
     Route::put('products/{product}/images/{image}/primary', [ProductImageController::class, 'setPrimary'])->name('products.images.primary');
 
+    // Store settings + CMS pages.
+    Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('settings.edit');
+    Route::put('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    Route::resource('content-pages', \App\Http\Controllers\Admin\ContentPageController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update'])
+        ->parameters(['content-pages' => 'contentPage']);
+
     // Returns review + resolution.
     Route::get('returns', [ReturnController::class, 'index'])->name('returns.index');
     Route::get('returns/{orderReturn}', [ReturnController::class, 'show'])->name('returns.show');

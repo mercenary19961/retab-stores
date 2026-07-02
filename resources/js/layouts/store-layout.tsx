@@ -62,6 +62,11 @@ export default function StoreLayout({ children, categories = [] }: PropsWithChil
             <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
 
             <footer className="mt-12 bg-[#2f4f4f] py-6 text-center text-sm text-white/80">
+                <nav className="mb-2 flex justify-center gap-4">
+                    <Link href="/pages/returns-policy" className="hover:underline">{t('footer.returnsPolicy')}</Link>
+                    <Link href="/pages/about" className="hover:underline">{t('footer.about')}</Link>
+                    <Link href="/pages/contact" className="hover:underline">{t('footer.contact')}</Link>
+                </nav>
                 © {new Date().getFullYear()} {t('brand')} — {t('common.rightsReserved')}
             </footer>
         </div>

@@ -44,6 +44,8 @@ return [
     ],
 
     'admin' => [
+        'settings_saved' => 'Settings saved.',
+        'page_saved' => 'Page saved.',
         'return_approved' => 'Return request approved.',
         'return_rejected' => 'Return request rejected.',
         'return_exchanged' => 'Return closed as an exchange.',

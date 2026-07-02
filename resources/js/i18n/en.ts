@@ -128,6 +128,11 @@ const en = {
         changeNumber: 'Change number',
         useEmail: 'Sign in with email instead',
     },
+    footer: {
+        returnsPolicy: 'Returns Policy',
+        about: 'About Us',
+        contact: 'Contact Us',
+    },
     returns: {
         title: 'Return Request',
         windowNote: 'Returns are for product defects or damage only, within {{days}} days of delivery.',
