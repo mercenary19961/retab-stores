@@ -2,7 +2,7 @@
 
 > Quick reference for AI assistants and developers
 
-> **📍 Doc sync:** CLAUDE.md last synced to commit `e0adec5` — 2026-07-02 15:37 (Thu) [`construction_phase`].
+> **📍 Doc sync:** CLAUDE.md last synced to commit `d0fce23` — 2026-07-02 16:31 (Thu) [`construction_phase`].
 > _Convention: whenever you edit this file, refresh this line to the current commit — run_ `git log -1 --format="%h %cd" --date=format:"%Y-%m-%d %H:%M (%a)"` _and paste the hash + date + time. Anchors the doc to a known code state; pairs with the prose `> Last updated:` log at the bottom of Build Progress._
 
 > **📌 Log the tricky stuff.** Whenever you hit an **issue, blocker, non-obvious behavior, or anything that cost real debugging time**, write it down with its **symptom → root cause → fix** — inline near the relevant section (retab's style, e.g. the MariaDB `db:show` and dual-push `--add --push` notes) and/or a one-liner in the `> Last updated:` log. The same stack is reused across projects (Sky Amman, HardRock, hardrock-ecom-demo), so a gotcha captured once saves the next project too. Traps → document as a gotcha; reusable patterns → note under Architecture/Decisions. When in doubt, over-document.
@@ -272,7 +272,7 @@ database/migrations/            → starter-kit defaults only so far
 ## Git & Deploy
 
 - `origin` is wired to **your** repo: `https://github.com/mercenary19961/retab-stores.git`.
-- **Dual-push is ACTIVE** (configured 2026-06-28) — one `git push` → **both** repos. The client repo **`https://github.com/retab-dates-dev/retab-website.git`** is the **Railway production source** (currently empty — first push to populate it is pending). Configured via:
+- **Dual-push is ACTIVE** (configured 2026-06-28; **re-fixed 2026-07-02** — ⚠️ gotcha: the config had drifted onto a redundant remote named `upstream`, so plain `git push` — which uses `origin` — was NOT reaching the client repo while this doc said it was. _Symptom:_ client repo stays empty/stale despite pushes. _Check:_ `git remote -v` must show the 2 push URLs on **origin**, not on some other remote. _Fix:_ the two `set-url --add --push origin` lines below + `git remote remove upstream`) — one `git push` → **both** repos. The client repo **`https://github.com/retab-dates-dev/retab-website.git`** is the **Railway production source** (currently empty — first push to populate it is pending). Configured via:
   ```bash
   git remote set-url --add --push origin https://github.com/mercenary19961/retab-stores.git    # re-add own repo FIRST
   git remote set-url --add --push origin https://github.com/retab-dates-dev/retab-website.git   # client / prod repo
