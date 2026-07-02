@@ -1,6 +1,8 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 
-type LocalizedRow = Record<string, unknown> | null | undefined;
+// `object` (not Record<string, unknown>) so concrete page interfaces without an
+// index signature are accepted; the cast happens once, inside the picker.
+type LocalizedRow = object | null | undefined;
 
 /**
  * Returns a picker for DB content that ships both locales (e.g. name_ar +
@@ -16,7 +18,8 @@ export function useLocalized() {
 
     return (row: LocalizedRow, field: string): string => {
         if (!row) return '';
-        const value = row[`${field}_${language}`] ?? row[`${field}_ar`];
+        const record = row as Record<string, unknown>;
+        const value = record[`${field}_${language}`] ?? record[`${field}_ar`];
         return typeof value === 'string' ? value : '';
     };
 }
