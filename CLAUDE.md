@@ -2,6 +2,11 @@
 
 > Quick reference for AI assistants and developers
 
+> **📍 Doc sync:** CLAUDE.md last synced to commit `a50e0c8` — 2026-07-01 10:50 (Wed) [`construction_phase`].
+> _Convention: whenever you edit this file, refresh this line to the current commit — run_ `git log -1 --format="%h %cd" --date=format:"%Y-%m-%d %H:%M (%a)"` _and paste the hash + date + time. Anchors the doc to a known code state; pairs with the prose `> Last updated:` log at the bottom of Build Progress._
+
+> **📌 Log the tricky stuff.** Whenever you hit an **issue, blocker, non-obvious behavior, or anything that cost real debugging time**, write it down with its **symptom → root cause → fix** — inline near the relevant section (retab's style, e.g. the MariaDB `db:show` and dual-push `--add --push` notes) and/or a one-liner in the `> Last updated:` log. The same stack is reused across projects (Sky Amman, HardRock, hardrock-ecom-demo), so a gotcha captured once saves the next project too. Traps → document as a gotcha; reusable patterns → note under Architecture/Decisions. When in doubt, over-document.
+
 ---
 
 ## Project Overview
@@ -318,6 +323,10 @@ After completing any task that touches code, end the reply with a **one-line sug
 - [ ] **Runtime SSR** — starter kit already ships `resources/js/ssr.jsx` + `build:ssr`; still need `config/inertia.php` (env toggle) + graceful-fallback gateway + production SSR sidecar (**port Sky Amman's `TimeoutHttpGateway` + sidecar**). _Flagged by the user as the immediate follow-up after this file._
 - [ ] Automated tests + CI (PHPUnit / Vitest / Playwright), branch protection on `main`
 - [ ] Production deploy (MySQL, env vars, data-seeding migrations), Cloudflare DNS + Turnstile keys, mail domain verification
+
+> **Last updated:** 2026-07-02 — **Adopted two cross-project doc-maintenance conventions from Sky Amman.**
+> - **Doc-sync stamp** added at the top of this file: anchors CLAUDE.md to a git commit (hash + date + time via `git log -1`), refreshed on every doc edit — a machine-anchored freshness marker that pairs with this prose log. Seeded to `a50e0c8` (2026-07-01).
+> - **"Log the tricky stuff" convention** added: document any issue/blocker/non-obvious behavior with symptom → root cause → fix (inline in retab's style and/or a line here) so it isn't re-hit — including in sibling projects on the same stack.
 
 > **Last updated:** 2026-06-28 — **Scaffold + CLAUDE.md, Inertia v2 → v3, local DB → XAMPP MariaDB, dual-push to client repo wired.**
 > - **Dual-push to client repo configured:** added `https://github.com/retab-dates-dev/retab-website.git` as a 2nd push URL on `origin` (now 1 fetch + 2 push URLs) — this is the **Railway production source**. Read access verified (`ls-remote` exit 0); repo is empty so first push will populate it. Chose dual-push (one `git push` → both repos) over a separate `client` remote.
