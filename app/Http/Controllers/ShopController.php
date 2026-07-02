@@ -115,6 +115,7 @@ class ShopController
         return [
             'id' => $product->id,
             'name_ar' => $product->name_ar,
+            'name_en' => $product->name_en,
             'slug' => $product->slug,
             'price' => (float) $product->price,
             'sale_price' => $product->sale_price !== null ? (float) $product->sale_price : null,
@@ -122,7 +123,7 @@ class ShopController
             'on_sale' => $product->isOnSale(),
             'is_featured' => (bool) $product->is_featured,
             'image' => Media::url($product->primaryImage()?->path),
-            'category' => $product->category?->only('name_ar', 'slug'),
+            'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
         ];
     }
 }

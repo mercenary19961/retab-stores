@@ -1,28 +1,18 @@
 import { Head, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
 
 interface Item {
     id: number;
     name_ar: string;
+    name_en: string | null;
     quantity: number;
     line_total: number;
 }
 
-const COUNTRY_NAMES: Record<string, string> = {
-    SA: 'السعودية',
-    AE: 'الإمارات',
-    KW: 'الكويت',
-    QA: 'قطر',
-    BH: 'البحرين',
-    OM: 'عُمان',
-};
-
-const METHODS: { value: string; label: string }[] = [
-    { value: 'bank_transfer', label: 'تحويل بنكي' },
-    { value: 'card', label: 'بطاقة (مدى / فيزا / ماستركارد / Apple Pay)' },
-    { value: 'tamara', label: 'تمارا — قسّمها على دفعات' },
-];
+const METHOD_VALUES = ['bank_transfer', 'card', 'tamara'] as const;
 
 export default function Checkout({
     items,
@@ -35,6 +25,10 @@ export default function Checkout({
     shippingFee: number;
     countries: string[];
 }) {
+    const { t } = useTranslation();
+    const localized = useLocalized();
+    const currency = t('common.currency');
+
     const { data, setData, post, processing, errors } = useForm({
         customer_name: '',
         customer_email: '',
@@ -73,55 +67,55 @@ export default function Checkout({
 
     return (
         <StoreLayout>
-            <Head title="إتمام الطلب" />
-            <h1 className="mb-6 text-2xl font-bold">إتمام الطلب</h1>
+            <Head title={t('checkout.title')} />
+            <h1 className="mb-6 text-2xl font-bold">{t('checkout.title')}</h1>
 
             <form onSubmit={submit} className="grid gap-6 lg:grid-cols-3">
                 <div className="space-y-6 lg:col-span-2">
                     <section className="rounded-lg border border-gray-200 bg-white p-4">
-                        <h2 className="mb-3 font-bold">بيانات العميل</h2>
+                        <h2 className="mb-3 font-bold">{t('checkout.customerInfo')}</h2>
                         <div className="grid gap-4 sm:grid-cols-2">
-                            {field('customer_name', 'الاسم', true)}
-                            {field('customer_phone', 'رقم الجوال', true)}
-                            {field('customer_email', 'البريد الإلكتروني (اختياري)', false, 'email')}
+                            {field('customer_name', t('checkout.name'), true)}
+                            {field('customer_phone', t('checkout.phone'), true)}
+                            {field('customer_email', t('checkout.emailOptional'), false, 'email')}
                         </div>
                     </section>
 
                     <section className="rounded-lg border border-gray-200 bg-white p-4">
-                        <h2 className="mb-3 font-bold">عنوان الشحن</h2>
+                        <h2 className="mb-3 font-bold">{t('checkout.shippingAddress')}</h2>
                         <div className="grid gap-4 sm:grid-cols-2">
                             <label className="block">
-                                <span className="text-sm text-gray-600">الدولة *</span>
+                                <span className="text-sm text-gray-600">{t('checkout.country')} *</span>
                                 <select
                                     value={data.country}
                                     onChange={(e) => setData('country', e.target.value)}
                                     className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
                                 >
                                     {countries.map((c) => (
-                                        <option key={c} value={c}>{COUNTRY_NAMES[c] ?? c}</option>
+                                        <option key={c} value={c}>{t(`countries.${c}`)}</option>
                                     ))}
                                 </select>
                             </label>
-                            {field('city', 'المدينة', true)}
-                            {field('district', 'الحي')}
-                            {field('street', 'الشارع')}
-                            {field('building', 'المبنى')}
+                            {field('city', t('checkout.city'), true)}
+                            {field('district', t('checkout.district'))}
+                            {field('street', t('checkout.street'))}
+                            {field('building', t('checkout.building'))}
                         </div>
                     </section>
 
                     <section className="rounded-lg border border-gray-200 bg-white p-4">
-                        <h2 className="mb-3 font-bold">طريقة الدفع</h2>
+                        <h2 className="mb-3 font-bold">{t('checkout.paymentMethod')}</h2>
                         <div className="space-y-2">
-                            {METHODS.map((m) => (
-                                <label key={m.value} className="flex items-center gap-2">
+                            {METHOD_VALUES.map((value) => (
+                                <label key={value} className="flex items-center gap-2">
                                     <input
                                         type="radio"
                                         name="payment_method"
-                                        value={m.value}
-                                        checked={data.payment_method === m.value}
+                                        value={value}
+                                        checked={data.payment_method === value}
                                         onChange={(e) => setData('payment_method', e.target.value)}
                                     />
-                                    <span>{m.label}</span>
+                                    <span>{t(`payment.${value}`)}</span>
                                 </label>
                             ))}
                         </div>
@@ -129,22 +123,22 @@ export default function Checkout({
                 </div>
 
                 <div className="h-fit rounded-lg border border-gray-200 bg-white p-4">
-                    <h2 className="mb-3 font-bold">ملخص الطلب</h2>
+                    <h2 className="mb-3 font-bold">{t('checkout.orderSummary')}</h2>
                     <ul className="space-y-1 text-sm">
                         {items.map((it) => (
                             <li key={it.id} className="flex justify-between">
-                                <span>{it.name_ar} × {it.quantity}</span>
-                                <span>{it.line_total} ر.س</span>
+                                <span>{localized(it, 'name')} × {it.quantity}</span>
+                                <span>{it.line_total} {currency}</span>
                             </li>
                         ))}
                     </ul>
                     <div className="mt-3 border-t pt-3 text-sm">
-                        <div className="flex justify-between"><span>المجموع الفرعي</span><span>{subtotal} ر.س</span></div>
-                        <div className="flex justify-between"><span>الشحن</span><span>{shippingFee} ر.س</span></div>
-                        <div className="mt-2 flex justify-between text-lg font-bold"><span>الإجمالي</span><span>{total} ر.س</span></div>
+                        <div className="flex justify-between"><span>{t('checkout.subtotal')}</span><span>{subtotal} {currency}</span></div>
+                        <div className="flex justify-between"><span>{t('checkout.shipping')}</span><span>{shippingFee} {currency}</span></div>
+                        <div className="mt-2 flex justify-between text-lg font-bold"><span>{t('checkout.total')}</span><span>{total} {currency}</span></div>
                     </div>
                     <label className="mt-3 block">
-                        <span className="text-sm text-gray-600">كود الخصم</span>
+                        <span className="text-sm text-gray-600">{t('checkout.couponCode')}</span>
                         <input
                             value={data.coupon_code}
                             onChange={(e) => setData('coupon_code', e.target.value)}
@@ -156,7 +150,7 @@ export default function Checkout({
                         disabled={processing}
                         className="mt-4 w-full rounded-lg bg-[#2f4f4f] px-6 py-3 font-semibold text-white transition hover:bg-[#264141] disabled:opacity-60"
                     >
-                        تأكيد الطلب
+                        {t('checkout.confirm')}
                     </button>
                 </div>
             </form>

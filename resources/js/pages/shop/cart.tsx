@@ -1,10 +1,13 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
 
 interface CartItem {
     id: number;
     product_id: number;
     name_ar: string;
+    name_en: string | null;
     slug: string;
     unit_price: number;
     quantity: number;
@@ -12,17 +15,21 @@ interface CartItem {
 }
 
 export default function Cart({ items, subtotal }: { items: CartItem[]; count: number; subtotal: number }) {
+    const { t } = useTranslation();
+    const localized = useLocalized();
+    const currency = t('common.currency');
+
     return (
         <StoreLayout>
-            <Head title="سلة التسوق" />
+            <Head title={t('cart.title')} />
 
-            <h1 className="mb-6 text-2xl font-bold">سلة التسوق</h1>
+            <h1 className="mb-6 text-2xl font-bold">{t('cart.title')}</h1>
 
             {items.length === 0 ? (
                 <p className="text-gray-500">
-                    سلتك فارغة.{' '}
+                    {t('cart.empty')}{' '}
                     <Link href="/" className="text-[#2f4f4f] underline">
-                        تصفّح المنتجات
+                        {t('cart.browse')}
                     </Link>
                 </p>
             ) : (
@@ -34,9 +41,9 @@ export default function Cart({ items, subtotal }: { items: CartItem[]; count: nu
 
                                 <div className="flex-1">
                                     <Link href={`/products/${item.slug}`} className="font-semibold hover:underline">
-                                        {item.name_ar}
+                                        {localized(item, 'name')}
                                     </Link>
-                                    <div className="text-sm text-gray-500">{item.unit_price} ر.س</div>
+                                    <div className="text-sm text-gray-500">{item.unit_price} {currency}</div>
                                 </div>
 
                                 <input
@@ -53,14 +60,14 @@ export default function Cart({ items, subtotal }: { items: CartItem[]; count: nu
                                     className="w-16 rounded border border-gray-300 px-2 py-1 text-center"
                                 />
 
-                                <div className="w-20 text-start font-semibold">{item.line_total} ر.س</div>
+                                <div className="w-20 text-start font-semibold">{item.line_total} {currency}</div>
 
                                 <button
                                     type="button"
                                     onClick={() => router.delete(`/cart/items/${item.id}`, { preserveScroll: true })}
                                     className="text-sm text-red-500 hover:text-red-700"
                                 >
-                                    حذف
+                                    {t('common.delete')}
                                 </button>
                             </div>
                         ))}
@@ -68,15 +75,15 @@ export default function Cart({ items, subtotal }: { items: CartItem[]; count: nu
 
                     <div className="h-fit rounded-lg border border-gray-200 bg-white p-4">
                         <div className="flex justify-between text-lg font-bold">
-                            <span>المجموع</span>
-                            <span>{subtotal} ر.س</span>
+                            <span>{t('cart.total')}</span>
+                            <span>{subtotal} {currency}</span>
                         </div>
-                        <p className="mt-1 text-xs text-gray-500">يُضاف الشحن عند الدفع</p>
+                        <p className="mt-1 text-xs text-gray-500">{t('cart.shippingNote')}</p>
                         <Link
                             href="/checkout"
                             className="mt-4 block rounded-lg bg-[#2f4f4f] px-6 py-3 text-center font-semibold text-white transition hover:bg-[#264141]"
                         >
-                            متابعة الدفع
+                            {t('cart.checkout')}
                         </Link>
                     </div>
                 </div>

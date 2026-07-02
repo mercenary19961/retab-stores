@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocalized } from '@/lib/localize';
 import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,12 +7,14 @@ import { useTranslation } from 'react-i18next';
 interface Category {
     id: number;
     name_ar: string;
+    name_en: string | null;
     slug: string;
 }
 
 export default function StoreLayout({ children, categories = [] }: PropsWithChildren<{ categories?: Category[] }>) {
     const { t } = useTranslation();
     const { toggleLanguage } = useLanguage();
+    const localized = useLocalized();
     const props = usePage().props as { cart?: { count?: number }; auth?: { user?: unknown } };
     const cartCount = props.cart?.count ?? 0;
     const loggedIn = Boolean(props.auth?.user);
@@ -48,7 +51,7 @@ export default function StoreLayout({ children, categories = [] }: PropsWithChil
                                     href={`/?category=${c.slug}`}
                                     className="rounded-full px-3 py-1 transition hover:bg-white/10"
                                 >
-                                    {c.name_ar}
+                                    {localized(c, 'name')}
                                 </Link>
                             ))}
                         </div>

@@ -1,8 +1,10 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import StoreLayout from '@/layouts/store-layout';
 
 export default function WhatsAppLogin() {
+    const { t } = useTranslation();
     const [step, setStep] = useState<'phone' | 'code'>('phone');
     const { data, setData, post, processing, errors, reset } = useForm({ phone: '', code: '' });
 
@@ -21,19 +23,19 @@ export default function WhatsAppLogin() {
 
     return (
         <StoreLayout>
-            <Head title="الدخول عبر واتساب" />
+            <Head title={t('login.title')} />
 
             <div className="mx-auto max-w-md">
-                <h1 className="mb-2 text-2xl font-bold">الدخول عبر واتساب</h1>
+                <h1 className="mb-2 text-2xl font-bold">{t('login.title')}</h1>
 
                 {step === 'phone' ? (
                     <>
                         <p className="mb-6 text-sm text-gray-600">
-                            أدخل رقم جوالك وسنرسل لك رمز تحقق عبر واتساب.
+                            {t('login.phoneInstructions')}
                         </p>
                         <form onSubmit={sendCode} className="space-y-4">
                             <label className="block">
-                                <span className="text-sm text-gray-600">رقم الجوال</span>
+                                <span className="text-sm text-gray-600">{t('login.phone')}</span>
                                 <input
                                     type="tel"
                                     inputMode="tel"
@@ -50,18 +52,18 @@ export default function WhatsAppLogin() {
                                 disabled={processing}
                                 className="w-full rounded-lg bg-[#25D366] px-6 py-3 font-semibold text-white transition hover:bg-[#1da851] disabled:opacity-60"
                             >
-                                إرسال الرمز عبر واتساب
+                                {t('login.sendCode')}
                             </button>
                         </form>
                     </>
                 ) : (
                     <>
                         <p className="mb-6 text-sm text-gray-600">
-                            أرسلنا رمزاً مكوناً من 6 أرقام إلى <span dir="ltr" className="font-mono">{data.phone}</span>.
+                            {t('login.codeInstructions')} <span dir="ltr" className="font-mono">{data.phone}</span>.
                         </p>
                         <form onSubmit={verify} className="space-y-4">
                             <label className="block">
-                                <span className="text-sm text-gray-600">رمز التحقق</span>
+                                <span className="text-sm text-gray-600">{t('login.code')}</span>
                                 <input
                                     type="text"
                                     inputMode="numeric"
@@ -78,7 +80,7 @@ export default function WhatsAppLogin() {
                                 disabled={processing}
                                 className="w-full rounded-lg bg-[#2f4f4f] px-6 py-3 font-semibold text-white transition hover:bg-[#264141] disabled:opacity-60"
                             >
-                                تأكيد الدخول
+                                {t('login.confirm')}
                             </button>
                             <button
                                 type="button"
@@ -88,14 +90,14 @@ export default function WhatsAppLogin() {
                                 }}
                                 className="w-full text-sm text-gray-500 underline"
                             >
-                                تغيير الرقم
+                                {t('login.changeNumber')}
                             </button>
                         </form>
                     </>
                 )}
 
                 <div className="mt-6 text-center text-sm text-gray-500">
-                    <Link href="/login" className="underline">الدخول بالبريد الإلكتروني بدلاً من ذلك</Link>
+                    <Link href="/login" className="underline">{t('login.useEmail')}</Link>
                 </div>
             </div>
         </StoreLayout>

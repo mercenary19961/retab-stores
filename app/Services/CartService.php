@@ -127,6 +127,7 @@ class CartService
             'id' => $i->id,
             'product_id' => $i->product_id,
             'name_ar' => $i->product?->name_ar,
+            'name_en' => $i->product?->name_en,
             'slug' => $i->product?->slug,
             'unit_price' => (float) $i->unit_price,
             'quantity' => $i->quantity,
