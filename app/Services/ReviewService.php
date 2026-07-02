@@ -43,7 +43,7 @@ class ReviewService
     {
         $orderId = $this->eligibleOrderId($user, $product->id);
         if (! $orderId) {
-            throw new RuntimeException('يمكنك تقييم المنتجات التي اشتريتها فقط.');
+            throw new RuntimeException(__('messages.review.only_purchased'));
         }
 
         return Review::updateOrCreate(
@@ -68,7 +68,7 @@ class ReviewService
     public function toggleHelpful(User $user, Review $review): bool
     {
         if ($review->user_id === $user->id) {
-            throw new RuntimeException('لا يمكنك التصويت على تقييمك.');
+            throw new RuntimeException(__('messages.review.no_self_vote'));
         }
 
         return DB::transaction(function () use ($user, $review) {

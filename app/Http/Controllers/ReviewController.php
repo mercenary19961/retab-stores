@@ -28,7 +28,7 @@ class ReviewController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'تم نشر تقييمك. شكراً لك!');
+        return back()->with('success', __('messages.review.posted'));
     }
 
     public function helpful(Review $review)

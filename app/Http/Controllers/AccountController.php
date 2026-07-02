@@ -90,7 +90,7 @@ class AccountController extends Controller
             'whatsapp_opt_in' => $data['whatsapp_opt_in'] ?? false,
         ])->save();
 
-        return back()->with('success', 'تم تحديث بياناتك.');
+        return back()->with('success', __('messages.profile.updated'));
     }
 
     /**

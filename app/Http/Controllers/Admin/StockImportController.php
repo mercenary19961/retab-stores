@@ -66,7 +66,7 @@ class StockImportController extends Controller
         $relative = self::DIR . '/' . basename($data['token']); // basename guards path traversal
         if (! Storage::disk('local')->exists($relative)) {
             return redirect()->route('admin.stock-import.index')
-                ->with('error', 'انتهت صلاحية ملف الاستيراد. يُرجى رفعه من جديد.');
+                ->with('error', __('messages.admin.import_expired'));
         }
 
         try {
@@ -81,7 +81,7 @@ class StockImportController extends Controller
         $updated = $log->changes['summary']['updated'] ?? 0;
 
         return redirect()->route('admin.stock-import.index')
-            ->with('success', "تم تحديث المخزون: {$updated} منتج.");
+            ->with('success', __('messages.admin.import_applied', ['count' => $updated]));
     }
 
     public function undo(ActivityLog $activityLog)
@@ -92,7 +92,7 @@ class StockImportController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'تم التراجع عن الاستيراد واستعادة المخزون السابق.');
+        return back()->with('success', __('messages.admin.import_undone'));
     }
 
     /**

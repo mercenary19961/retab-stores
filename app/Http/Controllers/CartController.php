@@ -29,7 +29,7 @@ class CartController
         $product = Product::where('is_active', true)->findOrFail($data['product_id']);
         $this->cart->add($product, $data['quantity'] ?? 1);
 
-        return back()->with('success', 'تمت الإضافة إلى السلة');
+        return back()->with('success', __('messages.cart.added'));
     }
 
     public function update(Request $request, CartItem $item): RedirectResponse

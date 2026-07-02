@@ -51,7 +51,7 @@ class OtpAuthController extends Controller
         ]);
 
         if (! $this->otp->verify($data['phone'], $data['code'])) {
-            return back()->withErrors(['code' => 'الرمز غير صحيح أو منتهي الصلاحية.']);
+            return back()->withErrors(['code' => __('messages.otp.invalid')]);
         }
 
         $phone = $this->otp->normalize($data['phone']);

@@ -117,7 +117,7 @@ class OrderController extends Controller
             $this->whatsapp->notifyLoyaltyReward($order, $this->confirmation->issuedReward);
         }
 
-        return back()->with('success', 'تم تأكيد الطلب وخصم المخزون.');
+        return back()->with('success', __('messages.admin.order_confirmed'));
     }
 
     public function markUnavailable(Request $request, Order $order)
@@ -134,7 +134,7 @@ class OrderController extends Controller
 
         $this->whatsapp->notifyOrderUnavailable($order);
 
-        return back()->with('success', 'تم تحديد الطلب كغير متوفر وإلغاء الحجز المالي.');
+        return back()->with('success', __('messages.admin.order_unavailable'));
     }
 
     public function ship(Order $order)
@@ -147,7 +147,7 @@ class OrderController extends Controller
 
         $this->whatsapp->notifyOrderShipped($order->refresh());
 
-        return back()->with('success', 'تم إنشاء الشحنة وطلب الاستلام من الناقل.');
+        return back()->with('success', __('messages.admin.shipment_created'));
     }
 
     public function cancel(Order $order)
@@ -158,7 +158,7 @@ class OrderController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'تم إلغاء الطلب.');
+        return back()->with('success', __('messages.admin.order_cancelled'));
     }
 
     /**

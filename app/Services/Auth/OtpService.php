@@ -40,7 +40,7 @@ class OtpService
             ->first();
 
         if ($recent && $recent->created_at->gt(now()->subSeconds(self::RESEND_COOLDOWN_SECONDS))) {
-            throw new RuntimeException('يرجى الانتظار قليلاً قبل طلب رمز جديد.');
+            throw new RuntimeException(__('messages.otp.rate_limited'));
         }
 
         $code = (string) random_int(100000, 999999);

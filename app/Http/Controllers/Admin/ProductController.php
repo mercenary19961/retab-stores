@@ -68,7 +68,7 @@ class ProductController extends Controller
 
         Product::create($data);
 
-        return redirect()->route('admin.products.index')->with('success', 'تمت إضافة المنتج.');
+        return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_created'));
     }
 
     public function edit(Product $product)
@@ -109,14 +109,14 @@ class ProductController extends Controller
 
         $product->update($data);
 
-        return redirect()->route('admin.products.index')->with('success', 'تم تحديث المنتج.');
+        return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_updated'));
     }
 
     public function destroy(Product $product)
     {
         $product->delete(); // soft delete — preserves order history references
 
-        return redirect()->route('admin.products.index')->with('success', 'تم حذف المنتج.');
+        return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_deleted'));
     }
 
     /**

@@ -41,7 +41,7 @@ class ProductImageController extends Controller
             $hasPrimary = true; // only the very first image is auto-primary
         }
 
-        return back()->with('success', 'تم رفع الصور.');
+        return back()->with('success', __('messages.admin.images_uploaded'));
     }
 
     public function destroy(Product $product, ProductImage $image)
@@ -58,7 +58,7 @@ class ProductImageController extends Controller
             $next?->update(['is_primary' => true]);
         }
 
-        return back()->with('success', 'تم حذف الصورة.');
+        return back()->with('success', __('messages.admin.image_deleted'));
     }
 
     public function setPrimary(Product $product, ProductImage $image)
@@ -68,6 +68,6 @@ class ProductImageController extends Controller
         $product->images()->update(['is_primary' => false]);
         $image->update(['is_primary' => true]);
 
-        return back()->with('success', 'تم تعيين الصورة الرئيسية.');
+        return back()->with('success', __('messages.admin.primary_image_set'));
     }
 }

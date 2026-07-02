@@ -2,7 +2,7 @@
 
 > Quick reference for AI assistants and developers
 
-> **📍 Doc sync:** CLAUDE.md last synced to commit `a50e0c8` — 2026-07-01 10:50 (Wed) [`construction_phase`].
+> **📍 Doc sync:** CLAUDE.md last synced to commit `da3f36f` — 2026-07-02 13:41 (Thu) [`construction_phase`].
 > _Convention: whenever you edit this file, refresh this line to the current commit — run_ `git log -1 --format="%h %cd" --date=format:"%Y-%m-%d %H:%M (%a)"` _and paste the hash + date + time. Anchors the doc to a known code state; pairs with the prose `> Last updated:` log at the bottom of Build Progress._
 
 > **📌 Log the tricky stuff.** Whenever you hit an **issue, blocker, non-obvious behavior, or anything that cost real debugging time**, write it down with its **symptom → root cause → fix** — inline near the relevant section (retab's style, e.g. the MariaDB `db:show` and dual-push `--add --push` notes) and/or a one-liner in the `> Last updated:` log. The same stack is reused across projects (Sky Amman, HardRock, hardrock-ecom-demo), so a gotcha captured once saves the next project too. Traps → document as a gotcha; reusable patterns → note under Architecture/Decisions. When in doubt, over-document.
@@ -161,11 +161,13 @@ These are the conventions we're adopting (most proven in Sky Amman). Where a pat
 - Auth state via `usePage().props.auth.user` (shared by middleware).
 - Flash messages: server `->with('success', …)` → client reads `usePage().props.flash`.
 
-### Bilingual (Arabic-first) + RTL — **(to build)**
-- Saudi market: **Arabic is the primary/default locale**, English secondary. Plan locale as the single source of truth in the **server session** (no localStorage), mirroring Sky Amman's `SetLocale` middleware + `/locale/{lang}` POST.
+### Bilingual (Arabic-first) + RTL — **(BUILT — foundation + storefront; deferred items below)**
+- **Locale = server session, default AR** (single source of truth, no localStorage): `SetLocale` middleware → `app()->setLocale()`, `LocaleController` + `POST /locale/{locale}` (whitelisted `ar|en`), `locale` shared via `HandleInertiaRequests`. `<html dir>` is set from the locale in `app.blade.php` for correct RTL on **first paint** (no flash).
+- **Client i18n = `react-i18next` + `i18next`** (`resources/js/i18n/{index,ar,en}.ts`, `lng`/`fallbackLng` = `ar`) + `LanguageContext` (`useLanguage()` → toggle does `fetch POST /locale/{lang}`, updates `document.dir`/`lang`; seeded from the shared session locale). Wired into **both** `app.tsx` + `ssr.jsx`; provider wraps the whole app.
+- **DB content (`_ar`/`_en` columns):** controllers ship **BOTH** locales; the client picks via **`useLocalized()`** (`resources/js/lib/localize.ts`, AR fallback) so the toggle is **instant** — no server round-trip (mirrors Sky Amman). Stored content always wins over i18n fallbacks.
 - RTL: use CSS **logical properties** (`text-start`, `ms-*`/`me-*`, `ps-*`/`pe-*`), not `text-left`/`flex-end`.
-- Arabic web font (e.g. IBM Plex Sans Arabic / Tajawal) + Latin font, swapped via `html[dir="rtl"]`.
-- Pattern: pass both locale bundles from the controller, pick client-side; **stored content always wins over i18n fallbacks**.
+- **Server-side strings (BUILT):** flash + error messages go through `__('messages.*')` (`lang/{ar,en}/messages.php`, storefront **and** admin); Laravel validation/auth/passwords localized (`lang/ar/*` mirroring published `lang/en/*`, incl. AR field-name `attributes`). Resolved in the request's session locale. ⚠️ Server-rendered strings (these + product names) reflect the locale **at request time** — they follow on the next request, not the instant client toggle.
+- **Deferred:** **admin panel i18n** (admin UI is EN/LTR-pinned by design for now — server flash already localizes); **Arabic web font** (IBM Plex Sans Arabic / Tajawal, swap via `html[dir="rtl"]`); **SSR locale** (call `i18n.changeLanguage(locale)` before render once runtime SSR is enabled — noted in `i18n/index.ts`).
 
 ### File Storage — **(BUILT — media layer + product images)**
 - **Single upload path = `App\Support\Media`** (`storeImage()` / `url()` / `delete()`): validates extension AND MIME, randomizes the filename (UUID), stores public on the **`media` disk**. **Never write public files directly** — always go through `Media` (same rule as `Setting::set()`).
@@ -308,21 +310,28 @@ After completing any task that touches code, end the reply with a **one-line sug
 
 ### Foundation (TODO)
 - [ ] **Decisions:** theme (keep dark-mode toggle vs. single branded theme) · payment gateway (Moyasar/Tap/HyperPay + Tabby/Tamara) · **dev↔prod DB parity** (dev is XAMPP MariaDB 10.4 — old/EOL; prod planned MySQL 8 — match engines via Docker `mysql:8`, or knowingly accept the gap?) · hosting (Railway?) · mail (Resend?)
-- [ ] **Arabic-first bilingual + RTL** (locale middleware, fonts, i18n bundles) — port from Sky Amman, flip default to AR
+- [x] **Arabic-first bilingual + RTL** — foundation (`SetLocale` default AR, `LocaleController`, `react-i18next`, `LanguageContext`, locale-driven `<html dir>`) + **all storefront/account/auth pages localized** with an instant AR⇄EN toggle (DB content via `useLocalized`, both locales shipped). See Architecture → Bilingual. _Deferred: server-side flash/validation, admin i18n, Arabic web font._
 - [x] **E-commerce schema** — built on `construction_phase`: 28 tables + 6 enums + Eloquent models, migrated on MariaDB + SQLite, 26 tests green (see Database Schema). _Service/gateway layer next._
 - [ ] **Zid data migration** path (export → import catalogue + customers + order history)
 - [ ] Security hardening (Turnstile, SecurityHeaders/CSP, rate limits, `URL::forceScheme` + trustProxies) — port from Sky Amman
 - [x] Pushed to GitHub (`origin`) + **dual-push to client repo `retab-dates-dev/retab-website` configured** (Railway prod source). ⏳ Client repo still empty — first push to populate it is pending.
 
-### Storefront + Admin (TODO)
-- [ ] Storefront: catalogue, product detail, cart, checkout, order confirmation, customer account
-- [ ] Admin/back-office: products CRUD, orders, customers, settings, content
+### Storefront + Admin (in progress — most of the vertical is built; checklist was stale, corrected 2026-07-02)
+- [x] Storefront: catalogue, product detail, cart, checkout (Moyasar/Tamara/bank transfer), order confirmation, customer account — **built + bilingual (AR⇄EN)**
+- [ ] Admin/back-office — **partly built:** products CRUD ✓, orders (lifecycle) ✓, SMACC stock-import ✓; **pending:** customers, settings, content/CMS, WhatsApp marketing. _(Admin still EN/LTR — its i18n is later.)_
 - [ ] SEO (SSR on, sitemap/robots, Product/Offer JSON-LD, hreflang)
 
 ### Infrastructure (TODO)
 - [ ] **Runtime SSR** — starter kit already ships `resources/js/ssr.jsx` + `build:ssr`; still need `config/inertia.php` (env toggle) + graceful-fallback gateway + production SSR sidecar (**port Sky Amman's `TimeoutHttpGateway` + sidecar**). _Flagged by the user as the immediate follow-up after this file._
 - [ ] Automated tests + CI (PHPUnit / Vitest / Playwright), branch protection on `main`
 - [ ] Production deploy (MySQL, env vars, data-seeding migrations), Cloudflare DNS + Turnstile keys, mail domain verification
+
+> **Last updated:** 2026-07-02 — **Arabic-first i18n + RTL foundation, then storefront localization (AR⇄EN).**
+> - **i18n foundation** (`b94cd6d`): `SetLocale` middleware (default **AR**) + `LocaleController` + `POST /locale/{locale}`; `HandleInertiaRequests` shares `locale`; `<html dir>` set from locale in `app.blade.php` (RTL on first paint, no flash); installed `react-i18next` + `i18next` (runtime deps → survive SSR prune) with `resources/js/i18n/{ar,en}.ts` bundles; `LanguageContext` (session-cookie source of truth, no localStorage) wired into `app.tsx` + `ssr.jsx`; AR⇄EN toggle in the store header.
+> - **Storefront localization** (`da3f36f`): all 10 storefront/account/auth pages + `store-layout` converted to `t()` (incl. the order-status map, GCC country names, payment-method labels that were inline Arabic dicts). DB content (product/category names) localized via **`useLocalized()`** — controllers (`ShopController::card`, `CartService::summary`, `WishlistController`) now ship both `_ar`/`_en` and the client picks by locale so the toggle is **instant** (no reload), mirroring Sky Amman. Verified: client build ✓, SSR build ✓, 118 tests / 408 assertions ✓, zero Arabic literals left in converted pages.
+> - **Server-side localization** (same-day follow-up): flash/error strings → `__('messages.*')` (`lang/{ar,en}/messages.php`) across storefront + admin controllers/services; Laravel validation/auth/passwords localized (`lang/ar/*` mirroring published `lang/en/*`, with AR `attributes`). 118 tests still green (AR values equal the old literals, so flash assertions hold). ⚠️ Resolves at request time — follows on the next request, not the instant client toggle.
+> - **Deferred (distinct mechanisms):** admin-panel UI i18n (still EN/LTR by design), Arabic web font (Tajawal / IBM Plex Sans Arabic), and honoring the session locale in SSR once runtime SSR lands.
+> - **Also:** corrected the stale Build Progress checklist — the storefront vertical + much of admin were already built but still showed as TODO.
 
 > **Last updated:** 2026-07-02 — **Adopted two cross-project doc-maintenance conventions from Sky Amman.**
 > - **Doc-sync stamp** added at the top of this file: anchors CLAUDE.md to a git commit (hash + date + time via `git log -1`), refreshed on every doc edit — a machine-anchored freshness marker that pairs with this prose log. Seeded to `a50e0c8` (2026-07-01).

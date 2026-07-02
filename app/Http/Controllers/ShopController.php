@@ -92,7 +92,7 @@ class ShopController
                     'rating' => $r->rating,
                     'title' => $r->title,
                     'body' => $r->body,
-                    'author' => $r->user?->name ?? 'عميل',
+                    'author' => $r->user?->name ?? __('messages.review.anonymous'),
                     'helpful_count' => $r->helpful_count,
                     'voted' => in_array($r->id, $votedIds, true),
                     'is_mine' => $user && $r->user_id === $user->id,

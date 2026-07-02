@@ -57,7 +57,7 @@ class CheckoutController
 
         $cart = $this->cart->current();
         if ($cart->items()->count() === 0) {
-            return redirect()->route('cart.show')->with('error', 'سلتك فارغة.');
+            return redirect()->route('cart.show')->with('error', __('messages.cart.empty'));
         }
 
         try {
@@ -96,7 +96,7 @@ class CheckoutController
                 Log::error('Payment initiation failed', ['order' => $order->order_number, 'error' => $e->getMessage()]);
 
                 return redirect()->route('orders.show', $order->order_number)
-                    ->with('error', 'تعذّر بدء الدفع الإلكتروني. يمكنك إتمام الدفع عبر التحويل البنكي.');
+                    ->with('error', __('messages.payment.init_failed'));
             }
         }
 
