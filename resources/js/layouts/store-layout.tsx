@@ -1,5 +1,7 @@
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Category {
     id: number;
@@ -8,21 +10,32 @@ interface Category {
 }
 
 export default function StoreLayout({ children, categories = [] }: PropsWithChildren<{ categories?: Category[] }>) {
+    const { t } = useTranslation();
+    const { toggleLanguage } = useLanguage();
     const props = usePage().props as { cart?: { count?: number }; auth?: { user?: unknown } };
     const cartCount = props.cart?.count ?? 0;
     const loggedIn = Boolean(props.auth?.user);
 
     return (
-        <div dir="rtl" lang="ar" className="min-h-screen bg-[#faf8f5] font-sans text-[#1f2937]">
+        <div className="min-h-screen bg-[#faf8f5] font-sans text-[#1f2937]">
             <header className="bg-[#2f4f4f] text-white">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-                    <Link href="/" className="text-2xl font-bold">رطاب للتمور</Link>
-                    <nav className="flex gap-5 text-sm">
-                        <Link href="/" className="hover:underline">الرئيسية</Link>
+                    <Link href="/" className="text-2xl font-bold">{t('brand')}</Link>
+                    <nav className="flex items-center gap-5 text-sm">
+                        <Link href="/" className="hover:underline">{t('common.home')}</Link>
                         <Link href="/cart" className="hover:underline">
-                            السلة{cartCount > 0 ? ` (${cartCount})` : ''}
+                            {t('common.cart')}{cartCount > 0 ? ` (${cartCount})` : ''}
                         </Link>
-                        <Link href={loggedIn ? '/account' : '/login/whatsapp'} className="hover:underline">حسابي</Link>
+                        <Link href={loggedIn ? '/account' : '/login/whatsapp'} className="hover:underline">
+                            {t('common.myAccount')}
+                        </Link>
+                        <button
+                            type="button"
+                            onClick={toggleLanguage}
+                            className="rounded-full border border-white/30 px-3 py-1 transition hover:bg-white/10"
+                        >
+                            {t('common.switchLanguage')}
+                        </button>
                     </nav>
                 </div>
 
@@ -46,7 +59,7 @@ export default function StoreLayout({ children, categories = [] }: PropsWithChil
             <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
 
             <footer className="mt-12 bg-[#2f4f4f] py-6 text-center text-sm text-white/80">
-                © {new Date().getFullYear()} رطاب للتمور — جميع الحقوق محفوظة
+                © {new Date().getFullYear()} {t('brand')} — {t('common.rightsReserved')}
             </footer>
         </div>
     );

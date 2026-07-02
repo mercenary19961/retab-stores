@@ -4,6 +4,8 @@ createInertiaApp
 } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import ReactDOMServer from 'react-dom/server';
+import './i18n';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 createServer((page) =>
     createInertiaApp({
@@ -18,6 +20,10 @@ createServer((page) =>
             return pages[`./pages/${name}.tsx`].default;
         },
         // prettier-ignore
-        setup: ({ App, props }) => <App {...props} />,
+        setup: ({ App, props }) => (
+            <LanguageProvider>
+                <App {...props} />
+            </LanguageProvider>
+        ),
     }),
 );

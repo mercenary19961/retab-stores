@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\WishlistController;
@@ -12,6 +13,11 @@ use App\Http\Controllers\Webhooks\TamaraWebhookController;
 use App\Http\Controllers\Webhooks\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+// Locale toggle — fetch POST from LanguageContext, persists to session (no Inertia visit).
+Route::post('/locale/{locale}', [LocaleController::class, 'set'])
+    ->whereIn('locale', ['ar', 'en'])
+    ->name('locale.set');
 
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');

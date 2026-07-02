@@ -45,6 +45,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'locale' => session('locale', 'ar'),
             'cart' => [
                 'count' => app(\App\Services\CartService::class)->count(),
             ],
