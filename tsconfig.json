@@ -109,7 +109,8 @@
         "skipLibCheck": true /* Skip type checking all .d.ts files. */,
         "paths": {
             "@/*": ["./resources/js/*"],
-            "ziggy-js": ["./vendor/tightenco/ziggy"]
+            // vendor first (matches composer); node_modules fallback covers CI, where the Node-only job has no vendor/.
+            "ziggy-js": ["./vendor/tightenco/ziggy", "./node_modules/ziggy-js"]
         },
         "jsx": "react-jsx"
     },
