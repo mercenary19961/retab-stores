@@ -13,6 +13,7 @@ class WhatsappMessage extends Model
     protected $fillable = [
         'user_id',
         'order_id',
+        'campaign_id',
         'recipient',
         'template',
         'category',
