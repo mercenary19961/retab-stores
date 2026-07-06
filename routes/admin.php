@@ -52,4 +52,8 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::post('stock-import/preview', [StockImportController::class, 'preview'])->name('stock-import.preview');
     Route::post('stock-import/apply', [StockImportController::class, 'apply'])->name('stock-import.apply');
     Route::post('stock-import/{activityLog}/undo', [StockImportController::class, 'undo'])->name('stock-import.undo');
+
+    // Change log — audit history + per-entry revert.
+    Route::get('change-log', [\App\Http\Controllers\Admin\ChangeLogController::class, 'index'])->name('change-log.index');
+    Route::post('change-log/{activityLog}/revert', [\App\Http\Controllers\Admin\ChangeLogController::class, 'revert'])->name('change-log.revert');
 });

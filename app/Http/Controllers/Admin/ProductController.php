@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Media;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -62,11 +64,14 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ChangeLogService $changeLog)
     {
         $data = $this->validateProduct($request);
 
-        Product::create($data);
+        DB::transaction(function () use ($data, $changeLog) {
+            $product = Product::create($data);
+            $changeLog->logCreated($product, $product->name_ar);
+        });
 
         return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_created'));
     }
@@ -103,18 +108,25 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(Request $request, Product $product)
+    public function update(Request $request, Product $product, ChangeLogService $changeLog)
     {
         $data = $this->validateProduct($request, $product);
 
-        $product->update($data);
+        DB::transaction(function () use ($product, $data, $changeLog) {
+            $before = $product->attributesToArray();
+            $product->update($data);
+            $changeLog->logUpdated($product, $before, $product->name_ar);
+        });
 
         return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_updated'));
     }
 
-    public function destroy(Product $product)
+    public function destroy(Product $product, ChangeLogService $changeLog)
     {
-        $product->delete(); // soft delete — preserves order history references
+        DB::transaction(function () use ($product, $changeLog) {
+            $product->delete(); // soft delete — preserves order history references
+            $changeLog->logDeleted($product, $product->name_ar);
+        });
 
         return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_deleted'));
     }

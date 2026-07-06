@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Services\CheckoutService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -33,15 +35,24 @@ class SettingController extends Controller
         ]);
     }
 
-    public function update(Request $request)
+    public function update(Request $request, ChangeLogService $changeLog)
     {
         $data = $request->validate(self::FIELDS);
 
-        foreach ($data as $key => $value) {
-            if ((string) Setting::get($key) !== (string) $value) { // guard no-op writes
-                Setting::set($key, $value);
+        DB::transaction(function () use ($data, $changeLog) {
+            $old = [];
+            $new = [];
+            foreach ($data as $key => $value) {
+                $current = Setting::get($key);
+                if ((string) $current !== (string) $value) { // guard no-op writes
+                    $old[$key] = $current;
+                    $new[$key] = $value;
+                    Setting::set($key, $value);
+                }
             }
-        }
+
+            $changeLog->logSettingsUpdated($old, $new); // one entry per save, changed keys only
+        });
 
         return back()->with('success', __('messages.admin.settings_saved'));
     }

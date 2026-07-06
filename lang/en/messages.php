@@ -76,6 +76,9 @@ return [
         'import_expired' => 'The import file has expired. Please upload it again.',
         'import_applied' => 'Stock updated: :count products.',
         'import_undone' => 'Import undone and previous stock restored.',
+        'change_reverted' => 'Change reverted.',
+        'change_revert_conflict' => 'Cannot revert: :fields changed again after this entry. Review the current values instead.',
+        'change_revert_blocked' => 'This change can no longer be reverted.',
     ],
 
 ];

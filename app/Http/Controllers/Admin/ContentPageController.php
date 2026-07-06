@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContentPage;
+use App\Services\ChangeLog\ChangeLogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -34,9 +36,14 @@ class ContentPageController extends Controller
         return Inertia::render('admin/content-pages/form', ['page' => null]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ChangeLogService $changeLog)
     {
-        ContentPage::create($this->validated($request));
+        $data = $this->validated($request);
+
+        DB::transaction(function () use ($data, $changeLog) {
+            $page = ContentPage::create($data);
+            $changeLog->logCreated($page, $page->title_ar);
+        });
 
         return redirect()->route('admin.content-pages.index')->with('success', __('messages.admin.page_saved'));
     }
@@ -48,9 +55,15 @@ class ContentPageController extends Controller
         ]);
     }
 
-    public function update(Request $request, ContentPage $contentPage)
+    public function update(Request $request, ContentPage $contentPage, ChangeLogService $changeLog)
     {
-        $contentPage->update($this->validated($request, $contentPage));
+        $data = $this->validated($request, $contentPage);
+
+        DB::transaction(function () use ($contentPage, $data, $changeLog) {
+            $before = $contentPage->attributesToArray();
+            $contentPage->update($data);
+            $changeLog->logUpdated($contentPage, $before, $contentPage->title_ar);
+        });
 
         return redirect()->route('admin.content-pages.index')->with('success', __('messages.admin.page_saved'));
     }

@@ -1,0 +1,137 @@
+import { Head, router } from '@inertiajs/react';
+import AdminLayout from '@/layouts/admin-layout';
+
+interface FieldChange {
+    label: string;
+    old: string;
+    new: string;
+}
+
+interface LogRow {
+    id: number;
+    section: string;
+    action: string;
+    label: string | null;
+    changes: FieldChange[];
+    user: string | null;
+    created_at: string | null;
+    revertable: boolean;
+    reverted_at: string | null;
+    reverted_by: string | null;
+    reverts_log_id: number | null;
+}
+
+interface Paginated {
+    data: LogRow[];
+    links: { url: string | null; label: string; active: boolean }[];
+    total: number;
+}
+
+const ACTION_STYLES: Record<string, string> = {
+    created: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+    updated: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+    deleted: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+    restored: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+};
+
+export default function ChangeLogIndex({ logs }: { logs: Paginated }) {
+    const revert = (row: LogRow) => {
+        if (!window.confirm(`Revert this ${row.section.toLowerCase()} change? A new entry will record the revert.`)) return;
+        router.post(`/admin/change-log/${row.id}/revert`, {}, { preserveScroll: true });
+    };
+
+    return (
+        <AdminLayout title="Change Log">
+            <Head title="Change Log" />
+
+            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+                {logs.data.length === 0 ? (
+                    <p className="p-6 text-sm text-neutral-400">No tracked changes yet.</p>
+                ) : (
+                    <table className="w-full text-sm">
+                        <thead className="text-left text-neutral-500">
+                            <tr className="border-b border-neutral-100 dark:border-neutral-800">
+                                <th className="px-4 py-3 font-medium">When</th>
+                                <th className="px-4 py-3 font-medium">Section</th>
+                                <th className="px-4 py-3 font-medium">Action</th>
+                                <th className="px-4 py-3 font-medium">Item</th>
+                                <th className="px-4 py-3 font-medium">Changes</th>
+                                <th className="px-4 py-3 font-medium">By</th>
+                                <th className="px-4 py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {logs.data.map((row) => (
+                                <tr key={row.id} className="border-b border-neutral-100 align-top last:border-b-0 dark:border-neutral-800">
+                                    <td className="whitespace-nowrap px-4 py-3 text-neutral-500">{row.created_at}</td>
+                                    <td className="whitespace-nowrap px-4 py-3">{row.section}</td>
+                                    <td className="whitespace-nowrap px-4 py-3">
+                                        <span
+                                            className={`rounded px-2 py-0.5 text-xs font-medium ${
+                                                ACTION_STYLES[row.action] ?? 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                                            }`}
+                                        >
+                                            {row.action.replace(/_/g, ' ')}
+                                        </span>
+                                        {row.reverts_log_id !== null && (
+                                            <span className="ms-1 rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                                                revert of #{row.reverts_log_id}
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="max-w-40 truncate px-4 py-3">{row.label ?? '—'}</td>
+                                    <td className="px-4 py-3">
+                                        {row.changes.length === 0 ? (
+                                            <span className="text-neutral-400">—</span>
+                                        ) : (
+                                            <ul className="space-y-0.5">
+                                                {row.changes.map((c, i) => (
+                                                    <li key={i} className="text-xs">
+                                                        <span className="font-medium">{c.label}:</span>{' '}
+                                                        <span className="text-neutral-400 line-through">{c.old}</span>{' '}
+                                                        <span className="text-neutral-700 dark:text-neutral-200">{c.new}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </td>
+                                    <td className="whitespace-nowrap px-4 py-3">{row.user ?? '—'}</td>
+                                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                                        {row.reverted_at ? (
+                                            <span className="text-xs text-neutral-400" title={`Reverted by ${row.reverted_by ?? 'unknown'} at ${row.reverted_at}`}>
+                                                reverted
+                                            </span>
+                                        ) : row.revertable ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => revert(row)}
+                                                className="text-red-600 hover:underline dark:text-red-400"
+                                            >
+                                                Revert
+                                            </button>
+                                        ) : null}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
+            {logs.total > logs.data.length && (
+                <div className="mt-4 flex flex-wrap gap-1">
+                    {logs.links.map((link, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            disabled={!link.url}
+                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
+                            className={`rounded px-3 py-1 text-sm ${link.active ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-600 disabled:opacity-40 dark:text-neutral-300'}`}
+                            dangerouslySetInnerHTML={{ __html: link.label }}
+                        />
+                    ))}
+                </div>
+            )}
+        </AdminLayout>
+    );
+}
