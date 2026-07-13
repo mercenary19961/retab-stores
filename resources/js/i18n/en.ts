@@ -21,6 +21,15 @@ const en = {
         outOfStock: 'Out of stock',
         addToCart: 'Add to cart',
     },
+    nav: {
+        home: 'Home',
+        offers: 'Offers',
+        about: 'About Us',
+        contact: 'Contact Us',
+        search: 'Search',
+        menu: 'Menu',
+        closeMenu: 'Close menu',
+    },
     shop: {
         headTitle: 'Retab Dates — Premium Dates',
         heading: 'Our Products',

@@ -22,6 +22,15 @@ const ar = {
         outOfStock: 'غير متوفر',
         addToCart: 'أضف إلى السلة',
     },
+    nav: {
+        home: 'الرئيسية',
+        offers: 'العروض',
+        about: 'من نحن',
+        contact: 'تواصل معنا',
+        search: 'البحث',
+        menu: 'القائمة',
+        closeMenu: 'إغلاق القائمة',
+    },
     shop: {
         headTitle: 'رطاب للتمور — تمور فاخرة',
         heading: 'منتجاتنا',

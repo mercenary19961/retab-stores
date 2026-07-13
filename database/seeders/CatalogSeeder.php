@@ -10,19 +10,43 @@ class CatalogSeeder extends Seeder
 {
     public function run(): void
     {
+        // Two nav parent groups — these drive the storefront navbar dropdowns
+        // (التمور / الهدايا). Placeholder taxonomy; the Zid import will replace it.
+        $parents = [
+            'cat-dates' => ['name_ar' => 'التمور', 'name_en' => 'Dates'],
+            'cat-gifts' => ['name_ar' => 'الهدايا', 'name_en' => 'Gifts'],
+        ];
+
+        $parentModels = [];
+        foreach (array_keys($parents) as $i => $slug) {
+            $parentModels[$slug] = Category::updateOrCreate(
+                ['slug' => $slug],
+                $parents[$slug] + ['parent_id' => null, 'sort_order' => $i, 'is_active' => true],
+            );
+        }
+
+        // Leaf categories (products attach here), each grouped under a nav parent.
+        // The former flat 'dates' leaf is relabelled "تمور فاخرة" so it doesn't
+        // duplicate the "التمور" parent label inside the dropdown.
         $categories = [
-            ['slug' => 'dates', 'name_ar' => 'التمور', 'name_en' => 'Dates'],
-            ['slug' => 'stuffed-dates', 'name_ar' => 'التمور المحشية', 'name_en' => 'Stuffed Dates'],
-            ['slug' => 'boxes', 'name_ar' => 'البوكسات', 'name_en' => 'Gift Boxes'],
-            ['slug' => 'occasion-gifts', 'name_ar' => 'هدايا المناسبات', 'name_en' => 'Occasion Gifts'],
-            ['slug' => 'assorted', 'name_ar' => 'منتجات متنوعة', 'name_en' => 'Assorted Products'],
+            ['slug' => 'dates', 'name_ar' => 'تمور فاخرة', 'name_en' => 'Premium Dates', 'parent' => 'cat-dates'],
+            ['slug' => 'stuffed-dates', 'name_ar' => 'التمور المحشية', 'name_en' => 'Stuffed Dates', 'parent' => 'cat-dates'],
+            ['slug' => 'boxes', 'name_ar' => 'البوكسات', 'name_en' => 'Gift Boxes', 'parent' => 'cat-gifts'],
+            ['slug' => 'occasion-gifts', 'name_ar' => 'هدايا المناسبات', 'name_en' => 'Occasion Gifts', 'parent' => 'cat-gifts'],
+            ['slug' => 'assorted', 'name_ar' => 'منتجات متنوعة', 'name_en' => 'Assorted Products', 'parent' => 'cat-gifts'],
         ];
 
         $cats = [];
         foreach ($categories as $i => $c) {
             $cats[$c['slug']] = Category::updateOrCreate(
                 ['slug' => $c['slug']],
-                $c + ['sort_order' => $i, 'is_active' => true],
+                [
+                    'name_ar' => $c['name_ar'],
+                    'name_en' => $c['name_en'],
+                    'parent_id' => $parentModels[$c['parent']]->id,
+                    'sort_order' => $i,
+                    'is_active' => true,
+                ],
             );
         }
 

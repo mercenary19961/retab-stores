@@ -21,6 +21,11 @@ html[dir='rtl'] {
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
+    /* Retab brand palette — sampled from the logo/navbar assets. */
+    --color-brand-gold: #af9056;
+    --color-brand-teal: #1b4e53;
+    --color-brand-cream: #f5f1ea;
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);

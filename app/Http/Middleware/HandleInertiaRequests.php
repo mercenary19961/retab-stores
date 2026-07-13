@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Category;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -48,6 +49,26 @@ class HandleInertiaRequests extends Middleware
             'locale' => session('locale', 'ar'),
             // Null while unset → the Turnstile widget renders nothing (dev).
             'turnstileSiteKey' => config('services.turnstile.site_key'),
+            // Storefront nav tree (parents + active children) for the navbar.
+            // Closure → only resolved for Inertia responses, not every request.
+            'navCategories' => fn () => Category::query()
+                ->whereNull('parent_id')
+                ->where('is_active', true)
+                ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn (Category $c) => [
+                    'id' => $c->id,
+                    'name_ar' => $c->name_ar,
+                    'name_en' => $c->name_en,
+                    'slug' => $c->slug,
+                    'children' => $c->children->map(fn (Category $child) => [
+                        'id' => $child->id,
+                        'name_ar' => $child->name_ar,
+                        'name_en' => $child->name_en,
+                        'slug' => $child->slug,
+                    ])->values(),
+                ])->values(),
             'cart' => [
                 'count' => app(\App\Services\CartService::class)->count(),
             ],
