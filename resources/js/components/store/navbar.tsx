@@ -68,7 +68,7 @@ export default function StoreNavbar() {
                 />
             </div>
 
-            <div className="relative mx-auto max-w-6xl px-4">
+            <div className="relative mx-auto max-w-[1600px] px-6 lg:px-12">
                 {/* Row 1 — utility icons · logo · language */}
                 <div className="grid grid-cols-3 items-center py-3">
                     {/* Start: utility icons (desktop) / hamburger (mobile) */}
