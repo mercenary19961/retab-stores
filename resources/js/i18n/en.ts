@@ -30,6 +30,14 @@ const en = {
         menu: 'Menu',
         closeMenu: 'Close menu',
     },
+    hero: {
+        headlineLine1: 'From the finest of the land',
+        headlineLine2: 'to your finest gatherings',
+        subtext: 'Premium Sukkari dates that complete your hospitality and sweeten every gathering',
+        cta: 'Shop now',
+        prevSlide: 'Previous slide',
+        nextSlide: 'Next slide',
+    },
     shop: {
         headTitle: 'Retab Dates — Premium Dates',
         heading: 'Our Products',

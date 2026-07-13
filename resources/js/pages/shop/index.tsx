@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
+import StoreHero from '@/components/store/hero';
 
 interface Category {
     id: number;
@@ -25,8 +26,8 @@ interface ProductCard {
 }
 
 export default function ShopIndex({
-    categories,
     products,
+    activeCategory,
 }: {
     categories: Category[];
     products: ProductCard[];
@@ -37,20 +38,24 @@ export default function ShopIndex({
     const currency = t('common.currency');
 
     return (
-        <StoreLayout categories={categories}>
+        <StoreLayout bare>
             <Head title={t('shop.headTitle')}>
                 <meta name="description" content={t('shop.metaDescription')} />
                 <meta property="og:title" content={t('shop.headTitle')} />
                 <meta property="og:type" content="website" />
             </Head>
 
-            <h1 className="mb-6 text-2xl font-bold">{t('shop.heading')}</h1>
+            {/* Hero shows on the plain homepage, not on a filtered catalogue view. */}
+            {!activeCategory && <StoreHero />}
 
-            {products.length === 0 ? (
-                <p className="text-gray-500">{t('shop.empty')}</p>
-            ) : (
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                    {products.map((p) => (
+            <div className="mx-auto max-w-6xl px-4 py-8">
+                <h1 className="mb-6 text-2xl font-bold">{t('shop.heading')}</h1>
+
+                {products.length === 0 ? (
+                    <p className="text-gray-500">{t('shop.empty')}</p>
+                ) : (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                        {products.map((p) => (
                         <Link
                             key={p.id}
                             href={`/products/${p.slug}`}
@@ -75,9 +80,10 @@ export default function ShopIndex({
                                 )}
                             </div>
                         </Link>
-                    ))}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
+            </div>
         </StoreLayout>
     );
 }

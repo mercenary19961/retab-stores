@@ -31,6 +31,14 @@ const ar = {
         menu: 'القائمة',
         closeMenu: 'إغلاق القائمة',
     },
+    hero: {
+        headlineLine1: 'من طيب الأرض',
+        headlineLine2: 'لطيب جمعتكم',
+        subtext: 'تمر سكري فاخر يكمّل ضيافتكم ويحلّي كل جمعة',
+        cta: 'تسوّق الآن',
+        prevSlide: 'الشريحة السابقة',
+        nextSlide: 'الشريحة التالية',
+    },
     shop: {
         headTitle: 'رطاب للتمور — تمور فاخرة',
         heading: 'منتجاتنا',
