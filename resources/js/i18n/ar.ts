@@ -32,8 +32,11 @@ const ar = {
         closeMenu: 'إغلاق القائمة',
     },
     hero: {
-        headlineLine1: 'من طيب الأرض',
-        headlineLine2: 'لطيب جمعتكم',
+        // "طيب" elongated with kashida (tatweel ـ) so both headline lines reach
+        // the subtext width and their start edges align. Tune the tatweel count
+        // to match the subtext line exactly.
+        headlineLine1: 'من طيـــــــب الأرض',
+        headlineLine2: 'لطيـــــــــب جمعتكم',
         subtext: 'تمر سكري فاخر يكمّل ضيافتكم ويحلّي كل جمعة',
         cta: 'تسوّق الآن',
         prevSlide: 'الشريحة السابقة',
