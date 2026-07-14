@@ -88,7 +88,7 @@ export default function StoreNavbar() {
 
     return (
         <header
-            className={`sticky top-0 z-40 border-b border-brand-gold/10 bg-white transition-all duration-300 ${
+            className={`sticky top-0 z-40 border-b border-brand-gold/10 bg-white transition-all duration-700 ${
                 show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
             } ${scrolled ? 'shadow-md' : ''}`}
         >
@@ -104,8 +104,9 @@ export default function StoreNavbar() {
             </div>
 
             <div className="relative mx-auto max-w-[1600px] px-6 lg:px-12">
-                {/* Row 1 — utility icons · logo · language */}
-                <div className="grid grid-cols-3 items-center py-3">
+                {/* Row 1 — utility icons · logo · language. Padding collapses once
+                    scrolled so the floating navbar is vertically compact; full at top. */}
+                <div className={`grid grid-cols-3 items-center transition-[padding] duration-300 ${scrolled ? 'py-0' : 'py-3'}`}>
                     {/* Start: utility icons (desktop) / hamburger (mobile) */}
                     <div className="flex items-center gap-4 justify-self-start">
                         <button
@@ -174,8 +175,8 @@ export default function StoreNavbar() {
                     </div>
                 </div>
 
-                {/* Row 2 — primary nav links (desktop) */}
-                <nav className="hidden items-center justify-between border-t border-brand-gold/10 py-2 md:flex">
+                {/* Row 2 — primary nav links (desktop). Padding collapses when scrolled. */}
+                <nav className={`hidden items-center justify-between border-t border-brand-gold/10 transition-[padding] duration-300 md:flex ${scrolled ? 'py-0' : 'py-2'}`}>
                     <Link href="/" className={`${linkBase} ${isActive('/') ? linkActive : linkIdle}`}>
                         {t('nav.home')}
                     </Link>
