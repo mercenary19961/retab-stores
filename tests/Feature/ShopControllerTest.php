@@ -106,6 +106,19 @@ class ShopControllerTest extends TestCase
         );
     }
 
+    public function test_home_includes_new_arrivals_newest_first(): void
+    {
+        $this->makeProduct(['slug' => 'older', 'sku' => 'OLD-1']);
+        $newest = $this->makeProduct(['slug' => 'newer', 'sku' => 'NEW-1']);
+        // Force a later timestamp so ordering is deterministic on fast machines.
+        $newest->forceFill(['created_at' => now()->addMinute()])->save();
+
+        $this->get('/')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('newArrivals', 2)
+                ->where('newArrivals.0.slug', 'newer'),
+        );
+    }
+
     public function test_home_includes_only_categories_with_an_image(): void
     {
         // The catalogue category from makeProduct() has no image → excluded.

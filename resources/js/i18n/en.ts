@@ -40,6 +40,12 @@ const en = {
     },
     bestSellers: {
         title: 'Best Sellers',
+    },
+    newArrivals: {
+        title: 'New Arrivals',
+        badge: 'New',
+    },
+    carousel: {
         prev: 'Previous',
         next: 'Next',
     },

@@ -42,6 +42,13 @@ class ShopController
             'products' => $query->get()->map(fn (Product $p) => $this->card($p))->values(),
             // Homepage-only sections; skipped on a filtered catalogue view.
             'bestSellers' => $activeCategory ? [] : $this->bestSellers(),
+            'newArrivals' => $activeCategory ? [] : Product::where('is_active', true)
+                ->with(['category:id,name_ar,name_en,slug', 'images'])
+                ->latest()
+                ->limit(10)
+                ->get()
+                ->map(fn (Product $p) => $this->card($p))
+                ->all(),
             'featuredCategories' => $activeCategory ? [] : Category::where('is_active', true)
                 ->whereNotNull('image')
                 ->orderBy('sort_order')

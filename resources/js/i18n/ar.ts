@@ -41,6 +41,12 @@ const ar = {
     },
     bestSellers: {
         title: 'الأكثر مبيعاً',
+    },
+    newArrivals: {
+        title: 'وصل حديثاً',
+        badge: 'صنف جديد',
+    },
+    carousel: {
         prev: 'السابق',
         next: 'التالي',
     },

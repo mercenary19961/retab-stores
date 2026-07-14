@@ -6,6 +6,7 @@ import StoreHero from '@/components/store/hero';
 import BestSellers from '@/components/store/best-sellers';
 import CategoriesSection from '@/components/store/categories-section';
 import PrimaryBanner from '@/components/store/primary-banner';
+import NewArrivals from '@/components/store/new-arrivals';
 
 interface Category {
     id: number;
@@ -39,12 +40,14 @@ interface FeaturedCategory {
 export default function ShopIndex({
     products,
     bestSellers = [],
+    newArrivals = [],
     featuredCategories = [],
     activeCategory,
 }: {
     categories: Category[];
     products: ProductCard[];
     bestSellers?: ProductCard[];
+    newArrivals?: ProductCard[];
     featuredCategories?: FeaturedCategory[];
     activeCategory: string | null;
 }) {
@@ -67,6 +70,7 @@ export default function ShopIndex({
                     <BestSellers products={bestSellers} />
                     <CategoriesSection categories={featuredCategories} />
                     <PrimaryBanner />
+                    <NewArrivals products={newArrivals} />
                 </>
             )}
 
