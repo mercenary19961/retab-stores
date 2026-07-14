@@ -46,6 +46,9 @@ const en = {
     categoriesSection: {
         title: 'Categories',
     },
+    primaryBanner: {
+        alt: 'Our dates, Saudi origin',
+    },
     shop: {
         headTitle: 'Retab Dates — Premium Dates',
         heading: 'Our Products',

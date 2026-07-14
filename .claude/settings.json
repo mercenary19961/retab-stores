@@ -15,7 +15,9 @@
       "Bash(node \"C:/Users/sabba/AppData/Local/Temp/claude/c--Users-sabba-Desktop-projects-retab-stores/c96a5620-26db-4713-86e2-2b749eda1b1a/scratchpad/check.js\")",
       "Bash(cp /c/Users/sabba/AppData/Local/Temp/claude/c--Users-sabba-Desktop-projects-retab-stores/c96a5620-26db-4713-86e2-2b749eda1b1a/scratchpad/t_sukkari.png /c/Users/sabba/Desktop/projects/retab-stores/public/images/categories/sukkari.png)",
       "Bash(cp /c/Users/sabba/AppData/Local/Temp/claude/c--Users-sabba-Desktop-projects-retab-stores/c96a5620-26db-4713-86e2-2b749eda1b1a/scratchpad/t_stuffed-dates.png /c/Users/sabba/Desktop/projects/retab-stores/public/images/categories/stuffed-dates.png)",
-      "PowerShell(npx tsc --noEmit 2>&1)"
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "Read(//c/Users/sabba/Downloads/primary banner/**)",
+      "WebSearch"
     ]
   }
 }

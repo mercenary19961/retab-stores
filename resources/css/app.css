@@ -7,27 +7,6 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Thmanyah Sans — brand heading font. Drop the files into public/fonts/ and
- * these @font-face rules pick them up; until then the `font-heading` token
- * falls back to Tajawal (also a heavy Arabic sans) so the layout is faithful.
- * Needed weights: 400 (Regular) + 900 (Black).
- */
-@font-face {
-    font-family: 'Thmanyah Sans';
-    src: url('/fonts/thmanyah-sans-regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'Thmanyah Sans';
-    src: url('/fonts/thmanyah-sans-black.woff2') format('woff2');
-    font-weight: 900;
-    font-style: normal;
-    font-display: swap;
-}
-
-/*
  * Arabic-first typography: under RTL, Tajawal leads the sans stack. Tailwind
  * v4's `font-sans` utility resolves var(--font-sans), so overriding the token
  * here cascades into every font-sans element ([dir] attr set from the session
@@ -47,8 +26,8 @@ html[dir='rtl'] {
     --color-brand-teal: #1b4e53;
     --color-brand-cream: #f5f1ea;
 
-    /* Brand heading font (Thmanyah Sans, Tajawal fallback). Utility: font-heading. */
-    --font-heading: 'Thmanyah Sans', 'Tajawal', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    /* Brand heading font — Tajawal (heavy Arabic sans). Utility: font-heading. */
+    --font-heading: 'Tajawal', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);

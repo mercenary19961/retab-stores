@@ -68,19 +68,26 @@ export default function StoreHero() {
                         <span className="block">{slide.line2}</span>
                     </h1>
 
-                    <div className="mt-5 flex items-center gap-3">
-                        <p className="font-heading text-start text-brand-teal text-[clamp(0.95rem,1.9vw,1.63rem)]">
-                            {slide.subtext}
-                        </p>
-                        <span className="hidden h-1.5 w-[75px] shrink-0 rounded-full bg-brand-teal sm:block" />
-                    </div>
+                    {/* Subtext + CTA share a shrink-to-fit column sized to the subtext;
+                        the CTA is centred under it. `text-center` is direction-agnostic,
+                        so it behaves identically in Arabic (RTL) and English (LTR). */}
+                    <div className="mt-5 inline-block max-w-full">
+                        <div className="flex items-center gap-3">
+                            <p className="font-heading text-brand-teal text-[clamp(0.95rem,1.9vw,1.63rem)]">
+                                {slide.subtext}
+                            </p>
+                            <span className="hidden h-1.5 w-[75px] shrink-0 rounded-full bg-brand-teal sm:block" />
+                        </div>
 
-                    <Link
-                        href={slide.ctaHref}
-                        className="mt-7 inline-block rounded-full bg-brand-teal px-10 py-4 font-heading font-black text-white transition-colors hover:bg-brand-teal/90 text-[clamp(1.15rem,2.6vw,2.5rem)]"
-                    >
-                        {slide.ctaLabel}
-                    </Link>
+                        <div className="mt-7 text-center">
+                            <Link
+                                href={slide.ctaHref}
+                                className="inline-block rounded-full bg-brand-teal px-10 py-4 font-heading font-black text-white transition-colors hover:bg-brand-teal/90 text-[clamp(1.15rem,2.6vw,2.5rem)]"
+                            >
+                                {slide.ctaLabel}
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </div>
 

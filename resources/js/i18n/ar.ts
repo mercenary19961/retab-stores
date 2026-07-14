@@ -47,6 +47,9 @@ const ar = {
     categoriesSection: {
         title: 'الأصناف',
     },
+    primaryBanner: {
+        alt: 'تمورنا سعودية المنشأ',
+    },
     shop: {
         headTitle: 'رطاب للتمور — تمور فاخرة',
         heading: 'منتجاتنا',

@@ -5,6 +5,7 @@ import StoreLayout from '@/layouts/store-layout';
 import StoreHero from '@/components/store/hero';
 import BestSellers from '@/components/store/best-sellers';
 import CategoriesSection from '@/components/store/categories-section';
+import PrimaryBanner from '@/components/store/primary-banner';
 
 interface Category {
     id: number;
@@ -65,10 +66,11 @@ export default function ShopIndex({
                     <StoreHero />
                     <BestSellers products={bestSellers} />
                     <CategoriesSection categories={featuredCategories} />
+                    <PrimaryBanner />
                 </>
             )}
 
-            <div className="mx-auto max-w-6xl px-4 py-8">
+            <div id="products" className="mx-auto max-w-6xl px-4 py-8">
                 <h1 className="mb-6 text-2xl font-bold">{t('shop.heading')}</h1>
 
                 {products.length === 0 ? (
