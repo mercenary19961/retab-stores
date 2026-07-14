@@ -61,11 +61,11 @@ export default function StoreHero() {
 
             {/* Content block — physically anchored to the left (the product sits
                 baked into the right of the image), text aligned per reading dir. */}
-            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pl-[5%] pr-4">
+            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pl-[5%] pr-4 max-sm:min-w-0">
                 <div className="w-full text-start">
                     {/* Below 732px the kashida-elongated headline overflows the
                         narrow text column, so step the size down there and smaller. */}
-                    <h1 className="font-heading font-black leading-[1.08] text-brand-teal text-[clamp(2.25rem,6.2vw,5.5rem)] max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)]">
+                    <h1 className="font-heading font-black leading-[1.08] text-brand-teal text-[clamp(2.25rem,6.2vw,5.5rem)] max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-[480px]:text-[clamp(0.85rem,4.5vw,1.35rem)]">
                         <span className="block">{slide.line1}</span>
                         <span className="block">{slide.line2}</span>
                     </h1>
@@ -78,16 +78,16 @@ export default function StoreHero() {
                             {/* Flanking lines — first child sits on the start side
                                 (right in RTL), the last on the end side (left). */}
                             <span className="hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full bg-brand-teal min-[733px]:block" />
-                            <p className="font-heading text-brand-teal text-[clamp(0.95rem,1.9vw,1.63rem)] max-[732px]:text-[0.8rem]">
+                            <p className="font-heading text-brand-teal text-[clamp(0.95rem,1.9vw,1.63rem)] max-[732px]:text-[0.8rem] max-[480px]:max-w-[10rem] max-[480px]:text-[0.7rem]">
                                 {slide.subtext}
                             </p>
                             <span className="hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full bg-brand-teal min-[733px]:block" />
                         </div>
 
-                        <div className="mt-7 text-center">
+                        <div className="mt-7 text-center max-[480px]:mt-2">
                             <Link
                                 href={slide.ctaHref}
-                                className="inline-block rounded-full bg-brand-teal px-10 py-4 font-heading font-black text-white transition-colors hover:bg-brand-teal/90 text-[clamp(1.15rem,2.6vw,2.5rem)] max-[732px]:px-6 max-[732px]:py-2.5 max-[732px]:text-[0.9rem]"
+                                className="inline-block rounded-full bg-brand-teal px-10 py-4 font-heading font-black text-white transition-colors hover:bg-brand-teal/90 text-[clamp(1.15rem,2.6vw,2.5rem)] max-[732px]:px-6 max-[732px]:py-2.5 max-[732px]:text-[0.9rem] max-[480px]:px-4 max-[480px]:py-2 max-[480px]:text-[0.72rem]"
                             >
                                 {slide.ctaLabel}
                             </Link>
