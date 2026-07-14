@@ -17,6 +17,10 @@ interface ProductCard {
     category: { name_ar: string; name_en: string | null; slug: string } | null;
 }
 
+// Track gap (Tailwind gap-6 = 1.5rem = 24px). Kept in sync with the card basis
+// calc()s below and the page-scroll step.
+const GAP = 24;
+
 /** Rounded-triangle arrow (from Polygon 2.svg), teal. Points right by default. */
 function Arrow({ flip }: { flip?: boolean }) {
     return (
@@ -37,10 +41,15 @@ function Arrow({ flip }: { flip?: boolean }) {
 }
 
 /**
- * "الأكثر مبيعاً" homepage strip — a horizontal, scroll-snap product carousel.
- * Arrows show on ≥sm (mobile swipes). Physical-pixel edge detection works in
- * both LTR and RTL: modern browsers keep scrollLeft 0 at the start and grow it
- * negative toward the end in RTL, so |scrollLeft| is distance-from-start either way.
+ * "الأكثر مبيعاً" homepage strip — a paged product carousel showing whole cards
+ * only (4 on desktop / 3 on tablet / 2 on mobile), never a partial peek. Card
+ * widths exactly fill the track, so a page-scroll of one viewport always lands
+ * on a fresh set of full cards. The track is inset with side gutters so the
+ * arrows sit clear of the cards, and arrows are vertically centred on the image.
+ *
+ * Physical-pixel scrolling works in both LTR and RTL: modern browsers keep
+ * scrollLeft 0 at the start and grow it negative toward the end in RTL, so a
+ * left chevron always means "reveal content to the left" (negative) either way.
  */
 export default function BestSellers({ products }: { products: ProductCard[] }) {
     const { t } = useTranslation();
@@ -48,77 +57,99 @@ export default function BestSellers({ products }: { products: ProductCard[] }) {
     const currency = t('common.currency');
     const trackRef = useRef<HTMLDivElement>(null);
     const [edges, setEdges] = useState({ atStart: true, atEnd: false });
+    const [imageHeight, setImageHeight] = useState(0);
 
-    const updateEdges = useCallback(() => {
+    const measure = useCallback(() => {
         const el = trackRef.current;
         if (!el) return;
         const max = el.scrollWidth - el.clientWidth;
         const pos = Math.abs(el.scrollLeft);
         setEdges({ atStart: pos <= 1, atEnd: pos >= max - 1 });
+
+        // Height of the first card's square image, so arrows sit at its centre
+        // (not the centre of the taller card that includes name + price).
+        const media = el.firstElementChild?.firstElementChild as HTMLElement | undefined;
+        if (media) setImageHeight(media.offsetHeight);
     }, []);
 
     useEffect(() => {
-        updateEdges();
+        measure();
         const el = trackRef.current;
         if (!el) return;
-        el.addEventListener('scroll', updateEdges, { passive: true });
-        window.addEventListener('resize', updateEdges);
+        el.addEventListener('scroll', measure, { passive: true });
+        window.addEventListener('resize', measure);
         return () => {
-            el.removeEventListener('scroll', updateEdges);
-            window.removeEventListener('resize', updateEdges);
+            el.removeEventListener('scroll', measure);
+            window.removeEventListener('resize', measure);
         };
-    }, [updateEdges, products.length]);
+    }, [measure, products.length]);
 
-    const scroll = (dir: 'left' | 'right') => {
+    const page = (dir: 'left' | 'right') => {
         const el = trackRef.current;
         if (!el) return;
-        const card = el.firstElementChild as HTMLElement | null;
-        const step = card ? card.offsetWidth + 16 : el.clientWidth * 0.8;
-        // Left chevron reveals content to the left (negative), right the opposite —
-        // consistent physically across LTR/RTL in spec-compliant browsers.
+        // One viewport of cards. Because cards exactly fill the track, clientWidth
+        // + one gap equals a whole number of card steps, so the scroll snaps onto
+        // a fresh full set regardless of how many are visible at this breakpoint.
+        const step = el.clientWidth + GAP;
         el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
     };
 
     if (products.length === 0) return null;
 
+    // Arrows centred on the image once measured; mid-track before then.
+    const arrowTop = imageHeight ? imageHeight / 2 : undefined;
+    const arrowBase =
+        'absolute z-10 hidden -translate-y-1/2 p-2 transition-opacity sm:block';
+
     return (
-        <section className="w-full bg-white py-10 sm:py-14">
-            <div className="mx-auto max-w-6xl px-4">
+        <section className="relative w-full overflow-hidden bg-white py-10 sm:py-14">
+            {/* Faint flowing-lines watermark (Asset 3), anchored to the start edge. */}
+            <img
+                src="/images/best-sellers/pattern.png"
+                alt=""
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 left-0 h-full w-auto select-none opacity-70"
+            />
+
+            <div className="relative mx-auto max-w-[1600px] px-6 lg:px-12">
                 <h2 className="mb-8 text-center font-heading font-black text-brand-teal text-[clamp(1.75rem,4vw,2.75rem)]">
                     {t('bestSellers.title')}
                 </h2>
 
                 <div className="relative">
-                    {/* Prev (left) arrow — hidden on touch, which swipes instead. */}
+                    {/* Prev (left) arrow — sits in the left gutter, clear of the cards. */}
                     <button
                         type="button"
-                        onClick={() => scroll('left')}
+                        onClick={() => page('left')}
                         aria-label={t('bestSellers.prev')}
-                        className={`absolute top-1/2 -left-2 z-10 hidden -translate-y-1/2 p-2 transition-opacity sm:-left-6 sm:block ${
+                        style={{ top: arrowTop }}
+                        className={`${arrowBase} left-0 ${arrowTop === undefined ? 'top-1/2' : ''} ${
                             edges.atStart ? 'pointer-events-none opacity-20' : 'opacity-70 hover:opacity-100'
                         }`}
                     >
                         <Arrow flip />
                     </button>
 
+                    {/* Track: full-bleed on mobile (swipe), inset by gutters on ≥sm so
+                        the arrows have room. Cards exactly fill it — no partial peek. */}
                     <div
                         ref={trackRef}
-                        className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                        className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth sm:mx-14 lg:mx-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     >
                         {products.map((p) => (
                             <Link
                                 key={p.id}
                                 href={`/products/${p.slug}`}
-                                className="group shrink-0 snap-start basis-[46%] sm:basis-[31%] lg:basis-[22.5%]"
+                                className="group shrink-0 snap-start basis-[calc((100%_-_1.5rem)_/_2)] md:basis-[calc((100%_-_3rem)_/_3)] lg:basis-[calc((100%_-_4.5rem)_/_4)]"
                             >
                                 {p.image ? (
                                     <img
                                         src={p.image}
                                         alt={localized(p, 'name')}
-                                        className="aspect-square w-full rounded-[1.75rem] object-cover shadow-sm transition group-hover:shadow-md"
+                                        className="aspect-square w-full rounded-[23%] object-cover shadow-sm transition group-hover:shadow-md"
                                     />
                                 ) : (
-                                    <div className="flex aspect-square w-full items-center justify-center rounded-[1.75rem] bg-brand-cream text-5xl shadow-sm">
+                                    <div className="flex aspect-square w-full items-center justify-center rounded-[23%] bg-brand-cream text-5xl shadow-sm">
                                         🌴
                                     </div>
                                 )}
@@ -129,15 +160,15 @@ export default function BestSellers({ products }: { products: ProductCard[] }) {
                                     {p.on_sale ? (
                                         <span className="inline-flex items-center gap-2">
                                             <span className="font-bold">
-                                                {p.effective_price} {currency}
+                                                {p.effective_price.toFixed(2)} {currency}
                                             </span>
                                             <span className="text-sm text-brand-teal/50 line-through">
-                                                {p.price} {currency}
+                                                {p.price.toFixed(2)} {currency}
                                             </span>
                                         </span>
                                     ) : (
                                         <span className="font-bold">
-                                            {p.price} {currency}
+                                            {p.price.toFixed(2)} {currency}
                                         </span>
                                     )}
                                 </div>
@@ -148,9 +179,10 @@ export default function BestSellers({ products }: { products: ProductCard[] }) {
                     {/* Next (right) arrow. */}
                     <button
                         type="button"
-                        onClick={() => scroll('right')}
+                        onClick={() => page('right')}
                         aria-label={t('bestSellers.next')}
-                        className={`absolute top-1/2 -right-2 z-10 hidden -translate-y-1/2 p-2 transition-opacity sm:-right-6 sm:block ${
+                        style={{ top: arrowTop }}
+                        className={`${arrowBase} right-0 ${arrowTop === undefined ? 'top-1/2' : ''} ${
                             edges.atEnd ? 'pointer-events-none opacity-20' : 'opacity-70 hover:opacity-100'
                         }`}
                     >

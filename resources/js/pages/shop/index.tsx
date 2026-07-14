@@ -80,11 +80,11 @@ export default function ShopIndex({
                             <div className="mt-2 flex items-center gap-2">
                                 {p.on_sale ? (
                                     <>
-                                        <span className="font-bold text-[#2f4f4f]">{p.effective_price} {currency}</span>
-                                        <span className="text-xs text-gray-400 line-through">{p.price} {currency}</span>
+                                        <span className="font-bold text-[#2f4f4f]">{p.effective_price.toFixed(2)} {currency}</span>
+                                        <span className="text-xs text-gray-400 line-through">{p.price.toFixed(2)} {currency}</span>
                                     </>
                                 ) : (
-                                    <span className="font-bold text-[#2f4f4f]">{p.price} {currency}</span>
+                                    <span className="font-bold text-[#2f4f4f]">{p.price.toFixed(2)} {currency}</span>
                                 )}
                             </div>
                         </Link>
