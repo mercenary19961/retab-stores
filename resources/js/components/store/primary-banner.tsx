@@ -23,7 +23,7 @@ export default function PrimaryBanner() {
                 href="#products"
                 aria-label={t('hero.cta')}
                 className="absolute"
-                style={{ left: '65.4%', top: '66.3%', width: '19%', height: '16.6%' }}
+                style={{ left: '65.6%', top: '67.6%', width: '18.9%', height: '16.4%' }}
             />
         </section>
     );
