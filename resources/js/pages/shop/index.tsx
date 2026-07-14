@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
 import StoreHero from '@/components/store/hero';
+import BestSellers from '@/components/store/best-sellers';
 
 interface Category {
     id: number;
@@ -27,10 +28,12 @@ interface ProductCard {
 
 export default function ShopIndex({
     products,
+    bestSellers = [],
     activeCategory,
 }: {
     categories: Category[];
     products: ProductCard[];
+    bestSellers?: ProductCard[];
     activeCategory: string | null;
 }) {
     const { t } = useTranslation();
@@ -45,8 +48,13 @@ export default function ShopIndex({
                 <meta property="og:type" content="website" />
             </Head>
 
-            {/* Hero shows on the plain homepage, not on a filtered catalogue view. */}
-            {!activeCategory && <StoreHero />}
+            {/* Hero + best sellers show on the plain homepage, not a filtered view. */}
+            {!activeCategory && (
+                <>
+                    <StoreHero />
+                    <BestSellers products={bestSellers} />
+                </>
+            )}
 
             <div className="mx-auto max-w-6xl px-4 py-8">
                 <h1 className="mb-6 text-2xl font-bold">{t('shop.heading')}</h1>

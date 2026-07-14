@@ -38,6 +38,11 @@ const en = {
         prevSlide: 'Previous slide',
         nextSlide: 'Next slide',
     },
+    bestSellers: {
+        title: 'Best Sellers',
+        prev: 'Previous',
+        next: 'Next',
+    },
     shop: {
         headTitle: 'Retab Dates — Premium Dates',
         heading: 'Our Products',

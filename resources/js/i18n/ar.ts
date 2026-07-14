@@ -39,6 +39,11 @@ const ar = {
         prevSlide: 'الشريحة السابقة',
         nextSlide: 'الشريحة التالية',
     },
+    bestSellers: {
+        title: 'الأكثر مبيعاً',
+        prev: 'السابق',
+        next: 'التالي',
+    },
     shop: {
         headTitle: 'رطاب للتمور — تمور فاخرة',
         heading: 'منتجاتنا',

@@ -72,6 +72,11 @@ class Product extends Model
         return $this->hasMany(Wishlist::class);
     }
 
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     /**
      * True when a sale price is set and actually below the regular price.
      */

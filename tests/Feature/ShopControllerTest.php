@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\OrderStatus;
 use App\Models\Category;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -53,5 +56,53 @@ class ShopControllerTest extends TestCase
         $this->makeProduct(['slug' => 'hidden', 'is_active' => false]);
 
         $this->get('/products/hidden')->assertNotFound();
+    }
+
+    public function test_home_includes_best_sellers(): void
+    {
+        // With no sales yet, the strip still populates (featured/newest fallback).
+        $this->makeProduct();
+
+        $this->get('/')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('bestSellers', 1),
+        );
+    }
+
+    public function test_best_sellers_omitted_on_filtered_category_view(): void
+    {
+        $this->makeProduct();
+
+        $this->get('/?category=dates')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('bestSellers', 0),
+        );
+    }
+
+    public function test_best_sellers_rank_by_units_sold(): void
+    {
+        $this->makeProduct(['slug' => 'khalas', 'name_ar' => 'خلاص']);
+        $popular = $this->makeProduct(['slug' => 'ajwa', 'name_ar' => 'عجوة']);
+
+        $order = Order::create([
+            'order_number' => 'R-1001',
+            'customer_name' => 'Test',
+            'customer_phone' => '0500000000',
+            'shipping_address' => ['city' => 'Riyadh'],
+            'status' => OrderStatus::Confirmed,
+            'subtotal' => 150,
+            'total' => 150,
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $popular->id,
+            'product_name_ar' => $popular->name_ar,
+            'unit_price' => 50,
+            'quantity' => 3,
+            'line_total' => 150,
+        ]);
+
+        $this->get('/')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->where('bestSellers.0.slug', 'ajwa'),
+        );
     }
 }

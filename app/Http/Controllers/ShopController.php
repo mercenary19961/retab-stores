@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
@@ -39,8 +40,43 @@ class ShopController
         return Inertia::render('shop/index', [
             'categories' => $categories,
             'products' => $query->get()->map(fn (Product $p) => $this->card($p))->values(),
+            // Homepage-only "best sellers" strip; skipped on a filtered catalogue view.
+            'bestSellers' => $activeCategory ? [] : $this->bestSellers(),
             'activeCategory' => $activeCategory,
         ]);
+    }
+
+    /**
+     * Top products for the homepage "best sellers" strip: ranked by units sold in
+     * orders that reached a fulfilled state, then featured, then newest — so the
+     * strip shows a sensible line-up even before any real sales exist.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function bestSellers(): array
+    {
+        $soldStatuses = [
+            OrderStatus::Confirmed->value,
+            OrderStatus::Shipped->value,
+            OrderStatus::Delivered->value,
+        ];
+
+        return Product::where('is_active', true)
+            ->with(['category:id,name_ar,name_en,slug', 'images'])
+            ->withSum(
+                ['orderItems as units_sold' => fn ($q) => $q->whereHas(
+                    'order',
+                    fn ($o) => $o->whereIn('status', $soldStatuses)
+                )],
+                'quantity'
+            )
+            ->orderByDesc('units_sold')
+            ->orderByDesc('is_featured')
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(fn (Product $p) => $this->card($p))
+            ->all();
     }
 
     public function show(Request $request, Product $product, ReviewService $reviewService): Response
