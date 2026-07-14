@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"/c/Users/sabba/Downloads/categories\" 2>/dev/null || echo \"NOT at Downloads/categories\")",
+      "Read(//c/Users/sabba/Downloads/categories/**)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(php artisan db:seed --class=CatalogSeeder --force 2>&1)",
+      "PowerShell(php artisan tinker --execute=\"App\\\\Models\\\\Category::whereNotNull\\('image'\\)->orderBy\\('sort_order'\\)->get\\(['name_ar','slug','image']\\)->each\\(fn\\(\\\\$c\\)=>print\\(\\\\$c->name_ar.' | '.\\\\$c->slug.' | '.\\\\$c->image.PHP_EOL\\)\\);\")",
+      "PowerShell(php artisan tinker --execute='App\\\\Models\\\\Category::whereNotNull\\(\"image\"\\)->orderBy\\(\"sort_order\"\\)->pluck\\(\"image\",\"name_ar\"\\)')",
+      "PowerShell(php artisan tinker --execute='App\\\\Models\\\\Category::whereNotNull\\(\"image\"\\)->orderBy\\(\"sort_order\"\\)->pluck\\(\"image\",\"name_ar\"\\)->dump\\(\\);')",
+      "Bash(npm install *)",
+      "Bash(node \"C:/Users/sabba/AppData/Local/Temp/claude/c--Users-sabba-Desktop-projects-retab-stores/c96a5620-26db-4713-86e2-2b749eda1b1a/scratchpad/pattern-gen.js\")",
+      "Bash(export NODE_PATH=\"C:/Users/sabba/Desktop/projects/retab-stores/node_modules\")",
+      "Bash(node \"C:/Users/sabba/AppData/Local/Temp/claude/c--Users-sabba-Desktop-projects-retab-stores/c96a5620-26db-4713-86e2-2b749eda1b1a/scratchpad/assets.js\")",
+      "Bash(node \"C:/Users/sabba/AppData/Local/Temp/claude/c--Users-sabba-Desktop-projects-retab-stores/c96a5620-26db-4713-86e2-2b749eda1b1a/scratchpad/check.js\")",
+      "Bash(cp /c/Users/sabba/AppData/Local/Temp/claude/c--Users-sabba-Desktop-projects-retab-stores/c96a5620-26db-4713-86e2-2b749eda1b1a/scratchpad/t_sukkari.png /c/Users/sabba/Desktop/projects/retab-stores/public/images/categories/sukkari.png)",
+      "Bash(cp /c/Users/sabba/AppData/Local/Temp/claude/c--Users-sabba-Desktop-projects-retab-stores/c96a5620-26db-4713-86e2-2b749eda1b1a/scratchpad/t_stuffed-dates.png /c/Users/sabba/Desktop/projects/retab-stores/public/images/categories/stuffed-dates.png)",
+      "PowerShell(npx tsc --noEmit 2>&1)"
+    ]
+  }
+}

@@ -43,6 +43,9 @@ const en = {
         prev: 'Previous',
         next: 'Next',
     },
+    categoriesSection: {
+        title: 'Categories',
+    },
     shop: {
         headTitle: 'Retab Dates — Premium Dates',
         heading: 'Our Products',

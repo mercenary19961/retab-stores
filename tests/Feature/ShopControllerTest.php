@@ -105,4 +105,22 @@ class ShopControllerTest extends TestCase
             fn (Assert $page) => $page->where('bestSellers.0.slug', 'ajwa'),
         );
     }
+
+    public function test_home_includes_only_categories_with_an_image(): void
+    {
+        // The catalogue category from makeProduct() has no image → excluded.
+        $this->makeProduct();
+        Category::create([
+            'name_ar' => 'خلاص',
+            'slug' => 'khalas',
+            'image' => '/images/categories/khalas.png',
+            'is_active' => true,
+        ]);
+
+        $this->get('/')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('featuredCategories', 1)
+                ->where('featuredCategories.0.slug', 'khalas')
+                ->where('featuredCategories.0.image', '/images/categories/khalas.png'),
+        );
+    }
 }

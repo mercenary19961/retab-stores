@@ -4,6 +4,7 @@ import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
 import StoreHero from '@/components/store/hero';
 import BestSellers from '@/components/store/best-sellers';
+import CategoriesSection from '@/components/store/categories-section';
 
 interface Category {
     id: number;
@@ -26,14 +27,24 @@ interface ProductCard {
     category: { name_ar: string; name_en: string | null; slug: string } | null;
 }
 
+interface FeaturedCategory {
+    id: number;
+    name_ar: string;
+    name_en: string | null;
+    slug: string;
+    image: string | null;
+}
+
 export default function ShopIndex({
     products,
     bestSellers = [],
+    featuredCategories = [],
     activeCategory,
 }: {
     categories: Category[];
     products: ProductCard[];
     bestSellers?: ProductCard[];
+    featuredCategories?: FeaturedCategory[];
     activeCategory: string | null;
 }) {
     const { t } = useTranslation();
@@ -48,11 +59,12 @@ export default function ShopIndex({
                 <meta property="og:type" content="website" />
             </Head>
 
-            {/* Hero + best sellers show on the plain homepage, not a filtered view. */}
+            {/* Homepage-only sections; hidden on a filtered catalogue view. */}
             {!activeCategory && (
                 <>
                     <StoreHero />
                     <BestSellers products={bestSellers} />
+                    <CategoriesSection categories={featuredCategories} />
                 </>
             )}
 

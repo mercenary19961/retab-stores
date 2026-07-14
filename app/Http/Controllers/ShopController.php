@@ -40,8 +40,13 @@ class ShopController
         return Inertia::render('shop/index', [
             'categories' => $categories,
             'products' => $query->get()->map(fn (Product $p) => $this->card($p))->values(),
-            // Homepage-only "best sellers" strip; skipped on a filtered catalogue view.
+            // Homepage-only sections; skipped on a filtered catalogue view.
             'bestSellers' => $activeCategory ? [] : $this->bestSellers(),
+            'featuredCategories' => $activeCategory ? [] : Category::where('is_active', true)
+                ->whereNotNull('image')
+                ->orderBy('sort_order')
+                ->get(['id', 'name_ar', 'name_en', 'slug', 'image'])
+                ->all(),
             'activeCategory' => $activeCategory,
         ]);
     }

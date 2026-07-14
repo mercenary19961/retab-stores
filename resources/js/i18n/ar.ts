@@ -44,6 +44,9 @@ const ar = {
         prev: 'السابق',
         next: 'التالي',
     },
+    categoriesSection: {
+        title: 'الأصناف',
+    },
     shop: {
         headTitle: 'رطاب للتمور — تمور فاخرة',
         heading: 'منتجاتنا',
