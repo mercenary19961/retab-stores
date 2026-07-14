@@ -73,6 +73,9 @@ export default function StoreHero() {
                         so it behaves identically in Arabic (RTL) and English (LTR). */}
                     <div className="mt-5 inline-block max-w-full">
                         <div className="flex items-center gap-3">
+                            {/* Flanking lines — first child sits on the start side
+                                (right in RTL), the last on the end side (left). */}
+                            <span className="hidden h-1.5 w-[75px] shrink-0 rounded-full bg-brand-teal sm:block" />
                             <p className="font-heading text-brand-teal text-[clamp(0.95rem,1.9vw,1.63rem)]">
                                 {slide.subtext}
                             </p>
