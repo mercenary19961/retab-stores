@@ -2,7 +2,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useLocalized } from '@/lib/localize';
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface NavCategory {
@@ -47,6 +47,37 @@ export default function StoreNavbar() {
 
     const [mobileOpen, setMobileOpen] = useState(false);
 
+    // Reveal-on-scroll-up navbar: hide when scrolling down, fade + slide back in
+    // when scrolling up (or near the top) so navigation is always a flick away.
+    const [show, setShow] = useState(true);
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        let lastY = window.scrollY;
+        let ticking = false;
+        const update = () => {
+            const y = window.scrollY;
+            setScrolled(y > 8);
+            if (y < 80) {
+                setShow(true); // always visible near the top
+            } else if (y > lastY + 4) {
+                setShow(false); // scrolling down → hide
+            } else if (y < lastY - 4) {
+                setShow(true); // scrolling up → reveal
+            }
+            lastY = y;
+            ticking = false;
+        };
+        const onScroll = () => {
+            if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(update);
+            }
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
     const isActive = (href: string) => (href === '/' ? url === '/' : url.startsWith(href));
     const isCategoryActive = (slug: string) => url.includes(`category=${slug}`);
 
@@ -56,7 +87,11 @@ export default function StoreNavbar() {
     const linkActive = 'bg-[#d9d9d9]/25 text-brand-teal';
 
     return (
-        <header className="relative border-b border-brand-gold/10 bg-white">
+        <header
+            className={`sticky top-0 z-40 border-b border-brand-gold/10 bg-white transition-all duration-300 ${
+                show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
+            } ${scrolled ? 'shadow-md' : ''}`}
+        >
             {/* Faint knot watermark (LOGO 2), clipped to the header via its own
                 overflow-hidden wrapper so it never clips the nav dropdowns. */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">

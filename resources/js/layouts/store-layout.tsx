@@ -21,7 +21,7 @@ export default function StoreLayout({
     const { t } = useTranslation();
 
     return (
-        <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#faf8f5] font-sans text-[#1f2937]">
+        <div className="flex min-h-screen flex-col overflow-x-clip bg-[#faf8f5] font-sans text-[#1f2937]">
             <StoreNavbar />
 
             {bare ? (
