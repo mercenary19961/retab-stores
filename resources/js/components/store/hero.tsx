@@ -37,7 +37,7 @@ export default function StoreHero() {
     // automatically once there is more than one slide.
     const slides: Slide[] = [
         {
-            image: '/images/hero/slide-1.png',
+            image: '/images/hero/slide-1.webp',
             line1: t('hero.headlineLine1'),
             line2: t('hero.headlineLine2'),
             subtext: t('hero.subtext'),

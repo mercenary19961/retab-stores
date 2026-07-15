@@ -31,11 +31,11 @@ class CatalogSeeder extends Seeder
         // public/images/categories. The former flat 'dates' leaf is relabelled
         // "تمور فاخرة" so it doesn't duplicate the "التمور" parent label.
         $categories = [
-            ['slug' => 'khalas', 'name_ar' => 'خلاص', 'name_en' => 'Khalas', 'parent' => 'cat-dates', 'image' => 'khalas.png'],
-            ['slug' => 'sukkari', 'name_ar' => 'سكري', 'name_en' => 'Sukkari', 'parent' => 'cat-dates', 'image' => 'sukkari.png'],
-            ['slug' => 'boxes', 'name_ar' => 'بوكسات تمور', 'name_en' => 'Date Boxes', 'parent' => 'cat-gifts', 'image' => 'boxes.png'],
-            ['slug' => 'occasion-gifts', 'name_ar' => 'هدايا المناسبات', 'name_en' => 'Occasion Gifts', 'parent' => 'cat-gifts', 'image' => 'occasion-gifts.png'],
-            ['slug' => 'stuffed-dates', 'name_ar' => 'تمور محشية', 'name_en' => 'Stuffed Dates', 'parent' => 'cat-dates', 'image' => 'stuffed-dates.png'],
+            ['slug' => 'khalas', 'name_ar' => 'خلاص', 'name_en' => 'Khalas', 'parent' => 'cat-dates', 'image' => 'khalas.webp'],
+            ['slug' => 'sukkari', 'name_ar' => 'سكري', 'name_en' => 'Sukkari', 'parent' => 'cat-dates', 'image' => 'sukkari.webp'],
+            ['slug' => 'boxes', 'name_ar' => 'بوكسات تمور', 'name_en' => 'Date Boxes', 'parent' => 'cat-gifts', 'image' => 'boxes.webp'],
+            ['slug' => 'occasion-gifts', 'name_ar' => 'هدايا المناسبات', 'name_en' => 'Occasion Gifts', 'parent' => 'cat-gifts', 'image' => 'occasion-gifts.webp'],
+            ['slug' => 'stuffed-dates', 'name_ar' => 'تمور محشية', 'name_en' => 'Stuffed Dates', 'parent' => 'cat-dates', 'image' => 'stuffed-dates.webp'],
             ['slug' => 'dates', 'name_ar' => 'تمور فاخرة', 'name_en' => 'Premium Dates', 'parent' => 'cat-dates', 'image' => null],
             ['slug' => 'assorted', 'name_ar' => 'منتجات متنوعة', 'name_en' => 'Assorted Products', 'parent' => 'cat-gifts', 'image' => null],
         ];

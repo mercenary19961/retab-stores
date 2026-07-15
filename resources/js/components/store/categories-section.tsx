@@ -32,7 +32,7 @@ export default function CategoriesSection({ categories }: { categories: Category
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 bottom-0 h-[110px] bg-repeat-x sm:h-[140px]"
                 style={{
-                    backgroundImage: "url('/images/categories/pattern.png')",
+                    backgroundImage: "url('/images/categories/pattern.webp')",
                     backgroundPosition: 'center bottom',
                     backgroundSize: 'auto 100%',
                 }}

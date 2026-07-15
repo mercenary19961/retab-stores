@@ -139,14 +139,14 @@ class ShopControllerTest extends TestCase
         Category::create([
             'name_ar' => 'خلاص',
             'slug' => 'khalas',
-            'image' => '/images/categories/khalas.png',
+            'image' => '/images/categories/khalas.webp',
             'is_active' => true,
         ]);
 
         $this->get('/')->assertOk()->assertInertia(
             fn (Assert $page) => $page->has('featuredCategories', 1)
                 ->where('featuredCategories.0.slug', 'khalas')
-                ->where('featuredCategories.0.image', '/images/categories/khalas.png'),
+                ->where('featuredCategories.0.image', '/images/categories/khalas.webp'),
         );
     }
 }
