@@ -57,6 +57,16 @@ const en = {
         title: 'Our Dates',
         subtitle: 'Saudi Origin',
     },
+    footerBanner: {
+        headline: 'Quality You Can Trust',
+        brand: 'Retab Dates',
+        badges: {
+            saudiMade: 'Saudi Made',
+            noPreservatives: 'No Preservatives',
+            nonGmo: 'Non-GMO Ingredients',
+            coolDry: 'Store Cool & Dry',
+        },
+    },
     clientReviews: {
         title: 'Client Reviews',
         client: 'Client',

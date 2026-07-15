@@ -61,6 +61,16 @@ const ar = {
         title: 'تمورنا',
         subtitle: 'سعودية المنشأ',
     },
+    footerBanner: {
+        headline: 'جودة يمكنك الوثوق بها',
+        brand: 'تمور رطاب',
+        badges: {
+            saudiMade: 'صناعة سعودية',
+            noPreservatives: 'خالية من المواد الحافظة',
+            nonGmo: 'مكونات غير معدلة وراثيًا',
+            coolDry: 'تحفظ في مكان بارد وجاف',
+        },
+    },
     clientReviews: {
         title: 'آراء العملاء',
         client: 'عميل',

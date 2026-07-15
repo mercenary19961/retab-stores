@@ -7,6 +7,7 @@ import CategoriesSection from '@/components/store/categories-section';
 import PrimaryBanner from '@/components/store/primary-banner';
 import NewArrivals from '@/components/store/new-arrivals';
 import ClientReviews from '@/components/store/client-reviews';
+import FooterBanner from '@/components/store/footer-banner';
 
 interface ProductCard {
     id: number;
@@ -64,6 +65,7 @@ export default function ShopIndex({
             <PrimaryBanner />
             <NewArrivals products={newArrivals} />
             <ClientReviews reviews={reviews} />
+            <FooterBanner />
         </StoreLayout>
     );
 }
