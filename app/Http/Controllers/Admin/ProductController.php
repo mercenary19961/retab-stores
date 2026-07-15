@@ -20,19 +20,21 @@ use Inertia\Inertia;
  */
 class ProductController extends Controller
 {
+    /** Columns the table may be sorted by (whitelist — never trust the raw param). */
+    private const SORTABLE = ['name_ar', 'sku', 'price', 'stock', 'created_at'];
+
+    /** Full field set for the export (CSV / XLSX / JSON), in column order. */
+    private const EXPORT_COLUMNS = [
+        'id', 'name_ar', 'name_en', 'sku', 'smacc_sku', 'barcode', 'category',
+        'price', 'sale_price', 'stock', 'low_stock_threshold', 'is_active',
+        'is_featured', 'short_description_ar', 'short_description_en',
+        'created_at', 'updated_at',
+    ];
+
     public function index(Request $request)
     {
-        $search = $request->query('search');
-        $categoryId = $request->query('category');
-
-        $products = Product::query()
+        $products = $this->filteredQuery($request)
             ->with(['category:id,name_ar', 'images'])
-            ->when($search, fn ($q) => $q->where(fn ($w) => $w
-                ->where('name_ar', 'like', "%{$search}%")
-                ->orWhere('name_en', 'like', "%{$search}%")
-                ->orWhere('sku', 'like', "%{$search}%")))
-            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
-            ->latest()
             ->paginate(20)
             ->withQueryString()
             ->through(fn (Product $p) => [
@@ -40,6 +42,7 @@ class ProductController extends Controller
                 'name_ar' => $p->name_ar,
                 'image' => Media::url($p->primaryImage()?->path),
                 'sku' => $p->sku,
+                'smacc_sku' => $p->smacc_sku,
                 'category' => $p->category?->name_ar,
                 'price' => (float) $p->price,
                 'sale_price' => $p->sale_price !== null ? (float) $p->sale_price : null,
@@ -51,9 +54,113 @@ class ProductController extends Controller
 
         return Inertia::render('admin/products/index', [
             'products' => $products,
-            'filters' => ['search' => $search, 'category' => $categoryId ? (int) $categoryId : null],
+            'filters' => [
+                'search' => $request->query('search'),
+                'category' => $request->query('category') ? (int) $request->query('category') : null,
+                'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
+                'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+            ],
             'categories' => $this->categoryOptions(),
         ]);
+    }
+
+    /**
+     * Shared list query for the table and the export: search (name/sku/smacc),
+     * category filter, and a whitelisted sort (falls back to newest-first).
+     */
+    private function filteredQuery(Request $request)
+    {
+        $search = $request->query('search');
+        $categoryId = $request->query('category');
+        $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
+        return Product::query()
+            ->when($search, fn ($q) => $q->where(fn ($w) => $w
+                ->where('name_ar', 'like', "%{$search}%")
+                ->orWhere('name_en', 'like', "%{$search}%")
+                ->orWhere('sku', 'like', "%{$search}%")
+                ->orWhere('smacc_sku', 'like', "%{$search}%")))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
+            ->when($sort, fn ($q) => $q->orderBy($sort, $direction), fn ($q) => $q->latest());
+    }
+
+    /**
+     * Download the (filtered) catalogue as CSV, XLSX or JSON. Same filters/sort
+     * as the table, so you export exactly what you're looking at.
+     */
+    public function export(Request $request)
+    {
+        $format = in_array($request->query('format'), ['csv', 'xlsx', 'json'], true)
+            ? $request->query('format')
+            : 'csv';
+
+        $rows = $this->filteredQuery($request)
+            ->with('category:id,name_ar')
+            ->get()
+            ->map(fn (Product $p) => [
+                'id' => $p->id,
+                'name_ar' => $p->name_ar,
+                'name_en' => $p->name_en,
+                'sku' => $p->sku,
+                'smacc_sku' => $p->smacc_sku,
+                'barcode' => $p->barcode,
+                'category' => $p->category?->name_ar,
+                'price' => (float) $p->price,
+                'sale_price' => $p->sale_price !== null ? (float) $p->sale_price : null,
+                'stock' => $p->stock,
+                'low_stock_threshold' => $p->low_stock_threshold,
+                'is_active' => (int) $p->is_active,
+                'is_featured' => (int) $p->is_featured,
+                'short_description_ar' => $p->short_description_ar,
+                'short_description_en' => $p->short_description_en,
+                'created_at' => $p->created_at?->toDateTimeString(),
+                'updated_at' => $p->updated_at?->toDateTimeString(),
+            ]);
+
+        $name = 'products-'.now()->format('Y-m-d');
+
+        return match ($format) {
+            'xlsx' => $this->exportXlsx($rows, "{$name}.xlsx"),
+            'json' => response()->streamDownload(
+                fn () => print (json_encode($rows->values(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)),
+                "{$name}.json",
+                ['Content-Type' => 'application/json'],
+            ),
+            default => $this->exportCsv($rows, "{$name}.csv"),
+        };
+    }
+
+    private function exportCsv($rows, string $filename)
+    {
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel reads Arabic correctly
+            fputcsv($out, self::EXPORT_COLUMNS);
+            foreach ($rows as $row) {
+                fputcsv($out, array_map(fn ($c) => $row[$c] ?? '', self::EXPORT_COLUMNS));
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private function exportXlsx($rows, string $filename)
+    {
+        // Write to a seekable temp file (XLSX is a zip), then stream + delete.
+        $temp = tempnam(sys_get_temp_dir(), 'retab_export_');
+        $writer = new \OpenSpout\Writer\XLSX\Writer();
+        $writer->openToFile($temp);
+        $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues(self::EXPORT_COLUMNS));
+        foreach ($rows as $row) {
+            $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues(
+                array_map(fn ($c) => $row[$c] ?? '', self::EXPORT_COLUMNS)
+            ));
+        }
+        $writer->close();
+
+        return response()->download($temp, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 
     public function create()

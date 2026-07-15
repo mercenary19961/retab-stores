@@ -19,6 +19,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::post('orders/{order:order_number}/ship', [OrderController::class, 'ship'])->name('orders.ship');
     Route::post('orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 
+    Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
     Route::resource('products', ProductController::class)->except(['show']);
 
     // Product images (clean multipart POST, separate from the text form).
