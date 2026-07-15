@@ -15,7 +15,7 @@ export default function PrimaryBanner() {
     return (
         <section className="relative w-full">
             <img
-                src="/images/banner/banner.svg"
+                src="/images/banner/banner.webp"
                 alt={t('primaryBanner.alt')}
                 className="block h-auto w-full"
             />
