@@ -31,16 +31,16 @@ function ReviewCard({ review }: { review: Review }) {
                     {initial}
                 </div>
                 <div className="min-w-0">
-                    <p dir="auto" className="truncate font-bold text-brand-teal">
+                    <p dir="auto" className="truncate text-lg font-bold text-brand-teal">
                         {review.author_name}
                     </p>
-                    <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
                         {t('clientReviews.client')}
                     </p>
                 </div>
             </div>
 
-            <p dir="auto" className="mt-4 text-sm leading-relaxed text-neutral-600">
+            <p dir="auto" className="mt-4 text-base leading-relaxed text-neutral-600">
                 {review.body}
             </p>
 
@@ -48,7 +48,7 @@ function ReviewCard({ review }: { review: Review }) {
                 {[0, 1, 2, 3, 4].map((i) => (
                     <Star key={i} filled={i < filled} />
                 ))}
-                <span className="ms-2 text-sm font-semibold text-neutral-500">{review.rating.toFixed(1)}</span>
+                <span className="ms-2 text-base font-semibold text-neutral-500">{review.rating.toFixed(1)}</span>
             </div>
         </div>
     );
@@ -90,7 +90,7 @@ export default function ClientReviews({ reviews }: { reviews: Review[] }) {
                             <h2 className="font-heading font-black text-brand-gold text-[clamp(1.75rem,3vw,2.5rem)]">
                                 {t('clientReviews.title')}
                             </h2>
-                            <p className="mt-5 text-justify text-sm leading-loose text-white/90">
+                            <p className="mt-5 text-justify text-[0.95rem] leading-loose text-white/90">
                                 {t('clientReviews.intro')}
                             </p>
                         </div>
