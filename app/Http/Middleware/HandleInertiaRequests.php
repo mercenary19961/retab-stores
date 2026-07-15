@@ -72,10 +72,32 @@ class HandleInertiaRequests extends Middleware
             'cart' => [
                 'count' => app(\App\Services\CartService::class)->count(),
             ],
+            // Footer/contact block, admin-editable via settings (falls back to
+            // FOOTER_DEFAULTS when a key is unset). Closure → resolved only for
+            // Inertia page responses; one batched query.
+            'footer' => fn () => $this->footerSettings(),
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
             ],
         ]);
+    }
+
+    /**
+     * Footer/contact values for the storefront: stored setting where present,
+     * otherwise the FOOTER_DEFAULTS fallback. One batched query over the keys.
+     *
+     * @return array<string, string>
+     */
+    private function footerSettings(): array
+    {
+        $defaults = \App\Http\Controllers\Admin\SettingController::FOOTER_DEFAULTS;
+        $stored = \App\Models\Setting::query()
+            ->whereIn('key', array_keys($defaults))
+            ->pluck('value', 'key');
+
+        return collect($defaults)
+            ->map(fn (string $default, string $key) => filled($stored->get($key)) ? $stored->get($key) : $default)
+            ->all();
     }
 }

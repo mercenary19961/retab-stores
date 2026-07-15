@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -8,24 +8,23 @@ import { useTranslation } from 'react-i18next';
  * markup: text (translatable, Tajawal), the brand logo, the two official badges
  * (commercial registration + VAT) and the contact/social icon set.
  *
- * Static business details (contact, CR, VAT) live here as constants for now;
- * they could move to admin `settings` later. Social URLs are best-guesses from
- * the @RETAB_DATES handle — verify them with the client before launch.
+ * Business details (contact, CR, VAT, social URLs) are admin-editable: they come
+ * from the shared `footer` prop (HandleInertiaRequests), which falls back to
+ * SettingController::FOOTER_DEFAULTS when a key is unset.
  */
-const PHONE_DISPLAY = '+966 5 5088 3845';
-const PHONE_TEL = '+966550883845';
-const EMAIL = 'Info@retab.com.sa';
-const COMMERCIAL_REG = '7001744098';
-const VAT_NUMBER = '300789485500003';
-const HANDLE = '@RETAB_DATES';
+interface FooterSettings {
+    contact_phone: string;
+    contact_email: string;
+    commercial_registration: string;
+    vat_number: string;
+    social_snapchat: string;
+    social_facebook: string;
+    social_instagram: string;
+    social_x: string;
+    social_linkedin: string;
+}
 
-const SOCIALS = [
-    { key: 'snapchat', icon: 'social-snapchat', url: 'https://www.snapchat.com/add/retab_dates' },
-    { key: 'facebook', icon: 'social-facebook', url: 'https://www.facebook.com/retab_dates' },
-    { key: 'instagram', icon: 'social-instagram', url: 'https://www.instagram.com/retab_dates' },
-    { key: 'x', icon: 'social-x', url: 'https://x.com/retab_dates' },
-    { key: 'linkedin', icon: 'social-linkedin', url: 'https://www.linkedin.com/company/retab_dates' },
-] as const;
+const HANDLE = '@RETAB_DATES';
 
 const QUICK_LINKS = [
     { key: 'returnPolicy', href: '/pages/returns-policy' },
@@ -36,6 +35,15 @@ const QUICK_LINKS = [
 
 export default function StoreFooter() {
     const { t } = useTranslation();
+    const footer = (usePage().props as unknown as { footer: FooterSettings }).footer;
+
+    const socials = [
+        { key: 'snapchat', icon: 'social-snapchat', url: footer.social_snapchat },
+        { key: 'facebook', icon: 'social-facebook', url: footer.social_facebook },
+        { key: 'instagram', icon: 'social-instagram', url: footer.social_instagram },
+        { key: 'x', icon: 'social-x', url: footer.social_x },
+        { key: 'linkedin', icon: 'social-linkedin', url: footer.social_linkedin },
+    ].filter((s) => s.url);
 
     const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -62,14 +70,14 @@ export default function StoreFooter() {
                         <div className="flex items-center gap-2">
                             <div className="text-start leading-tight">
                                 <div className="text-sm font-bold text-brand-teal">{t('footer.commercialReg')}</div>
-                                <div dir="ltr" className="text-xs font-semibold tracking-wide text-brand-teal">{COMMERCIAL_REG}</div>
+                                <div dir="ltr" className="text-xs font-semibold tracking-wide text-brand-teal">{footer.commercial_registration}</div>
                             </div>
                             <img src="/images/footer/badge-commerce.png" alt={t('footer.commercialReg')} className="h-12 w-12 object-contain" />
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="text-start leading-tight">
                                 <div className="text-sm font-bold text-brand-teal">{t('footer.vatNumber')}</div>
-                                <div dir="ltr" className="text-xs font-semibold tracking-wide text-brand-teal">{VAT_NUMBER}</div>
+                                <div dir="ltr" className="text-xs font-semibold tracking-wide text-brand-teal">{footer.vat_number}</div>
                             </div>
                             <img src="/images/footer/badge-vat.png" alt={t('footer.vatNumber')} className="h-12 w-12 object-contain" />
                         </div>
@@ -77,19 +85,19 @@ export default function StoreFooter() {
 
                     {/* Contact (LTR content) */}
                     <div dir="ltr" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
-                        <a href={`tel:${PHONE_TEL}`} className="flex items-center gap-2 text-brand-teal transition-opacity hover:opacity-75">
+                        <a href={`tel:${footer.contact_phone.replace(/\s/g, '')}`} className="flex items-center gap-2 text-brand-teal transition-opacity hover:opacity-75">
                             <img src="/images/footer/icon-phone.png" alt="" className="h-7 w-7" />
-                            <span className="font-semibold">{PHONE_DISPLAY}</span>
+                            <span className="font-semibold">{footer.contact_phone}</span>
                         </a>
-                        <a href={`mailto:${EMAIL}`} className="flex items-center gap-2 text-brand-teal transition-opacity hover:opacity-75">
+                        <a href={`mailto:${footer.contact_email}`} className="flex items-center gap-2 text-brand-teal transition-opacity hover:opacity-75">
                             <img src="/images/footer/icon-email.png" alt="" className="h-7 w-7" />
-                            <span className="font-semibold">{EMAIL}</span>
+                            <span className="font-semibold">{footer.contact_email}</span>
                         </a>
                     </div>
 
                     {/* Social icons (fixed visual order) */}
                     <div dir="ltr" className="flex items-center justify-center gap-3">
-                        {SOCIALS.map((s) => (
+                        {socials.map((s) => (
                             <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.key} className="transition-opacity hover:opacity-75">
                                 <img src={`/images/footer/${s.icon}.png`} alt={s.key} className="h-9 w-9" />
                             </a>

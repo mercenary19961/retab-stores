@@ -6,6 +6,7 @@ use App\Models\ContentPage;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class SettingsAndPagesTest extends TestCase
@@ -26,6 +27,33 @@ class SettingsAndPagesTest extends TestCase
 
         $this->assertSame('35', Setting::get('shipping_flat_fee'));
         $this->assertSame('SA9780000145608010008130', Setting::get('bank_iban'));
+    }
+
+    public function test_footer_prop_falls_back_to_defaults_then_reflects_override(): void
+    {
+        // Unset → the shared footer prop serves the default.
+        $this->get('/')->assertInertia(fn (Assert $page) => $page
+            ->where('footer.contact_email', 'Info@retab.com.sa'));
+
+        // Admin edits it → the storefront reflects the new value; blank socials
+        // still fall back to their default (filled() guard).
+        $this->actingAs($this->admin())->put('/admin/settings', [
+            'shipping_flat_fee' => '35',
+            'contact_email' => 'hello@retab.com.sa',
+        ])->assertSessionHas('success');
+
+        $this->get('/')->assertInertia(fn (Assert $page) => $page
+            ->where('footer.contact_email', 'hello@retab.com.sa')
+            ->where('footer.social_facebook', 'https://www.facebook.com/retab_dates'));
+    }
+
+    public function test_settings_reject_invalid_footer_values(): void
+    {
+        $this->actingAs($this->admin())->put('/admin/settings', [
+            'shipping_flat_fee' => '35',
+            'contact_email' => 'not-an-email',
+            'social_facebook' => 'not-a-url',
+        ])->assertSessionHasErrors(['contact_email', 'social_facebook']);
     }
 
     public function test_customers_cannot_touch_settings(): void
