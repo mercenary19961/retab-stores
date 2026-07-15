@@ -27,7 +27,7 @@ class OrderController extends Controller
     ) {}
 
     /** Whitelisted sort columns for the table/export. */
-    private const SORTABLE = ['order_number', 'customer_name', 'status', 'total', 'created_at'];
+    private const SORTABLE = ['order_number', 'customer_name', 'status', 'payment_status', 'total', 'created_at'];
 
     /** Full field set for the export, in column order. */
     private const EXPORT_COLUMNS = [

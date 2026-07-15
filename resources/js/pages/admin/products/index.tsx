@@ -133,11 +133,11 @@ export default function ProductsIndex({
                         <tr>
                             <SortableTh col="name_ar" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Product</SortableTh>
                             <SortableTh col="sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SKU</SortableTh>
-                            <th className="px-4 py-3 font-medium">SMACC SKU</th>
-                            <th className="px-4 py-3 font-medium">Category</th>
+                            <SortableTh col="smacc_sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SMACC SKU</SortableTh>
+                            <SortableTh col="category" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Category</SortableTh>
                             <SortableTh col="price" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Price</SortableTh>
                             <SortableTh col="stock" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Stock</SortableTh>
-                            <th className="px-4 py-3 font-medium">Status</th>
+                            <SortableTh col="is_active" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
                             <th className="px-4 py-3"></th>
                         </tr>
                     </thead>

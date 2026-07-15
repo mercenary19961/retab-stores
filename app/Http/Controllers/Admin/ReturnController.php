@@ -23,8 +23,8 @@ class ReturnController extends Controller
         protected ReturnService $returns,
     ) {}
 
-    /** Whitelisted sort columns (own table only; order_number lives on the relation). */
-    private const SORTABLE = ['status', 'created_at'];
+    /** Whitelisted sort columns. order_number/customer_name sort via the joined order. */
+    private const SORTABLE = ['id', 'order_number', 'customer_name', 'status', 'created_at'];
 
     /** Full field set for the export, in column order. */
     private const EXPORT_COLUMNS = [
@@ -60,9 +60,21 @@ class ReturnController extends Controller
         $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
 
-        return OrderReturn::with('order:id,order_number,customer_name,total', 'user:id,name')
-            ->when($status, fn ($q) => $q->where('status', $status))
-            ->when($sort, fn ($q) => $q->orderBy($sort, $direction), fn ($q) => $q->latest());
+        // status qualified so it stays unambiguous once the order join is added.
+        $query = OrderReturn::with('order:id,order_number,customer_name,total', 'user:id,name')
+            ->when($status, fn ($q) => $q->where('order_returns.status', $status));
+
+        if (in_array($sort, ['order_number', 'customer_name'], true)) {
+            $query->leftJoin('orders', 'orders.id', '=', 'order_returns.order_id')
+                ->orderBy("orders.{$sort}", $direction)
+                ->select('order_returns.*');
+        } elseif ($sort) {
+            $query->orderBy("order_returns.{$sort}", $direction);
+        } else {
+            $query->latest();
+        }
+
+        return $query;
     }
 
     public function export(Request $request)

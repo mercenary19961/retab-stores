@@ -19,7 +19,7 @@ use Inertia\Inertia;
 class CustomerController extends Controller
 {
     /** Whitelisted sort columns for the table/export. */
-    private const SORTABLE = ['name', 'confirmed_purchases_count', 'created_at'];
+    private const SORTABLE = ['name', 'phone', 'email', 'whatsapp_opt_in', 'confirmed_purchases_count', 'created_at'];
 
     /** Full field set for the export, in column order. */
     private const EXPORT_COLUMNS = [

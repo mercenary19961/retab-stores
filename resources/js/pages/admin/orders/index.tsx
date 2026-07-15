@@ -102,7 +102,7 @@ export default function OrdersIndex({
                             <SortableTh col="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Order</SortableTh>
                             <SortableTh col="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</SortableTh>
                             <SortableTh col="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
-                            <th className="px-4 py-3 font-medium">Payment</th>
+                            <SortableTh col="payment_status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Payment</SortableTh>
                             <SortableTh col="total" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Total</SortableTh>
                             <SortableTh col="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Placed</SortableTh>
                         </tr>

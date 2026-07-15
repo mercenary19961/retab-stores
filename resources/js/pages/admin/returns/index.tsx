@@ -103,9 +103,9 @@ export default function ReturnsIndex({
                 <table className="w-full text-sm">
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <th className="px-4 py-3 font-medium">Return</th>
-                            <th className="px-4 py-3 font-medium">Order</th>
-                            <th className="px-4 py-3 font-medium">Customer</th>
+                            <SortableTh col="id" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Return</SortableTh>
+                            <SortableTh col="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Order</SortableTh>
+                            <SortableTh col="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</SortableTh>
                             <SortableTh col="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
                             <th className="px-4 py-3 font-medium">Reason</th>
                             <SortableTh col="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Filed</SortableTh>

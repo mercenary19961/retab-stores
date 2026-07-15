@@ -111,9 +111,9 @@ export default function CustomersIndex({
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
                             <SortableTh col="name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</SortableTh>
-                            <th className="px-4 py-3 font-medium">Phone</th>
-                            <th className="px-4 py-3 font-medium">Email</th>
-                            <th className="px-4 py-3 font-medium">WhatsApp opt-in</th>
+                            <SortableTh col="phone" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Phone</SortableTh>
+                            <SortableTh col="email" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Email</SortableTh>
+                            <SortableTh col="whatsapp_opt_in" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>WhatsApp opt-in</SortableTh>
                             <SortableTh col="confirmed_purchases_count" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Confirmed orders</SortableTh>
                             <SortableTh col="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Joined</SortableTh>
                         </tr>

@@ -21,8 +21,9 @@ use Inertia\Inertia;
  */
 class ProductController extends Controller
 {
-    /** Columns the table may be sorted by (whitelist — never trust the raw param). */
-    private const SORTABLE = ['name_ar', 'sku', 'price', 'stock', 'created_at'];
+    /** Columns the table may be sorted by (whitelist — never trust the raw param).
+     *  'category' is virtual (sorts by the joined category name). */
+    private const SORTABLE = ['name_ar', 'sku', 'smacc_sku', 'category', 'price', 'stock', 'is_active'];
 
     /** Full field set for the export (CSV / XLSX / JSON), in column order. */
     private const EXPORT_COLUMNS = [
@@ -76,14 +77,27 @@ class ProductController extends Controller
         $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
 
-        return Product::query()
+        // Columns qualified with products.* so they stay unambiguous once the
+        // category sort adds a join (categories also has name_ar/name_en/slug).
+        $query = Product::query()
             ->when($search, fn ($q) => $q->where(fn ($w) => $w
-                ->where('name_ar', 'like', "%{$search}%")
-                ->orWhere('name_en', 'like', "%{$search}%")
-                ->orWhere('sku', 'like', "%{$search}%")
-                ->orWhere('smacc_sku', 'like', "%{$search}%")))
-            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
-            ->when($sort, fn ($q) => $q->orderBy($sort, $direction), fn ($q) => $q->latest());
+                ->where('products.name_ar', 'like', "%{$search}%")
+                ->orWhere('products.name_en', 'like', "%{$search}%")
+                ->orWhere('products.sku', 'like', "%{$search}%")
+                ->orWhere('products.smacc_sku', 'like', "%{$search}%")))
+            ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId));
+
+        if ($sort === 'category') {
+            $query->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+                ->orderBy('categories.name_ar', $direction)
+                ->select('products.*');
+        } elseif ($sort) {
+            $query->orderBy($sort, $direction);
+        } else {
+            $query->latest();
+        }
+
+        return $query;
     }
 
     /**
