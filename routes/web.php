@@ -50,8 +50,9 @@ Route::get('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'verify'])->
 Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'handle'])->name('webhooks.whatsapp');
 
 Route::middleware(['auth'])->group(function () {
+    // Legacy starter-kit path: staff → back-office, customers → their account.
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        return redirect(\Illuminate\Support\Facades\Auth::user()->isStaff() ? route('admin.dashboard') : route('account.dashboard'));
     })->name('dashboard');
 
     // Customer account (storefront, AR-first).

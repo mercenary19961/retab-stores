@@ -36,7 +36,10 @@ class AuthenticatedSessionController extends Controller
 
         app(CartService::class)->mergeGuestInto(Auth::user());
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Staff land in the back-office; customers go to their account.
+        $home = Auth::user()->isStaff() ? route('admin.dashboard', absolute: false) : '/account';
+
+        return redirect()->intended($home);
     }
 
     /**
