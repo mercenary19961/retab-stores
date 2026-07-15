@@ -190,9 +190,17 @@ const ar = {
         useEmail: 'الدخول بالبريد الإلكتروني بدلاً من ذلك',
     },
     footer: {
-        returnsPolicy: 'سياسة الاسترجاع',
-        about: 'من نحن',
-        contact: 'تواصل معنا',
+        companyName: 'شركة مصنع رطاب الوطن للتمور',
+        quickLinks: 'روابط سريعة',
+        commercialReg: 'السجل التجاري',
+        vatNumber: 'الرقم الضريبي',
+        backToTop: 'العودة للأعلى',
+        links: {
+            returnPolicy: 'سياسة الاستبدال و الاسترجاع',
+            contact: 'تواصل معنا',
+            branches: 'فروعنا',
+            dates: 'التّمور',
+        },
     },
     returns: {
         title: 'طلب إرجاع',

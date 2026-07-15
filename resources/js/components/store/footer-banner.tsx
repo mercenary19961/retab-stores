@@ -37,7 +37,7 @@ export default function FooterBanner() {
             {/* Brand wordmark — between the two floral ornaments on the right */}
             <span
                 className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-heading font-black leading-none text-brand-gold text-[clamp(0.8rem,3vw,2.3rem)]"
-                style={{ left: '72%', top: '50%' }}
+                style={{ left: '73%', top: '50%' }}
             >
                 {t('footerBanner.brand')}
             </span>

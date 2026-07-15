@@ -186,9 +186,17 @@ const en = {
         useEmail: 'Sign in with email instead',
     },
     footer: {
-        returnsPolicy: 'Returns Policy',
-        about: 'About Us',
-        contact: 'Contact Us',
+        companyName: 'Retab Alwatan Dates Factory Co.',
+        quickLinks: 'Quick Links',
+        commercialReg: 'Commercial Registration',
+        vatNumber: 'VAT Number',
+        backToTop: 'Back to top',
+        links: {
+            returnPolicy: 'Return & Exchange Policy',
+            contact: 'Contact Us',
+            branches: 'Our Branches',
+            dates: 'Dates',
+        },
     },
     returns: {
         title: 'Return Request',
