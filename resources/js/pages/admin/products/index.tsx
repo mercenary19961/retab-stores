@@ -1,12 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import ExportButtons from '@/components/admin/export-buttons';
+import SortableTh from '@/components/admin/sortable-th';
 
 interface ProductRow {
     id: number;
     name_ar: string;
     image: string | null;
     sku: string;
+    smacc_sku: string | null;
     category: string | null;
     price: number;
     sale_price: number | null;
@@ -21,6 +24,13 @@ interface Category {
     name_ar: string;
 }
 
+interface Filters {
+    search: string | null;
+    category: number | null;
+    sort: string | null;
+    direction: 'asc' | 'desc';
+}
+
 interface Paginator<T> {
     data: T[];
     links: { url: string | null; label: string; active: boolean }[];
@@ -33,7 +43,7 @@ export default function ProductsIndex({
     categories,
 }: {
     products: Paginator<ProductRow>;
-    filters: { search: string | null; category: number | null };
+    filters: Filters;
     categories: Category[];
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
@@ -41,14 +51,32 @@ export default function ProductsIndex({
     const query = (next: Record<string, unknown>) => {
         router.get(
             '/admin/products',
-            { search: search || undefined, category: filters.category || undefined, ...next },
+            {
+                search: search || undefined,
+                category: filters.category || undefined,
+                sort: filters.sort || undefined,
+                direction: filters.sort ? filters.direction : undefined,
+                ...next,
+            },
             { preserveState: true, preserveScroll: true },
         );
+    };
+
+    const toggleSort = (col: string) => {
+        const direction = filters.sort === col && filters.direction === 'asc' ? 'desc' : 'asc';
+        query({ sort: col, direction });
     };
 
     const destroy = (p: ProductRow) => {
         if (!window.confirm(`Delete "${p.name_ar}"? It will be hidden but order history is kept.`)) return;
         router.delete(`/admin/products/${p.id}`, { preserveScroll: true });
+    };
+
+    const exportParams = {
+        search: filters.search,
+        category: filters.category,
+        sort: filters.sort,
+        direction: filters.sort ? filters.direction : undefined,
     };
 
     return (
@@ -59,7 +87,7 @@ export default function ProductsIndex({
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
-                        query({});
+                        query({ page: undefined });
                     }}
                     className="flex gap-2"
                 >
@@ -76,7 +104,7 @@ export default function ProductsIndex({
 
                 <select
                     value={filters.category ?? ''}
-                    onChange={(e) => query({ category: e.target.value || undefined })}
+                    onChange={(e) => query({ category: e.target.value || undefined, page: undefined })}
                     className="rounded border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-800"
                 >
                     <option value="">All categories</option>
@@ -87,29 +115,36 @@ export default function ProductsIndex({
 
                 <Link
                     href="/admin/products/create"
-                    className="ml-auto rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                    className="ms-auto rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
                 >
                     + New product
                 </Link>
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            {/* Count + export */}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-sm text-neutral-400">{products.total} products</span>
+                <ExportButtons base="/admin/products/export" params={exportParams} />
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="w-full text-sm">
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <th className="px-4 py-3 font-medium">Product</th>
-                            <th className="px-4 py-3 font-medium">SKU</th>
-                            <th className="px-4 py-3 font-medium">Category</th>
-                            <th className="px-4 py-3 font-medium">Price</th>
-                            <th className="px-4 py-3 font-medium">Stock</th>
-                            <th className="px-4 py-3 font-medium">Status</th>
+                            <SortableTh col="name_ar" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Product</SortableTh>
+                            <SortableTh col="sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SKU</SortableTh>
+                            <SortableTh col="smacc_sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SMACC SKU</SortableTh>
+                            <SortableTh col="category" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Category</SortableTh>
+                            <SortableTh col="price" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Price</SortableTh>
+                            <SortableTh col="stock" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Stock</SortableTh>
+                            <SortableTh col="is_active" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
                             <th className="px-4 py-3"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {products.data.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-neutral-400">No products.</td>
+                                <td colSpan={8} className="px-4 py-8 text-center text-neutral-400">No products.</td>
                             </tr>
                         )}
                         {products.data.map((p) => (
@@ -121,12 +156,13 @@ export default function ProductsIndex({
                                         ) : (
                                             <div className="flex h-9 w-9 items-center justify-center rounded bg-neutral-100 text-sm dark:bg-neutral-800">🌴</div>
                                         )}
-                                        <span>{p.name_ar}</span>
+                                        <span dir="auto">{p.name_ar}</span>
                                         {p.is_featured && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">Featured</span>}
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 font-mono text-neutral-500">{p.sku}</td>
-                                <td className="px-4 py-3">{p.category ?? '—'}</td>
+                                <td className="px-4 py-3 font-mono text-neutral-500">{p.smacc_sku ?? '—'}</td>
+                                <td className="px-4 py-3" dir="auto">{p.category ?? '—'}</td>
                                 <td className="px-4 py-3">
                                     {p.sale_price !== null ? (
                                         <span>

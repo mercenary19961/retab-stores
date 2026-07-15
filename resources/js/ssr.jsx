@@ -4,6 +4,7 @@ createInertiaApp
 } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import ReactDOMServer from 'react-dom/server';
+import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
 import { LanguageProvider } from './contexts/LanguageContext';
 
@@ -26,9 +27,11 @@ createServer((page) => {
         },
         // prettier-ignore
         setup: ({ App, props }) => (
-            <LanguageProvider initialLocale={page.props?.locale}>
-                <App {...props} />
-            </LanguageProvider>
+            <I18nextProvider i18n={i18n}>
+                <LanguageProvider initialLocale={page.props?.locale}>
+                    <App {...props} />
+                </LanguageProvider>
+            </I18nextProvider>
         ),
     });
 });

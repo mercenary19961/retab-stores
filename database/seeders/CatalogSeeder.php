@@ -10,27 +10,56 @@ class CatalogSeeder extends Seeder
 {
     public function run(): void
     {
+        // Two nav parent groups — these drive the storefront navbar dropdowns
+        // (التمور / الهدايا). Placeholder taxonomy; the Zid import will replace it.
+        $parents = [
+            'cat-dates' => ['name_ar' => 'التمور', 'name_en' => 'Dates'],
+            'cat-gifts' => ['name_ar' => 'الهدايا', 'name_en' => 'Gifts'],
+        ];
+
+        $parentModels = [];
+        foreach (array_keys($parents) as $i => $slug) {
+            $parentModels[$slug] = Category::updateOrCreate(
+                ['slug' => $slug],
+                $parents[$slug] + ['parent_id' => null, 'sort_order' => $i, 'is_active' => true],
+            );
+        }
+
+        // Leaf categories (products attach here), each grouped under a nav parent.
+        // Those with an `image` are the ones featured in the homepage "الأصناف"
+        // section (in this order); their images are static brand assets under
+        // public/images/categories. The former flat 'dates' leaf is relabelled
+        // "تمور فاخرة" so it doesn't duplicate the "التمور" parent label.
         $categories = [
-            ['slug' => 'dates', 'name_ar' => 'التمور', 'name_en' => 'Dates'],
-            ['slug' => 'stuffed-dates', 'name_ar' => 'التمور المحشية', 'name_en' => 'Stuffed Dates'],
-            ['slug' => 'boxes', 'name_ar' => 'البوكسات', 'name_en' => 'Gift Boxes'],
-            ['slug' => 'occasion-gifts', 'name_ar' => 'هدايا المناسبات', 'name_en' => 'Occasion Gifts'],
-            ['slug' => 'assorted', 'name_ar' => 'منتجات متنوعة', 'name_en' => 'Assorted Products'],
+            ['slug' => 'khalas', 'name_ar' => 'خلاص', 'name_en' => 'Khalas', 'parent' => 'cat-dates', 'image' => 'khalas.webp'],
+            ['slug' => 'sukkari', 'name_ar' => 'سكري', 'name_en' => 'Sukkari', 'parent' => 'cat-dates', 'image' => 'sukkari.webp'],
+            ['slug' => 'boxes', 'name_ar' => 'بوكسات تمور', 'name_en' => 'Date Boxes', 'parent' => 'cat-gifts', 'image' => 'boxes.webp'],
+            ['slug' => 'occasion-gifts', 'name_ar' => 'هدايا المناسبات', 'name_en' => 'Occasion Gifts', 'parent' => 'cat-gifts', 'image' => 'occasion-gifts.webp'],
+            ['slug' => 'stuffed-dates', 'name_ar' => 'تمور محشية', 'name_en' => 'Stuffed Dates', 'parent' => 'cat-dates', 'image' => 'stuffed-dates.webp'],
+            ['slug' => 'dates', 'name_ar' => 'تمور فاخرة', 'name_en' => 'Premium Dates', 'parent' => 'cat-dates', 'image' => null],
+            ['slug' => 'assorted', 'name_ar' => 'منتجات متنوعة', 'name_en' => 'Assorted Products', 'parent' => 'cat-gifts', 'image' => null],
         ];
 
         $cats = [];
         foreach ($categories as $i => $c) {
             $cats[$c['slug']] = Category::updateOrCreate(
                 ['slug' => $c['slug']],
-                $c + ['sort_order' => $i, 'is_active' => true],
+                [
+                    'name_ar' => $c['name_ar'],
+                    'name_en' => $c['name_en'],
+                    'parent_id' => $parentModels[$c['parent']]->id,
+                    'image' => $c['image'] ? '/images/categories/' . $c['image'] : null,
+                    'sort_order' => $i,
+                    'is_active' => true,
+                ],
             );
         }
 
         // Weight lives in the title per the spec (descriptive, not a structured field).
         $products = [
-            ['cat' => 'dates', 'slug' => 'sukkari-1kg', 'name_ar' => 'تمر سكري فاخر - 1 كجم', 'name_en' => 'Premium Sukkari Dates - 1kg', 'price' => 75, 'sku' => 'SUK-1KG', 'stock' => 120, 'featured' => true],
+            ['cat' => 'sukkari', 'slug' => 'sukkari-1kg', 'name_ar' => 'تمر سكري فاخر - 1 كجم', 'name_en' => 'Premium Sukkari Dates - 1kg', 'price' => 75, 'sku' => 'SUK-1KG', 'stock' => 120, 'featured' => true],
             ['cat' => 'dates', 'slug' => 'ajwa-1kg', 'name_ar' => 'تمر عجوة المدينة - 1 كجم', 'name_en' => 'Ajwa Al-Madinah - 1kg', 'price' => 95, 'sku' => 'AJW-1KG', 'stock' => 80, 'featured' => true],
-            ['cat' => 'dates', 'slug' => 'khalas-1kg', 'name_ar' => 'تمر خلاص - 1 كجم', 'name_en' => 'Khalas Dates - 1kg', 'price' => 55, 'sku' => 'KHL-1KG', 'stock' => 150],
+            ['cat' => 'khalas', 'slug' => 'khalas-1kg', 'name_ar' => 'تمر خلاص - 1 كجم', 'name_en' => 'Khalas Dates - 1kg', 'price' => 55, 'sku' => 'KHL-1KG', 'stock' => 150],
             ['cat' => 'dates', 'slug' => 'medjool-500g', 'name_ar' => 'تمر مجدول فاخر - 500 جم', 'name_en' => 'Premium Medjool - 500g', 'price' => 65, 'sale' => 55, 'sku' => 'MJD-500', 'stock' => 60],
             ['cat' => 'stuffed-dates', 'slug' => 'stuffed-nuts-500g', 'name_ar' => 'تمر محشي بالمكسرات - 500 جم', 'name_en' => 'Nut-stuffed Dates - 500g', 'price' => 85, 'sku' => 'STF-NUT', 'stock' => 70],
             ['cat' => 'stuffed-dates', 'slug' => 'stuffed-choc-500g', 'name_ar' => 'تمر محشي بالشوكولاتة - 500 جم', 'name_en' => 'Chocolate-stuffed Dates - 500g', 'price' => 90, 'sku' => 'STF-CHC', 'stock' => 65],

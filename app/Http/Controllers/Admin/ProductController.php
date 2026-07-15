@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Media;
+use App\Support\TableExport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -18,19 +21,22 @@ use Inertia\Inertia;
  */
 class ProductController extends Controller
 {
+    /** Columns the table may be sorted by (whitelist — never trust the raw param).
+     *  'category' is virtual (sorts by the joined category name). */
+    private const SORTABLE = ['name_ar', 'sku', 'smacc_sku', 'category', 'price', 'stock', 'is_active'];
+
+    /** Full field set for the export (CSV / XLSX / JSON), in column order. */
+    private const EXPORT_COLUMNS = [
+        'id', 'name_ar', 'name_en', 'sku', 'smacc_sku', 'barcode', 'category',
+        'price', 'sale_price', 'stock', 'low_stock_threshold', 'is_active',
+        'is_featured', 'short_description_ar', 'short_description_en',
+        'created_at', 'updated_at',
+    ];
+
     public function index(Request $request)
     {
-        $search = $request->query('search');
-        $categoryId = $request->query('category');
-
-        $products = Product::query()
+        $products = $this->filteredQuery($request)
             ->with(['category:id,name_ar', 'images'])
-            ->when($search, fn ($q) => $q->where(fn ($w) => $w
-                ->where('name_ar', 'like', "%{$search}%")
-                ->orWhere('name_en', 'like', "%{$search}%")
-                ->orWhere('sku', 'like', "%{$search}%")))
-            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
-            ->latest()
             ->paginate(20)
             ->withQueryString()
             ->through(fn (Product $p) => [
@@ -38,6 +44,7 @@ class ProductController extends Controller
                 'name_ar' => $p->name_ar,
                 'image' => Media::url($p->primaryImage()?->path),
                 'sku' => $p->sku,
+                'smacc_sku' => $p->smacc_sku,
                 'category' => $p->category?->name_ar,
                 'price' => (float) $p->price,
                 'sale_price' => $p->sale_price !== null ? (float) $p->sale_price : null,
@@ -49,9 +56,84 @@ class ProductController extends Controller
 
         return Inertia::render('admin/products/index', [
             'products' => $products,
-            'filters' => ['search' => $search, 'category' => $categoryId ? (int) $categoryId : null],
+            'filters' => [
+                'search' => $request->query('search'),
+                'category' => $request->query('category') ? (int) $request->query('category') : null,
+                'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
+                'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+            ],
             'categories' => $this->categoryOptions(),
         ]);
+    }
+
+    /**
+     * Shared list query for the table and the export: search (name/sku/smacc),
+     * category filter, and a whitelisted sort (falls back to newest-first).
+     */
+    private function filteredQuery(Request $request)
+    {
+        $search = $request->query('search');
+        $categoryId = $request->query('category');
+        $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
+        // Columns qualified with products.* so they stay unambiguous once the
+        // category sort adds a join (categories also has name_ar/name_en/slug).
+        $query = Product::query()
+            ->when($search, fn ($q) => $q->where(fn ($w) => $w
+                ->where('products.name_ar', 'like', "%{$search}%")
+                ->orWhere('products.name_en', 'like', "%{$search}%")
+                ->orWhere('products.sku', 'like', "%{$search}%")
+                ->orWhere('products.smacc_sku', 'like', "%{$search}%")))
+            ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId));
+
+        if ($sort === 'category') {
+            $query->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+                ->orderBy('categories.name_ar', $direction)
+                ->select('products.*');
+        } elseif ($sort) {
+            $query->orderBy($sort, $direction);
+        } else {
+            $query->latest();
+        }
+
+        return $query;
+    }
+
+    /**
+     * Download the (filtered) catalogue as CSV, XLSX or JSON. Same filters/sort
+     * as the table, so you export exactly what you're looking at.
+     */
+    public function export(Request $request)
+    {
+        $format = in_array($request->query('format'), ['csv', 'xlsx', 'json'], true)
+            ? $request->query('format')
+            : 'csv';
+
+        $rows = $this->filteredQuery($request)
+            ->with('category:id,name_ar')
+            ->get()
+            ->map(fn (Product $p) => [
+                'id' => $p->id,
+                'name_ar' => $p->name_ar,
+                'name_en' => $p->name_en,
+                'sku' => $p->sku,
+                'smacc_sku' => $p->smacc_sku,
+                'barcode' => $p->barcode,
+                'category' => $p->category?->name_ar,
+                'price' => (float) $p->price,
+                'sale_price' => $p->sale_price !== null ? (float) $p->sale_price : null,
+                'stock' => $p->stock,
+                'low_stock_threshold' => $p->low_stock_threshold,
+                'is_active' => (int) $p->is_active,
+                'is_featured' => (int) $p->is_featured,
+                'short_description_ar' => $p->short_description_ar,
+                'short_description_en' => $p->short_description_en,
+                'created_at' => $p->created_at?->toDateTimeString(),
+                'updated_at' => $p->updated_at?->toDateTimeString(),
+            ]);
+
+        return TableExport::download($format, 'products', self::EXPORT_COLUMNS, $rows);
     }
 
     public function create()
@@ -62,11 +144,14 @@ class ProductController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ChangeLogService $changeLog)
     {
         $data = $this->validateProduct($request);
 
-        Product::create($data);
+        DB::transaction(function () use ($data, $changeLog) {
+            $product = Product::create($data);
+            $changeLog->logCreated($product, $product->name_ar);
+        });
 
         return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_created'));
     }
@@ -103,18 +188,25 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(Request $request, Product $product)
+    public function update(Request $request, Product $product, ChangeLogService $changeLog)
     {
         $data = $this->validateProduct($request, $product);
 
-        $product->update($data);
+        DB::transaction(function () use ($product, $data, $changeLog) {
+            $before = $product->attributesToArray();
+            $product->update($data);
+            $changeLog->logUpdated($product, $before, $product->name_ar);
+        });
 
         return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_updated'));
     }
 
-    public function destroy(Product $product)
+    public function destroy(Product $product, ChangeLogService $changeLog)
     {
-        $product->delete(); // soft delete — preserves order history references
+        DB::transaction(function () use ($product, $changeLog) {
+            $product->delete(); // soft delete — preserves order history references
+            $changeLog->logDeleted($product, $product->name_ar);
+        });
 
         return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_deleted'));
     }

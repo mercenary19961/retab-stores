@@ -27,6 +27,7 @@ Route::get('/robots.txt', [\App\Http\Controllers\SeoController::class, 'robots']
 
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');
+Route::get('/shop', [ShopController::class, 'catalogue'])->name('shop.catalogue');
 Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show'])->name('pages.show');
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
 
@@ -49,8 +50,9 @@ Route::get('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'verify'])->
 Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'handle'])->name('webhooks.whatsapp');
 
 Route::middleware(['auth'])->group(function () {
+    // Legacy starter-kit path: staff → back-office, customers → their account.
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        return redirect(\Illuminate\Support\Facades\Auth::user()->isStaff() ? route('admin.dashboard') : route('account.dashboard'));
     })->name('dashboard');
 
     // Customer account (storefront, AR-first).

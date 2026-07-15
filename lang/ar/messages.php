@@ -59,6 +59,9 @@ return [
     'admin' => [
         'settings_saved' => 'تم حفظ الإعدادات.',
         'page_saved' => 'تم حفظ الصفحة.',
+        'review_saved' => 'تم حفظ التقييم.',
+        'review_deleted' => 'تم حذف التقييم.',
+        'reviews_imported' => 'تم استيراد :count تقييم.',
         'return_approved' => 'تمت الموافقة على طلب الإرجاع.',
         'return_rejected' => 'تم رفض طلب الإرجاع.',
         'return_exchanged' => 'تم إغلاق الإرجاع كاستبدال.',
@@ -76,6 +79,9 @@ return [
         'import_expired' => 'انتهت صلاحية ملف الاستيراد. يُرجى رفعه من جديد.',
         'import_applied' => 'تم تحديث المخزون: :count منتج.',
         'import_undone' => 'تم التراجع عن الاستيراد واستعادة المخزون السابق.',
+        'change_reverted' => 'تم التراجع عن التغيير.',
+        'change_revert_conflict' => 'تعذر التراجع: :fields تغيّرت مرة أخرى بعد هذا السجل. يُرجى مراجعة القيم الحالية.',
+        'change_revert_blocked' => 'لم يعد بالإمكان التراجع عن هذا التغيير.',
     ],
 
 ];

@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import ExportButtons from '@/components/admin/export-buttons';
+import SortableTh from '@/components/admin/sortable-th';
 
 interface CustomerRow {
     id: number;
@@ -10,6 +12,13 @@ interface CustomerRow {
     whatsapp_opt_in: boolean;
     confirmed_purchases: number;
     created_at: string | null;
+}
+
+interface Filters {
+    q: string;
+    opt_in: string | null;
+    sort: string | null;
+    direction: 'asc' | 'desc';
 }
 
 interface Paginator<T> {
@@ -23,7 +32,7 @@ export default function CustomersIndex({
     filters,
 }: {
     customers: Paginator<CustomerRow>;
-    filters: { q: string; opt_in: string | null };
+    filters: Filters;
 }) {
     const [search, setSearch] = useState(filters.q ?? '');
 
@@ -31,6 +40,10 @@ export default function CustomersIndex({
         const params: Record<string, string> = {};
         if (search) params.q = search;
         if (filters.opt_in) params.opt_in = filters.opt_in;
+        if (filters.sort) {
+            params.sort = filters.sort;
+            params.direction = filters.direction;
+        }
         Object.entries(extra).forEach(([k, v]) => {
             if (v === undefined) delete params[k];
             else params[k] = v;
@@ -41,6 +54,18 @@ export default function CustomersIndex({
     const submit = (e: FormEvent) => {
         e.preventDefault();
         apply();
+    };
+
+    const toggleSort = (col: string) => {
+        const direction = filters.sort === col && filters.direction === 'asc' ? 'desc' : 'asc';
+        apply({ sort: col, direction });
+    };
+
+    const exportParams = {
+        q: filters.q,
+        opt_in: filters.opt_in,
+        sort: filters.sort,
+        direction: filters.sort ? filters.direction : undefined,
     };
 
     return (
@@ -77,19 +102,20 @@ export default function CustomersIndex({
                     ))}
                 </div>
 
-                <span className="text-sm text-neutral-400">{customers.total} customers</span>
+                <span className="ms-auto text-sm text-neutral-400">{customers.total} customers</span>
+                <ExportButtons base="/admin/customers/export" params={exportParams} />
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="w-full text-sm">
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <th className="px-4 py-3 font-medium">Customer</th>
-                            <th className="px-4 py-3 font-medium">Phone</th>
-                            <th className="px-4 py-3 font-medium">Email</th>
-                            <th className="px-4 py-3 font-medium">WhatsApp opt-in</th>
-                            <th className="px-4 py-3 font-medium">Confirmed orders</th>
-                            <th className="px-4 py-3 font-medium">Joined</th>
+                            <SortableTh col="name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</SortableTh>
+                            <SortableTh col="phone" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Phone</SortableTh>
+                            <SortableTh col="email" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Email</SortableTh>
+                            <SortableTh col="whatsapp_opt_in" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>WhatsApp opt-in</SortableTh>
+                            <SortableTh col="confirmed_purchases_count" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Confirmed orders</SortableTh>
+                            <SortableTh col="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Joined</SortableTh>
                         </tr>
                     </thead>
                     <tbody>
@@ -113,6 +139,21 @@ export default function CustomersIndex({
                     </tbody>
                 </table>
             </div>
+
+            {customers.total > customers.data.length && (
+                <div className="mt-4 flex flex-wrap gap-1">
+                    {customers.links.map((link, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            disabled={!link.url}
+                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
+                            className={`rounded px-3 py-1 text-sm ${link.active ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-600 disabled:opacity-40 dark:text-neutral-300'}`}
+                            dangerouslySetInnerHTML={{ __html: link.label }}
+                        />
+                    ))}
+                </div>
+            )}
         </AdminLayout>
     );
 }

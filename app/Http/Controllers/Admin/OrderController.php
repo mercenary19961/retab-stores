@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Services\OrderConfirmationService;
 use App\Services\Shipping\ShippingService;
 use App\Services\WhatsApp\WhatsAppService;
+use App\Support\TableExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -25,13 +26,20 @@ class OrderController extends Controller
         protected WhatsAppService $whatsapp,
     ) {}
 
+    /** Whitelisted sort columns for the table/export. */
+    private const SORTABLE = ['order_number', 'customer_name', 'status', 'payment_status', 'total', 'created_at'];
+
+    /** Full field set for the export, in column order. */
+    private const EXPORT_COLUMNS = [
+        'order_number', 'customer_name', 'customer_email', 'customer_phone',
+        'status', 'payment_status', 'payment_method', 'subtotal', 'discount_total',
+        'shipping_fee', 'total', 'currency', 'tracking_number', 'carrier',
+        'created_at', 'confirmed_at', 'delivered_at',
+    ];
+
     public function index(Request $request)
     {
-        $status = $request->query('status');
-
-        $orders = Order::query()
-            ->when($status, fn ($q) => $q->where('status', $status))
-            ->latest()
+        $orders = $this->filteredQuery($request)
             ->paginate(20)
             ->withQueryString()
             ->through(fn (Order $order) => [
@@ -46,10 +54,53 @@ class OrderController extends Controller
 
         return Inertia::render('admin/orders/index', [
             'orders' => $orders,
-            'filters' => ['status' => $status],
+            'filters' => [
+                'status' => $request->query('status'),
+                'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
+                'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+            ],
             'statuses' => array_map(fn (OrderStatus $s) => $s->value, OrderStatus::cases()),
             'counts' => $this->statusCounts(),
         ]);
+    }
+
+    /** Shared list query for the table and export: status filter + whitelisted sort. */
+    private function filteredQuery(Request $request)
+    {
+        $status = $request->query('status');
+        $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
+        return Order::query()
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($sort, fn ($q) => $q->orderBy($sort, $direction), fn ($q) => $q->latest());
+    }
+
+    public function export(Request $request)
+    {
+        $rows = $this->filteredQuery($request)
+            ->get()
+            ->map(fn (Order $o) => [
+                'order_number' => $o->order_number,
+                'customer_name' => $o->customer_name,
+                'customer_email' => $o->customer_email,
+                'customer_phone' => $o->customer_phone,
+                'status' => $o->status->value,
+                'payment_status' => $o->payment_status->value,
+                'payment_method' => $o->payment_method?->value,
+                'subtotal' => (float) $o->subtotal,
+                'discount_total' => (float) $o->discount_total,
+                'shipping_fee' => (float) $o->shipping_fee,
+                'total' => (float) $o->total,
+                'currency' => $o->currency,
+                'tracking_number' => $o->tracking_number,
+                'carrier' => $o->carrier,
+                'created_at' => $o->created_at?->toDateTimeString(),
+                'confirmed_at' => $o->confirmed_at?->toDateTimeString(),
+                'delivered_at' => $o->delivered_at?->toDateTimeString(),
+            ]);
+
+        return TableExport::download((string) $request->query('format'), 'orders', self::EXPORT_COLUMNS, $rows);
     }
 
     public function show(Order $order)

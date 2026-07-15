@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             AdminUserSeeder::class,
             CatalogSeeder::class,
+            ClientReviewSeeder::class,
         ]);
     }
 }

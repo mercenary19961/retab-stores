@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\OrderReturn;
 use App\Services\ReturnService;
 use App\Support\Media;
+use App\Support\TableExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -22,19 +23,19 @@ class ReturnController extends Controller
         protected ReturnService $returns,
     ) {}
 
+    /** Whitelisted sort columns. order_number/customer_name sort via the joined order. */
+    private const SORTABLE = ['id', 'order_number', 'customer_name', 'status', 'created_at'];
+
+    /** Full field set for the export, in column order. */
+    private const EXPORT_COLUMNS = [
+        'id', 'order_number', 'customer', 'status', 'resolution', 'refund_amount',
+        'refund_shipping', 'reason', 'admin_notes', 'created_at', 'resolved_at',
+    ];
+
     public function index(Request $request)
     {
-        $status = $request->query('status');
-
-        $query = OrderReturn::with('order:id,order_number,customer_name,total', 'user:id,name')
-            ->latest();
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-
         return Inertia::render('admin/returns/index', [
-            'returns' => $query->paginate(20)->withQueryString()->through(fn (OrderReturn $r) => [
+            'returns' => $this->filteredQuery($request)->paginate(20)->withQueryString()->through(fn (OrderReturn $r) => [
                 'id' => $r->id,
                 'order_number' => $r->order?->order_number,
                 'customer' => $r->order?->customer_name ?? $r->user?->name,
@@ -42,10 +43,57 @@ class ReturnController extends Controller
                 'reason' => str($r->reason)->limit(80)->toString(),
                 'created_at' => $r->created_at?->toDateTimeString(),
             ]),
-            'filters' => ['status' => $status],
+            'filters' => [
+                'status' => $request->query('status'),
+                'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
+                'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+            ],
             'statuses' => array_column(ReturnStatus::cases(), 'value'),
             'counts' => OrderReturn::selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status'),
         ]);
+    }
+
+    /** Shared list query for the table and export: status filter + whitelisted sort. */
+    private function filteredQuery(Request $request)
+    {
+        $status = $request->query('status');
+        $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
+        // status qualified so it stays unambiguous once the order join is added.
+        $query = OrderReturn::with('order:id,order_number,customer_name,total', 'user:id,name')
+            ->when($status, fn ($q) => $q->where('order_returns.status', $status));
+
+        if (in_array($sort, ['order_number', 'customer_name'], true)) {
+            $query->leftJoin('orders', 'orders.id', '=', 'order_returns.order_id')
+                ->orderBy("orders.{$sort}", $direction)
+                ->select('order_returns.*');
+        } elseif ($sort) {
+            $query->orderBy("order_returns.{$sort}", $direction);
+        } else {
+            $query->latest();
+        }
+
+        return $query;
+    }
+
+    public function export(Request $request)
+    {
+        $rows = $this->filteredQuery($request)->get()->map(fn (OrderReturn $r) => [
+            'id' => $r->id,
+            'order_number' => $r->order?->order_number,
+            'customer' => $r->order?->customer_name ?? $r->user?->name,
+            'status' => $r->status->value,
+            'resolution' => $r->resolution,
+            'refund_amount' => $r->refund_amount !== null ? (float) $r->refund_amount : null,
+            'refund_shipping' => (int) $r->refund_shipping,
+            'reason' => $r->reason,
+            'admin_notes' => $r->admin_notes,
+            'created_at' => $r->created_at?->toDateTimeString(),
+            'resolved_at' => $r->resolved_at?->toDateTimeString(),
+        ]);
+
+        return TableExport::download((string) $request->query('format'), 'returns', self::EXPORT_COLUMNS, $rows);
     }
 
     public function show(OrderReturn $orderReturn)

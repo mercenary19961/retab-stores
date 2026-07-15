@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Models\Category;
+use App\Models\ClientReview;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\ReviewHelpfulVote;
@@ -19,7 +21,34 @@ use Inertia\Response;
  */
 class ShopController
 {
-    public function index(Request $request): Response
+    /** Curated homepage (`/`). Full product browsing lives at /shop (catalogue). */
+    public function index(): Response
+    {
+        return Inertia::render('shop/index', [
+            'bestSellers' => $this->bestSellers(),
+            'newArrivals' => Product::where('is_active', true)
+                ->with(['category:id,name_ar,name_en,slug', 'images'])
+                ->latest()
+                ->limit(10)
+                ->get()
+                ->map(fn (Product $p) => $this->card($p))
+                ->all(),
+            'featuredCategories' => Category::where('is_active', true)
+                ->whereNotNull('image')
+                ->orderBy('sort_order')
+                ->get(['id', 'name_ar', 'name_en', 'slug', 'image'])
+                ->all(),
+            // Random handful of the active pool → rotates on each refresh.
+            'reviews' => ClientReview::where('is_active', true)
+                ->inRandomOrder()
+                ->limit(4)
+                ->get(['id', 'author_name', 'body', 'rating'])
+                ->all(),
+        ]);
+    }
+
+    /** Full catalogue (`/shop`) — all active products, optionally category-filtered. */
+    public function catalogue(Request $request): Response
     {
         $categories = Category::where('is_active', true)
             ->orderBy('sort_order')
@@ -36,11 +65,44 @@ class ShopController
             $query->where('category_id', $category->id);
         }
 
-        return Inertia::render('shop/index', [
+        return Inertia::render('shop/catalogue', [
             'categories' => $categories,
             'products' => $query->get()->map(fn (Product $p) => $this->card($p))->values(),
             'activeCategory' => $activeCategory,
         ]);
+    }
+
+    /**
+     * Top products for the homepage "best sellers" strip: ranked by units sold in
+     * orders that reached a fulfilled state, then featured, then newest — so the
+     * strip shows a sensible line-up even before any real sales exist.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function bestSellers(): array
+    {
+        $soldStatuses = [
+            OrderStatus::Confirmed->value,
+            OrderStatus::Shipped->value,
+            OrderStatus::Delivered->value,
+        ];
+
+        return Product::where('is_active', true)
+            ->with(['category:id,name_ar,name_en,slug', 'images'])
+            ->withSum(
+                ['orderItems as units_sold' => fn ($q) => $q->whereHas(
+                    'order',
+                    fn ($o) => $o->whereIn('status', $soldStatuses)
+                )],
+                'quantity'
+            )
+            ->orderByDesc('units_sold')
+            ->orderByDesc('is_featured')
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(fn (Product $p) => $this->card($p))
+            ->all();
     }
 
     public function show(Request $request, Product $product, ReviewService $reviewService): Response

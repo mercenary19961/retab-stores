@@ -97,6 +97,67 @@ class AdminProductControllerTest extends TestCase
         $this->assertSame(5, $product->stock);
     }
 
+    public function test_export_csv_contains_headers_and_rows(): void
+    {
+        $category = $this->category();
+        Product::create($this->validPayload($category, ['slug' => 'exp-1', 'sku' => 'EXP-1', 'name_ar' => 'تمر سكري فاخر', 'smacc_sku' => 'SMK-1']));
+
+        $response = $this->actingAs($this->staff())->get('/admin/products/export?format=csv');
+        $response->assertOk();
+        $this->assertStringContainsString('.csv', $response->headers->get('content-disposition'));
+
+        $body = $response->streamedContent();
+        $this->assertStringContainsString('smacc_sku', $body);   // header row
+        $this->assertStringContainsString('تمر سكري فاخر', $body); // data row
+        $this->assertStringContainsString('SMK-1', $body);
+    }
+
+    public function test_export_respects_category_filter(): void
+    {
+        $dates = $this->category();
+        $other = Category::create(['name_ar' => 'أخرى', 'slug' => 'other-' . uniqid()]);
+        Product::create($this->validPayload($dates, ['slug' => 'in-1', 'sku' => 'IN-1', 'name_ar' => 'منتج داخل الفلتر']));
+        Product::create($this->validPayload($other, ['slug' => 'out-1', 'sku' => 'OUT-1', 'name_ar' => 'منتج خارج الفلتر']));
+
+        $body = $this->actingAs($this->staff())
+            ->get("/admin/products/export?format=csv&category={$dates->id}")
+            ->streamedContent();
+
+        $this->assertStringContainsString('منتج داخل الفلتر', $body);
+        $this->assertStringNotContainsString('منتج خارج الفلتر', $body);
+    }
+
+    public function test_export_json_returns_products(): void
+    {
+        $category = $this->category();
+        Product::create($this->validPayload($category, ['slug' => 'j-1', 'sku' => 'J-1']));
+
+        $body = $this->actingAs($this->staff())
+            ->get('/admin/products/export?format=json')
+            ->streamedContent();
+
+        $data = json_decode($body, true);
+        $this->assertIsArray($data);
+        $this->assertCount(1, $data);
+        $this->assertArrayHasKey('smacc_sku', $data[0]);
+    }
+
+    public function test_export_xlsx_returns_spreadsheet(): void
+    {
+        $category = $this->category();
+        Product::create($this->validPayload($category, ['slug' => 'x-1', 'sku' => 'X-1']));
+
+        $response = $this->actingAs($this->staff())->get('/admin/products/export?format=xlsx');
+        $response->assertOk();
+        $this->assertStringContainsString('.xlsx', $response->headers->get('content-disposition'));
+    }
+
+    public function test_customers_cannot_export(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $this->actingAs($customer)->get('/admin/products/export?format=csv')->assertForbidden();
+    }
+
     public function test_destroy_soft_deletes(): void
     {
         $category = $this->category();

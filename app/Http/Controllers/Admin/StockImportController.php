@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\Product;
 use App\Models\Setting;
 use App\Services\Smacc\SmaccImportService;
+use App\Support\TableExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -26,12 +28,47 @@ class StockImportController extends Controller
         protected SmaccImportService $service,
     ) {}
 
+    /** Full field set for the current-stock export, in column order. */
+    private const EXPORT_COLUMNS = [
+        'sku', 'smacc_sku', 'barcode', 'name_ar', 'category', 'stock',
+        'low_stock_threshold', 'is_low_stock', 'is_active', 'updated_at',
+    ];
+
     public function index()
     {
         return Inertia::render('admin/stock-import/index', [
             'lastSynced' => $this->lastSyncedPayload(),
             'history' => $this->recentImports(),
         ]);
+    }
+
+    /**
+     * Snapshot of current website stock (CSV / XLSX / JSON). Feeds the daily
+     * SMACC reconciliation routine; `?low=1` limits it to low-stock items.
+     */
+    public function export(Request $request)
+    {
+        $lowOnly = (bool) $request->query('low');
+
+        $rows = Product::query()
+            ->with('category:id,name_ar')
+            ->when($lowOnly, fn ($q) => $q->whereRaw('stock <= COALESCE(low_stock_threshold, ?)', [5]))
+            ->orderBy('name_ar')
+            ->get()
+            ->map(fn (Product $p) => [
+                'sku' => $p->sku,
+                'smacc_sku' => $p->smacc_sku,
+                'barcode' => $p->barcode,
+                'name_ar' => $p->name_ar,
+                'category' => $p->category?->name_ar,
+                'stock' => $p->stock,
+                'low_stock_threshold' => $p->low_stock_threshold,
+                'is_low_stock' => (int) $p->isLowStock(),
+                'is_active' => (int) $p->is_active,
+                'updated_at' => $p->updated_at?->toDateTimeString(),
+            ]);
+
+        return TableExport::download((string) $request->query('format'), 'inventory-stock', self::EXPORT_COLUMNS, $rows);
     }
 
     public function preview(Request $request)

@@ -7,6 +7,7 @@ use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\LoyaltyService;
+use App\Support\TableExport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,28 +18,19 @@ use Inertia\Inertia;
  */
 class CustomerController extends Controller
 {
+    /** Whitelisted sort columns for the table/export. */
+    private const SORTABLE = ['name', 'phone', 'email', 'whatsapp_opt_in', 'confirmed_purchases_count', 'created_at'];
+
+    /** Full field set for the export, in column order. */
+    private const EXPORT_COLUMNS = [
+        'id', 'name', 'email', 'phone', 'whatsapp_opt_in',
+        'confirmed_purchases_count', 'locale', 'created_at',
+    ];
+
     public function index(Request $request)
     {
-        $search = trim((string) $request->query('q', ''));
-        $optIn = $request->query('opt_in');
-
-        // Customers = non-staff accounts.
-        $query = User::where(fn ($q) => $q->whereNull('role')->orWhereNotIn('role', ['admin', 'editor']))
-            ->latest();
-
-        if ($search !== '') {
-            $query->where(fn ($q) => $q
-                ->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('phone', 'like', "%{$search}%"));
-        }
-
-        if ($optIn !== null && $optIn !== '') {
-            $query->where('whatsapp_opt_in', (bool) $optIn);
-        }
-
         return Inertia::render('admin/customers/index', [
-            'customers' => $query->paginate(25)->withQueryString()->through(fn (User $u) => [
+            'customers' => $this->filteredQuery($request)->paginate(25)->withQueryString()->through(fn (User $u) => [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
@@ -47,8 +39,49 @@ class CustomerController extends Controller
                 'confirmed_purchases' => (int) $u->confirmed_purchases_count,
                 'created_at' => $u->created_at?->toDateString(),
             ]),
-            'filters' => ['q' => $search, 'opt_in' => $optIn],
+            'filters' => [
+                'q' => trim((string) $request->query('q', '')),
+                'opt_in' => $request->query('opt_in'),
+                'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
+                'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+            ],
         ]);
+    }
+
+    /**
+     * Shared list query for the table and export: non-staff accounts, search
+     * (name/email/phone), opt-in filter, and a whitelisted sort.
+     */
+    private function filteredQuery(Request $request)
+    {
+        $search = trim((string) $request->query('q', ''));
+        $optIn = $request->query('opt_in');
+        $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
+        return User::where(fn ($q) => $q->whereNull('role')->orWhereNotIn('role', ['admin', 'editor']))
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('phone', 'like', "%{$search}%")))
+            ->when($optIn !== null && $optIn !== '', fn ($q) => $q->where('whatsapp_opt_in', (bool) $optIn))
+            ->when($sort, fn ($q) => $q->orderBy($sort, $direction), fn ($q) => $q->latest());
+    }
+
+    public function export(Request $request)
+    {
+        $rows = $this->filteredQuery($request)->get()->map(fn (User $u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'email' => $u->email,
+            'phone' => $u->phone,
+            'whatsapp_opt_in' => (int) $u->whatsapp_opt_in,
+            'confirmed_purchases_count' => (int) $u->confirmed_purchases_count,
+            'locale' => $u->locale,
+            'created_at' => $u->created_at?->toDateTimeString(),
+        ]);
+
+        return TableExport::download((string) $request->query('format'), 'customers', self::EXPORT_COLUMNS, $rows);
     }
 
     public function show(User $customer)
