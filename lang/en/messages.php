@@ -61,6 +61,7 @@ return [
         'page_saved' => 'Page saved.',
         'review_saved' => 'Review saved.',
         'review_deleted' => 'Review deleted.',
+        'reviews_imported' => ':count review(s) imported.',
         'return_approved' => 'Return request approved.',
         'return_rejected' => 'Return request rejected.',
         'return_exchanged' => 'Return closed as an exchange.',

@@ -40,7 +40,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         ->only(['index', 'create', 'store', 'edit', 'update'])
         ->parameters(['content-pages' => 'contentPage']);
 
-    // Curated client reviews (Google Maps testimonials pool).
+    // Curated client reviews (Google Maps testimonials pool) + bulk import.
+    Route::get('client-reviews/import', [\App\Http\Controllers\Admin\ClientReviewController::class, 'importForm'])->name('client-reviews.import');
+    Route::post('client-reviews/import', [\App\Http\Controllers\Admin\ClientReviewController::class, 'importStore'])->name('client-reviews.import.store');
     Route::resource('client-reviews', \App\Http\Controllers\Admin\ClientReviewController::class)
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])
         ->parameters(['client-reviews' => 'clientReview']);

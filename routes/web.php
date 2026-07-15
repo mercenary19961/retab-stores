@@ -27,6 +27,7 @@ Route::get('/robots.txt', [\App\Http\Controllers\SeoController::class, 'robots']
 
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');
+Route::get('/shop', [ShopController::class, 'catalogue'])->name('shop.catalogue');
 Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show'])->name('pages.show');
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
 

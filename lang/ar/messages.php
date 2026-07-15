@@ -61,6 +61,7 @@ return [
         'page_saved' => 'تم حفظ الصفحة.',
         'review_saved' => 'تم حفظ التقييم.',
         'review_deleted' => 'تم حذف التقييم.',
+        'reviews_imported' => 'تم استيراد :count تقييم.',
         'return_approved' => 'تمت الموافقة على طلب الإرجاع.',
         'return_rejected' => 'تم رفض طلب الإرجاع.',
         'return_exchanged' => 'تم إغلاق الإرجاع كاستبدال.',

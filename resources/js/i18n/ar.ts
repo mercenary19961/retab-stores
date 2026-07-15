@@ -58,6 +58,8 @@ const ar = {
     },
     primaryBanner: {
         alt: 'تمورنا سعودية المنشأ',
+        title: 'تمورنا',
+        subtitle: 'سعودية المنشأ',
     },
     clientReviews: {
         title: 'آراء العملاء',
@@ -69,6 +71,11 @@ const ar = {
         heading: 'منتجاتنا',
         empty: 'لا توجد منتجات في هذا التصنيف.',
         metaDescription: 'تمور فاخرة من مصنع رطاب الوطن — سكري، خلاص، عجوة والمزيد. توصيل لدول الخليج.',
+    },
+    catalogue: {
+        headTitle: 'المتجر — رطاب للتمور',
+        heading: 'منتجاتنا',
+        all: 'الكل',
     },
     product: {
         addToCart: 'أضف إلى السلة',

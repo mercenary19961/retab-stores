@@ -195,7 +195,7 @@ export default function StoreNavbar() {
                                     {cat.children.map((child) => (
                                         <Link
                                             key={child.id}
-                                            href={`/?category=${child.slug}`}
+                                            href={`/shop?category=${child.slug}`}
                                             className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
                                                 isCategoryActive(child.slug)
                                                     ? 'bg-brand-cream text-brand-teal'
@@ -210,7 +210,7 @@ export default function StoreNavbar() {
                         ) : (
                             <Link
                                 key={cat.id}
-                                href={`/?category=${cat.slug}`}
+                                href={`/shop?category=${cat.slug}`}
                                 className={`${linkBase} ${isCategoryActive(cat.slug) ? linkActive : linkIdle}`}
                             >
                                 {localized(cat, 'name')}
@@ -264,7 +264,7 @@ export default function StoreNavbar() {
                                     cat.children.map((child) => (
                                         <Link
                                             key={child.id}
-                                            href={`/?category=${child.slug}`}
+                                            href={`/shop?category=${child.slug}`}
                                             className="block rounded-lg px-5 py-2 text-sm text-brand-gold hover:bg-brand-cream hover:text-brand-teal"
                                             onClick={() => setMobileOpen(false)}
                                         >
@@ -273,7 +273,7 @@ export default function StoreNavbar() {
                                     ))
                                 ) : (
                                     <Link
-                                        href={`/?category=${cat.slug}`}
+                                        href={`/shop?category=${cat.slug}`}
                                         className="block rounded-lg px-5 py-2 text-sm text-brand-gold hover:bg-brand-cream"
                                         onClick={() => setMobileOpen(false)}
                                     >

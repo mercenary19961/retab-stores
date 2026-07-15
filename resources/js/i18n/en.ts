@@ -54,6 +54,8 @@ const en = {
     },
     primaryBanner: {
         alt: 'Our dates, Saudi origin',
+        title: 'Our Dates',
+        subtitle: 'Saudi Origin',
     },
     clientReviews: {
         title: 'Client Reviews',
@@ -65,6 +67,11 @@ const en = {
         heading: 'Our Products',
         empty: 'No products in this category.',
         metaDescription: 'Premium dates from Retab Alwatan factory — Sukkari, Khalas, Ajwa and more. GCC-wide delivery.',
+    },
+    catalogue: {
+        headTitle: 'Shop — Retab Dates',
+        heading: 'Our Products',
+        all: 'All',
     },
     product: {
         addToCart: 'Add to cart',

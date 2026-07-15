@@ -34,12 +34,12 @@ class ShopControllerTest extends TestCase
         ], $overrides));
     }
 
-    public function test_home_lists_active_products(): void
+    public function test_shop_lists_active_products(): void
     {
         $this->makeProduct();
 
-        $this->get('/')->assertOk()->assertInertia(
-            fn (Assert $page) => $page->component('shop/index')->has('products', 1)->has('categories', 1),
+        $this->get('/shop')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->component('shop/catalogue')->has('products', 1)->has('categories', 1),
         );
     }
 
@@ -69,12 +69,12 @@ class ShopControllerTest extends TestCase
         );
     }
 
-    public function test_best_sellers_omitted_on_filtered_category_view(): void
+    public function test_shop_filters_by_category(): void
     {
-        $this->makeProduct();
+        $this->makeProduct(); // seeded into the 'dates' category
 
-        $this->get('/?category=dates')->assertOk()->assertInertia(
-            fn (Assert $page) => $page->has('bestSellers', 0),
+        $this->get('/shop?category=dates')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->component('shop/catalogue')->has('products', 1)->where('activeCategory', 'dates'),
         );
     }
 

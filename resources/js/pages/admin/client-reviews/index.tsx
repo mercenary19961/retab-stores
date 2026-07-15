@@ -23,12 +23,20 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                 <p className="text-sm text-neutral-500">
                     {activeCount} active in the homepage pool · {reviews.length} total
                 </p>
-                <Link
-                    href="/admin/client-reviews/create"
-                    className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900"
-                >
-                    New review
-                </Link>
+                <div className="flex gap-2">
+                    <Link
+                        href="/admin/client-reviews/import"
+                        className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                    >
+                        Bulk import
+                    </Link>
+                    <Link
+                        href="/admin/client-reviews/create"
+                        className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900"
+                    >
+                        New review
+                    </Link>
+                </div>
             </div>
 
             <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">

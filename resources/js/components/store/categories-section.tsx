@@ -45,7 +45,7 @@ export default function CategoriesSection({ categories }: { categories: Category
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
                     {categories.map((c) => (
-                        <Link key={c.id} href={`/?category=${c.slug}`} className="group flex flex-col items-center">
+                        <Link key={c.id} href={`/shop?category=${c.slug}`} className="group flex flex-col items-center">
                             {/* Bottom-aligned so tiles of differing heights share a baseline. */}
                             <div className="flex h-40 w-full items-end justify-center lg:h-52">
                                 {c.image ? (

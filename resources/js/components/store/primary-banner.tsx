@@ -1,30 +1,38 @@
+import { Link } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Full-bleed promotional banner ("تمورنا سعودية المنشأ"). Same width mechanism
- * as the hero: a plain `w-full` <img> inside a `w-full` section, so it reaches
- * exactly the same right edge as every other full-width section (no scrollbar
- * breakout math). The artwork is a self-contained SVG (embedded product photo +
- * geometric pattern + vector text + CTA pill). Only the baked-in "تسوّق الآن"
- * pill is clickable, via a transparent link over it (SVG button rect x=949 y=338
- * w=272 h=82 within the 1448×508 viewBox).
+ * Full-bleed promotional banner. The WebP is just the product photo with an
+ * empty teal area on the right; the title, subtitle and CTA are real overlaid
+ * elements (so they're translatable and the button is a genuine link). The
+ * overlay sits on the physical right — the photo doesn't mirror, so it stays
+ * over the empty area in both Arabic and English.
  */
 export default function PrimaryBanner() {
     const { t } = useTranslation();
 
     return (
-        <section className="relative w-full">
+        <section className="relative w-full overflow-hidden">
             <img
                 src="/images/banner/banner.webp"
                 alt={t('primaryBanner.alt')}
                 className="block h-auto w-full"
             />
-            <a
-                href="/"
-                aria-label={t('hero.cta')}
-                className="absolute"
-                style={{ left: '65.6%', top: '67.6%', width: '18.9%', height: '16.4%' }}
-            />
+
+            <div className="absolute inset-y-0 right-0 flex w-[48%] flex-col items-center justify-center gap-[1.5%] px-[2%] text-center">
+                <h2 className="font-heading font-black leading-none text-brand-gold text-[clamp(1.75rem,9vw,7.5rem)]">
+                    {t('primaryBanner.title')}
+                </h2>
+                <p className="font-heading font-bold leading-tight text-white text-[clamp(0.85rem,3.6vw,3rem)]">
+                    {t('primaryBanner.subtitle')}
+                </p>
+                <Link
+                    href="/shop"
+                    className="mt-[3%] inline-block rounded-full bg-brand-teal px-[7%] py-[1.6%] font-heading font-black text-white shadow-xl ring-1 ring-white/20 transition-colors hover:bg-brand-teal/90 text-[clamp(0.8rem,2.4vw,2rem)]"
+                >
+                    {t('hero.cta')}
+                </Link>
+            </div>
         </section>
     );
 }

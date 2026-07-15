@@ -42,7 +42,7 @@ export default function StoreHero() {
             line2: t('hero.headlineLine2'),
             subtext: t('hero.subtext'),
             ctaLabel: t('hero.cta'),
-            ctaHref: '/', // TODO: point to /shop once the catalogue split lands.
+            ctaHref: '/shop',
         },
     ];
 
