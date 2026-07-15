@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import ExportButtons from '@/components/admin/export-buttons';
 
 interface LastSynced {
     at: string | null;
@@ -51,6 +52,15 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                 ) : (
                     'Stock has never been synced from SMACC. Upload today’s export to begin.'
                 )}
+            </div>
+
+            {/* Current-stock export (feeds the daily SMACC reconciliation) */}
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
+                <div className="text-sm">
+                    <p className="font-semibold">Export current website stock</p>
+                    <p className="text-neutral-500">Today’s stock snapshot to reconcile against SMACC before the next export.</p>
+                </div>
+                <ExportButtons base="/admin/stock-import/export" />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">

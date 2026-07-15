@@ -1,5 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/layouts/admin-layout';
+import ExportButtons from '@/components/admin/export-buttons';
+import SortableTh from '@/components/admin/sortable-th';
 
 const STATUS_LABELS: Record<string, string> = {
     requested: 'Requested',
@@ -18,6 +20,12 @@ interface ReturnRow {
     created_at: string | null;
 }
 
+interface Filters {
+    status: string | null;
+    sort: string | null;
+    direction: 'asc' | 'desc';
+}
+
 interface Paginator<T> {
     data: T[];
     links: { url: string | null; label: string; active: boolean }[];
@@ -31,12 +39,34 @@ export default function ReturnsIndex({
     counts,
 }: {
     returns: Paginator<ReturnRow>;
-    filters: { status: string | null };
+    filters: Filters;
     statuses: string[];
     counts: Record<string, number>;
 }) {
-    const filterBy = (status: string | null) => {
-        router.get('/admin/returns', status ? { status } : {}, { preserveState: true, preserveScroll: true });
+    const query = (next: Record<string, unknown>) => {
+        router.get(
+            '/admin/returns',
+            {
+                status: filters.status || undefined,
+                sort: filters.sort || undefined,
+                direction: filters.sort ? filters.direction : undefined,
+                ...next,
+            },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
+
+    const filterBy = (status: string | null) => query({ status: status || undefined });
+
+    const toggleSort = (col: string) => {
+        const direction = filters.sort === col && filters.direction === 'asc' ? 'desc' : 'asc';
+        query({ sort: col, direction });
+    };
+
+    const exportParams = {
+        status: filters.status,
+        sort: filters.sort,
+        direction: filters.sort ? filters.direction : undefined,
     };
 
     return (
@@ -64,16 +94,21 @@ export default function ReturnsIndex({
                 ))}
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-sm text-neutral-400">{returns.total} returns</span>
+                <ExportButtons base="/admin/returns/export" params={exportParams} />
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="w-full text-sm">
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
                             <th className="px-4 py-3 font-medium">Return</th>
                             <th className="px-4 py-3 font-medium">Order</th>
                             <th className="px-4 py-3 font-medium">Customer</th>
-                            <th className="px-4 py-3 font-medium">Status</th>
+                            <SortableTh col="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
                             <th className="px-4 py-3 font-medium">Reason</th>
-                            <th className="px-4 py-3 font-medium">Filed</th>
+                            <SortableTh col="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Filed</SortableTh>
                         </tr>
                     </thead>
                     <tbody>
@@ -101,6 +136,21 @@ export default function ReturnsIndex({
                     </tbody>
                 </table>
             </div>
+
+            {returns.total > returns.data.length && (
+                <div className="mt-4 flex flex-wrap gap-1">
+                    {returns.links.map((link, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            disabled={!link.url}
+                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
+                            className={`rounded px-3 py-1 text-sm ${link.active ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-600 disabled:opacity-40 dark:text-neutral-300'}`}
+                            dangerouslySetInnerHTML={{ __html: link.label }}
+                        />
+                    ))}
+                </div>
+            )}
         </AdminLayout>
     );
 }

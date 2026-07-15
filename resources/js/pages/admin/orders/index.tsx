@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/layouts/admin-layout';
 import OrderStatusBadge, { ORDER_STATUS_LABELS } from '@/components/order-status-badge';
+import ExportButtons from '@/components/admin/export-buttons';
+import SortableTh from '@/components/admin/sortable-th';
 
 interface OrderRow {
     order_number: string;
@@ -10,6 +12,12 @@ interface OrderRow {
     payment_method: string | null;
     total: number;
     created_at: string | null;
+}
+
+interface Filters {
+    status: string | null;
+    sort: string | null;
+    direction: 'asc' | 'desc';
 }
 
 interface Paginator<T> {
@@ -27,12 +35,34 @@ export default function OrdersIndex({
     counts,
 }: {
     orders: Paginator<OrderRow>;
-    filters: { status: string | null };
+    filters: Filters;
     statuses: string[];
     counts: Record<string, number>;
 }) {
-    const filterBy = (status: string | null) => {
-        router.get('/admin/orders', status ? { status } : {}, { preserveState: true, preserveScroll: true });
+    const query = (next: Record<string, unknown>) => {
+        router.get(
+            '/admin/orders',
+            {
+                status: filters.status || undefined,
+                sort: filters.sort || undefined,
+                direction: filters.sort ? filters.direction : undefined,
+                ...next,
+            },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
+
+    const filterBy = (status: string | null) => query({ status: status || undefined });
+
+    const toggleSort = (col: string) => {
+        const direction = filters.sort === col && filters.direction === 'asc' ? 'desc' : 'asc';
+        query({ sort: col, direction });
+    };
+
+    const exportParams = {
+        status: filters.status,
+        sort: filters.sort,
+        direction: filters.sort ? filters.direction : undefined,
     };
 
     return (
@@ -60,16 +90,21 @@ export default function OrdersIndex({
                 ))}
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-sm text-neutral-400">{orders.total} orders</span>
+                <ExportButtons base="/admin/orders/export" params={exportParams} />
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="w-full text-sm">
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <th className="px-4 py-3 font-medium">Order</th>
-                            <th className="px-4 py-3 font-medium">Customer</th>
-                            <th className="px-4 py-3 font-medium">Status</th>
+                            <SortableTh col="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Order</SortableTh>
+                            <SortableTh col="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</SortableTh>
+                            <SortableTh col="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
                             <th className="px-4 py-3 font-medium">Payment</th>
-                            <th className="px-4 py-3 font-medium">Total</th>
-                            <th className="px-4 py-3 font-medium">Placed</th>
+                            <SortableTh col="total" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Total</SortableTh>
+                            <SortableTh col="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Placed</SortableTh>
                         </tr>
                     </thead>
                     <tbody>

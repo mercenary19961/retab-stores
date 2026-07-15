@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Media;
+use App\Support\TableExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -118,49 +119,7 @@ class ProductController extends Controller
                 'updated_at' => $p->updated_at?->toDateTimeString(),
             ]);
 
-        $name = 'products-'.now()->format('Y-m-d');
-
-        return match ($format) {
-            'xlsx' => $this->exportXlsx($rows, "{$name}.xlsx"),
-            'json' => response()->streamDownload(
-                fn () => print (json_encode($rows->values(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)),
-                "{$name}.json",
-                ['Content-Type' => 'application/json'],
-            ),
-            default => $this->exportCsv($rows, "{$name}.csv"),
-        };
-    }
-
-    private function exportCsv($rows, string $filename)
-    {
-        return response()->streamDownload(function () use ($rows) {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel reads Arabic correctly
-            fputcsv($out, self::EXPORT_COLUMNS);
-            foreach ($rows as $row) {
-                fputcsv($out, array_map(fn ($c) => $row[$c] ?? '', self::EXPORT_COLUMNS));
-            }
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
-    }
-
-    private function exportXlsx($rows, string $filename)
-    {
-        // Write to a seekable temp file (XLSX is a zip), then stream + delete.
-        $temp = tempnam(sys_get_temp_dir(), 'retab_export_');
-        $writer = new \OpenSpout\Writer\XLSX\Writer();
-        $writer->openToFile($temp);
-        $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues(self::EXPORT_COLUMNS));
-        foreach ($rows as $row) {
-            $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues(
-                array_map(fn ($c) => $row[$c] ?? '', self::EXPORT_COLUMNS)
-            ));
-        }
-        $writer->close();
-
-        return response()->download($temp, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ])->deleteFileAfterSend(true);
+        return TableExport::download($format, 'products', self::EXPORT_COLUMNS, $rows);
     }
 
     public function create()

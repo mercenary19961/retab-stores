@@ -1,7 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Download } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import ExportButtons from '@/components/admin/export-buttons';
+import SortableTh from '@/components/admin/sortable-th';
 
 interface ProductRow {
     id: number;
@@ -71,32 +72,11 @@ export default function ProductsIndex({
         router.delete(`/admin/products/${p.id}`, { preserveScroll: true });
     };
 
-    const exportUrl = (format: 'csv' | 'xlsx' | 'json') => {
-        const params = new URLSearchParams({ format });
-        if (filters.search) params.set('search', filters.search);
-        if (filters.category) params.set('category', String(filters.category));
-        if (filters.sort) {
-            params.set('sort', filters.sort);
-            params.set('direction', filters.direction);
-        }
-        return `/admin/products/export?${params.toString()}`;
-    };
-
-    const SortHeader = ({ col, children }: { col: string; children: ReactNode }) => {
-        const active = filters.sort === col;
-        const Icon = active ? (filters.direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
-        return (
-            <th className="px-4 py-3 font-medium">
-                <button
-                    type="button"
-                    onClick={() => toggleSort(col)}
-                    className={`inline-flex items-center gap-1 hover:text-neutral-200 ${active ? 'text-neutral-200' : ''}`}
-                >
-                    {children}
-                    <Icon className="h-3.5 w-3.5 opacity-60" />
-                </button>
-            </th>
-        );
+    const exportParams = {
+        search: filters.search,
+        category: filters.category,
+        sort: filters.sort,
+        direction: filters.sort ? filters.direction : undefined,
     };
 
     return (
@@ -144,32 +124,19 @@ export default function ProductsIndex({
             {/* Count + export */}
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <span className="text-sm text-neutral-400">{products.total} products</span>
-                <div className="flex items-center gap-2 text-sm">
-                    <span className="flex items-center gap-1.5 text-neutral-400">
-                        <Download className="h-4 w-4" /> Export
-                    </span>
-                    {(['csv', 'xlsx', 'json'] as const).map((f) => (
-                        <a
-                            key={f}
-                            href={exportUrl(f)}
-                            className="rounded-lg border border-neutral-300 px-3 py-1.5 font-medium text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                        >
-                            {f === 'xlsx' ? 'Excel' : f.toUpperCase()}
-                        </a>
-                    ))}
-                </div>
+                <ExportButtons base="/admin/products/export" params={exportParams} />
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="w-full text-sm">
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <SortHeader col="name_ar">Product</SortHeader>
-                            <SortHeader col="sku">SKU</SortHeader>
+                            <SortableTh col="name_ar" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Product</SortableTh>
+                            <SortableTh col="sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SKU</SortableTh>
                             <th className="px-4 py-3 font-medium">SMACC SKU</th>
                             <th className="px-4 py-3 font-medium">Category</th>
-                            <SortHeader col="price">Price</SortHeader>
-                            <SortHeader col="stock">Stock</SortHeader>
+                            <SortableTh col="price" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Price</SortableTh>
+                            <SortableTh col="stock" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Stock</SortableTh>
                             <th className="px-4 py-3 font-medium">Status</th>
                             <th className="px-4 py-3"></th>
                         </tr>
