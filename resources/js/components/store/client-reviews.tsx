@@ -83,7 +83,7 @@ export default function ClientReviews({ reviews }: { reviews: Review[] }) {
                     {/* Feature card — start side (right in RTL); spans both rows on lg. */}
                     <div
                         className="relative flex min-h-[22rem] flex-col justify-center overflow-hidden rounded-[2rem] bg-cover bg-center p-8 text-center md:col-span-2 lg:col-span-1 lg:row-span-2 lg:min-h-full"
-                        style={{ backgroundImage: "url('/images/reviews/feature.png')" }}
+                        style={{ backgroundImage: "url('/images/reviews/feature.webp')" }}
                     >
                         <div className="absolute inset-0 bg-black/45" />
                         <div className="relative">
