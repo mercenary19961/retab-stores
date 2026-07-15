@@ -89,7 +89,7 @@ export default function StoreHero() {
                                 href={slide.ctaHref}
                                 className="inline-block rounded-full bg-brand-teal px-10 py-4 font-heading font-black text-white transition-colors hover:bg-brand-teal/90 text-[clamp(1.15rem,2.6vw,2.5rem)] max-[732px]:px-6 max-[732px]:py-2.5 max-[732px]:text-[0.9rem] max-[480px]:px-4 max-[480px]:py-2 max-[480px]:text-[0.72rem]"
                             >
-                                {slide.ctaLabel}
+                                <span className="cta-shimmer">{slide.ctaLabel}</span>
                             </Link>
                         </div>
                     </div>

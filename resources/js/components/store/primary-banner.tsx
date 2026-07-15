@@ -30,7 +30,7 @@ export default function PrimaryBanner() {
                     href="/shop"
                     className="mt-[3%] inline-block rounded-full bg-brand-teal px-[7%] py-[1.6%] font-heading font-black text-white shadow-xl ring-1 ring-white/20 transition-colors hover:bg-brand-teal/90 text-[clamp(0.8rem,2.4vw,2rem)]"
                 >
-                    {t('hero.cta')}
+                    <span className="cta-shimmer">{t('hero.cta')}</span>
                 </Link>
             </div>
         </section>
