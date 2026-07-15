@@ -48,7 +48,7 @@ export default function StoreFooter() {
     const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
     return (
-        <footer className="mt-12 bg-gradient-to-b from-[#f6e8d4] via-[#f2e3cd] to-[#efdcc4]">
+        <footer className="bg-gradient-to-b from-[#f6e8d4] via-[#f2e3cd] to-[#efdcc4]">
             <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 px-6 py-14 md:flex-row md:items-start md:justify-between md:gap-8">
                 {/* Brand logo — rightmost in RTL, leftmost in LTR */}
                 <div className="shrink-0">
