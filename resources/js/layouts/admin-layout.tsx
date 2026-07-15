@@ -10,6 +10,7 @@ const NAV: NavItem[] = [
     { label: 'Orders', href: '/admin/orders' },
     { label: 'Products', href: '/admin/products' },
     { label: 'Inventory', href: '/admin/stock-import' },
+    { label: 'Reviews', href: '/admin/client-reviews' },
     { label: 'Change Log', href: '/admin/change-log' },
 ];
 

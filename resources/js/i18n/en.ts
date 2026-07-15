@@ -55,6 +55,11 @@ const en = {
     primaryBanner: {
         alt: 'Our dates, Saudi origin',
     },
+    clientReviews: {
+        title: 'Client Reviews',
+        client: 'Client',
+        intro: "At Retab Dates, we take pride in the trust our customers place in us, earned by offering the finest Saudi dates with care and quality worthy of every occasion. Discover our customers' experiences and their thoughts on our product quality, fast delivery, and the service we're committed to with every order.",
+    },
     shop: {
         headTitle: 'Retab Dates — Premium Dates',
         heading: 'Our Products',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
 use App\Models\Category;
+use App\Models\ClientReview;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\ReviewHelpfulVote;
@@ -53,6 +54,12 @@ class ShopController
                 ->whereNotNull('image')
                 ->orderBy('sort_order')
                 ->get(['id', 'name_ar', 'name_en', 'slug', 'image'])
+                ->all(),
+            // Random handful of the active pool → rotates on each refresh.
+            'reviews' => $activeCategory ? [] : ClientReview::where('is_active', true)
+                ->inRandomOrder()
+                ->limit(4)
+                ->get(['id', 'author_name', 'body', 'rating'])
                 ->all(),
             'activeCategory' => $activeCategory,
         ]);

@@ -40,6 +40,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         ->only(['index', 'create', 'store', 'edit', 'update'])
         ->parameters(['content-pages' => 'contentPage']);
 
+    // Curated client reviews (Google Maps testimonials pool).
+    Route::resource('client-reviews', \App\Http\Controllers\Admin\ClientReviewController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])
+        ->parameters(['client-reviews' => 'clientReview']);
+
     // Returns review + resolution.
     Route::get('returns', [ReturnController::class, 'index'])->name('returns.index');
     Route::get('returns/{orderReturn}', [ReturnController::class, 'show'])->name('returns.show');

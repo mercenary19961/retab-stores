@@ -20,7 +20,7 @@ export default function PrimaryBanner() {
                 className="block h-auto w-full"
             />
             <a
-                href="#products"
+                href="/"
                 aria-label={t('hero.cta')}
                 className="absolute"
                 style={{ left: '65.6%', top: '67.6%', width: '18.9%', height: '16.4%' }}

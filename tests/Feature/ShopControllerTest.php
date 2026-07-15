@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
 use App\Models\Category;
+use App\Models\ClientReview;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -116,6 +117,18 @@ class ShopControllerTest extends TestCase
         $this->get('/')->assertOk()->assertInertia(
             fn (Assert $page) => $page->has('newArrivals', 2)
                 ->where('newArrivals.0.slug', 'newer'),
+        );
+    }
+
+    public function test_home_includes_only_active_client_reviews(): void
+    {
+        $this->makeProduct();
+        ClientReview::create(['author_name' => 'Active One', 'body' => 'Great dates.', 'rating' => 5, 'is_active' => true]);
+        ClientReview::create(['author_name' => 'Hidden One', 'body' => 'Not shown.', 'rating' => 4, 'is_active' => false]);
+
+        $this->get('/')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('reviews', 1)
+                ->where('reviews.0.author_name', 'Active One'),
         );
     }
 
