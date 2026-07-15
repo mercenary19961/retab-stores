@@ -205,6 +205,16 @@ const ar = {
             changeLog: 'سجل التغييرات',
         },
         logout: 'تسجيل الخروج',
+        search: {
+            placeholder: 'ابحث عن منتج، طلب، عميل…',
+            noResults: 'لا توجد نتائج',
+            groups: {
+                products: 'المنتجات',
+                orders: 'الطلبات',
+                customers: 'العملاء',
+                pages: 'الصفحات',
+            },
+        },
         dashboard: {
             title: 'لوحة التحكم',
             welcome: 'مرحباً، {{name}}',

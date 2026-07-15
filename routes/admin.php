@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 // Back-office (EN-first). Staff only — admin or editor.
 Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('search', [\App\Http\Controllers\Admin\GlobalSearchController::class, 'search'])->name('search');
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export');

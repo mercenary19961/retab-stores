@@ -18,6 +18,7 @@ import {
 import { useEffect, useState, type PropsWithChildren } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import adminI18n from '@/i18n/admin';
+import GlobalSearch from '@/components/admin/global-search';
 
 type AdminLocale = 'en' | 'ar';
 const STORAGE_KEY = 'retab_admin_locale';
@@ -101,9 +102,12 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
 
             {/* Main column */}
             <div className="flex min-w-0 flex-1 flex-col">
-                <header className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-800 bg-neutral-900 px-6">
-                    <h1 className="truncate text-lg font-semibold">{title}</h1>
-                    <div className="flex items-center gap-4 text-sm">
+                <header className="flex h-16 shrink-0 items-center gap-4 border-b border-neutral-800 bg-neutral-900 px-6">
+                    <h1 className="hidden shrink-0 truncate text-lg font-semibold lg:block">{title}</h1>
+                    <div className="flex flex-1 justify-center">
+                        <GlobalSearch />
+                    </div>
+                    <div className="flex shrink-0 items-center gap-4 text-sm">
                         <button
                             type="button"
                             onClick={toggleLocale}

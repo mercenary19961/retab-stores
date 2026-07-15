@@ -201,6 +201,16 @@ const en = {
             changeLog: 'Change Log',
         },
         logout: 'Log out',
+        search: {
+            placeholder: 'Search products, orders, customers…',
+            noResults: 'No results',
+            groups: {
+                products: 'Products',
+                orders: 'Orders',
+                customers: 'Customers',
+                pages: 'Pages',
+            },
+        },
         dashboard: {
             title: 'Dashboard',
             welcome: 'Welcome, {{name}}',
