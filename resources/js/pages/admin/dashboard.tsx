@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { AlertTriangle, Boxes, Package, RotateCcw, ShoppingBag, Users, type LucideIcon } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/layouts/admin-layout';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface Stats {
     awaitingConfirmation: number;
@@ -32,7 +32,7 @@ const CARDS: Card[] = [
 ];
 
 export default function AdminDashboard({ stats, recentOrders = [] }: { stats: Stats; recentOrders?: RecentOrder[] }) {
-    const { t } = useTranslation();
+    const { t } = useAdminT();
 
     return (
         <AdminLayout title={t('admin.dashboard.title')}>

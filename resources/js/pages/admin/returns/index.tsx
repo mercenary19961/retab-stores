@@ -6,6 +6,7 @@ import ExportButtons from '@/components/admin/export-buttons';
 import ResizableTh from '@/components/admin/resizable-th';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 const COLUMNS: ColumnDef[] = [
     { key: 'return', defaultWidth: 100, minWidth: 70 },
@@ -15,14 +16,6 @@ const COLUMNS: ColumnDef[] = [
     { key: 'reason', defaultWidth: 260, minWidth: 140 },
     { key: 'filed', defaultWidth: 160, minWidth: 120 },
 ];
-
-const STATUS_LABELS: Record<string, string> = {
-    requested: 'Requested',
-    approved: 'Approved',
-    rejected: 'Rejected',
-    exchanged: 'Exchanged',
-    refunded: 'Refunded',
-};
 
 interface ReturnRow {
     id: number;
@@ -56,6 +49,7 @@ export default function ReturnsIndex({
     statuses: string[];
     counts: Record<string, number>;
 }) {
+    const { t } = useAdminT();
     const rc = useResizableColumns({ tableKey: 'returns', columns: COLUMNS });
 
     const query = (next: Record<string, unknown>) => {
@@ -85,8 +79,8 @@ export default function ReturnsIndex({
     };
 
     return (
-        <AdminLayout title="Returns">
-            <Head title="Returns" />
+        <AdminLayout title={t('admin.returns.title')}>
+            <Head title={t('admin.returns.title')} />
 
             <div className="mb-4 flex flex-wrap gap-2">
                 <button
@@ -94,7 +88,7 @@ export default function ReturnsIndex({
                     onClick={() => filterBy(null)}
                     className={`rounded-full px-3 py-1 text-sm ${!filters.status ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'}`}
                 >
-                    All
+                    {t('admin.common.all')}
                 </button>
                 {statuses.map((s) => (
                     <button
@@ -103,7 +97,7 @@ export default function ReturnsIndex({
                         onClick={() => filterBy(s)}
                         className={`rounded-full px-3 py-1 text-sm ${filters.status === s ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'}`}
                     >
-                        {STATUS_LABELS[s] ?? s}
+                        {t(`admin.returns.status.${s}`)}
                         {counts[s] ? ` (${counts[s]})` : ''}
                     </button>
                 ))}
@@ -111,13 +105,13 @@ export default function ReturnsIndex({
 
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm text-neutral-400">{returns.total} returns</span>
+                    <span className="text-sm text-neutral-400">{t('admin.returns.count', { n: returns.total })}</span>
                     {rc.isDefault ? (
                         <span className="hidden items-center gap-1.5 text-xs text-neutral-500 lg:inline-flex">
-                            <MoveHorizontal className="h-3.5 w-3.5" /> Drag column edges to resize
+                            <MoveHorizontal className="h-3.5 w-3.5" /> {t('admin.common.dragToResize')}
                         </span>
                     ) : (
-                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>Reset columns</Button>
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>{t('admin.common.resetColumns')}</Button>
                     )}
                 </div>
                 <ExportButtons base="/admin/returns/export" params={exportParams} />
@@ -127,19 +121,19 @@ export default function ReturnsIndex({
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <ResizableTh colKey="return" width={rc.widths.return} resizeProps={rc.getResizeHandleProps('return')} resizing={rc.resizing === 'return'} sortKey="id" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Return</ResizableTh>
-                            <ResizableTh colKey="order" width={rc.widths.order} resizeProps={rc.getResizeHandleProps('order')} resizing={rc.resizing === 'order'} sortKey="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Order</ResizableTh>
-                            <ResizableTh colKey="customer" width={rc.widths.customer} resizeProps={rc.getResizeHandleProps('customer')} resizing={rc.resizing === 'customer'} sortKey="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</ResizableTh>
-                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</ResizableTh>
-                            <ResizableTh colKey="reason" width={rc.widths.reason} resizeProps={rc.getResizeHandleProps('reason')} resizing={rc.resizing === 'reason'}>Reason</ResizableTh>
-                            <ResizableTh colKey="filed" width={rc.widths.filed} resizeProps={rc.getResizeHandleProps('filed')} resizing={rc.resizing === 'filed'} sortKey="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Filed</ResizableTh>
+                            <ResizableTh colKey="return" width={rc.widths.return} resizeProps={rc.getResizeHandleProps('return')} resizing={rc.resizing === 'return'} sortKey="id" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.return')}</ResizableTh>
+                            <ResizableTh colKey="order" width={rc.widths.order} resizeProps={rc.getResizeHandleProps('order')} resizing={rc.resizing === 'order'} sortKey="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.order')}</ResizableTh>
+                            <ResizableTh colKey="customer" width={rc.widths.customer} resizeProps={rc.getResizeHandleProps('customer')} resizing={rc.resizing === 'customer'} sortKey="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.customer')}</ResizableTh>
+                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.status')}</ResizableTh>
+                            <ResizableTh colKey="reason" width={rc.widths.reason} resizeProps={rc.getResizeHandleProps('reason')} resizing={rc.resizing === 'reason'}>{t('admin.returns.cols.reason')}</ResizableTh>
+                            <ResizableTh colKey="filed" width={rc.widths.filed} resizeProps={rc.getResizeHandleProps('filed')} resizing={rc.resizing === 'filed'} sortKey="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.filed')}</ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
                         {returns.data.length === 0 && (
                             <tr>
                                 <td colSpan={6} className="px-4 py-8 text-center text-neutral-400">
-                                    No returns.
+                                    {t('admin.returns.empty')}
                                 </td>
                             </tr>
                         )}
@@ -152,7 +146,7 @@ export default function ReturnsIndex({
                                 </td>
                                 <td className="truncate px-4 py-3 font-mono">{r.order_number ?? '—'}</td>
                                 <td className="truncate px-4 py-3">{r.customer ?? '—'}</td>
-                                <td className="truncate px-4 py-3">{STATUS_LABELS[r.status] ?? r.status}</td>
+                                <td className="truncate px-4 py-3">{t(`admin.returns.status.${r.status}`)}</td>
                                 <td className="truncate px-4 py-3 text-neutral-500" dir="auto">{r.reason}</td>
                                 <td className="truncate px-4 py-3 text-neutral-500">{r.created_at ?? '—'}</td>
                             </tr>

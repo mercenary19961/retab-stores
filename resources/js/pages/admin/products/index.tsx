@@ -8,6 +8,7 @@ import ResizableTh from '@/components/admin/resizable-th';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 const COLUMNS: ColumnDef[] = [
     { key: 'product', defaultWidth: 300, minWidth: 160 },
@@ -64,6 +65,7 @@ export default function ProductsIndex({
     categories: Category[];
     undoMeta?: UndoMeta | null;
 }) {
+    const { t } = useAdminT();
     const [search, setSearch] = useState(filters.search ?? '');
     const rc = useResizableColumns({ tableKey: 'products', columns: COLUMNS });
 
@@ -87,7 +89,7 @@ export default function ProductsIndex({
     };
 
     const destroy = (p: ProductRow) => {
-        if (!window.confirm(`Delete "${p.name_ar}"? It will be hidden but order history is kept.`)) return;
+        if (!window.confirm(t('admin.products.deleteConfirm', { name: p.name_ar }))) return;
         router.delete(`/admin/products/${p.id}`, { preserveScroll: true });
     };
 
@@ -99,8 +101,8 @@ export default function ProductsIndex({
     };
 
     return (
-        <AdminLayout title="Products">
-            <Head title="Products" />
+        <AdminLayout title={t('admin.products.title')}>
+            <Head title={t('admin.products.title')} />
 
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <form
@@ -113,11 +115,11 @@ export default function ProductsIndex({
                     <input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search name or SKU…"
+                        placeholder={t('admin.products.searchPlaceholder')}
                         className="min-w-0 flex-1 rounded border border-neutral-300 px-3 py-1.5 text-sm sm:w-56 sm:flex-none dark:border-neutral-700 dark:bg-neutral-800"
                     />
                     <button type="submit" className="shrink-0 rounded bg-neutral-900 px-3 py-1.5 text-sm text-white dark:bg-white dark:text-neutral-900">
-                        Search
+                        {t('admin.common.search')}
                     </button>
                 </form>
 
@@ -126,28 +128,28 @@ export default function ProductsIndex({
                     onChange={(e) => query({ category: e.target.value || undefined, page: undefined })}
                     className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm sm:w-auto dark:border-neutral-700 dark:bg-neutral-800"
                 >
-                    <option value="">All categories</option>
+                    <option value="">{t('admin.products.allCategories')}</option>
                     {categories.map((c) => (
                         <option key={c.id} value={c.id}>{c.name_ar}</option>
                     ))}
                 </select>
 
                 <div className="sm:ms-auto">
-                    <Button href="/admin/products/create" variant="primary" icon={Plus} className="w-full sm:w-auto">New product</Button>
+                    <Button href="/admin/products/create" variant="primary" icon={Plus} className="w-full sm:w-auto">{t('admin.products.newProduct')}</Button>
                 </div>
             </div>
 
             {/* Count + undo + reset/hint + export */}
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm text-neutral-400">{products.total} products</span>
+                    <span className="text-sm text-neutral-400">{t('admin.products.count', { n: products.total })}</span>
                     <UndoButton section="products" undoMeta={undoMeta} />
                     {rc.isDefault ? (
                         <span className="hidden items-center gap-1.5 text-xs text-neutral-500 lg:inline-flex">
-                            <MoveHorizontal className="h-3.5 w-3.5" /> Drag column edges to resize
+                            <MoveHorizontal className="h-3.5 w-3.5" /> {t('admin.common.dragToResize')}
                         </span>
                     ) : (
-                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>Reset columns</Button>
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>{t('admin.common.resetColumns')}</Button>
                     )}
                 </div>
                 <ExportButtons base="/admin/products/export" params={exportParams} />
@@ -157,20 +159,20 @@ export default function ProductsIndex({
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <ResizableTh colKey="product" width={rc.widths.product} resizeProps={rc.getResizeHandleProps('product')} resizing={rc.resizing === 'product'} sortKey="name_ar" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Product</ResizableTh>
-                            <ResizableTh colKey="sku" width={rc.widths.sku} resizeProps={rc.getResizeHandleProps('sku')} resizing={rc.resizing === 'sku'} sortKey="sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SKU</ResizableTh>
-                            <ResizableTh colKey="smacc_sku" width={rc.widths.smacc_sku} resizeProps={rc.getResizeHandleProps('smacc_sku')} resizing={rc.resizing === 'smacc_sku'} sortKey="smacc_sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SMACC SKU</ResizableTh>
-                            <ResizableTh colKey="category" width={rc.widths.category} resizeProps={rc.getResizeHandleProps('category')} resizing={rc.resizing === 'category'} sortKey="category" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Category</ResizableTh>
-                            <ResizableTh colKey="price" width={rc.widths.price} resizeProps={rc.getResizeHandleProps('price')} resizing={rc.resizing === 'price'} sortKey="price" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Price</ResizableTh>
-                            <ResizableTh colKey="stock" width={rc.widths.stock} resizeProps={rc.getResizeHandleProps('stock')} resizing={rc.resizing === 'stock'} sortKey="stock" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Stock</ResizableTh>
-                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="is_active" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</ResizableTh>
-                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'} className="text-end">Actions</ResizableTh>
+                            <ResizableTh colKey="product" width={rc.widths.product} resizeProps={rc.getResizeHandleProps('product')} resizing={rc.resizing === 'product'} sortKey="name_ar" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.product')}</ResizableTh>
+                            <ResizableTh colKey="sku" width={rc.widths.sku} resizeProps={rc.getResizeHandleProps('sku')} resizing={rc.resizing === 'sku'} sortKey="sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.sku')}</ResizableTh>
+                            <ResizableTh colKey="smacc_sku" width={rc.widths.smacc_sku} resizeProps={rc.getResizeHandleProps('smacc_sku')} resizing={rc.resizing === 'smacc_sku'} sortKey="smacc_sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.smaccSku')}</ResizableTh>
+                            <ResizableTh colKey="category" width={rc.widths.category} resizeProps={rc.getResizeHandleProps('category')} resizing={rc.resizing === 'category'} sortKey="category" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.category')}</ResizableTh>
+                            <ResizableTh colKey="price" width={rc.widths.price} resizeProps={rc.getResizeHandleProps('price')} resizing={rc.resizing === 'price'} sortKey="price" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.price')}</ResizableTh>
+                            <ResizableTh colKey="stock" width={rc.widths.stock} resizeProps={rc.getResizeHandleProps('stock')} resizing={rc.resizing === 'stock'} sortKey="stock" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.stock')}</ResizableTh>
+                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="is_active" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.status')}</ResizableTh>
+                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'} className="text-end">{t('admin.common.actions')}</ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
                         {products.data.length === 0 && (
                             <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-neutral-400">No products.</td>
+                                <td colSpan={8} className="px-4 py-8 text-center text-neutral-400">{t('admin.products.empty')}</td>
                             </tr>
                         )}
                         {products.data.map((p) => (
@@ -183,7 +185,7 @@ export default function ProductsIndex({
                                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-neutral-100 text-sm dark:bg-neutral-800">🌴</div>
                                         )}
                                         <span dir="auto" className="truncate">{p.name_ar}</span>
-                                        {p.is_featured && <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">Featured</span>}
+                                        {p.is_featured && <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">{t('admin.products.featured')}</span>}
                                     </div>
                                 </td>
                                 <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.sku}</td>
@@ -204,15 +206,15 @@ export default function ProductsIndex({
                                 </td>
                                 <td className="px-4 py-3">
                                     {p.is_active ? (
-                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">Active</span>
+                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">{t('admin.products.active')}</span>
                                     ) : (
-                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">Hidden</span>
+                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t('admin.products.hidden')}</span>
                                     )}
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end gap-2">
-                                        <Button size="sm" variant="secondary" icon={Pencil} href={`/admin/products/${p.id}/edit`}>Edit</Button>
-                                        <Button size="sm" variant="danger" icon={Trash2} onClick={() => destroy(p)}>Delete</Button>
+                                        <Button size="sm" variant="secondary" icon={Pencil} href={`/admin/products/${p.id}/edit`}>{t('admin.common.edit')}</Button>
+                                        <Button size="sm" variant="danger" icon={Trash2} onClick={() => destroy(p)}>{t('admin.common.delete')}</Button>
                                     </div>
                                 </td>
                             </tr>

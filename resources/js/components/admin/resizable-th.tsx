@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { type MouseEvent, type ReactNode } from 'react';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface ResizeProps {
     onMouseDown?: (e: MouseEvent) => void;
@@ -33,6 +34,7 @@ export default function ResizableTh({
     onSort?: (col: string) => void;
     className?: string;
 }) {
+    const { t } = useAdminT();
     const sortable = typeof onSort === 'function' && sortKey !== undefined;
     const active = sortable && sort === sortKey;
     const Icon = active ? (direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
@@ -57,7 +59,7 @@ export default function ResizableTh({
                 it thickens to brand-gold on hover / while dragging. */}
             <span
                 {...resizeProps}
-                title="Drag to resize · double-click to reset"
+                title={t('admin.common.dragTooltip')}
                 className="group/grip absolute inset-y-0 end-0 z-10 flex w-3 cursor-col-resize touch-none select-none items-stretch justify-center"
             >
                 <span

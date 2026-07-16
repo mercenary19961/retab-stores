@@ -7,6 +7,7 @@ import ExportButtons from '@/components/admin/export-buttons';
 import ResizableTh from '@/components/admin/resizable-th';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 const COLUMNS: ColumnDef[] = [
     { key: 'customer', defaultWidth: 200, minWidth: 120 },
@@ -47,6 +48,7 @@ export default function CustomersIndex({
     customers: Paginator<CustomerRow>;
     filters: Filters;
 }) {
+    const { t } = useAdminT();
     const [search, setSearch] = useState(filters.q ?? '');
     const rc = useResizableColumns({ tableKey: 'customers', columns: COLUMNS });
 
@@ -83,35 +85,35 @@ export default function CustomersIndex({
     };
 
     return (
-        <AdminLayout title="Customers">
-            <Head title="Customers" />
+        <AdminLayout title={t('admin.customers.title')}>
+            <Head title={t('admin.customers.title')} />
 
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <form onSubmit={submit} className="flex w-full gap-2 sm:w-auto">
                     <input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search name / email / phone…"
+                        placeholder={t('admin.customers.searchPlaceholder')}
                         className="min-w-0 flex-1 rounded border border-neutral-300 px-3 py-1.5 text-sm sm:w-64 sm:flex-none dark:border-neutral-700 dark:bg-neutral-950"
                     />
                     <button type="submit" className="shrink-0 rounded bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white dark:bg-white dark:text-neutral-900">
-                        Search
+                        {t('admin.common.search')}
                     </button>
                 </form>
 
                 <div className="flex flex-wrap gap-2">
                     {[
-                        { label: 'All', value: undefined },
-                        { label: 'Opted in', value: '1' },
-                        { label: 'Not opted in', value: '0' },
+                        { key: 'all', value: undefined },
+                        { key: 'optedIn', value: '1' },
+                        { key: 'notOptedIn', value: '0' },
                     ].map((f) => (
                         <button
-                            key={f.label}
+                            key={f.key}
                             type="button"
                             onClick={() => apply({ opt_in: f.value })}
                             className={`rounded-full px-3 py-1 text-sm ${(filters.opt_in ?? undefined) === f.value ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'}`}
                         >
-                            {f.label}
+                            {t(`admin.customers.filters.${f.key}`)}
                         </button>
                     ))}
                 </div>
@@ -119,13 +121,13 @@ export default function CustomersIndex({
 
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm text-neutral-400">{customers.total} customers</span>
+                    <span className="text-sm text-neutral-400">{t('admin.customers.count', { n: customers.total })}</span>
                     {rc.isDefault ? (
                         <span className="hidden items-center gap-1.5 text-xs text-neutral-500 lg:inline-flex">
-                            <MoveHorizontal className="h-3.5 w-3.5" /> Drag column edges to resize
+                            <MoveHorizontal className="h-3.5 w-3.5" /> {t('admin.common.dragToResize')}
                         </span>
                     ) : (
-                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>Reset columns</Button>
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>{t('admin.common.resetColumns')}</Button>
                     )}
                 </div>
                 <ExportButtons base="/admin/customers/export" params={exportParams} />
@@ -135,17 +137,17 @@ export default function CustomersIndex({
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <ResizableTh colKey="customer" width={rc.widths.customer} resizeProps={rc.getResizeHandleProps('customer')} resizing={rc.resizing === 'customer'} sortKey="name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</ResizableTh>
-                            <ResizableTh colKey="phone" width={rc.widths.phone} resizeProps={rc.getResizeHandleProps('phone')} resizing={rc.resizing === 'phone'} sortKey="phone" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Phone</ResizableTh>
-                            <ResizableTh colKey="email" width={rc.widths.email} resizeProps={rc.getResizeHandleProps('email')} resizing={rc.resizing === 'email'} sortKey="email" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Email</ResizableTh>
-                            <ResizableTh colKey="opt_in" width={rc.widths.opt_in} resizeProps={rc.getResizeHandleProps('opt_in')} resizing={rc.resizing === 'opt_in'} sortKey="whatsapp_opt_in" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>WhatsApp opt-in</ResizableTh>
-                            <ResizableTh colKey="confirmed" width={rc.widths.confirmed} resizeProps={rc.getResizeHandleProps('confirmed')} resizing={rc.resizing === 'confirmed'} sortKey="confirmed_purchases_count" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Confirmed orders</ResizableTh>
-                            <ResizableTh colKey="joined" width={rc.widths.joined} resizeProps={rc.getResizeHandleProps('joined')} resizing={rc.resizing === 'joined'} sortKey="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Joined</ResizableTh>
+                            <ResizableTh colKey="customer" width={rc.widths.customer} resizeProps={rc.getResizeHandleProps('customer')} resizing={rc.resizing === 'customer'} sortKey="name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.customers.cols.customer')}</ResizableTh>
+                            <ResizableTh colKey="phone" width={rc.widths.phone} resizeProps={rc.getResizeHandleProps('phone')} resizing={rc.resizing === 'phone'} sortKey="phone" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.customers.cols.phone')}</ResizableTh>
+                            <ResizableTh colKey="email" width={rc.widths.email} resizeProps={rc.getResizeHandleProps('email')} resizing={rc.resizing === 'email'} sortKey="email" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.customers.cols.email')}</ResizableTh>
+                            <ResizableTh colKey="opt_in" width={rc.widths.opt_in} resizeProps={rc.getResizeHandleProps('opt_in')} resizing={rc.resizing === 'opt_in'} sortKey="whatsapp_opt_in" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.customers.cols.optIn')}</ResizableTh>
+                            <ResizableTh colKey="confirmed" width={rc.widths.confirmed} resizeProps={rc.getResizeHandleProps('confirmed')} resizing={rc.resizing === 'confirmed'} sortKey="confirmed_purchases_count" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.customers.cols.confirmed')}</ResizableTh>
+                            <ResizableTh colKey="joined" width={rc.widths.joined} resizeProps={rc.getResizeHandleProps('joined')} resizing={rc.resizing === 'joined'} sortKey="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.customers.cols.joined')}</ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
                         {customers.data.length === 0 && (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-400">No customers.</td></tr>
+                            <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-400">{t('admin.customers.empty')}</td></tr>
                         )}
                         {customers.data.map((c) => (
                             <tr key={c.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
@@ -156,7 +158,7 @@ export default function CustomersIndex({
                                 </td>
                                 <td className="truncate px-4 py-3 font-mono">{c.phone ?? '—'}</td>
                                 <td className="truncate px-4 py-3">{c.email ?? '—'}</td>
-                                <td className="px-4 py-3">{c.whatsapp_opt_in ? 'Yes' : 'No'}</td>
+                                <td className="px-4 py-3">{c.whatsapp_opt_in ? t('admin.common.yes') : t('admin.common.no')}</td>
                                 <td className="px-4 py-3">{c.confirmed_purchases}</td>
                                 <td className="truncate px-4 py-3 text-neutral-500">{c.created_at ?? '—'}</td>
                             </tr>
