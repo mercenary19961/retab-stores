@@ -1,5 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
+import { Plus, Upload } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 
 interface ReviewRow {
     id: number;
@@ -24,18 +26,8 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                     {activeCount} active in the homepage pool · {reviews.length} total
                 </p>
                 <div className="flex gap-2">
-                    <Link
-                        href="/admin/client-reviews/import"
-                        className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                    >
-                        Bulk import
-                    </Link>
-                    <Link
-                        href="/admin/client-reviews/create"
-                        className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900"
-                    >
-                        New review
-                    </Link>
+                    <Button href="/admin/client-reviews/import" variant="secondary" icon={Upload}>Bulk import</Button>
+                    <Button href="/admin/client-reviews/create" variant="primary" icon={Plus}>New review</Button>
                 </div>
             </div>
 

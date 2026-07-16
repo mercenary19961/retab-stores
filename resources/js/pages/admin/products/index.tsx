@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
 import SortableTh from '@/components/admin/sortable-th';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
@@ -116,12 +118,9 @@ export default function ProductsIndex({
                     ))}
                 </select>
 
-                <Link
-                    href="/admin/products/create"
-                    className="ms-auto rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                >
-                    + New product
-                </Link>
+                <div className="ms-auto">
+                    <Button href="/admin/products/create" variant="primary" icon={Plus}>New product</Button>
+                </div>
             </div>
 
             {/* Count + undo + export */}
@@ -189,9 +188,11 @@ export default function ProductsIndex({
                                         <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">Hidden</span>
                                     )}
                                 </td>
-                                <td className="px-4 py-3 text-right">
-                                    <Link href={`/admin/products/${p.id}/edit`} className="text-blue-600 hover:underline dark:text-blue-400">Edit</Link>
-                                    <button type="button" onClick={() => destroy(p)} className="ms-3 text-red-600 hover:underline dark:text-red-400">Delete</button>
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <Button size="sm" variant="secondary" icon={Pencil} href={`/admin/products/${p.id}/edit`}>Edit</Button>
+                                        <Button size="sm" variant="danger" icon={Trash2} onClick={() => destroy(p)}>Delete</Button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

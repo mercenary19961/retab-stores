@@ -269,6 +269,19 @@ class ChangeLogTest extends TestCase
                 ->where('logs.data.0.revertable', true));
     }
 
+    public function test_log_row_carries_go_to_item_data(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product();
+
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 99]));
+
+        $this->actingAs($staff)->get('/admin/change-log')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('logs.data.0.edit_url', "/admin/products/{$product->id}/edit")
+                ->where('logs.data.0.fields', fn ($fields) => collect($fields)->contains('price')));
+    }
+
     public function test_conflict_pins_the_blocking_change(): void
     {
         $staff = $this->staff();

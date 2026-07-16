@@ -1,6 +1,9 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
+import { useHighlightFields } from '@/hooks/use-highlight-fields';
 
 interface Category {
     id: number;
@@ -35,6 +38,7 @@ interface Product {
 
 export default function ProductForm({ product, categories }: { product: Product | null; categories: Category[] }) {
     const editing = product !== null;
+    useHighlightFields();
 
     const { data, setData, post, put, processing, errors } = useForm({
         category_id: product?.category_id ?? categories[0]?.id ?? '',
@@ -76,7 +80,7 @@ export default function ProductForm({ product, categories }: { product: Product 
     };
 
     const text = (name: keyof typeof data, label: string, opts: { required?: boolean; type?: string; placeholder?: string } = {}) => (
-        <label className="block">
+        <label className="block" id={`field-${name}`}>
             <span className="text-sm text-neutral-600 dark:text-neutral-300">
                 {label}
                 {opts.required && <span className="text-red-500"> *</span>}
@@ -102,7 +106,7 @@ export default function ProductForm({ product, categories }: { product: Product 
             <form onSubmit={submit} className="max-w-3xl space-y-6">
                 <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="font-bold">Details</h2>
-                    <label className="block">
+                    <label className="block" id="field-category_id">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">Category *</span>
                         <select
                             value={data.category_id}
@@ -120,7 +124,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                         {text('name_en', 'Name (English)')}
                     </div>
                     {text('slug', 'Slug', { placeholder: 'auto-generated if blank' })}
-                    <label className="block">
+                    <label className="block" id="field-description_ar">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">Description (Arabic)</span>
                         <textarea
                             value={data.description_ar}
@@ -129,7 +133,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                             className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
                         />
                     </label>
-                    <label className="block">
+                    <label className="block" id="field-description_en">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">Description (English)</span>
                         <textarea
                             value={data.description_en}
@@ -155,27 +159,21 @@ export default function ProductForm({ product, categories }: { product: Product 
 
                 <section className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="font-bold">Visibility</h2>
-                    <label className="flex items-center gap-2 text-sm">
+                    <label className="flex items-center gap-2 text-sm" id="field-is_active">
                         <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} />
                         Active (visible in the storefront)
                     </label>
-                    <label className="flex items-center gap-2 text-sm">
+                    <label className="flex items-center gap-2 text-sm" id="field-is_featured">
                         <input type="checkbox" checked={data.is_featured} onChange={(e) => setData('is_featured', e.target.checked)} />
                         Featured
                     </label>
                 </section>
 
                 <div className="flex gap-3">
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="rounded-lg bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-                    >
+                    <Button type="submit" variant="primary" disabled={processing}>
                         {editing ? 'Save changes' : 'Create product'}
-                    </button>
-                    <Link href="/admin/products" className="rounded-lg border border-neutral-300 px-6 py-2.5 text-sm dark:border-neutral-700">
-                        Cancel
-                    </Link>
+                    </Button>
+                    <Button href="/admin/products" variant="secondary">Cancel</Button>
                 </div>
             </form>
 
@@ -224,13 +222,9 @@ export default function ProductForm({ product, categories }: { product: Product 
                             onChange={(e) => imageForm.setData('images', Array.from(e.target.files ?? []))}
                             className="text-sm"
                         />
-                        <button
-                            type="submit"
-                            disabled={imageForm.processing || imageForm.data.images.length === 0}
-                            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-neutral-900"
-                        >
+                        <Button type="submit" variant="primary" icon={Upload} disabled={imageForm.processing || imageForm.data.images.length === 0}>
                             Upload
-                        </button>
+                        </Button>
                     </form>
                     {imageForm.errors.images && <p className="text-xs text-red-500">{imageForm.errors.images}</p>}
                 </section>

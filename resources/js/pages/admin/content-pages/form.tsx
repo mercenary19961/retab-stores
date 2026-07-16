@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
+import { useHighlightFields } from '@/hooks/use-highlight-fields';
 
 interface PageData {
     id: number;
@@ -13,6 +15,7 @@ interface PageData {
 }
 
 export default function ContentPageForm({ page }: { page: PageData | null }) {
+    useHighlightFields();
     const { data, setData, post, put, processing, errors } = useForm({
         slug: page?.slug ?? '',
         title_ar: page?.title_ar ?? '',
@@ -31,8 +34,8 @@ export default function ContentPageForm({ page }: { page: PageData | null }) {
         }
     };
 
-    const field = (label: string, el: React.ReactNode, error?: string) => (
-        <label className="block">
+    const field = (name: string, label: string, el: React.ReactNode, error?: string) => (
+        <label className="block" id={`field-${name}`}>
             <span className="text-sm text-neutral-500">{label}</span>
             {el}
             {error && <span className="block text-xs text-red-500">{error}</span>}
@@ -50,38 +53,34 @@ export default function ContentPageForm({ page }: { page: PageData | null }) {
             </div>
 
             <form onSubmit={submit} className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                {field('Slug (public URL: /pages/{slug})', (
+                {field('slug', 'Slug (public URL: /pages/{slug})', (
                     <input value={data.slug} onChange={(e) => setData('slug', e.target.value)} className={`${inputCls} font-mono`} />
                 ), errors.slug)}
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {field('Title (AR) *', (
+                    {field('title_ar', 'Title (AR) *', (
                         <input dir="rtl" value={data.title_ar} onChange={(e) => setData('title_ar', e.target.value)} className={inputCls} />
                     ), errors.title_ar)}
-                    {field('Title (EN)', (
+                    {field('title_en', 'Title (EN)', (
                         <input value={data.title_en} onChange={(e) => setData('title_en', e.target.value)} className={inputCls} />
                     ), errors.title_en)}
                 </div>
 
-                {field('Body (AR) *', (
+                {field('body_ar', 'Body (AR) *', (
                     <textarea dir="rtl" rows={10} value={data.body_ar} onChange={(e) => setData('body_ar', e.target.value)} className={inputCls} />
                 ), errors.body_ar)}
-                {field('Body (EN)', (
+                {field('body_en', 'Body (EN)', (
                     <textarea rows={10} value={data.body_en} onChange={(e) => setData('body_en', e.target.value)} className={inputCls} />
                 ), errors.body_en)}
 
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-sm" id="field-is_published">
                     <input type="checkbox" checked={data.is_published} onChange={(e) => setData('is_published', e.target.checked)} />
                     Published (visible on the storefront)
                 </label>
 
-                <button
-                    type="submit"
-                    disabled={processing}
-                    className="rounded-lg bg-neutral-900 px-5 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-                >
+                <Button type="submit" variant="primary" disabled={processing}>
                     Save page
-                </button>
+                </Button>
             </form>
         </AdminLayout>
     );

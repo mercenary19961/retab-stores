@@ -48,6 +48,10 @@ class ChangeLogController extends Controller
                 'reverted_at' => $log->reverted_at?->toDateTimeString(),
                 'reverted_by' => $log->revertedByUser?->name,
                 'reverts_log_id' => $log->reverts_log_id,
+                // "Go to item": where to edit the subject, and which fields to
+                // highlight there. Hidden for deletes (the subject is trashed).
+                'edit_url' => $log->action === ActivityLog::ACTION_DELETED ? null : $this->changeLog->editUrl($log),
+                'fields' => $this->changeLog->changedKeys($log),
             ]);
 
         return Inertia::render('admin/change-log/index', [

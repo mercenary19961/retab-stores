@@ -1,5 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 
 interface PageRow {
@@ -18,12 +20,9 @@ export default function ContentPagesIndex({ pages, undoMeta = null }: { pages: P
 
             <div className="mb-4 flex items-center justify-between gap-3">
                 <UndoButton section="content_pages" undoMeta={undoMeta} />
-                <Link
-                    href="/admin/content-pages/create"
-                    className="ms-auto rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900"
-                >
-                    New page
-                </Link>
+                <div className="ms-auto">
+                    <Button href="/admin/content-pages/create" variant="primary" icon={Plus}>New page</Button>
+                </div>
             </div>
 
             <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">

@@ -436,12 +436,12 @@ class ChangeLogService
             $blocker?->id,
             $blocker ? ($blocker->label ?? $this->sectionLabel($blocker)) : null,
             $chainDepth,
-            $this->editUrlFor($log),
+            $this->editUrl($log),
         );
     }
 
-    /** Where to edit the subject directly (offered when the revert chain is too long). */
-    private function editUrlFor(ActivityLog $log): ?string
+    /** Where to edit the subject directly (the change-log "Go to item" link + long-chain fallback). */
+    public function editUrl(ActivityLog $log): ?string
     {
         return match ($log->subject_type) {
             Product::class => $log->subject_id ? "/admin/products/{$log->subject_id}/edit" : null,
@@ -449,6 +449,14 @@ class ChangeLogService
             ActivityLog::SUBJECT_SETTINGS => '/admin/settings',
             default => null,
         };
+    }
+
+    /** Raw field keys this entry changed (for the ?highlight= param on the edit page). */
+    public function changedKeys(ActivityLog $log): array
+    {
+        $keys = array_unique([...array_keys($log->old_data ?? []), ...array_keys($log->new_data ?? [])]);
+
+        return array_values(array_diff($keys, self::SKIP_KEYS));
     }
 
     /** Clear a section's "undo last save" pointer (after revert, or a manual dismiss). */
