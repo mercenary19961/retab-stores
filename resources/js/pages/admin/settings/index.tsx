@@ -1,6 +1,7 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 
 type Settings = Record<string, string | null>;
 
@@ -25,7 +26,7 @@ const FIELDS: Field[] = [
     { key: 'social_linkedin', label: 'LinkedIn URL', type: 'url', dir: 'ltr' },
 ];
 
-export default function SettingsIndex({ settings, defaults = {} }: { settings: Settings; defaults?: Record<string, string> }) {
+export default function SettingsIndex({ settings, defaults = {}, undoMeta = null }: { settings: Settings; defaults?: Record<string, string>; undoMeta?: UndoMeta | null }) {
     const flash = (usePage().props as { flash?: { success?: string | null } }).flash;
     const { data, setData, put, processing, errors } = useForm(
         Object.fromEntries(FIELDS.map((f) => [f.key, settings[f.key] ?? ''])) as Record<string, string>,
@@ -43,6 +44,12 @@ export default function SettingsIndex({ settings, defaults = {} }: { settings: S
             {flash?.success && (
                 <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
                     {flash.success}
+                </div>
+            )}
+
+            {undoMeta && (
+                <div className="mb-4">
+                    <UndoButton section="settings" undoMeta={undoMeta} />
                 </div>
             )}
 

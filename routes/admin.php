@@ -72,4 +72,5 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Change log — audit history + per-entry revert.
     Route::get('change-log', [\App\Http\Controllers\Admin\ChangeLogController::class, 'index'])->name('change-log.index');
     Route::post('change-log/{activityLog}/revert', [\App\Http\Controllers\Admin\ChangeLogController::class, 'revert'])->name('change-log.revert');
+    Route::delete('change-log/undo/{section}', [\App\Http\Controllers\Admin\ChangeLogController::class, 'dismissUndo'])->name('change-log.dismiss-undo');
 });

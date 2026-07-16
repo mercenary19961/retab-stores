@@ -205,6 +205,12 @@ const ar = {
             changeLog: 'سجل التغييرات',
         },
         logout: 'تسجيل الخروج',
+        undo: {
+            button: 'تراجع عن آخر حفظ',
+            saved: 'تم حفظ {{label}}',
+            confirm: 'هل تريد التراجع عن هذا التغيير؟',
+            dismiss: 'إخفاء',
+        },
         search: {
             placeholder: 'ابحث عن منتج، طلب، عميل…',
             noResults: 'لا توجد نتائج',

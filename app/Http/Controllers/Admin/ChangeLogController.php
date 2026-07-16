@@ -48,12 +48,26 @@ class ChangeLogController extends Controller
         $result = $this->changeLog->revert($activityLog);
 
         if ($result->ok) {
+            // The quick "undo last save" button for that section has served its
+            // purpose — clear it so it doesn't linger pointing at a reverted change.
+            if ($section = $this->changeLog->sectionKey($activityLog)) {
+                $this->changeLog->clearUndo($section);
+            }
+
             return back()->with('success', __('messages.admin.change_reverted'));
         }
 
         return back()->with('error', $result->reason === RevertResult::REASON_CONFLICT
             ? __('messages.admin.change_revert_conflict', ['fields' => implode(', ', $result->conflicts)])
             : __('messages.admin.change_revert_blocked'));
+    }
+
+    /** Dismiss a section's "undo last save" pointer without reverting anything. */
+    public function dismissUndo(string $section)
+    {
+        $this->changeLog->clearUndo($section);
+
+        return back();
     }
 
     /** Display label for bespoke entries that predate / bypass the generic logger. */

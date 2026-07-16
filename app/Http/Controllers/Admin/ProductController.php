@@ -63,6 +63,7 @@ class ProductController extends Controller
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
             ],
             'categories' => $this->categoryOptions(),
+            'undoMeta' => session('undo:products'),
         ]);
     }
 

@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/layouts/admin-layout';
+import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 
 interface PageRow {
     id: number;
@@ -10,15 +11,16 @@ interface PageRow {
     updated_at: string | null;
 }
 
-export default function ContentPagesIndex({ pages }: { pages: PageRow[] }) {
+export default function ContentPagesIndex({ pages, undoMeta = null }: { pages: PageRow[]; undoMeta?: UndoMeta | null }) {
     return (
         <AdminLayout title="Content Pages">
             <Head title="Content Pages" />
 
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <UndoButton section="content_pages" undoMeta={undoMeta} />
                 <Link
                     href="/admin/content-pages/create"
-                    className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900"
+                    className="ms-auto rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900"
                 >
                     New page
                 </Link>

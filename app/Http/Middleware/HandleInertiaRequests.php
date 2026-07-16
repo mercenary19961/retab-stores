@@ -80,6 +80,10 @@ class HandleInertiaRequests extends Middleware
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
             ],
+            // Flashed "undo last save" pointer → the immediate toast after a
+            // tracked admin save (staff only; the persistent per-section button
+            // is passed as a page prop instead).
+            'undo' => fn () => $request->user()?->isStaff() ? $request->session()->get('undo') : null,
         ]);
     }
 

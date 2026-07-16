@@ -3,6 +3,7 @@ import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import ExportButtons from '@/components/admin/export-buttons';
 import SortableTh from '@/components/admin/sortable-th';
+import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 
 interface ProductRow {
     id: number;
@@ -41,10 +42,12 @@ export default function ProductsIndex({
     products,
     filters,
     categories,
+    undoMeta = null,
 }: {
     products: Paginator<ProductRow>;
     filters: Filters;
     categories: Category[];
+    undoMeta?: UndoMeta | null;
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
 
@@ -121,9 +124,12 @@ export default function ProductsIndex({
                 </Link>
             </div>
 
-            {/* Count + export */}
+            {/* Count + undo + export */}
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm text-neutral-400">{products.total} products</span>
+                <div className="flex items-center gap-3">
+                    <span className="text-sm text-neutral-400">{products.total} products</span>
+                    <UndoButton section="products" undoMeta={undoMeta} />
+                </div>
                 <ExportButtons base="/admin/products/export" params={exportParams} />
             </div>
 

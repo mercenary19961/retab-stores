@@ -28,6 +28,7 @@ class ContentPageController extends Controller
                     'is_published' => $p->is_published,
                     'updated_at' => $p->updated_at?->toDateTimeString(),
                 ]),
+            'undoMeta' => session('undo:content_pages'),
         ]);
     }
 

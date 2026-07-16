@@ -60,6 +60,7 @@ class SettingController extends Controller
             'settings' => collect(array_keys(self::FIELDS))
                 ->mapWithKeys(fn (string $key) => [$key => Setting::get($key)]),
             'defaults' => self::FOOTER_DEFAULTS, // shown as placeholders / effective fallback
+            'undoMeta' => session('undo:settings'),
         ]);
     }
 

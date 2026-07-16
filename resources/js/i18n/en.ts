@@ -201,6 +201,12 @@ const en = {
             changeLog: 'Change Log',
         },
         logout: 'Log out',
+        undo: {
+            button: 'Undo last save',
+            saved: 'Saved {{label}}',
+            confirm: 'Undo this change?',
+            dismiss: 'Dismiss',
+        },
         search: {
             placeholder: 'Search products, orders, customers…',
             noResults: 'No results',

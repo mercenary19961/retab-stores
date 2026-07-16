@@ -59,17 +59,28 @@ class ChangeLogService
         ActivityLog::SUBJECT_SETTINGS => 'Settings',
     ];
 
+    /** subject_type => stable section key (session pointer + dismiss route + page prop). */
+    public const SECTION_KEYS = [
+        Product::class => 'products',
+        ContentPage::class => 'content_pages',
+        ActivityLog::SUBJECT_SETTINGS => 'settings',
+    ];
+
     // ── Logging ─────────────────────────────────────────────────────────────
 
     public function logCreated(Model $subject, ?string $label = null): ActivityLog
     {
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_CREATED,
             'subject_type' => $subject::class,
             'subject_id' => $subject->getKey(),
             'new_data' => $this->snapshot($subject->attributesToArray()),
             'label' => $label,
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     /**
@@ -86,7 +97,7 @@ class ChangeLogService
 
         $after = $subject->attributesToArray();
 
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_UPDATED,
             'subject_type' => $subject::class,
             'subject_id' => $subject->getKey(),
@@ -95,29 +106,41 @@ class ChangeLogService
             'label' => $label,
             'reverts_log_id' => $revertsLogId,
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     /** Log a delete (full snapshot in old_data — that's what a restore recreates context from). */
     public function logDeleted(Model $subject, ?string $label = null): ActivityLog
     {
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_DELETED,
             'subject_type' => $subject::class,
             'subject_id' => $subject->getKey(),
             'old_data' => $this->snapshot($subject->attributesToArray()),
             'label' => $label,
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     public function logRestored(Model $subject, ?string $label = null): ActivityLog
     {
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_RESTORED,
             'subject_type' => $subject::class,
             'subject_id' => $subject->getKey(),
             'new_data' => $this->snapshot($subject->attributesToArray()),
             'label' => $label,
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     /**
@@ -130,13 +153,17 @@ class ChangeLogService
             return null;
         }
 
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_UPDATED,
             'subject_type' => ActivityLog::SUBJECT_SETTINGS,
             'old_data' => $old,
             'new_data' => $new,
             'label' => 'Settings',
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     // ── Revert ──────────────────────────────────────────────────────────────
@@ -357,6 +384,48 @@ class ChangeLogService
     {
         return self::SUBJECT_LABELS[$log->subject_type]
             ?? ($log->subject_type ? class_basename($log->subject_type) : 'System');
+    }
+
+    /** Stable machine key for the section, or null if the subject isn't tracked per-section. */
+    public function sectionKey(ActivityLog $log): ?string
+    {
+        return self::SECTION_KEYS[$log->subject_type] ?? null;
+    }
+
+    /** Clear a section's "undo last save" pointer (after revert, or a manual dismiss). */
+    public function clearUndo(string $section): void
+    {
+        session()->forget("undo:{$section}");
+    }
+
+    /**
+     * Point the "undo last save" affordance at this change: a flashed pointer for
+     * the immediate toast, and a persistent per-section pointer for the button
+     * that survives navigation until the change is reverted or dismissed. Only
+     * fires for original, revertable changes (never for revert mirror entries).
+     */
+    private function flagUndo(?ActivityLog $log): void
+    {
+        if ($log === null || $log->reverts_log_id !== null || ! $this->revertable($log)) {
+            return;
+        }
+
+        $key = $this->sectionKey($log);
+        if ($key === null) {
+            return;
+        }
+
+        $payload = [
+            'id' => $log->id,
+            'section' => $key,
+            'action' => $log->action,
+            'label' => $log->label ?? $this->sectionLabel($log),
+            'changes' => $this->diff($log),
+            'at' => optional($log->created_at)->toIso8601String(),
+        ];
+
+        session()->flash('undo', $payload);       // one request → toast
+        session()->put("undo:{$key}", $payload);   // persists → per-section button
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
