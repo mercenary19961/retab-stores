@@ -714,6 +714,7 @@ const ar = {
         },
         marketing: {
             title: 'تسويق واتساب',
+            brandWord: 'واتساب',
             templates: 'القوالب',
             templatesDesc: 'أنشئ القالب واحصل على الموافقة في Meta Business Manager، ثم انسخه هنا واضبط حالته إلى approved.',
             noTemplates: 'لا توجد قوالب بعد.',

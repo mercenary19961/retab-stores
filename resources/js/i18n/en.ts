@@ -710,6 +710,7 @@ const en = {
         },
         marketing: {
             title: 'WhatsApp Marketing',
+            brandWord: 'WhatsApp',
             templates: 'Templates',
             templatesDesc: 'Author + get approval in Meta Business Manager, then mirror the template here and set its status to approved.',
             noTemplates: 'No templates yet.',

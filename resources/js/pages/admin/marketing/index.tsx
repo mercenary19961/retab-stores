@@ -51,6 +51,25 @@ export default function MarketingIndex({
     const { t: tr } = useAdminT();
     const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
 
+    // Header title: only the "WhatsApp" word (+ icon) is brand-green; the rest white.
+    const titleText = tr('admin.marketing.title');
+    const brandWord = tr('admin.marketing.brandWord');
+    const brandIdx = titleText.indexOf(brandWord);
+    const marketingTitle = brandIdx === -1 ? (
+        <span className="inline-flex items-center gap-2">
+            <WhatsappIcon className="h-5 w-5 text-[#25D366]" /> {titleText}
+        </span>
+    ) : (
+        <span className="inline-flex items-center gap-2 text-white">
+            <WhatsappIcon className="h-5 w-5 text-[#25D366]" />
+            <span>
+                {titleText.slice(0, brandIdx)}
+                <span className="text-[#25D366]">{brandWord}</span>
+                {titleText.slice(brandIdx + brandWord.length)}
+            </span>
+        </span>
+    );
+
     // Template registry form (create or edit-in-place).
     const [editing, setEditing] = useState<number | null>(null);
     const [tpl, setTpl] = useState<Record<string, string | number>>(emptyTemplate);
@@ -77,13 +96,8 @@ export default function MarketingIndex({
     };
 
     return (
-        <AdminLayout title={tr('admin.marketing.title')}>
+        <AdminLayout title={marketingTitle}>
             <Head title={tr('admin.marketing.title')} />
-
-            <div className="mb-6 flex items-center gap-2.5 text-[#25D366]">
-                <WhatsappIcon className="h-7 w-7" />
-                <h1 className="text-2xl font-bold">{tr('admin.marketing.title')}</h1>
-            </div>
 
             {flash?.success && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>}
             {flash?.error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{flash.error}</div>}

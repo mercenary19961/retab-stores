@@ -18,7 +18,7 @@ import {
     X,
     type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useState, type PropsWithChildren } from 'react';
+import { useEffect, useState, type PropsWithChildren, type ReactNode } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import adminI18n from '@/i18n/admin';
 import GlobalSearch from '@/components/admin/global-search';
@@ -52,7 +52,7 @@ const NAV_BOTTOM: NavItem[] = [
     { key: 'settings', href: '/admin/settings', icon: Settings, perm: 'settings' },
 ];
 
-function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) {
+function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }>) {
     const { t, i18n } = useTranslation();
     const page = usePage();
     const props = page.props as {
@@ -80,6 +80,13 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
     };
     const navTop = NAV.filter(canSee);
     const navBottom = NAV_BOTTOM.filter(canSee);
+
+    // The current section's sidebar icon, to prefix the header title (string
+    // titles only — pages that pass a styled node, e.g. Marketing, keep their own).
+    const activeNavItem = [...NAV, ...NAV_BOTTOM].find(
+        (item) => currentPath === item.href || (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href)),
+    );
+    const TitleIcon = activeNavItem?.icon;
 
     const renderNavItem = (item: NavItem) => {
         const active =
@@ -204,7 +211,16 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
                     >
                         <Menu className="h-5 w-5" />
                     </button>
-                    <h1 className="hidden shrink-0 truncate text-lg font-semibold lg:block">{title}</h1>
+                    <h1 className="hidden shrink-0 items-center gap-2 truncate text-lg font-semibold lg:flex">
+                        {typeof title === 'string' ? (
+                            <>
+                                {TitleIcon && <TitleIcon className="h-5 w-5 shrink-0 text-brand-gold" />}
+                                <span className="truncate">{title}</span>
+                            </>
+                        ) : (
+                            title
+                        )}
+                    </h1>
                     <div className="flex flex-1 justify-center">
                         <GlobalSearch />
                     </div>
@@ -256,7 +272,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
     );
 }
 
-export default function AdminLayout(props: PropsWithChildren<{ title?: string }>) {
+export default function AdminLayout(props: PropsWithChildren<{ title?: ReactNode }>) {
     return (
         <I18nextProvider i18n={adminI18n}>
             <AdminShell {...props} />
