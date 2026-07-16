@@ -288,6 +288,26 @@ class ChangeLogTest extends TestCase
         $this->assertSame('75.00', $product->fresh()->price); // nothing was clobbered
     }
 
+    public function test_long_conflict_chain_redirects_to_direct_edit(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product(['price' => 10]);
+
+        // The old edit we'll try to undo, then 6 more edits to price (chain > limit 5).
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 20]));
+        $oldEdit = $this->latestLog();
+
+        foreach (range(3, 8) as $i) {
+            $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product->fresh(), ['price' => $i * 10]));
+        }
+
+        // Too many later edits to guide through — no blocker link, offer direct edit.
+        $this->actingAs($staff)->post("/admin/change-log/{$oldEdit->id}/revert")
+            ->assertSessionHas('revertConflict', fn ($c) => $c['blockerId'] === null
+                && $c['chainDepth'] >= 6
+                && $c['editUrl'] === "/admin/products/{$product->id}/edit");
+    }
+
     public function test_highlight_jumps_to_the_entry_page(): void
     {
         $staff = $this->staff();

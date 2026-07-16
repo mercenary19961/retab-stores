@@ -20,8 +20,10 @@ final readonly class RevertResult
     /**
      * @param  list<string>  $conflicts  Humanized field labels that changed since the entry.
      * @param  ActivityLog|null  $mirror  The new history entry the revert created.
-     * @param  int|null  $blockerId  The later change to undo first (for the "take me to it" link).
+     * @param  int|null  $blockerId  The later change to undo first (null when the chain is too long to guide).
      * @param  string|null  $blockerLabel  Human label of that blocking change.
+     * @param  int  $chainDepth  How many later un-reverted edits touch the conflicting fields.
+     * @param  string|null  $editUrl  Where to edit the item directly (offered when the chain is too long).
      */
     private function __construct(
         public bool $ok,
@@ -30,6 +32,8 @@ final readonly class RevertResult
         public ?ActivityLog $mirror = null,
         public ?int $blockerId = null,
         public ?string $blockerLabel = null,
+        public int $chainDepth = 0,
+        public ?string $editUrl = null,
     ) {}
 
     public static function ok(?ActivityLog $mirror): self
@@ -43,8 +47,13 @@ final readonly class RevertResult
     }
 
     /** @param list<string> $fields */
-    public static function conflict(array $fields, ?int $blockerId = null, ?string $blockerLabel = null): self
-    {
-        return new self(false, self::REASON_CONFLICT, $fields, null, $blockerId, $blockerLabel);
+    public static function conflict(
+        array $fields,
+        ?int $blockerId = null,
+        ?string $blockerLabel = null,
+        int $chainDepth = 0,
+        ?string $editUrl = null,
+    ): self {
+        return new self(false, self::REASON_CONFLICT, $fields, null, $blockerId, $blockerLabel, $chainDepth, $editUrl);
     }
 }

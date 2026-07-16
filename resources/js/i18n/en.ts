@@ -208,8 +208,10 @@ const en = {
             dismiss: 'Dismiss',
         },
         revertConflict: {
-            message: 'Can’t undo yet: {{fields}} changed in a later edit. Undo that later change first.',
+            message: 'Can’t undo yet: {{fields}} changed in a later edit. Undo the most recent one first.',
             goToBlocker: 'Take me to it',
+            tooLong: 'Can’t undo this: {{fields}} has changed {{count}} times since. Editing it directly is cleaner than undoing each one.',
+            editDirectly: 'Edit it directly',
         },
         search: {
             placeholder: 'Search products, orders, customers…',

@@ -397,16 +397,24 @@ class ChangeLogService
     }
 
     /**
-     * Build a conflict result and pin the blocker: the newest un-reverted change
-     * to the same subject that touched one of the conflicting fields — i.e. the
-     * one the admin must undo first. Powers the "take me to it" link.
+     * How many later un-reverted edits to the same field we'll guide the admin
+     * through, newest-first. Beyond this, cascading reverts stops being sensible
+     * and we point them at editing the value directly instead.
+     */
+    private const REVERT_CHAIN_LIMIT = 5;
+
+    /**
+     * Build a conflict result. Measures the chain: every un-reverted change after
+     * this entry that touched a conflicting field. If the chain is short we pin
+     * the immediate blocker (the "take me to it" link, undo newest-first); if it's
+     * long we drop the link and offer a direct-edit URL instead.
      *
      * @param  list<string>  $conflicts  humanized labels
      * @param  list<string>  $keys       raw field keys
      */
     private function conflict(ActivityLog $log, array $conflicts, array $keys): RevertResult
     {
-        $blocker = ActivityLog::query()
+        $laterMatching = ActivityLog::query()
             ->where('subject_type', $log->subject_type)
             ->when(
                 $log->subject_id !== null,
@@ -417,13 +425,30 @@ class ChangeLogService
             ->whereNull('reverted_at')
             ->orderByDesc('id')
             ->get()
-            ->first(fn (ActivityLog $candidate) => array_intersect(array_keys($candidate->new_data ?? []), $keys) !== []);
+            ->filter(fn (ActivityLog $candidate) => array_intersect(array_keys($candidate->new_data ?? []), $keys) !== [])
+            ->values();
+
+        $chainDepth = $laterMatching->count();
+        $blocker = $chainDepth > 0 && $chainDepth <= self::REVERT_CHAIN_LIMIT ? $laterMatching->first() : null;
 
         return RevertResult::conflict(
             $conflicts,
             $blocker?->id,
             $blocker ? ($blocker->label ?? $this->sectionLabel($blocker)) : null,
+            $chainDepth,
+            $this->editUrlFor($log),
         );
+    }
+
+    /** Where to edit the subject directly (offered when the revert chain is too long). */
+    private function editUrlFor(ActivityLog $log): ?string
+    {
+        return match ($log->subject_type) {
+            Product::class => $log->subject_id ? "/admin/products/{$log->subject_id}/edit" : null,
+            ContentPage::class => $log->subject_id ? "/admin/content-pages/{$log->subject_id}/edit" : null,
+            ActivityLog::SUBJECT_SETTINGS => '/admin/settings',
+            default => null,
+        };
     }
 
     /** Clear a section's "undo last save" pointer (after revert, or a manual dismiss). */

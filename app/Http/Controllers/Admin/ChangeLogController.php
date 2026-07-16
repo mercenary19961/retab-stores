@@ -77,6 +77,8 @@ class ChangeLogController extends Controller
                 'fields' => $result->conflicts,
                 'blockerId' => $result->blockerId,
                 'blockerLabel' => $result->blockerLabel,
+                'chainDepth' => $result->chainDepth,
+                'editUrl' => $result->editUrl,
             ]);
         }
 
