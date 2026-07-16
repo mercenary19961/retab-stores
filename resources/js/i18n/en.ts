@@ -405,7 +405,7 @@ const en = {
                 shipMsg: 'Create the OTO shipment and request pickup?',
                 cancelMsg: 'Cancel this order?',
                 unavailableMsg: 'Mark unavailable? This releases the payment hold / flags a refund.',
-                noteLabel: 'Note (optional — reason / customer message)',
+                noteLabel: 'Internal note (optional, not sent to the customer)',
                 items: 'Items',
                 activity: 'Activity',
                 noActivity: 'No activity yet.',
