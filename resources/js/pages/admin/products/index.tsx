@@ -164,7 +164,7 @@ export default function ProductsIndex({
                             <ResizableTh colKey="price" width={rc.widths.price} resizeProps={rc.getResizeHandleProps('price')} resizing={rc.resizing === 'price'} sortKey="price" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Price</ResizableTh>
                             <ResizableTh colKey="stock" width={rc.widths.stock} resizeProps={rc.getResizeHandleProps('stock')} resizing={rc.resizing === 'stock'} sortKey="stock" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Stock</ResizableTh>
                             <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="is_active" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</ResizableTh>
-                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'}><span className="sr-only">Actions</span></ResizableTh>
+                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'} className="text-end">Actions</ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
