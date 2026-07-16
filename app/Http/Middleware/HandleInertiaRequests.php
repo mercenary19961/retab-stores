@@ -76,6 +76,10 @@ class HandleInertiaRequests extends Middleware
             // FOOTER_DEFAULTS when a key is unset). Closure → resolved only for
             // Inertia page responses; one batched query.
             'footer' => fn () => $this->footerSettings(),
+            // Per-user saved table column widths (resizable admin tables).
+            'tablePrefs' => fn () => $request->user()?->isStaff()
+                ? (object) ($request->user()->ui_preferences['tableWidths'] ?? [])
+                : null,
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),

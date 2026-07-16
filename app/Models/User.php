@@ -33,6 +33,7 @@ class User extends Authenticatable
         'city',
         'locale',
         'admin_theme',
+        'ui_preferences',
         'whatsapp_opt_in',
         'whatsapp_opt_in_at',
         'confirmed_purchases_count',
@@ -62,6 +63,7 @@ class User extends Authenticatable
             'whatsapp_opt_in' => 'boolean',
             'whatsapp_opt_in_at' => 'datetime',
             'confirmed_purchases_count' => 'integer',
+            'ui_preferences' => 'array',
         ];
     }
 

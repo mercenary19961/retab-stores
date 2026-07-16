@@ -1,11 +1,23 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Columns3, Pencil, Plus, Trash2 } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
-import SortableTh from '@/components/admin/sortable-th';
+import ResizableTh from '@/components/admin/resizable-th';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
+import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
+
+const COLUMNS: ColumnDef[] = [
+    { key: 'product', defaultWidth: 300, minWidth: 160 },
+    { key: 'sku', defaultWidth: 120, minWidth: 80 },
+    { key: 'smacc_sku', defaultWidth: 140, minWidth: 90 },
+    { key: 'category', defaultWidth: 150, minWidth: 90 },
+    { key: 'price', defaultWidth: 110, minWidth: 70 },
+    { key: 'stock', defaultWidth: 90, minWidth: 60 },
+    { key: 'status', defaultWidth: 110, minWidth: 80 },
+    { key: 'actions', defaultWidth: 170, minWidth: 130 },
+];
 
 interface ProductRow {
     id: number;
@@ -52,6 +64,7 @@ export default function ProductsIndex({
     undoMeta?: UndoMeta | null;
 }) {
     const [search, setSearch] = useState(filters.search ?? '');
+    const rc = useResizableColumns({ tableKey: 'products', columns: COLUMNS });
 
     const query = (next: Record<string, unknown>) => {
         router.get(
@@ -123,27 +136,30 @@ export default function ProductsIndex({
                 </div>
             </div>
 
-            {/* Count + undo + export */}
+            {/* Count + undo + reset + export */}
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <span className="text-sm text-neutral-400">{products.total} products</span>
                     <UndoButton section="products" undoMeta={undoMeta} />
+                    {!rc.isDefault && (
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>Reset columns</Button>
+                    )}
                 </div>
                 <ExportButtons base="/admin/products/export" params={exportParams} />
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-                <table className="w-full text-sm">
+                <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <SortableTh col="name_ar" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Product</SortableTh>
-                            <SortableTh col="sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SKU</SortableTh>
-                            <SortableTh col="smacc_sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SMACC SKU</SortableTh>
-                            <SortableTh col="category" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Category</SortableTh>
-                            <SortableTh col="price" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Price</SortableTh>
-                            <SortableTh col="stock" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Stock</SortableTh>
-                            <SortableTh col="is_active" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
-                            <th className="px-4 py-3"></th>
+                            <ResizableTh colKey="product" width={rc.widths.product} resizeProps={rc.getResizeHandleProps('product')} resizing={rc.resizing === 'product'} sortKey="name_ar" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Product</ResizableTh>
+                            <ResizableTh colKey="sku" width={rc.widths.sku} resizeProps={rc.getResizeHandleProps('sku')} resizing={rc.resizing === 'sku'} sortKey="sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SKU</ResizableTh>
+                            <ResizableTh colKey="smacc_sku" width={rc.widths.smacc_sku} resizeProps={rc.getResizeHandleProps('smacc_sku')} resizing={rc.resizing === 'smacc_sku'} sortKey="smacc_sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>SMACC SKU</ResizableTh>
+                            <ResizableTh colKey="category" width={rc.widths.category} resizeProps={rc.getResizeHandleProps('category')} resizing={rc.resizing === 'category'} sortKey="category" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Category</ResizableTh>
+                            <ResizableTh colKey="price" width={rc.widths.price} resizeProps={rc.getResizeHandleProps('price')} resizing={rc.resizing === 'price'} sortKey="price" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Price</ResizableTh>
+                            <ResizableTh colKey="stock" width={rc.widths.stock} resizeProps={rc.getResizeHandleProps('stock')} resizing={rc.resizing === 'stock'} sortKey="stock" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Stock</ResizableTh>
+                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="is_active" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</ResizableTh>
+                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'}><span className="sr-only">Actions</span></ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
@@ -155,19 +171,19 @@ export default function ProductsIndex({
                         {products.data.map((p) => (
                             <tr key={p.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
                                 <td className="px-4 py-3">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex min-w-0 items-center gap-2">
                                         {p.image ? (
-                                            <img src={p.image} alt="" className="h-9 w-9 rounded object-cover" />
+                                            <img src={p.image} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
                                         ) : (
-                                            <div className="flex h-9 w-9 items-center justify-center rounded bg-neutral-100 text-sm dark:bg-neutral-800">🌴</div>
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-neutral-100 text-sm dark:bg-neutral-800">🌴</div>
                                         )}
-                                        <span dir="auto">{p.name_ar}</span>
-                                        {p.is_featured && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">Featured</span>}
+                                        <span dir="auto" className="truncate">{p.name_ar}</span>
+                                        {p.is_featured && <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">Featured</span>}
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 font-mono text-neutral-500">{p.sku}</td>
-                                <td className="px-4 py-3 font-mono text-neutral-500">{p.smacc_sku ?? '—'}</td>
-                                <td className="px-4 py-3" dir="auto">{p.category ?? '—'}</td>
+                                <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.sku}</td>
+                                <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.smacc_sku ?? '—'}</td>
+                                <td className="truncate px-4 py-3" dir="auto">{p.category ?? '—'}</td>
                                 <td className="px-4 py-3">
                                     {p.sale_price !== null ? (
                                         <span>

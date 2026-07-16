@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('search', [\App\Http\Controllers\Admin\GlobalSearchController::class, 'search'])->name('search');
+    Route::put('preferences/table-widths', [\App\Http\Controllers\Admin\PreferenceController::class, 'tableWidths'])->name('preferences.table-widths');
 
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export');
