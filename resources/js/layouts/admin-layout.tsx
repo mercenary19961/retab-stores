@@ -172,13 +172,17 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
                 }`}
             >
                 <div className="flex h-full w-60 shrink-0 flex-col">
-                    <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-800 px-5">
-                        <Link href="/admin/dashboard" className="text-lg font-bold text-brand-gold">
-                            {t('admin.brand')}
+                    <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-neutral-800 px-5">
+                        <Link href="/admin/dashboard" className="flex min-w-0 items-center gap-2 text-lg font-bold text-brand-gold">
+                            <ShieldCheck className="h-5 w-5 shrink-0" />
+                            <span className="truncate">{t('admin.brand')}</span>
                         </Link>
-                        <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Close menu" className="text-neutral-400 hover:text-white lg:hidden">
-                            <X className="h-5 w-5" />
-                        </button>
+                        <div className="flex shrink-0 items-center gap-2">
+                            <img src="/images/brand/logo.png" alt="Retab" className="h-9 w-auto" />
+                            <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Close menu" className="text-neutral-400 hover:text-white lg:hidden">
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
                     </div>
                     <nav className="flex flex-1 flex-col overflow-y-auto p-3">
                         <div className="space-y-1">{navTop.map(renderNavItem)}</div>
