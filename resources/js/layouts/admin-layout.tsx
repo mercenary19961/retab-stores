@@ -26,6 +26,7 @@ import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
 
 type AdminLocale = 'en' | 'ar';
 const STORAGE_KEY = 'retab_admin_locale';
+const SIDEBAR_KEY = 'retab_admin_sidebar_collapsed';
 
 const NAV: { key: string; href: string; icon: LucideIcon }[] = [
     { key: 'dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -73,15 +74,29 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
         if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, next);
     };
 
-    // Mobile sidebar drawer. Auto-closes on any navigation (nav link, search
-    // result, back-office redirect) and on Escape — no dangling open drawer.
+    // Sidebar: a mobile drawer (sidebarOpen) below lg, and a persisted collapse
+    // on desktop (collapsed). The one header button adapts to the breakpoint.
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
+    useEffect(() => setCollapsed(localStorage.getItem(SIDEBAR_KEY) === '1'), []);
     useEffect(() => router.on('navigate', () => setSidebarOpen(false)), []);
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSidebarOpen(false);
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, []);
+
+    const toggleSidebar = () => {
+        if (window.matchMedia('(min-width: 1024px)').matches) {
+            setCollapsed((c) => {
+                const next = !c;
+                localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0');
+                return next;
+            });
+        } else {
+            setSidebarOpen(true);
+        }
+    };
 
     return (
         <div dir={isRTL ? 'rtl' : 'ltr'} lang={locale} className="admin-shell dark flex h-dvh overflow-hidden bg-neutral-950 font-sans text-neutral-100">
@@ -91,9 +106,9 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
             {/* Sidebar — a fixed off-canvas drawer on mobile, static column on desktop.
                 Direction handled in JS (Tailwind dropped the max-lg:rtl: triple-stack). */}
             <aside
-                className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-40 flex w-60 shrink-0 flex-col border-e border-neutral-800 bg-neutral-900 transition-transform duration-200 lg:static lg:translate-x-0 ${
-                    sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
-                }`}
+                className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-40 flex w-60 shrink-0 flex-col border-e border-neutral-800 bg-neutral-900 transition-transform duration-200 ${
+                    collapsed ? 'lg:hidden' : 'lg:static lg:translate-x-0'
+                } ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'}`}
             >
                 <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-800 px-5">
                     <Link href="/admin/dashboard" className="text-lg font-bold text-brand-gold">
@@ -132,9 +147,9 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
                 <header className="flex h-16 shrink-0 items-center gap-3 border-b border-neutral-800 bg-neutral-900 px-4 sm:px-6">
                     <button
                         type="button"
-                        onClick={() => setSidebarOpen(true)}
-                        aria-label="Open menu"
-                        className="shrink-0 text-neutral-300 hover:text-white lg:hidden"
+                        onClick={toggleSidebar}
+                        aria-label="Toggle sidebar"
+                        className="shrink-0 rounded-lg p-1.5 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white"
                     >
                         <Menu className="h-5 w-5" />
                     </button>
