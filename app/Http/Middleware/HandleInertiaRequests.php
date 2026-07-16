@@ -45,6 +45,9 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                // Editors: their resolved section→action grants (drives admin nav
+                // visibility + client-side gating). Null for admins = full access.
+                'permissions' => $request->user()?->isEditor() ? $request->user()->resolvedPermissions() : null,
             ],
             'locale' => session('locale', 'ar'),
             // Null while unset → the Turnstile widget renders nothing (dev).

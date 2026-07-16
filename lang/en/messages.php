@@ -59,6 +59,10 @@ return [
     'admin' => [
         'settings_saved' => 'Settings saved.',
         'content_reset' => 'Content restored to the project-handover defaults.',
+        'no_permission' => 'You do not have permission to perform this action.',
+        'permissions_updated' => 'Permissions updated for :name.',
+        'editor_created' => 'Editor account created for :name.',
+        'editor_deleted' => 'Editor account removed.',
         'page_saved' => 'Page saved.',
         'review_saved' => 'Review saved.',
         'review_deleted' => 'Review deleted.',

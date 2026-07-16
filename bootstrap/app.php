@@ -42,6 +42,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'staff' => \App\Http\Middleware\EnsureUserIsStaff::class,
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'permission' => \App\Http\Middleware\RequirePermission::class,
         ]);
 
         // Server-to-server webhooks (OTO, payment gateways) can't carry a CSRF token.

@@ -59,6 +59,10 @@ return [
     'admin' => [
         'settings_saved' => 'تم حفظ الإعدادات.',
         'content_reset' => 'تمت إعادة المحتوى إلى إعدادات التسليم الافتراضية.',
+        'no_permission' => 'ليست لديك صلاحية لتنفيذ هذا الإجراء.',
+        'permissions_updated' => 'تم تحديث صلاحيات :name.',
+        'editor_created' => 'تم إنشاء حساب محرّر لـ :name.',
+        'editor_deleted' => 'تم حذف حساب المحرّر.',
         'page_saved' => 'تم حفظ الصفحة.',
         'review_saved' => 'تم حفظ التقييم.',
         'review_deleted' => 'تم حذف التقييم.',

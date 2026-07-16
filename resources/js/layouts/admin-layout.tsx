@@ -11,6 +11,7 @@ import {
     Package,
     RotateCcw,
     Settings,
+    ShieldCheck,
     ShoppingBag,
     Star,
     Users,
@@ -28,30 +29,47 @@ type AdminLocale = 'en' | 'ar';
 const STORAGE_KEY = 'retab_admin_locale';
 const SIDEBAR_KEY = 'retab_admin_sidebar_collapsed';
 
-const NAV: { key: string; href: string; icon: LucideIcon }[] = [
+// `perm` = the permission SECTION an editor needs "<perm>.view" to see the item.
+// No `perm` = always visible to staff (dashboard). `adminOnly` = admins only.
+type NavItem = { key: string; href: string; icon: LucideIcon; perm?: string; adminOnly?: boolean };
+
+const NAV: NavItem[] = [
     { key: 'dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { key: 'orders', href: '/admin/orders', icon: ShoppingBag },
-    { key: 'products', href: '/admin/products', icon: Package },
-    { key: 'inventory', href: '/admin/stock-import', icon: Boxes },
-    { key: 'returns', href: '/admin/returns', icon: RotateCcw },
-    { key: 'customers', href: '/admin/customers', icon: Users },
-    { key: 'marketing', href: '/admin/marketing', icon: Megaphone },
-    { key: 'reviews', href: '/admin/client-reviews', icon: Star },
-    { key: 'contentPages', href: '/admin/content-pages', icon: FileText },
-    { key: 'settings', href: '/admin/settings', icon: Settings },
-    { key: 'changeLog', href: '/admin/change-log', icon: History },
+    { key: 'orders', href: '/admin/orders', icon: ShoppingBag, perm: 'orders' },
+    { key: 'products', href: '/admin/products', icon: Package, perm: 'products' },
+    { key: 'inventory', href: '/admin/stock-import', icon: Boxes, perm: 'inventory' },
+    { key: 'returns', href: '/admin/returns', icon: RotateCcw, perm: 'returns' },
+    { key: 'customers', href: '/admin/customers', icon: Users, perm: 'customers' },
+    { key: 'marketing', href: '/admin/marketing', icon: Megaphone, perm: 'marketing' },
+    { key: 'reviews', href: '/admin/client-reviews', icon: Star, perm: 'reviews' },
+    { key: 'contentPages', href: '/admin/content-pages', icon: FileText, perm: 'content_pages' },
+    { key: 'settings', href: '/admin/settings', icon: Settings, perm: 'settings' },
+    { key: 'changeLog', href: '/admin/change-log', icon: History, perm: 'change_log' },
+    { key: 'users', href: '/admin/users', icon: ShieldCheck, adminOnly: true },
 ];
 
 function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) {
     const { t, i18n } = useTranslation();
     const page = usePage();
     const props = page.props as {
-        auth?: { user?: { name?: string | null; email?: string | null } };
+        auth?: {
+            user?: { name?: string | null; email?: string | null; role?: string | null };
+            permissions?: Record<string, Record<string, boolean>> | null;
+        };
         flash?: { success?: string | null; error?: string | null };
     };
     const user = props.auth?.user;
     const flash = props.flash;
     const currentPath = page.url.split('?')[0];
+
+    // Editors see only the sections they can view; admins (permissions === null) see all.
+    const isAdmin = user?.role === 'admin';
+    const permissions = props.auth?.permissions ?? null;
+    const nav = NAV.filter((item) => {
+        if (item.adminOnly) return isAdmin;
+        if (isAdmin || !item.perm) return true;
+        return Boolean(permissions?.[item.perm]?.view);
+    });
 
     // Admin language: English by default, persisted in localStorage. RTL scoped
     // to this subtree via the root `dir` attribute (document.dir stays the
@@ -132,7 +150,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
                         </button>
                     </div>
                     <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-                        {NAV.map((item) => {
+                        {nav.map((item) => {
                             const active =
                                 currentPath === item.href ||
                                 (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href));
