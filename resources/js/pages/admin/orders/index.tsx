@@ -1,8 +1,21 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Columns3, MoveHorizontal } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 import OrderStatusBadge, { ORDER_STATUS_LABELS } from '@/components/order-status-badge';
 import ExportButtons from '@/components/admin/export-buttons';
-import SortableTh from '@/components/admin/sortable-th';
+import ResizableTh from '@/components/admin/resizable-th';
+import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
+
+const COLUMNS: ColumnDef[] = [
+    { key: 'order', defaultWidth: 170, minWidth: 120 },
+    { key: 'customer', defaultWidth: 180, minWidth: 110 },
+    { key: 'status', defaultWidth: 140, minWidth: 100 },
+    { key: 'payment', defaultWidth: 190, minWidth: 120 },
+    { key: 'total', defaultWidth: 110, minWidth: 80 },
+    { key: 'placed', defaultWidth: 170, minWidth: 120 },
+];
 
 interface OrderRow {
     order_number: string;
@@ -39,6 +52,8 @@ export default function OrdersIndex({
     statuses: string[];
     counts: Record<string, number>;
 }) {
+    const rc = useResizableColumns({ tableKey: 'orders', columns: COLUMNS });
+
     const query = (next: Record<string, unknown>) => {
         router.get(
             '/admin/orders',
@@ -90,21 +105,30 @@ export default function OrdersIndex({
                 ))}
             </div>
 
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm text-neutral-400">{orders.total} orders</span>
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm text-neutral-400">{orders.total} orders</span>
+                    {rc.isDefault ? (
+                        <span className="hidden items-center gap-1.5 text-xs text-neutral-500 lg:inline-flex">
+                            <MoveHorizontal className="h-3.5 w-3.5" /> Drag column edges to resize
+                        </span>
+                    ) : (
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>Reset columns</Button>
+                    )}
+                </div>
                 <ExportButtons base="/admin/orders/export" params={exportParams} />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-                <table className="w-full text-sm">
+            <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+                <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <SortableTh col="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Order</SortableTh>
-                            <SortableTh col="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</SortableTh>
-                            <SortableTh col="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
-                            <SortableTh col="payment_status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Payment</SortableTh>
-                            <SortableTh col="total" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Total</SortableTh>
-                            <SortableTh col="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Placed</SortableTh>
+                            <ResizableTh colKey="order" width={rc.widths.order} resizeProps={rc.getResizeHandleProps('order')} resizing={rc.resizing === 'order'} sortKey="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Order</ResizableTh>
+                            <ResizableTh colKey="customer" width={rc.widths.customer} resizeProps={rc.getResizeHandleProps('customer')} resizing={rc.resizing === 'customer'} sortKey="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</ResizableTh>
+                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</ResizableTh>
+                            <ResizableTh colKey="payment" width={rc.widths.payment} resizeProps={rc.getResizeHandleProps('payment')} resizing={rc.resizing === 'payment'} sortKey="payment_status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Payment</ResizableTh>
+                            <ResizableTh colKey="total" width={rc.widths.total} resizeProps={rc.getResizeHandleProps('total')} resizing={rc.resizing === 'total'} sortKey="total" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Total</ResizableTh>
+                            <ResizableTh colKey="placed" width={rc.widths.placed} resizeProps={rc.getResizeHandleProps('placed')} resizing={rc.resizing === 'placed'} sortKey="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Placed</ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
@@ -121,22 +145,22 @@ export default function OrdersIndex({
                                 className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
                             >
                                 <td className="px-4 py-3">
-                                    <Link href={`/admin/orders/${order.order_number}`} className="font-mono font-medium text-blue-600 hover:underline dark:text-blue-400">
+                                    <Link href={`/admin/orders/${order.order_number}`} className="block truncate font-mono font-medium text-blue-600 hover:underline dark:text-blue-400">
                                         {order.order_number}
                                     </Link>
                                 </td>
-                                <td className="px-4 py-3">{order.customer_name ?? '—'}</td>
+                                <td className="truncate px-4 py-3" dir="auto">{order.customer_name ?? '—'}</td>
                                 <td className="px-4 py-3"><OrderStatusBadge status={order.status} /></td>
-                                <td className="px-4 py-3 text-neutral-500">
+                                <td className="truncate px-4 py-3 text-neutral-500">
                                     {order.payment_method ?? '—'} · {order.payment_status}
                                 </td>
                                 <td className="px-4 py-3">{order.total} SAR</td>
-                                <td className="px-4 py-3 text-neutral-500">{order.created_at ?? '—'}</td>
+                                <td className="truncate px-4 py-3 text-neutral-500">{order.created_at ?? '—'}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-            </div>
+            </StickyScrollWrapper>
 
             {orders.total > orders.data.length && (
                 <div className="mt-4 flex flex-wrap gap-1">

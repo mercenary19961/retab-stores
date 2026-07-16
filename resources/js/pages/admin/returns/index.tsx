@@ -1,7 +1,20 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Columns3, MoveHorizontal } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
-import SortableTh from '@/components/admin/sortable-th';
+import ResizableTh from '@/components/admin/resizable-th';
+import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
+
+const COLUMNS: ColumnDef[] = [
+    { key: 'return', defaultWidth: 100, minWidth: 70 },
+    { key: 'order', defaultWidth: 150, minWidth: 100 },
+    { key: 'customer', defaultWidth: 170, minWidth: 110 },
+    { key: 'status', defaultWidth: 120, minWidth: 90 },
+    { key: 'reason', defaultWidth: 260, minWidth: 140 },
+    { key: 'filed', defaultWidth: 160, minWidth: 120 },
+];
 
 const STATUS_LABELS: Record<string, string> = {
     requested: 'Requested',
@@ -43,6 +56,8 @@ export default function ReturnsIndex({
     statuses: string[];
     counts: Record<string, number>;
 }) {
+    const rc = useResizableColumns({ tableKey: 'returns', columns: COLUMNS });
+
     const query = (next: Record<string, unknown>) => {
         router.get(
             '/admin/returns',
@@ -94,21 +109,30 @@ export default function ReturnsIndex({
                 ))}
             </div>
 
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm text-neutral-400">{returns.total} returns</span>
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm text-neutral-400">{returns.total} returns</span>
+                    {rc.isDefault ? (
+                        <span className="hidden items-center gap-1.5 text-xs text-neutral-500 lg:inline-flex">
+                            <MoveHorizontal className="h-3.5 w-3.5" /> Drag column edges to resize
+                        </span>
+                    ) : (
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>Reset columns</Button>
+                    )}
+                </div>
                 <ExportButtons base="/admin/returns/export" params={exportParams} />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-                <table className="w-full text-sm">
+            <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+                <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <SortableTh col="id" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Return</SortableTh>
-                            <SortableTh col="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Order</SortableTh>
-                            <SortableTh col="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</SortableTh>
-                            <SortableTh col="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</SortableTh>
-                            <th className="px-4 py-3 font-medium">Reason</th>
-                            <SortableTh col="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Filed</SortableTh>
+                            <ResizableTh colKey="return" width={rc.widths.return} resizeProps={rc.getResizeHandleProps('return')} resizing={rc.resizing === 'return'} sortKey="id" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Return</ResizableTh>
+                            <ResizableTh colKey="order" width={rc.widths.order} resizeProps={rc.getResizeHandleProps('order')} resizing={rc.resizing === 'order'} sortKey="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Order</ResizableTh>
+                            <ResizableTh colKey="customer" width={rc.widths.customer} resizeProps={rc.getResizeHandleProps('customer')} resizing={rc.resizing === 'customer'} sortKey="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Customer</ResizableTh>
+                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Status</ResizableTh>
+                            <ResizableTh colKey="reason" width={rc.widths.reason} resizeProps={rc.getResizeHandleProps('reason')} resizing={rc.resizing === 'reason'}>Reason</ResizableTh>
+                            <ResizableTh colKey="filed" width={rc.widths.filed} resizeProps={rc.getResizeHandleProps('filed')} resizing={rc.resizing === 'filed'} sortKey="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>Filed</ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
@@ -122,20 +146,20 @@ export default function ReturnsIndex({
                         {returns.data.map((r) => (
                             <tr key={r.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
                                 <td className="px-4 py-3">
-                                    <Link href={`/admin/returns/${r.id}`} className="font-mono text-blue-600 underline dark:text-blue-400">
+                                    <Link href={`/admin/returns/${r.id}`} className="block truncate font-mono text-blue-600 underline dark:text-blue-400">
                                         #{r.id}
                                     </Link>
                                 </td>
-                                <td className="px-4 py-3 font-mono">{r.order_number ?? '—'}</td>
-                                <td className="px-4 py-3">{r.customer ?? '—'}</td>
-                                <td className="px-4 py-3">{STATUS_LABELS[r.status] ?? r.status}</td>
-                                <td className="px-4 py-3 text-neutral-500" dir="auto">{r.reason}</td>
-                                <td className="px-4 py-3 text-neutral-500">{r.created_at ?? '—'}</td>
+                                <td className="truncate px-4 py-3 font-mono">{r.order_number ?? '—'}</td>
+                                <td className="truncate px-4 py-3">{r.customer ?? '—'}</td>
+                                <td className="truncate px-4 py-3">{STATUS_LABELS[r.status] ?? r.status}</td>
+                                <td className="truncate px-4 py-3 text-neutral-500" dir="auto">{r.reason}</td>
+                                <td className="truncate px-4 py-3 text-neutral-500">{r.created_at ?? '—'}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-            </div>
+            </StickyScrollWrapper>
 
             {returns.total > returns.data.length && (
                 <div className="mt-4 flex flex-wrap gap-1">
