@@ -5,6 +5,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
 import ResizableTh from '@/components/admin/resizable-th';
+import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 
@@ -148,7 +149,7 @@ export default function ProductsIndex({
                 <ExportButtons base="/admin/products/export" params={exportParams} />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
@@ -214,7 +215,7 @@ export default function ProductsIndex({
                         ))}
                     </tbody>
                 </table>
-            </div>
+            </StickyScrollWrapper>
 
             {products.total > products.data.length && (
                 <div className="mt-4 flex flex-wrap gap-1">
