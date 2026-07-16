@@ -3,6 +3,7 @@ import { ArrowLeft, Eye, Image as ImageIcon, Info, Tag, Upload } from 'lucide-re
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import Select from '@/components/admin/select';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -112,15 +113,15 @@ export default function ProductForm({ product, categories }: { product: Product 
                     <h2 className="flex items-center gap-2 font-bold"><Info className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.details')}</h2>
                     <label className="block" id="field-category_id">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')} *</span>
-                        <select
+                        <Select
                             value={data.category_id}
                             onChange={(e) => setData('category_id', Number(e.target.value))}
-                            className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+                            className="mt-1 w-full"
                         >
                             {categories.map((c) => (
                                 <option key={c.id} value={c.id}>{c.name_ar}</option>
                             ))}
-                        </select>
+                        </Select>
                         {errors.category_id && <span className="text-xs text-red-500">{errors.category_id}</span>}
                     </label>
                     <div className="grid gap-4 sm:grid-cols-2">

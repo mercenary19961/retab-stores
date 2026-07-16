@@ -5,6 +5,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
 import ResizableTh from '@/components/admin/resizable-th';
+import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
@@ -123,16 +124,16 @@ export default function ProductsIndex({
                     </button>
                 </form>
 
-                <select
+                <Select
                     value={filters.category ?? ''}
                     onChange={(e) => query({ category: e.target.value || undefined, page: undefined })}
-                    className="w-full rounded border border-neutral-300 px-3 py-1.5 text-sm sm:w-auto dark:border-neutral-700 dark:bg-neutral-800"
+                    className="w-full sm:w-auto"
                 >
                     <option value="">{t('admin.products.allCategories')}</option>
                     {categories.map((c) => (
                         <option key={c.id} value={c.id}>{c.name_ar}</option>
                     ))}
-                </select>
+                </Select>
 
                 <div className="sm:ms-auto">
                     <Button href="/admin/products/create" variant="primary" icon={Plus} className="w-full sm:w-auto">{t('admin.products.newProduct')}</Button>

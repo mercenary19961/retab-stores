@@ -3,6 +3,7 @@ import { ArrowLeft, Trash2 } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import Select from '@/components/admin/select';
 import { useAdminT } from '@/i18n/use-admin-t';
 
 interface ReviewData {
@@ -70,18 +71,18 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
 
                 <div className="grid gap-4 sm:grid-cols-2">
                     {field(t('admin.reviews.form.rating'), (
-                        <select value={data.rating} onChange={(e) => setData('rating', Number(e.target.value))} className={inputCls}>
+                        <Select value={data.rating} onChange={(e) => setData('rating', Number(e.target.value))} className="mt-1 w-full">
                             {[5, 4, 3, 2, 1].map((n) => (
                                 <option key={n} value={n}>{n} ★</option>
                             ))}
-                        </select>
+                        </Select>
                     ), errors.rating)}
                     {field(t('admin.reviews.form.language'), (
-                        <select value={data.language} onChange={(e) => setData('language', e.target.value)} className={inputCls}>
+                        <Select value={data.language} onChange={(e) => setData('language', e.target.value)} className="mt-1 w-full">
                             <option value="">{t('admin.reviews.form.languageUnset')}</option>
                             <option value="ar">{t('admin.reviews.form.arabic')}</option>
                             <option value="en">{t('admin.reviews.form.english')}</option>
-                        </select>
+                        </Select>
                     ), errors.language)}
                 </div>
 

@@ -3,6 +3,7 @@ import { FileText, History, Megaphone, Pencil, Send } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import Select from '@/components/admin/select';
 import { useAdminT } from '@/i18n/use-admin-t';
 
 interface Template {
@@ -117,17 +118,17 @@ export default function MarketingIndex({
                             </label>
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.language')}</span>
-                                <select value={String(tpl.language)} onChange={(e) => setTpl({ ...tpl, language: e.target.value })} className={inputCls}>
+                                <Select value={String(tpl.language)} onChange={(e) => setTpl({ ...tpl, language: e.target.value })} className="mt-1 w-full">
                                     <option value="ar">ar</option>
                                     <option value="en">en</option>
-                                </select>
+                                </Select>
                             </label>
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.category')}</span>
-                                <select value={String(tpl.category)} onChange={(e) => setTpl({ ...tpl, category: e.target.value })} className={inputCls}>
+                                <Select value={String(tpl.category)} onChange={(e) => setTpl({ ...tpl, category: e.target.value })} className="mt-1 w-full">
                                     <option value="marketing">marketing</option>
                                     <option value="utility">utility</option>
-                                </select>
+                                </Select>
                             </label>
                         </div>
                         <label className="block text-sm">
@@ -136,9 +137,9 @@ export default function MarketingIndex({
                         </label>
                         <label className="block text-sm">
                             <span className="text-neutral-500">{tr('admin.marketing.metaStatus')}</span>
-                            <select value={String(tpl.status)} onChange={(e) => setTpl({ ...tpl, status: e.target.value })} className={inputCls}>
+                            <Select value={String(tpl.status)} onChange={(e) => setTpl({ ...tpl, status: e.target.value })} className="mt-1 w-full">
                                 {['draft', 'pending', 'approved', 'rejected'].map((s) => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                            </Select>
                         </label>
                         <div className="flex gap-2">
                             <Button type="submit" variant="primary">{editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}</Button>
@@ -158,16 +159,16 @@ export default function MarketingIndex({
                         <form onSubmit={sendCampaign} className="space-y-3">
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.template')}</span>
-                                <select
+                                <Select
                                     value={templateId}
                                     onChange={(e) => { const id = Number(e.target.value) || ''; setTemplateId(id); setParams([]); }}
-                                    className={inputCls}
+                                    className="mt-1 w-full"
                                 >
                                     <option value="">{tr('admin.marketing.pickTemplate')}</option>
                                     {templates.filter((t) => t.status === 'approved').map((t) => (
                                         <option key={t.id} value={t.id}>{t.name} ({t.language})</option>
                                     ))}
-                                </select>
+                                </Select>
                             </label>
 
                             {selected && selected.body && (
