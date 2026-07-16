@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import { type LucideIcon } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'ghost';
 type Size = 'sm' | 'md';
 
 const BASE =
@@ -12,7 +12,9 @@ const VARIANTS: Record<Variant, string> = {
     primary: 'border-transparent bg-brand-teal text-white hover:bg-brand-teal/90',
     secondary:
         'border-neutral-300 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800',
+    success: 'border-transparent bg-green-600 text-white hover:bg-green-700',
     danger: 'border-red-500/40 bg-red-500/10 text-red-600 hover:border-red-500 hover:bg-red-500/20 dark:text-red-300',
+    warning: 'border-amber-500/50 bg-amber-500/10 text-amber-700 hover:border-amber-500 hover:bg-amber-500/20 dark:text-amber-300',
     ghost: 'border-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
 };
 

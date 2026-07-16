@@ -1,6 +1,8 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { Check } from 'lucide-react';
 import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 
 interface MatchRow {
     product_id: number;
@@ -62,17 +64,10 @@ export default function StockImportPreview({ token, diff }: { token: string; dif
             </div>
 
             <div className="mb-6 flex gap-3">
-                <button
-                    type="button"
-                    onClick={apply}
-                    disabled={busy || nothingToApply}
-                    className="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-                >
+                <Button variant="success" icon={Check} onClick={apply} disabled={busy || nothingToApply}>
                     {nothingToApply ? 'Nothing to apply' : `Apply ${diff.matched.length} update(s)`}
-                </button>
-                <Link href="/admin/stock-import" className="rounded-lg border border-neutral-300 px-5 py-2.5 text-sm dark:border-neutral-700">
-                    Cancel
-                </Link>
+                </Button>
+                <Button href="/admin/stock-import" variant="secondary">Cancel</Button>
             </div>
 
             {diff.matched.length > 0 && (

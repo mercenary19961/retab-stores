@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
 
 interface LastSynced {
@@ -78,13 +79,9 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                             className="block w-full text-sm"
                         />
                         {errors.file && <p className="mt-1 text-xs text-red-500">{errors.file}</p>}
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="mt-4 w-full rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-                        >
+                        <Button type="submit" variant="primary" disabled={processing} className="mt-4 w-full">
                             Preview changes
-                        </button>
+                        </Button>
                     </form>
                 </section>
 
@@ -116,9 +113,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                                             {row.reverted_at ? (
                                                 <span className="text-xs text-neutral-400">reverted</span>
                                             ) : (
-                                                <button type="button" onClick={() => undo(row.id)} className="text-red-600 hover:underline dark:text-red-400">
-                                                    Undo
-                                                </button>
+                                                <Button size="sm" variant="danger" onClick={() => undo(row.id)}>Undo</Button>
                                             )}
                                         </td>
                                     </tr>

@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 
 const EXAMPLE = `Mohammad Ahmad | 5 | Great variety of Saudi dates, very fresh.
 Sarah Al-Otaibi | 5 | Beautiful packaging and fast delivery.
@@ -46,13 +48,9 @@ export default function ClientReviewsImport() {
                     {errors.data && <span className="block text-xs text-red-500">{errors.data}</span>}
                 </label>
 
-                <button
-                    type="submit"
-                    disabled={processing}
-                    className="rounded-lg bg-neutral-900 px-5 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-                >
+                <Button type="submit" variant="primary" icon={Upload} disabled={processing}>
                     Import reviews
-                </button>
+                </Button>
             </form>
         </AdminLayout>
     );

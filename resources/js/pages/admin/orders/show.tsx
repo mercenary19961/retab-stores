@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Ban, Check, Truck, X } from 'lucide-react';
 import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 import OrderStatusBadge from '@/components/order-status-badge';
 
 interface Item {
@@ -97,34 +99,19 @@ export default function OrderShow({ order, can }: { order: Order; can: Can }) {
                 <div className="mb-6 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                     <div className="flex flex-wrap items-center gap-3">
                         {can.confirm && (
-                            <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => action('confirm', {}, 'Confirm this order? Stock will be deducted.')}
-                                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
-                            >
+                            <Button variant="success" icon={Check} disabled={busy} onClick={() => action('confirm', {}, 'Confirm this order? Stock will be deducted.')}>
                                 Confirm order
-                            </button>
+                            </Button>
                         )}
                         {can.ship && (
-                            <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => action('ship', {}, 'Create the OTO shipment and request pickup?')}
-                                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-                            >
+                            <Button variant="primary" icon={Truck} disabled={busy} onClick={() => action('ship', {}, 'Create the OTO shipment and request pickup?')}>
                                 Ship (OTO pickup)
-                            </button>
+                            </Button>
                         )}
                         {can.cancel && (
-                            <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => action('cancel', {}, 'Cancel this order?')}
-                                className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:hover:bg-red-950"
-                            >
+                            <Button variant="danger" icon={X} disabled={busy} onClick={() => action('cancel', {}, 'Cancel this order?')}>
                                 Cancel
-                            </button>
+                            </Button>
                         )}
                     </div>
 
@@ -138,14 +125,9 @@ export default function OrderShow({ order, can }: { order: Order; can: Can }) {
                                     className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
                                 />
                             </label>
-                            <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => action('unavailable', { note }, 'Mark unavailable? This releases the payment hold / flags a refund.')}
-                                className="rounded-lg border border-amber-400 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-60 dark:text-amber-300 dark:hover:bg-amber-950"
-                            >
+                            <Button variant="warning" icon={Ban} disabled={busy} onClick={() => action('unavailable', { note }, 'Mark unavailable? This releases the payment hold / flags a refund.')}>
                                 Mark unavailable
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>

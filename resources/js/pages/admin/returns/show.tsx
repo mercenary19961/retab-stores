@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
+import { Check, RefreshCw, Undo2, X } from 'lucide-react';
 import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 
 const STATUS_LABELS: Record<string, string> = {
     requested: 'Requested',
@@ -112,20 +114,8 @@ export default function ReturnShow({
 
                             {orderReturn.status === 'requested' && (
                                 <div className="flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => act('approve')}
-                                        className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                                    >
-                                        Approve
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => act('reject')}
-                                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                                    >
-                                        Reject
-                                    </button>
+                                    <Button variant="success" icon={Check} onClick={() => act('approve')}>Approve</Button>
+                                    <Button variant="danger" icon={X} onClick={() => act('reject')}>Reject</Button>
                                 </div>
                             )}
 
@@ -145,20 +135,8 @@ export default function ReturnShow({
                                         {order.payment_method === 'bank_transfer' && ' (manual transfer — no gateway call)'}
                                     </p>
                                     <div className="flex gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => act('refund', { refund_shipping: refundShipping })}
-                                            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900"
-                                        >
-                                            Refund
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => act('exchange')}
-                                            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
-                                        >
-                                            Resolve as exchange
-                                        </button>
+                                        <Button variant="primary" icon={Undo2} onClick={() => act('refund', { refund_shipping: refundShipping })}>Refund</Button>
+                                        <Button variant="secondary" icon={RefreshCw} onClick={() => act('exchange')}>Resolve as exchange</Button>
                                     </div>
                                 </div>
                             )}

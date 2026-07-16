@@ -1,6 +1,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 
 interface ReviewData {
     id: number;
@@ -85,17 +87,9 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
                 </label>
 
                 <div className="flex items-center justify-between pt-2">
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="rounded-lg bg-neutral-900 px-5 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-                    >
-                        Save review
-                    </button>
+                    <Button type="submit" variant="primary" disabled={processing}>Save review</Button>
                     {review && (
-                        <button type="button" onClick={destroy} className="text-sm font-medium text-red-600 hover:underline">
-                            Delete
-                        </button>
+                        <Button type="button" variant="danger" icon={Trash2} onClick={destroy}>Delete</Button>
                     )}
                 </div>
             </form>

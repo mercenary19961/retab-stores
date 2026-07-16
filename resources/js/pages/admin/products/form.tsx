@@ -194,7 +194,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                                             <button
                                                 type="button"
                                                 onClick={() => router.put(`/admin/products/${product.id}/images/${img.id}/primary`, {}, { preserveScroll: true })}
-                                                className="text-blue-600 hover:underline dark:text-blue-400"
+                                                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
                                             >
                                                 Set primary
                                             </button>
@@ -202,7 +202,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                                         <button
                                             type="button"
                                             onClick={() => router.delete(`/admin/products/${product.id}/images/${img.id}`, { preserveScroll: true })}
-                                            className="text-red-600 hover:underline dark:text-red-400"
+                                            className="font-medium text-red-600 hover:underline dark:text-red-400"
                                         >
                                             Delete
                                         </button>

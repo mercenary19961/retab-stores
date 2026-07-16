@@ -1,6 +1,8 @@
 import { Head, router, usePage } from '@inertiajs/react';
+import { Pencil, Send } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
 
 interface Template {
     id: number;
@@ -89,13 +91,14 @@ export default function MarketingIndex({
                                     <span className={`rounded-full px-2 py-0.5 text-xs ${t.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800'}`}>
                                         {t.status}
                                     </span>
-                                    <button
-                                        type="button"
-                                        className="text-xs text-blue-600 underline dark:text-blue-400"
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        icon={Pencil}
                                         onClick={() => { setEditing(t.id); setTpl({ name: t.name, language: t.language, category: t.category, body: t.body, param_count: t.param_count, status: t.status }); }}
                                     >
                                         Edit
-                                    </button>
+                                    </Button>
                                 </div>
                             </li>
                         ))}
@@ -138,13 +141,9 @@ export default function MarketingIndex({
                             </select>
                         </label>
                         <div className="flex gap-2">
-                            <button type="submit" className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-neutral-900">
-                                {editing ? 'Update' : 'Add'}
-                            </button>
+                            <Button type="submit" variant="primary">{editing ? 'Update' : 'Add'}</Button>
                             {editing && (
-                                <button type="button" onClick={() => { setEditing(null); setTpl(emptyTemplate); }} className="rounded-lg border border-neutral-300 px-4 py-2 text-sm dark:border-neutral-700">
-                                    Cancel
-                                </button>
+                                <Button type="button" variant="secondary" onClick={() => { setEditing(null); setTpl(emptyTemplate); }}>Cancel</Button>
                             )}
                         </div>
                     </form>
@@ -189,13 +188,9 @@ export default function MarketingIndex({
                                 </label>
                             ))}
 
-                            <button
-                                type="submit"
-                                disabled={!selected}
-                                className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-neutral-900"
-                            >
+                            <Button type="submit" variant="primary" icon={Send} disabled={!selected}>
                                 Send to {audienceCount} customers
-                            </button>
+                            </Button>
                         </form>
                     </section>
 
