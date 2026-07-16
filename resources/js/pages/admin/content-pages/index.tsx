@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface PageRow {
     id: number;
@@ -14,14 +15,15 @@ interface PageRow {
 }
 
 export default function ContentPagesIndex({ pages, undoMeta = null }: { pages: PageRow[]; undoMeta?: UndoMeta | null }) {
+    const { t } = useAdminT();
     return (
-        <AdminLayout title="Content Pages">
-            <Head title="Content Pages" />
+        <AdminLayout title={t('admin.contentPages.title')}>
+            <Head title={t('admin.contentPages.title')} />
 
             <div className="mb-4 flex items-center justify-between gap-3">
                 <UndoButton section="content_pages" undoMeta={undoMeta} />
                 <div className="ms-auto">
-                    <Button href="/admin/content-pages/create" variant="primary" icon={Plus}>New page</Button>
+                    <Button href="/admin/content-pages/create" variant="primary" icon={Plus}>{t('admin.contentPages.newPage')}</Button>
                 </div>
             </div>
 
@@ -29,16 +31,16 @@ export default function ContentPagesIndex({ pages, undoMeta = null }: { pages: P
                 <table className="w-full text-sm">
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <th className="px-4 py-3 font-medium">Slug</th>
-                            <th className="px-4 py-3 font-medium">Title (AR)</th>
-                            <th className="px-4 py-3 font-medium">Title (EN)</th>
-                            <th className="px-4 py-3 font-medium">Published</th>
-                            <th className="px-4 py-3 font-medium">Updated</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.contentPages.cols.slug')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.contentPages.cols.titleAr')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.contentPages.cols.titleEn')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.contentPages.cols.published')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.contentPages.cols.updated')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {pages.length === 0 && (
-                            <tr><td colSpan={5} className="px-4 py-8 text-center text-neutral-400">No pages.</td></tr>
+                            <tr><td colSpan={5} className="px-4 py-8 text-center text-neutral-400">{t('admin.contentPages.empty')}</td></tr>
                         )}
                         {pages.map((p) => (
                             <tr key={p.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
@@ -49,7 +51,7 @@ export default function ContentPagesIndex({ pages, undoMeta = null }: { pages: P
                                 </td>
                                 <td className="px-4 py-3" dir="rtl">{p.title_ar}</td>
                                 <td className="px-4 py-3">{p.title_en ?? '—'}</td>
-                                <td className="px-4 py-3">{p.is_published ? 'Yes' : 'No'}</td>
+                                <td className="px-4 py-3">{p.is_published ? t('admin.common.yes') : t('admin.common.no')}</td>
                                 <td className="px-4 py-3 text-neutral-500">{p.updated_at ?? '—'}</td>
                             </tr>
                         ))}

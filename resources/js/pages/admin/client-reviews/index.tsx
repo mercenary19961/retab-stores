@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Plus, Upload } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface ReviewRow {
     id: number;
@@ -15,19 +16,20 @@ interface ReviewRow {
 }
 
 export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }) {
+    const { t } = useAdminT();
     const activeCount = reviews.filter((r) => r.is_active).length;
 
     return (
-        <AdminLayout title="Client Reviews">
-            <Head title="Client Reviews" />
+        <AdminLayout title={t('admin.reviews.title')}>
+            <Head title={t('admin.reviews.title')} />
 
             <div className="mb-4 flex items-center justify-between">
                 <p className="text-sm text-neutral-500">
-                    {activeCount} active in the homepage pool · {reviews.length} total
+                    {t('admin.reviews.summary', { active: activeCount, total: reviews.length })}
                 </p>
                 <div className="flex gap-2">
-                    <Button href="/admin/client-reviews/import" variant="secondary" icon={Upload}>Bulk import</Button>
-                    <Button href="/admin/client-reviews/create" variant="primary" icon={Plus}>New review</Button>
+                    <Button href="/admin/client-reviews/import" variant="secondary" icon={Upload}>{t('admin.reviews.bulkImport')}</Button>
+                    <Button href="/admin/client-reviews/create" variant="primary" icon={Plus}>{t('admin.reviews.newReview')}</Button>
                 </div>
             </div>
 
@@ -35,17 +37,17 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                 <table className="w-full text-sm">
                     <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
                         <tr>
-                            <th className="px-4 py-3 font-medium">Author</th>
-                            <th className="px-4 py-3 font-medium">Review</th>
-                            <th className="px-4 py-3 font-medium">Rating</th>
-                            <th className="px-4 py-3 font-medium">Source</th>
-                            <th className="px-4 py-3 font-medium">In pool</th>
-                            <th className="px-4 py-3 font-medium">Updated</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.reviews.cols.author')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.reviews.cols.review')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.reviews.cols.rating')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.reviews.cols.source')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.reviews.cols.inPool')}</th>
+                            <th className="px-4 py-3 font-medium">{t('admin.reviews.cols.updated')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {reviews.length === 0 && (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-400">No reviews yet.</td></tr>
+                            <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-400">{t('admin.reviews.empty')}</td></tr>
                         )}
                         {reviews.map((r) => (
                             <tr key={r.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
@@ -62,7 +64,7 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                                 <td className="px-4 py-3 align-top text-neutral-500">{r.source ?? '—'}</td>
                                 <td className="px-4 py-3 align-top">
                                     <span className={r.is_active ? 'font-semibold text-green-600' : 'text-neutral-400'}>
-                                        {r.is_active ? 'Yes' : 'No'}
+                                        {r.is_active ? t('admin.common.yes') : t('admin.common.no')}
                                     </span>
                                 </td>
                                 <td className="px-4 py-3 align-top text-neutral-500">{r.updated_at ?? '—'}</td>

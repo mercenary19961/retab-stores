@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface MatchRow {
     product_id: number;
@@ -40,6 +41,7 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: str
 }
 
 export default function StockImportPreview({ token, diff }: { token: string; diff: Diff }) {
+    const { t } = useAdminT();
     const [busy, setBusy] = useState(false);
 
     const apply = () => {
@@ -53,33 +55,33 @@ export default function StockImportPreview({ token, diff }: { token: string; dif
     const nothingToApply = diff.matched.length === 0;
 
     return (
-        <AdminLayout title="Review import">
-            <Head title="Review import" />
+        <AdminLayout title={t('admin.inventory.reviewTitle')}>
+            <Head title={t('admin.inventory.reviewTitle')} />
 
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Stat label="To update" value={diff.matched.length} tone="text-blue-600 dark:text-blue-400" />
-                <Stat label="Unchanged" value={diff.unchanged.length} />
-                <Stat label="Unmatched" value={diff.unmatched.length} tone={diff.unmatched.length ? 'text-amber-600 dark:text-amber-400' : ''} />
-                <Stat label="Invalid rows" value={diff.invalid.length} tone={diff.invalid.length ? 'text-red-600 dark:text-red-400' : ''} />
+                <Stat label={t('admin.inventory.toUpdate')} value={diff.matched.length} tone="text-blue-600 dark:text-blue-400" />
+                <Stat label={t('admin.inventory.unchanged')} value={diff.unchanged.length} />
+                <Stat label={t('admin.inventory.unmatched')} value={diff.unmatched.length} tone={diff.unmatched.length ? 'text-amber-600 dark:text-amber-400' : ''} />
+                <Stat label={t('admin.inventory.invalidRows')} value={diff.invalid.length} tone={diff.invalid.length ? 'text-red-600 dark:text-red-400' : ''} />
             </div>
 
             <div className="mb-6 flex gap-3">
                 <Button variant="success" icon={Check} onClick={apply} disabled={busy || nothingToApply}>
-                    {nothingToApply ? 'Nothing to apply' : `Apply ${diff.matched.length} update(s)`}
+                    {nothingToApply ? t('admin.inventory.nothingToApply') : t('admin.inventory.applyUpdates', { count: diff.matched.length })}
                 </Button>
-                <Button href="/admin/stock-import" variant="secondary">Cancel</Button>
+                <Button href="/admin/stock-import" variant="secondary">{t('admin.common.cancel')}</Button>
             </div>
 
             {diff.matched.length > 0 && (
                 <section className="mb-6 overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="border-b border-neutral-200 px-4 py-2 font-bold dark:border-neutral-800">Stock changes</h2>
+                    <h2 className="border-b border-neutral-200 px-4 py-2 font-bold dark:border-neutral-800">{t('admin.inventory.stockChanges')}</h2>
                     <table className="w-full text-sm">
                         <thead className="text-left text-neutral-500">
                             <tr>
-                                <th className="px-4 py-2 font-medium">Product</th>
-                                <th className="px-4 py-2 font-medium">SKU</th>
-                                <th className="px-4 py-2 text-right font-medium">Current</th>
-                                <th className="px-4 py-2 text-right font-medium">New</th>
+                                <th className="px-4 py-2 font-medium">{t('admin.common.product')}</th>
+                                <th className="px-4 py-2 font-medium">{t('admin.common.sku')}</th>
+                                <th className="px-4 py-2 text-right font-medium">{t('admin.inventory.current')}</th>
+                                <th className="px-4 py-2 text-right font-medium">{t('admin.inventory.new')}</th>
                                 <th className="px-4 py-2 text-right font-medium">Δ</th>
                             </tr>
                         </thead>
@@ -106,15 +108,15 @@ export default function StockImportPreview({ token, diff }: { token: string; dif
             {diff.unmatched.length > 0 && (
                 <section className="mb-6 overflow-hidden rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40">
                     <h2 className="border-b border-amber-200 px-4 py-2 font-bold text-amber-800 dark:border-amber-900 dark:text-amber-200">
-                        Unmatched rows (skipped — no product with this SMACC SKU / barcode)
+                        {t('admin.inventory.unmatchedTitle')}
                     </h2>
                     <table className="w-full text-sm">
                         <thead className="text-left text-amber-700 dark:text-amber-300">
                             <tr>
-                                <th className="px-4 py-2 font-medium">Line</th>
-                                <th className="px-4 py-2 font-medium">SMACC SKU</th>
-                                <th className="px-4 py-2 font-medium">Barcode</th>
-                                <th className="px-4 py-2 text-right font-medium">Stock</th>
+                                <th className="px-4 py-2 font-medium">{t('admin.inventory.line')}</th>
+                                <th className="px-4 py-2 font-medium">{t('admin.inventory.smaccSku')}</th>
+                                <th className="px-4 py-2 font-medium">{t('admin.inventory.barcode')}</th>
+                                <th className="px-4 py-2 text-right font-medium">{t('admin.inventory.stock')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -133,10 +135,10 @@ export default function StockImportPreview({ token, diff }: { token: string; dif
 
             {diff.invalid.length > 0 && (
                 <section className="overflow-hidden rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40">
-                    <h2 className="border-b border-red-200 px-4 py-2 font-bold text-red-800 dark:border-red-900 dark:text-red-200">Invalid rows (skipped)</h2>
+                    <h2 className="border-b border-red-200 px-4 py-2 font-bold text-red-800 dark:border-red-900 dark:text-red-200">{t('admin.inventory.invalidTitle')}</h2>
                     <ul className="px-4 py-2 text-sm text-red-700 dark:text-red-300">
                         {diff.invalid.map((r, i) => (
-                            <li key={i}>Line {r.line}: {r.error}</li>
+                            <li key={i}>{t('admin.inventory.invalidLine', { line: r.line, error: r.error })}</li>
                         ))}
                     </ul>
                 </section>

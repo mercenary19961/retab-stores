@@ -3,6 +3,7 @@ import { Pencil, Send } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface Template {
     id: number;
@@ -37,6 +38,7 @@ export default function MarketingIndex({
     campaigns: Campaign[];
     audienceCount: number;
 }) {
+    const { t: tr } = useAdminT();
     const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
 
     // Template registry form (create or edit-in-place).
@@ -65,8 +67,8 @@ export default function MarketingIndex({
     };
 
     return (
-        <AdminLayout title="WhatsApp Marketing">
-            <Head title="WhatsApp Marketing" />
+        <AdminLayout title={tr('admin.marketing.title')}>
+            <Head title={tr('admin.marketing.title')} />
 
             {flash?.success && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>}
             {flash?.error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{flash.error}</div>}
@@ -74,18 +76,16 @@ export default function MarketingIndex({
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Templates registry */}
                 <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="mb-1 font-bold">Templates</h2>
-                    <p className="mb-4 text-sm text-neutral-500">
-                        Author + get approval in Meta Business Manager, then mirror the template here and set its status to approved.
-                    </p>
+                    <h2 className="mb-1 font-bold">{tr('admin.marketing.templates')}</h2>
+                    <p className="mb-4 text-sm text-neutral-500">{tr('admin.marketing.templatesDesc')}</p>
 
                     <ul className="mb-5 space-y-2 text-sm">
-                        {templates.length === 0 && <li className="text-neutral-400">No templates yet.</li>}
+                        {templates.length === 0 && <li className="text-neutral-400">{tr('admin.marketing.noTemplates')}</li>}
                         {templates.map((t) => (
                             <li key={t.id} className="flex items-center justify-between rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
                                 <div>
                                     <span className="font-mono">{t.name}</span>
-                                    <span className="ms-2 text-xs text-neutral-400">{t.language} · {t.category} · {t.param_count} vars</span>
+                                    <span className="ms-2 text-xs text-neutral-400">{t.language} · {t.category} · {t.param_count} {tr('admin.marketing.vars')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`rounded-full px-2 py-0.5 text-xs ${t.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800'}`}>
@@ -97,7 +97,7 @@ export default function MarketingIndex({
                                         icon={Pencil}
                                         onClick={() => { setEditing(t.id); setTpl({ name: t.name, language: t.language, category: t.category, body: t.body, param_count: t.param_count, status: t.status }); }}
                                     >
-                                        Edit
+                                        {tr('admin.common.edit')}
                                     </Button>
                                 </div>
                             </li>
@@ -105,25 +105,25 @@ export default function MarketingIndex({
                     </ul>
 
                     <form onSubmit={saveTemplate} className="space-y-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-                        <p className="text-sm font-semibold">{editing ? 'Edit template' : 'Add template'}</p>
+                        <p className="text-sm font-semibold">{editing ? tr('admin.marketing.editTemplate') : tr('admin.marketing.addTemplate')}</p>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <label className="block text-sm">
-                                <span className="text-neutral-500">Meta name (snake_case)</span>
+                                <span className="text-neutral-500">{tr('admin.marketing.metaName')}</span>
                                 <input value={String(tpl.name)} onChange={(e) => setTpl({ ...tpl, name: e.target.value })} className={`${inputCls} font-mono`} />
                             </label>
                             <label className="block text-sm">
-                                <span className="text-neutral-500">Variables count</span>
+                                <span className="text-neutral-500">{tr('admin.marketing.varsCount')}</span>
                                 <input type="number" min={0} max={10} value={Number(tpl.param_count)} onChange={(e) => setTpl({ ...tpl, param_count: Number(e.target.value) })} className={inputCls} />
                             </label>
                             <label className="block text-sm">
-                                <span className="text-neutral-500">Language</span>
+                                <span className="text-neutral-500">{tr('admin.marketing.language')}</span>
                                 <select value={String(tpl.language)} onChange={(e) => setTpl({ ...tpl, language: e.target.value })} className={inputCls}>
                                     <option value="ar">ar</option>
                                     <option value="en">en</option>
                                 </select>
                             </label>
                             <label className="block text-sm">
-                                <span className="text-neutral-500">Category</span>
+                                <span className="text-neutral-500">{tr('admin.marketing.category')}</span>
                                 <select value={String(tpl.category)} onChange={(e) => setTpl({ ...tpl, category: e.target.value })} className={inputCls}>
                                     <option value="marketing">marketing</option>
                                     <option value="utility">utility</option>
@@ -131,19 +131,19 @@ export default function MarketingIndex({
                             </label>
                         </div>
                         <label className="block text-sm">
-                            <span className="text-neutral-500">Body preview ({'{{1}}'} placeholders)</span>
+                            <span className="text-neutral-500">{tr('admin.marketing.bodyPreview')}</span>
                             <textarea dir="auto" rows={3} value={String(tpl.body)} onChange={(e) => setTpl({ ...tpl, body: e.target.value })} className={inputCls} />
                         </label>
                         <label className="block text-sm">
-                            <span className="text-neutral-500">Meta approval status</span>
+                            <span className="text-neutral-500">{tr('admin.marketing.metaStatus')}</span>
                             <select value={String(tpl.status)} onChange={(e) => setTpl({ ...tpl, status: e.target.value })} className={inputCls}>
                                 {['draft', 'pending', 'approved', 'rejected'].map((s) => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </label>
                         <div className="flex gap-2">
-                            <Button type="submit" variant="primary">{editing ? 'Update' : 'Add'}</Button>
+                            <Button type="submit" variant="primary">{editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}</Button>
                             {editing && (
-                                <Button type="button" variant="secondary" onClick={() => { setEditing(null); setTpl(emptyTemplate); }}>Cancel</Button>
+                                <Button type="button" variant="secondary" onClick={() => { setEditing(null); setTpl(emptyTemplate); }}>{tr('admin.common.cancel')}</Button>
                             )}
                         </div>
                     </form>
@@ -152,20 +152,18 @@ export default function MarketingIndex({
                 {/* Campaign composer + history */}
                 <div className="space-y-6">
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-1 font-bold">Send a campaign</h2>
-                        <p className="mb-4 text-sm text-neutral-500">
-                            Goes to the opt-in segment: <b>{audienceCount}</b> customers. Approved templates only.
-                        </p>
+                        <h2 className="mb-1 font-bold">{tr('admin.marketing.sendCampaign')}</h2>
+                        <p className="mb-4 text-sm text-neutral-500">{tr('admin.marketing.audienceNote', { count: audienceCount })}</p>
 
                         <form onSubmit={sendCampaign} className="space-y-3">
                             <label className="block text-sm">
-                                <span className="text-neutral-500">Template</span>
+                                <span className="text-neutral-500">{tr('admin.marketing.template')}</span>
                                 <select
                                     value={templateId}
                                     onChange={(e) => { const id = Number(e.target.value) || ''; setTemplateId(id); setParams([]); }}
                                     className={inputCls}
                                 >
-                                    <option value="">— pick an approved template —</option>
+                                    <option value="">{tr('admin.marketing.pickTemplate')}</option>
                                     {templates.filter((t) => t.status === 'approved').map((t) => (
                                         <option key={t.id} value={t.id}>{t.name} ({t.language})</option>
                                     ))}
@@ -189,15 +187,15 @@ export default function MarketingIndex({
                             ))}
 
                             <Button type="submit" variant="primary" icon={Send} disabled={!selected}>
-                                Send to {audienceCount} customers
+                                {tr('admin.marketing.sendTo', { count: audienceCount })}
                             </Button>
                         </form>
                     </section>
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-3 font-bold">Campaign history</h2>
+                        <h2 className="mb-3 font-bold">{tr('admin.marketing.campaignHistory')}</h2>
                         <ul className="space-y-2 text-sm">
-                            {campaigns.length === 0 && <li className="text-neutral-400">No campaigns yet.</li>}
+                            {campaigns.length === 0 && <li className="text-neutral-400">{tr('admin.marketing.noCampaigns')}</li>}
                             {campaigns.map((c) => (
                                 <li key={c.id} className="rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
                                     <div className="flex items-center justify-between">
@@ -205,7 +203,7 @@ export default function MarketingIndex({
                                         <span className="text-xs text-neutral-400">{c.sent_at ?? c.status}</span>
                                     </div>
                                     <div className="mt-1 text-xs text-neutral-500">
-                                        audience {c.audience_count}
+                                        {tr('admin.marketing.audience', { count: c.audience_count })}
                                         {Object.entries(c.stats).map(([k, v]) => ` · ${k} ${v}`)}
                                     </div>
                                 </li>
