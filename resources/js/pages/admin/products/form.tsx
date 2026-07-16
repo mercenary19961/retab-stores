@@ -114,14 +114,11 @@ export default function ProductForm({ product, categories }: { product: Product 
                     <label className="block" id="field-category_id">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')} *</span>
                         <Select
-                            value={data.category_id}
-                            onChange={(e) => setData('category_id', Number(e.target.value))}
+                            value={String(data.category_id)}
+                            onChange={(v) => setData('category_id', Number(v))}
+                            options={categories.map((c) => ({ value: String(c.id), label: c.name_ar }))}
                             className="mt-1 w-full"
-                        >
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name_ar}</option>
-                            ))}
-                        </Select>
+                        />
                         {errors.category_id && <span className="text-xs text-red-500">{errors.category_id}</span>}
                     </label>
                     <div className="grid gap-4 sm:grid-cols-2">

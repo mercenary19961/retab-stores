@@ -132,17 +132,21 @@ export default function MarketingIndex({
                             </label>
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.language')}</span>
-                                <Select value={String(tpl.language)} onChange={(e) => setTpl({ ...tpl, language: e.target.value })} className="mt-1 w-full">
-                                    <option value="ar">ar</option>
-                                    <option value="en">en</option>
-                                </Select>
+                                <Select
+                                    value={String(tpl.language)}
+                                    onChange={(v) => setTpl({ ...tpl, language: v })}
+                                    options={[{ value: 'ar', label: 'ar' }, { value: 'en', label: 'en' }]}
+                                    className="mt-1 w-full"
+                                />
                             </label>
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.category')}</span>
-                                <Select value={String(tpl.category)} onChange={(e) => setTpl({ ...tpl, category: e.target.value })} className="mt-1 w-full">
-                                    <option value="marketing">marketing</option>
-                                    <option value="utility">utility</option>
-                                </Select>
+                                <Select
+                                    value={String(tpl.category)}
+                                    onChange={(v) => setTpl({ ...tpl, category: v })}
+                                    options={[{ value: 'marketing', label: 'marketing' }, { value: 'utility', label: 'utility' }]}
+                                    className="mt-1 w-full"
+                                />
                             </label>
                         </div>
                         <label className="block text-sm">
@@ -151,9 +155,12 @@ export default function MarketingIndex({
                         </label>
                         <label className="block text-sm">
                             <span className="text-neutral-500">{tr('admin.marketing.metaStatus')}</span>
-                            <Select value={String(tpl.status)} onChange={(e) => setTpl({ ...tpl, status: e.target.value })} className="mt-1 w-full">
-                                {['draft', 'pending', 'approved', 'rejected'].map((s) => <option key={s} value={s}>{s}</option>)}
-                            </Select>
+                            <Select
+                                value={String(tpl.status)}
+                                onChange={(v) => setTpl({ ...tpl, status: v })}
+                                options={['draft', 'pending', 'approved', 'rejected'].map((s) => ({ value: s, label: s }))}
+                                className="mt-1 w-full"
+                            />
                         </label>
                         <div className="flex gap-2">
                             <Button type="submit" variant="primary">{editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}</Button>
@@ -174,15 +181,14 @@ export default function MarketingIndex({
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.template')}</span>
                                 <Select
-                                    value={templateId}
-                                    onChange={(e) => { const id = Number(e.target.value) || ''; setTemplateId(id); setParams([]); }}
+                                    value={templateId ? String(templateId) : ''}
+                                    onChange={(v) => { const id = Number(v) || ''; setTemplateId(id); setParams([]); }}
+                                    options={[
+                                        { value: '', label: tr('admin.marketing.pickTemplate') },
+                                        ...templates.filter((t) => t.status === 'approved').map((t) => ({ value: String(t.id), label: `${t.name} (${t.language})` })),
+                                    ]}
                                     className="mt-1 w-full"
-                                >
-                                    <option value="">{tr('admin.marketing.pickTemplate')}</option>
-                                    {templates.filter((t) => t.status === 'approved').map((t) => (
-                                        <option key={t.id} value={t.id}>{t.name} ({t.language})</option>
-                                    ))}
-                                </Select>
+                                />
                             </label>
 
                             {selected && selected.body && (

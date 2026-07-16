@@ -53,9 +53,9 @@ const en = {
         title: 'Categories',
     },
     primaryBanner: {
-        alt: 'Our dates, Saudi origin',
-        title: 'Our Dates',
-        subtitle: 'Saudi Origin',
+        alt: 'Quality we grow, trust we deliver',
+        title: 'Quality we grow',
+        subtitle: 'Trust we deliver',
     },
     footerBanner: {
         headline: 'Quality You Can Trust',

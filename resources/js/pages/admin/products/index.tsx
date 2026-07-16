@@ -125,15 +125,14 @@ export default function ProductsIndex({
                 </form>
 
                 <Select
-                    value={filters.category ?? ''}
-                    onChange={(e) => query({ category: e.target.value || undefined, page: undefined })}
+                    value={filters.category ? String(filters.category) : ''}
+                    onChange={(v) => query({ category: v || undefined, page: undefined })}
+                    options={[
+                        { value: '', label: t('admin.products.allCategories') },
+                        ...categories.map((c) => ({ value: String(c.id), label: c.name_ar })),
+                    ]}
                     className="w-full sm:w-auto"
-                >
-                    <option value="">{t('admin.products.allCategories')}</option>
-                    {categories.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name_ar}</option>
-                    ))}
-                </Select>
+                />
 
                 <div className="sm:ms-auto">
                     <Button href="/admin/products/create" variant="primary" icon={Plus} className="w-full sm:w-auto">{t('admin.products.newProduct')}</Button>

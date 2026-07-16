@@ -138,21 +138,6 @@ html[dir='rtl'] .cta-shimmer {
 }
 
 /*
- * Admin dropdown — the native <select> is restyled by components/admin/select.tsx;
- * this themes the OS-rendered options panel to match the dark UI, with a
- * brand-gold tint on the selected option (respected by Chromium/Edge on Windows).
- */
-.admin-select option {
-    background-color: rgb(23 23 23); /* neutral-900 */
-    color: rgb(229 229 229); /* neutral-200 */
-}
-.admin-select option:checked,
-.admin-select option:hover {
-    background-color: rgb(175 144 86 / 0.28); /* brand-gold tint */
-    color: rgb(245 245 245);
-}
-
-/*
  * Admin field highlight — a fading amber ring pulsed on a form field when the
  * admin arrives from a change-log "Go to item" link (see use-highlight-fields).
  */

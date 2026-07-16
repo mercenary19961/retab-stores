@@ -57,9 +57,9 @@ const ar = {
         title: 'الأصناف',
     },
     primaryBanner: {
-        alt: 'تمورنا سعودية المنشأ',
-        title: 'تمورنا',
-        subtitle: 'سعودية المنشأ',
+        alt: 'جودة نزرعها وثقة نقدمها',
+        title: 'جودة نزرعها',
+        subtitle: 'وثقة نقدمها',
     },
     footerBanner: {
         headline: 'جودة يمكنك الوثوق بها',

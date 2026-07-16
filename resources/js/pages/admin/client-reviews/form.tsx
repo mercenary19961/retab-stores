@@ -71,18 +71,24 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
 
                 <div className="grid gap-4 sm:grid-cols-2">
                     {field(t('admin.reviews.form.rating'), (
-                        <Select value={data.rating} onChange={(e) => setData('rating', Number(e.target.value))} className="mt-1 w-full">
-                            {[5, 4, 3, 2, 1].map((n) => (
-                                <option key={n} value={n}>{n} ★</option>
-                            ))}
-                        </Select>
+                        <Select
+                            value={String(data.rating)}
+                            onChange={(v) => setData('rating', Number(v))}
+                            options={[5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: `${n} ★` }))}
+                            className="mt-1 w-full"
+                        />
                     ), errors.rating)}
                     {field(t('admin.reviews.form.language'), (
-                        <Select value={data.language} onChange={(e) => setData('language', e.target.value)} className="mt-1 w-full">
-                            <option value="">{t('admin.reviews.form.languageUnset')}</option>
-                            <option value="ar">{t('admin.reviews.form.arabic')}</option>
-                            <option value="en">{t('admin.reviews.form.english')}</option>
-                        </Select>
+                        <Select
+                            value={data.language}
+                            onChange={(v) => setData('language', v)}
+                            options={[
+                                { value: '', label: t('admin.reviews.form.languageUnset') },
+                                { value: 'ar', label: t('admin.reviews.form.arabic') },
+                                { value: 'en', label: t('admin.reviews.form.english') },
+                            ]}
+                            className="mt-1 w-full"
+                        />
                     ), errors.language)}
                 </div>
 
