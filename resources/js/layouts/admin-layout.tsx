@@ -76,9 +76,16 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
 
     // Sidebar: a mobile drawer (sidebarOpen) below lg, and a persisted collapse
     // on desktop (collapsed). The one header button adapts to the breakpoint.
+    // `mounted` gates the slide transition so it never fires on first paint /
+    // Inertia remount (only on an actual user toggle).
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
-    useEffect(() => setCollapsed(localStorage.getItem(SIDEBAR_KEY) === '1'), []);
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setCollapsed(localStorage.getItem(SIDEBAR_KEY) === '1');
+        const id = requestAnimationFrame(() => setMounted(true));
+        return () => cancelAnimationFrame(id);
+    }, []);
     useEffect(() => router.on('navigate', () => setSidebarOpen(false)), []);
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSidebarOpen(false);
@@ -104,42 +111,49 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
             {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
             {/* Sidebar — a fixed off-canvas drawer on mobile, static column on desktop.
-                Direction handled in JS (Tailwind dropped the max-lg:rtl: triple-stack). */}
+                Mobile toggles `transform`; desktop collapses `width` (both smoothly).
+                The inner w-60 wrapper keeps its layout while the shell width animates,
+                so nothing reflows mid-slide. Direction handled in JS (Tailwind dropped
+                the max-lg:rtl: triple-stack). */}
             <aside
-                className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-40 flex w-60 shrink-0 flex-col border-e border-neutral-800 bg-neutral-900 transition-transform duration-200 ${
-                    collapsed ? 'lg:hidden' : 'lg:static lg:translate-x-0'
-                } ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'}`}
+                className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-40 flex w-60 shrink-0 flex-col overflow-hidden border-e border-neutral-800 bg-neutral-900 ease-in-out lg:static lg:translate-x-0 ${
+                    mounted ? 'transition-all duration-300' : ''
+                } ${collapsed ? 'lg:w-0 lg:border-e-0' : 'lg:w-60'} ${
+                    sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
+                }`}
             >
-                <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-800 px-5">
-                    <Link href="/admin/dashboard" className="text-lg font-bold text-brand-gold">
-                        {t('admin.brand')}
-                    </Link>
-                    <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Close menu" className="text-neutral-400 hover:text-white lg:hidden">
-                        <X className="h-5 w-5" />
-                    </button>
+                <div className="flex h-full w-60 shrink-0 flex-col">
+                    <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-800 px-5">
+                        <Link href="/admin/dashboard" className="text-lg font-bold text-brand-gold">
+                            {t('admin.brand')}
+                        </Link>
+                        <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Close menu" className="text-neutral-400 hover:text-white lg:hidden">
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+                    <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+                        {NAV.map((item) => {
+                            const active =
+                                currentPath === item.href ||
+                                (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href));
+                            const Icon = item.icon;
+                            return (
+                                <Link
+                                    key={item.key}
+                                    href={item.href}
+                                    className={
+                                        active
+                                            ? 'flex items-center gap-3 rounded-lg bg-brand-teal/25 px-3 py-2 text-sm font-semibold text-brand-gold'
+                                            : 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100'
+                                    }
+                                >
+                                    <Icon className="h-5 w-5 shrink-0" />
+                                    <span>{t(`admin.nav.${item.key}`)}</span>
+                                </Link>
+                            );
+                        })}
+                    </nav>
                 </div>
-                <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-                    {NAV.map((item) => {
-                        const active =
-                            currentPath === item.href ||
-                            (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href));
-                        const Icon = item.icon;
-                        return (
-                            <Link
-                                key={item.key}
-                                href={item.href}
-                                className={
-                                    active
-                                        ? 'flex items-center gap-3 rounded-lg bg-brand-teal/25 px-3 py-2 text-sm font-semibold text-brand-gold'
-                                        : 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100'
-                                }
-                            >
-                                <Icon className="h-5 w-5 shrink-0" />
-                                <span>{t(`admin.nav.${item.key}`)}</span>
-                            </Link>
-                        );
-                    })}
-                </nav>
             </aside>
 
             {/* Main column */}

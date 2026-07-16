@@ -52,14 +52,22 @@ export default function ResizableTh({
                 <span className="block truncate">{children}</span>
             )}
 
-            {/* Resize grip on the column's inline-end edge (right in LTR, left in RTL). */}
+            {/* Resize grip on the column's inline-end edge (right in LTR, left in RTL).
+                A faint divider is always visible so users see the column is draggable;
+                it thickens to brand-gold on hover / while dragging. */}
             <span
                 {...resizeProps}
-                title="Drag to resize, double-click to reset"
-                className={`absolute inset-y-0 end-0 z-10 w-1.5 cursor-col-resize touch-none select-none transition-colors ${
-                    resizing ? 'bg-brand-gold' : 'bg-transparent hover:bg-brand-gold/60'
-                }`}
-            />
+                title="Drag to resize · double-click to reset"
+                className="group/grip absolute inset-y-0 end-0 z-10 flex w-3 cursor-col-resize touch-none select-none items-stretch justify-center"
+            >
+                <span
+                    className={`my-2.5 rounded-full transition-all ${
+                        resizing
+                            ? 'w-0.5 bg-brand-gold'
+                            : 'w-px bg-neutral-600 group-hover/grip:w-0.5 group-hover/grip:bg-brand-gold'
+                    }`}
+                />
+            </span>
         </th>
     );
 }
