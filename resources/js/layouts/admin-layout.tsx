@@ -43,6 +43,10 @@ const NAV: NavItem[] = [
     { key: 'marketing', href: '/admin/marketing', icon: Megaphone, perm: 'marketing' },
     { key: 'reviews', href: '/admin/client-reviews', icon: Star, perm: 'reviews' },
     { key: 'contentPages', href: '/admin/content-pages', icon: FileText, perm: 'content_pages' },
+];
+
+// Pinned to the bottom of the sidebar, in this order (top → bottom).
+const NAV_BOTTOM: NavItem[] = [
     { key: 'changeLog', href: '/admin/change-log', icon: History, perm: 'change_log' },
     { key: 'users', href: '/admin/users', icon: ShieldCheck, adminOnly: true },
     { key: 'settings', href: '/admin/settings', icon: Settings, perm: 'settings' },
@@ -69,11 +73,34 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
     // Editors see only the sections they can view; admins (permissions === null) see all.
     const isAdmin = user?.role === 'admin';
     const permissions = props.auth?.permissions ?? null;
-    const nav = NAV.filter((item) => {
+    const canSee = (item: NavItem) => {
         if (item.adminOnly) return isAdmin;
         if (isAdmin || !item.perm) return true;
         return Boolean(permissions?.[item.perm]?.view);
-    });
+    };
+    const navTop = NAV.filter(canSee);
+    const navBottom = NAV_BOTTOM.filter(canSee);
+
+    const renderNavItem = (item: NavItem) => {
+        const active =
+            currentPath === item.href ||
+            (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href));
+        const Icon = item.icon;
+        return (
+            <Link
+                key={item.key}
+                href={item.href}
+                className={
+                    active
+                        ? 'flex items-center gap-3 rounded-lg bg-brand-teal/25 px-3 py-2 text-sm font-semibold text-brand-gold'
+                        : 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100'
+                }
+            >
+                <Icon className="h-5 w-5 shrink-0" />
+                <span>{t(`admin.nav.${item.key}`)}</span>
+            </Link>
+        );
+    };
 
     // Admin language: English by default, persisted in localStorage. RTL scoped
     // to this subtree via the root `dir` attribute (document.dir stays the
@@ -153,27 +180,11 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
                             <X className="h-5 w-5" />
                         </button>
                     </div>
-                    <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-                        {nav.map((item) => {
-                            const active =
-                                currentPath === item.href ||
-                                (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href));
-                            const Icon = item.icon;
-                            return (
-                                <Link
-                                    key={item.key}
-                                    href={item.href}
-                                    className={
-                                        active
-                                            ? 'flex items-center gap-3 rounded-lg bg-brand-teal/25 px-3 py-2 text-sm font-semibold text-brand-gold'
-                                            : 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100'
-                                    }
-                                >
-                                    <Icon className="h-5 w-5 shrink-0" />
-                                    <span>{t(`admin.nav.${item.key}`)}</span>
-                                </Link>
-                            );
-                        })}
+                    <nav className="flex flex-1 flex-col overflow-y-auto p-3">
+                        <div className="space-y-1">{navTop.map(renderNavItem)}</div>
+                        {navBottom.length > 0 && (
+                            <div className="mt-auto space-y-1 border-t border-neutral-800 pt-3">{navBottom.map(renderNavItem)}</div>
+                        )}
                     </nav>
                 </div>
             </aside>
