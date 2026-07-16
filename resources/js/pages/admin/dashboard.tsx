@@ -1,6 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     Banknote,
+    BarChart3,
+    BellRing,
+    Boxes,
     Clock,
     Gift,
     MessageCircle,
@@ -9,6 +12,7 @@ import {
     ShoppingBag,
     TrendingDown,
     TrendingUp,
+    Trophy,
     Truck,
     UserPlus,
     Users,
@@ -155,7 +159,7 @@ export default function AdminDashboard({
 
             {/* Daily revenue trend */}
             <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                <h2 className="mb-4 font-semibold text-neutral-100">{t('admin.dashboard.trend.title')}</h2>
+                <h2 className="mb-4 flex items-center gap-2 font-semibold text-neutral-100"><BarChart3 className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.trend.title')}</h2>
                 {trendMax <= 1 ? (
                     <p className="py-8 text-center text-sm text-neutral-500">{t('admin.dashboard.trend.empty')}</p>
                 ) : (
@@ -178,7 +182,7 @@ export default function AdminDashboard({
 
             {/* Needs attention */}
             <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                <h2 className="mb-4 font-semibold text-neutral-100">{t('admin.dashboard.tasks.title')}</h2>
+                <h2 className="mb-4 flex items-center gap-2 font-semibold text-neutral-100"><BellRing className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.tasks.title')}</h2>
                 {openTasks.length === 0 ? (
                     <p className="text-sm text-neutral-500">{t('admin.dashboard.tasks.allClear')}</p>
                 ) : (
@@ -214,7 +218,7 @@ export default function AdminDashboard({
                 {/* Inventory */}
                 <section className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
                     <div className="mb-3 flex items-center justify-between">
-                        <h2 className="font-semibold text-neutral-100">{t('admin.dashboard.inventory.title')}</h2>
+                        <h2 className="flex items-center gap-2 font-semibold text-neutral-100"><Boxes className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.inventory.title')}</h2>
                         <Link href="/admin/stock-import" className="text-xs text-brand-gold hover:underline">{t('admin.dashboard.viewAll')}</Link>
                     </div>
 
@@ -268,7 +272,7 @@ export default function AdminDashboard({
 
                 {/* Insights */}
                 <section className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                    <h2 className="mb-3 font-semibold text-neutral-100">{t('admin.dashboard.insights.topProducts')}</h2>
+                    <h2 className="mb-3 flex items-center gap-2 font-semibold text-neutral-100"><Trophy className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.insights.topProducts')}</h2>
                     {insights.topProducts.length === 0 ? (
                         <p className="mb-5 text-sm text-neutral-500">{t('admin.dashboard.insights.noSales')}</p>
                     ) : (
@@ -317,7 +321,7 @@ export default function AdminDashboard({
             {/* Recent orders */}
             <div className="mt-6 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
                 <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-3">
-                    <h2 className="font-semibold text-neutral-100">{t('admin.dashboard.recentOrders')}</h2>
+                    <h2 className="flex items-center gap-2 font-semibold text-neutral-100"><ShoppingBag className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.recentOrders')}</h2>
                     <Link href="/admin/orders" className="text-sm text-brand-gold hover:underline">{t('admin.dashboard.viewAll')}</Link>
                 </div>
 

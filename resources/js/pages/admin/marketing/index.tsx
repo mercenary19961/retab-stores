@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { Pencil, Send } from 'lucide-react';
+import { FileText, History, Megaphone, Pencil, Send } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
@@ -76,7 +76,7 @@ export default function MarketingIndex({
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Templates registry */}
                 <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="mb-1 font-bold">{tr('admin.marketing.templates')}</h2>
+                    <h2 className="mb-1 flex items-center gap-2 font-bold"><FileText className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.templates')}</h2>
                     <p className="mb-4 text-sm text-neutral-500">{tr('admin.marketing.templatesDesc')}</p>
 
                     <ul className="mb-5 space-y-2 text-sm">
@@ -152,7 +152,7 @@ export default function MarketingIndex({
                 {/* Campaign composer + history */}
                 <div className="space-y-6">
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-1 font-bold">{tr('admin.marketing.sendCampaign')}</h2>
+                        <h2 className="mb-1 flex items-center gap-2 font-bold"><Megaphone className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.sendCampaign')}</h2>
                         <p className="mb-4 text-sm text-neutral-500">{tr('admin.marketing.audienceNote', { count: audienceCount })}</p>
 
                         <form onSubmit={sendCampaign} className="space-y-3">
@@ -193,7 +193,7 @@ export default function MarketingIndex({
                     </section>
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-3 font-bold">{tr('admin.marketing.campaignHistory')}</h2>
+                        <h2 className="mb-3 flex items-center gap-2 font-bold"><History className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.campaignHistory')}</h2>
                         <ul className="space-y-2 text-sm">
                             {campaigns.length === 0 && <li className="text-neutral-400">{tr('admin.marketing.noCampaigns')}</li>}
                             {campaigns.map((c) => (

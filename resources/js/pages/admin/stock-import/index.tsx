@@ -1,4 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
+import { Download, History, Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
@@ -60,7 +61,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
             {/* Current-stock export (feeds the daily SMACC reconciliation) */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
                 <div className="text-sm">
-                    <p className="font-semibold">{t('admin.inventory.exportTitle')}</p>
+                    <p className="flex items-center gap-2 font-semibold"><Download className="h-4 w-4 text-brand-gold" /> {t('admin.inventory.exportTitle')}</p>
                     <p className="text-neutral-500">{t('admin.inventory.exportDesc')}</p>
                 </div>
                 <ExportButtons base="/admin/stock-import/export" />
@@ -68,7 +69,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <section className="rounded-lg border border-neutral-200 bg-white p-4 lg:col-span-1 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="mb-2 font-bold">{t('admin.inventory.uploadTitle')}</h2>
+                    <h2 className="mb-2 flex items-center gap-2 font-bold"><Upload className="h-4 w-4 text-brand-gold" /> {t('admin.inventory.uploadTitle')}</h2>
                     <p className="mb-3 text-sm text-neutral-500">{t('admin.inventory.uploadDesc')}</p>
                     <form onSubmit={submit}>
                         <input
@@ -85,7 +86,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                 </section>
 
                 <section className="rounded-lg border border-neutral-200 bg-white p-4 lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="mb-3 font-bold">{t('admin.inventory.recentImports')}</h2>
+                    <h2 className="mb-3 flex items-center gap-2 font-bold"><History className="h-4 w-4 text-brand-gold" /> {t('admin.inventory.recentImports')}</h2>
                     {history.length === 0 ? (
                         <p className="text-sm text-neutral-400">{t('admin.inventory.noImports')}</p>
                     ) : (

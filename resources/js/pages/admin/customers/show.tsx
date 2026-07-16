@@ -1,7 +1,18 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Languages, Mail, MapPin, MessageCircle, Phone, ShoppingBag, User, type LucideIcon } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import { useAdminT } from '@/i18n/use-admin-t';
+
+function DlRow({ icon: Icon, label, value, mono, dir }: { icon: LucideIcon; label: string; value: React.ReactNode; mono?: boolean; dir?: 'auto' }) {
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <dt className="flex items-center gap-2 text-neutral-500">
+                <Icon className="h-3.5 w-3.5 shrink-0" /> {label}
+            </dt>
+            <dd className={mono ? 'font-mono' : ''} dir={dir}>{value}</dd>
+        </div>
+    );
+}
 
 interface Customer {
     id: number;
@@ -56,22 +67,27 @@ export default function CustomerShow({
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="space-y-6 lg:col-span-1">
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-3 font-bold" dir="auto">{customer.name ?? '—'}</h2>
+                        <h2 className="mb-3 flex items-center gap-2 font-bold" dir="auto">
+                            <User className="h-4 w-4 shrink-0 text-brand-gold" /> {customer.name ?? '—'}
+                        </h2>
                         <dl className="space-y-2">
-                            <div className="flex justify-between"><dt className="text-neutral-500">{t('admin.common.phone')}</dt><dd className="font-mono">{customer.phone ?? '—'}{customer.phone_verified ? ' ✓' : ''}</dd></div>
-                            <div className="flex justify-between"><dt className="text-neutral-500">{t('admin.common.email')}</dt><dd>{customer.email ?? '—'}</dd></div>
-                            <div className="flex justify-between"><dt className="text-neutral-500">{t('admin.common.city')}</dt><dd dir="auto">{customer.city ?? '—'}</dd></div>
-                            <div className="flex justify-between"><dt className="text-neutral-500">{t('admin.customers.show.locale')}</dt><dd>{customer.locale ?? '—'}</dd></div>
-                            <div className="flex justify-between"><dt className="text-neutral-500">{t('admin.customers.show.joined')}</dt><dd>{customer.created_at ?? '—'}</dd></div>
-                            <div className="flex justify-between">
-                                <dt className="text-neutral-500">{t('admin.customers.show.optIn')}</dt>
-                                <dd>{customer.whatsapp_opt_in ? `${t('admin.common.yes')}${customer.whatsapp_opt_in_at ? ` (${customer.whatsapp_opt_in_at})` : ''}` : t('admin.common.no')}</dd>
-                            </div>
+                            <DlRow icon={Phone} label={t('admin.common.phone')} value={`${customer.phone ?? '—'}${customer.phone_verified ? ' ✓' : ''}`} mono />
+                            <DlRow icon={Mail} label={t('admin.common.email')} value={customer.email ?? '—'} />
+                            <DlRow icon={MapPin} label={t('admin.common.city')} value={customer.city ?? '—'} dir="auto" />
+                            <DlRow icon={Languages} label={t('admin.customers.show.locale')} value={customer.locale ?? '—'} />
+                            <DlRow icon={Calendar} label={t('admin.customers.show.joined')} value={customer.created_at ?? '—'} />
+                            <DlRow
+                                icon={MessageCircle}
+                                label={t('admin.customers.show.optIn')}
+                                value={customer.whatsapp_opt_in ? `${t('admin.common.yes')}${customer.whatsapp_opt_in_at ? ` (${customer.whatsapp_opt_in_at})` : ''}` : t('admin.common.no')}
+                            />
                         </dl>
                     </section>
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-1 font-bold">{t('admin.customers.show.loyalty')}</h2>
+                        <h2 className="mb-1 flex items-center gap-2 font-bold">
+                            <Gift className="h-4 w-4 text-brand-gold" /> {t('admin.customers.show.loyalty')}
+                        </h2>
                         <p className="mb-3 text-neutral-500">
                             {t('admin.customers.show.loyaltyProgress', { confirmed: loyalty.confirmed_purchases, progress: loyalty.progress, milestone: loyalty.milestone })}
                         </p>
@@ -96,7 +112,9 @@ export default function CustomerShow({
                 </div>
 
                 <section className="rounded-lg border border-neutral-200 bg-white p-5 lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="mb-3 font-bold">{t('admin.customers.show.orders')}</h2>
+                    <h2 className="mb-3 flex items-center gap-2 font-bold">
+                        <ShoppingBag className="h-4 w-4 text-brand-gold" /> {t('admin.customers.show.orders')}
+                    </h2>
                     {orders.length === 0 ? (
                         <p className="text-sm text-neutral-400">{t('admin.orders.empty')}</p>
                     ) : (

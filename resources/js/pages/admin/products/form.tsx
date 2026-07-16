@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft, Eye, Image as ImageIcon, Info, Tag, Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
@@ -109,7 +109,7 @@ export default function ProductForm({ product, categories }: { product: Product 
 
             <form onSubmit={submit} className="max-w-3xl space-y-6">
                 <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="font-bold">{t('admin.products.form.details')}</h2>
+                    <h2 className="flex items-center gap-2 font-bold"><Info className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.details')}</h2>
                     <label className="block" id="field-category_id">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')} *</span>
                         <select
@@ -149,7 +149,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                 </section>
 
                 <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="font-bold">{t('admin.products.form.pricingInventory')}</h2>
+                    <h2 className="flex items-center gap-2 font-bold"><Tag className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.pricingInventory')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2">
                         {text('price', t('admin.products.form.priceSar'), { required: true, type: 'number' })}
                         {text('sale_price', t('admin.products.form.salePriceSar'), { type: 'number' })}
@@ -162,7 +162,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                 </section>
 
                 <section className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="font-bold">{t('admin.products.form.visibility')}</h2>
+                    <h2 className="flex items-center gap-2 font-bold"><Eye className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.visibility')}</h2>
                     <label className="flex items-center gap-2 text-sm" id="field-is_active">
                         <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} />
                         {t('admin.products.form.activeLabel')}
@@ -184,7 +184,7 @@ export default function ProductForm({ product, categories }: { product: Product 
             {/* Images — only after the product exists (kept outside the text form). */}
             {editing && (
                 <section className="mt-6 max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="font-bold">{t('admin.products.form.images')}</h2>
+                    <h2 className="flex items-center gap-2 font-bold"><ImageIcon className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.images')}</h2>
 
                     {product.images && product.images.length > 0 ? (
                         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
