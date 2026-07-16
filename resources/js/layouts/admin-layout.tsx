@@ -7,12 +7,14 @@ import {
     LayoutDashboard,
     LogOut,
     Megaphone,
+    Menu,
     Package,
     RotateCcw,
     Settings,
     ShoppingBag,
     Star,
     Users,
+    X,
     type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useState, type PropsWithChildren } from 'react';
@@ -71,13 +73,36 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
         if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, next);
     };
 
+    // Mobile sidebar drawer. Auto-closes on any navigation (nav link, search
+    // result, back-office redirect) and on Escape — no dangling open drawer.
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    useEffect(() => router.on('navigate', () => setSidebarOpen(false)), []);
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSidebarOpen(false);
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
+
     return (
-        <div dir={isRTL ? 'rtl' : 'ltr'} lang={locale} className="dark flex min-h-screen bg-neutral-950 font-sans text-neutral-100">
-            {/* Sidebar */}
-            <aside className="flex w-60 shrink-0 flex-col border-e border-neutral-800 bg-neutral-900">
-                <Link href="/admin/dashboard" className="flex h-16 items-center border-b border-neutral-800 px-5 text-lg font-bold text-brand-gold">
-                    {t('admin.brand')}
-                </Link>
+        <div dir={isRTL ? 'rtl' : 'ltr'} lang={locale} className="admin-shell dark flex h-dvh overflow-hidden bg-neutral-950 font-sans text-neutral-100">
+            {/* Backdrop (mobile only, when the drawer is open) */}
+            {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+
+            {/* Sidebar — a fixed off-canvas drawer on mobile, static column on desktop.
+                Direction handled in JS (Tailwind dropped the max-lg:rtl: triple-stack). */}
+            <aside
+                className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-40 flex w-60 shrink-0 flex-col border-e border-neutral-800 bg-neutral-900 transition-transform duration-200 lg:static lg:translate-x-0 ${
+                    sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
+                }`}
+            >
+                <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-800 px-5">
+                    <Link href="/admin/dashboard" className="text-lg font-bold text-brand-gold">
+                        {t('admin.brand')}
+                    </Link>
+                    <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Close menu" className="text-neutral-400 hover:text-white lg:hidden">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
                 <nav className="flex-1 space-y-1 overflow-y-auto p-3">
                     {NAV.map((item) => {
                         const active =
@@ -104,12 +129,20 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
 
             {/* Main column */}
             <div className="flex min-w-0 flex-1 flex-col">
-                <header className="flex h-16 shrink-0 items-center gap-4 border-b border-neutral-800 bg-neutral-900 px-6">
+                <header className="flex h-16 shrink-0 items-center gap-3 border-b border-neutral-800 bg-neutral-900 px-4 sm:px-6">
+                    <button
+                        type="button"
+                        onClick={() => setSidebarOpen(true)}
+                        aria-label="Open menu"
+                        className="shrink-0 text-neutral-300 hover:text-white lg:hidden"
+                    >
+                        <Menu className="h-5 w-5" />
+                    </button>
                     <h1 className="hidden shrink-0 truncate text-lg font-semibold lg:block">{title}</h1>
                     <div className="flex flex-1 justify-center">
                         <GlobalSearch />
                     </div>
-                    <div className="flex shrink-0 items-center gap-4 text-sm">
+                    <div className="flex shrink-0 items-center gap-3 text-sm">
                         <button
                             type="button"
                             onClick={toggleLocale}
@@ -130,7 +163,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-6">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6">
                     {flash?.success && (
                         <div className="mb-4 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
                             {flash.success}

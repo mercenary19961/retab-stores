@@ -110,6 +110,34 @@ html[dir='rtl'] .cta-shimmer {
 }
 
 /*
+ * Admin scrollbars — brand-gold thumb across the panel (table x-scroll, the
+ * main content area, the sidebar nav). Firefox uses scrollbar-color (inherits
+ * to descendants); WebKit needs the ::-webkit-scrollbar pseudo per element.
+ */
+.admin-shell {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(175 144 86 / 0.55) transparent;
+}
+.admin-shell ::-webkit-scrollbar,
+.admin-shell::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+.admin-shell ::-webkit-scrollbar-track,
+.admin-shell::-webkit-scrollbar-track {
+    background: transparent;
+}
+.admin-shell ::-webkit-scrollbar-thumb,
+.admin-shell::-webkit-scrollbar-thumb {
+    background-color: rgb(175 144 86 / 0.55);
+    border-radius: 9999px;
+}
+.admin-shell ::-webkit-scrollbar-thumb:hover,
+.admin-shell::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(175 144 86 / 0.85);
+}
+
+/*
  * Admin field highlight — a fading amber ring pulsed on a form field when the
  * admin arrives from a change-log "Go to item" link (see use-highlight-fields).
  */
