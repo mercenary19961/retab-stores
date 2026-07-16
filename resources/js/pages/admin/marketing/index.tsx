@@ -1,10 +1,44 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { FileText, History, Megaphone, Pencil, Send } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { FileText, History, Info, Megaphone, Pencil, Send } from 'lucide-react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import Select from '@/components/admin/select';
 import { useAdminT } from '@/i18n/use-admin-t';
+
+const PLACEHOLDER_RE = /\{\{\s*(\d+)\s*\}\}/g;
+
+/** Distinct {{n}} placeholders in a template body, as sorted numbers. */
+function detectPlaceholders(body: string): number[] {
+    const nums = new Set<number>();
+    for (const m of body.matchAll(PLACEHOLDER_RE)) nums.add(Number(m[1]));
+    return Array.from(nums).sort((a, b) => a - b);
+}
+
+/**
+ * Render a template body with its {{n}} placeholders highlighted. When `values`
+ * is given (campaign preview), filled variables show substituted in teal and
+ * unfilled ones stay as {{n}} in amber.
+ */
+function renderTemplate(body: string, values?: string[]): ReactNode {
+    const out: ReactNode[] = [];
+    let last = 0;
+    let key = 0;
+    for (const m of body.matchAll(PLACEHOLDER_RE)) {
+        const idx = m.index ?? 0;
+        if (idx > last) out.push(body.slice(last, idx));
+        const n = Number(m[1]);
+        const val = values?.[n - 1]?.trim();
+        out.push(
+            <span key={`v${key++}`} className={`rounded px-1 ${val ? 'bg-brand-teal/20 text-brand-teal' : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'}`}>
+                {val || `{{${n}}}`}
+            </span>,
+        );
+        last = idx + m[0].length;
+    }
+    if (last < body.length) out.push(body.slice(last));
+    return out;
+}
 
 interface Template {
     id: number;
@@ -48,7 +82,7 @@ export default function MarketingIndex({
     campaigns: Campaign[];
     audienceCount: number;
 }) {
-    const { t: tr } = useAdminT();
+    const { t: tr, i18n } = useAdminT();
     const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
 
     // Header title: only the "WhatsApp" word (+ icon) is brand-green; the rest white.
@@ -79,6 +113,13 @@ export default function MarketingIndex({
     const [params, setParams] = useState<string[]>([]);
     const selected = templates.find((t) => t.id === templateId);
 
+    // Template body helpers (live preview + auto variable detection).
+    const body = String(tpl.body);
+    const detected = detectPlaceholders(body);
+    const bodyExample = i18n.language === 'en'
+        ? 'Ramadan offer: {{1}}% off {{2}} — order now! 🌴'
+        : 'عرض رمضان: خصم {{1}}٪ على {{2}} — اطلب الآن! 🌴';
+
     const saveTemplate = (e: FormEvent) => {
         e.preventDefault();
         const opts = { preserveScroll: true, onSuccess: () => { setEditing(null); setTpl(emptyTemplate); } };
@@ -101,6 +142,22 @@ export default function MarketingIndex({
 
             {flash?.success && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>}
             {flash?.error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{flash.error}</div>}
+
+            <details className="mb-6 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+                    <Info className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.help.title')}
+                </summary>
+                <ol className="mt-3 list-inside list-decimal space-y-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+                    <li>{tr('admin.marketing.help.step1')}</li>
+                    <li>{tr('admin.marketing.help.step2')}</li>
+                    <li>{tr('admin.marketing.help.step3')}</li>
+                </ol>
+                <ul className="mt-3 space-y-1 border-t border-neutral-100 pt-3 text-xs text-neutral-500 dark:border-neutral-800">
+                    <li>• {tr('admin.marketing.help.rule1')}</li>
+                    <li>• {tr('admin.marketing.help.rule2')}</li>
+                    <li>• {tr('admin.marketing.help.rule3')}</li>
+                </ul>
+            </details>
 
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Templates registry */}
@@ -138,11 +195,17 @@ export default function MarketingIndex({
                         <div className="grid gap-3 sm:grid-cols-2">
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.metaName')}</span>
-                                <input value={String(tpl.name)} onChange={(e) => setTpl({ ...tpl, name: e.target.value })} className={`${inputCls} font-mono`} />
+                                <input value={String(tpl.name)} placeholder={tr('admin.marketing.namePlaceholder')} onChange={(e) => setTpl({ ...tpl, name: e.target.value })} className={`${inputCls} font-mono`} />
+                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.metaName')}</span>
                             </label>
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.varsCount')}</span>
                                 <input type="number" min={0} max={10} value={Number(tpl.param_count)} onChange={(e) => setTpl({ ...tpl, param_count: Number(e.target.value) })} className={inputCls} />
+                                {Number(tpl.param_count) !== detected.length ? (
+                                    <span className="mt-1 block text-xs text-amber-600 dark:text-amber-400">{tr('admin.marketing.hints.mismatch', { body: detected.length, count: Number(tpl.param_count) })}</span>
+                                ) : (
+                                    <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.varsCount')}</span>
+                                )}
                             </label>
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.language')}</span>
@@ -152,6 +215,7 @@ export default function MarketingIndex({
                                     options={[{ value: 'ar', label: 'ar' }, { value: 'en', label: 'en' }]}
                                     className="mt-1 w-full"
                                 />
+                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.language')}</span>
                             </label>
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.category')}</span>
@@ -161,12 +225,27 @@ export default function MarketingIndex({
                                     options={[{ value: 'marketing', label: 'marketing' }, { value: 'utility', label: 'utility' }]}
                                     className="mt-1 w-full"
                                 />
+                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.category')}</span>
                             </label>
                         </div>
                         <label className="block text-sm">
                             <span className="text-neutral-500">{tr('admin.marketing.bodyPreview')}</span>
-                            <textarea dir="auto" rows={3} value={String(tpl.body)} onChange={(e) => setTpl({ ...tpl, body: e.target.value })} className={inputCls} />
+                            <textarea
+                                dir="auto"
+                                rows={3}
+                                value={body}
+                                placeholder={bodyExample}
+                                onChange={(e) => setTpl({ ...tpl, body: e.target.value, param_count: detectPlaceholders(e.target.value).length })}
+                                className={inputCls}
+                            />
+                            <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.body')}</span>
                         </label>
+                        {body.trim() && (
+                            <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
+                                <p className="mb-1 text-xs font-medium uppercase text-neutral-400">{tr('admin.marketing.livePreview')}</p>
+                                <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{renderTemplate(body)}</p>
+                            </div>
+                        )}
                         <label className="block text-sm">
                             <span className="text-neutral-500">{tr('admin.marketing.metaStatus')}</span>
                             <Select
@@ -175,6 +254,7 @@ export default function MarketingIndex({
                                 options={['draft', 'pending', 'approved', 'rejected'].map((s) => ({ value: s, label: s }))}
                                 className="mt-1 w-full"
                             />
+                            <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.status')}</span>
                         </label>
                         <div className="flex gap-2">
                             <Button type="submit" variant="primary">{editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}</Button>
@@ -205,13 +285,9 @@ export default function MarketingIndex({
                                 />
                             </label>
 
-                            {selected && selected.body && (
-                                <p className="rounded bg-neutral-50 p-3 text-sm text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300" dir="auto">{selected.body}</p>
-                            )}
-
                             {selected && Array.from({ length: selected.param_count }).map((_, i) => (
                                 <label key={i} className="block text-sm">
-                                    <span className="text-neutral-500">{'{{'}{i + 1}{'}}'}</span>
+                                    <span className="text-neutral-500">{tr('admin.marketing.variable', { n: i + 1 })}</span>
                                     <input
                                         dir="auto"
                                         value={params[i] ?? ''}
@@ -220,6 +296,13 @@ export default function MarketingIndex({
                                     />
                                 </label>
                             ))}
+
+                            {selected && selected.body && (
+                                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950" dir="auto">
+                                    <p className="mb-1 text-xs font-medium uppercase text-neutral-400">{tr('admin.marketing.customerPreview')}</p>
+                                    <p className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{renderTemplate(selected.body, params)}</p>
+                                </div>
+                            )}
 
                             <Button type="submit" variant="primary" icon={Send} disabled={!selected}>
                                 {tr('admin.marketing.sendTo', { count: audienceCount })}
