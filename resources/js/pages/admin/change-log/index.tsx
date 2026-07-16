@@ -66,7 +66,7 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                     <p className="p-6 text-sm text-neutral-400">{t('admin.changeLog.empty')}</p>
                 ) : (
                     <table className="w-full text-sm">
-                        <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500 dark:bg-neutral-800/40">
+                        <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
                             <tr className="border-b border-neutral-100 dark:border-neutral-800">
                                 <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.when')}</th>
                                 <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.section')}</th>

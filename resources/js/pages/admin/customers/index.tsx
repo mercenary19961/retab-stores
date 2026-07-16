@@ -135,7 +135,7 @@ export default function CustomersIndex({
 
             <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
-                    <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
+                    <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                         <tr>
                             <ResizableTh colKey="customer" width={rc.widths.customer} resizeProps={rc.getResizeHandleProps('customer')} resizing={rc.resizing === 'customer'} sortKey="name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.customers.cols.customer')}</ResizableTh>
                             <ResizableTh colKey="phone" width={rc.widths.phone} resizeProps={rc.getResizeHandleProps('phone')} resizing={rc.resizing === 'phone'} sortKey="phone" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.customers.cols.phone')}</ResizableTh>

@@ -119,7 +119,7 @@ export default function CustomerShow({
                         <p className="text-sm text-neutral-400">{t('admin.orders.empty')}</p>
                     ) : (
                         <table className="w-full text-sm">
-                            <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
+                            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                                 <tr>
                                     <th className="py-2 font-medium">{t('admin.common.order')}</th>
                                     <th className="py-2 font-medium">{t('admin.common.status')}</th>

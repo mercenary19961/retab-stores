@@ -91,7 +91,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                         <p className="text-sm text-neutral-400">{t('admin.inventory.noImports')}</p>
                     ) : (
                         <table className="w-full text-sm">
-                            <thead className="text-left text-neutral-500">
+                            <thead className="bg-neutral-50 text-left text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
                                 <tr>
                                     <th className="py-2 font-medium">{t('admin.inventory.when')}</th>
                                     <th className="py-2 font-medium">{t('admin.inventory.by')}</th>

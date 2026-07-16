@@ -330,7 +330,7 @@ export default function AdminDashboard({
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="text-start text-neutral-500">
+                            <thead className="bg-neutral-50 text-start text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
                                 <tr className="border-b border-neutral-800">
                                     <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.order')}</th>
                                     <th className="px-5 py-3 text-start font-medium">{t('admin.common.customer')}</th>

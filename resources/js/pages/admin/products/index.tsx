@@ -157,7 +157,7 @@ export default function ProductsIndex({
 
             <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
-                    <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
+                    <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                         <tr>
                             <ResizableTh colKey="product" width={rc.widths.product} resizeProps={rc.getResizeHandleProps('product')} resizing={rc.resizing === 'product'} sortKey="name_ar" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.product')}</ResizableTh>
                             <ResizableTh colKey="sku" width={rc.widths.sku} resizeProps={rc.getResizeHandleProps('sku')} resizing={rc.resizing === 'sku'} sortKey="sku" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.products.cols.sku')}</ResizableTh>

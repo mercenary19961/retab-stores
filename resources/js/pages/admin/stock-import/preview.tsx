@@ -76,7 +76,7 @@ export default function StockImportPreview({ token, diff }: { token: string; dif
                 <section className="mb-6 overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="border-b border-neutral-200 px-4 py-2 font-bold dark:border-neutral-800">{t('admin.inventory.stockChanges')}</h2>
                     <table className="w-full text-sm">
-                        <thead className="text-left text-neutral-500">
+                        <thead className="bg-neutral-50 text-left text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
                             <tr>
                                 <th className="px-4 py-2 font-medium">{t('admin.common.product')}</th>
                                 <th className="px-4 py-2 font-medium">{t('admin.common.sku')}</th>

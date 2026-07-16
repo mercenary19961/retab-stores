@@ -119,7 +119,7 @@ export default function ReturnsIndex({
 
             <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
-                    <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
+                    <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                         <tr>
                             <ResizableTh colKey="return" width={rc.widths.return} resizeProps={rc.getResizeHandleProps('return')} resizing={rc.resizing === 'return'} sortKey="id" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.return')}</ResizableTh>
                             <ResizableTh colKey="order" width={rc.widths.order} resizeProps={rc.getResizeHandleProps('order')} resizing={rc.resizing === 'order'} sortKey="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.order')}</ResizableTh>

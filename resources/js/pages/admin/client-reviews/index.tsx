@@ -35,7 +35,7 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
 
             <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="w-full text-sm">
-                    <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
+                    <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                         <tr>
                             <th className="px-4 py-3 font-medium">{t('admin.reviews.cols.author')}</th>
                             <th className="px-4 py-3 font-medium">{t('admin.reviews.cols.review')}</th>

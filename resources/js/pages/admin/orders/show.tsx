@@ -176,7 +176,7 @@ export default function OrderShow({ order, can }: { order: Order; can: Can }) {
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={Package}>{t('admin.orders.show.items')}</SectionHeader>
                         <table className="w-full text-sm">
-                            <thead className="text-left text-neutral-500">
+                            <thead className="bg-neutral-50 text-left text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
                                 <tr>
                                     <th className="py-1 font-medium">{t('admin.common.product')}</th>
                                     <th className="py-1 font-medium">{t('admin.common.sku')}</th>
