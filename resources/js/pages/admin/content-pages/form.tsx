@@ -1,8 +1,10 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface PageData {
     id: number;
@@ -15,6 +17,7 @@ interface PageData {
 }
 
 export default function ContentPageForm({ page }: { page: PageData | null }) {
+    const { t } = useAdminT();
     useHighlightFields();
     const { data, setData, post, put, processing, errors } = useForm({
         slug: page?.slug ?? '',
@@ -45,41 +48,43 @@ export default function ContentPageForm({ page }: { page: PageData | null }) {
     const inputCls = 'mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950';
 
     return (
-        <AdminLayout title={page ? `Edit: ${page.slug}` : 'New page'}>
-            <Head title={page ? `Edit ${page.slug}` : 'New page'} />
+        <AdminLayout title={page ? t('admin.contentPages.form.editTitle', { slug: page.slug }) : t('admin.contentPages.form.newTitle')}>
+            <Head title={page ? t('admin.contentPages.form.editHead', { slug: page.slug }) : t('admin.contentPages.form.newTitle')} />
 
             <div className="mb-4">
-                <Link href="/admin/content-pages" className="text-sm text-neutral-500 underline">← Content pages</Link>
+                <Link href="/admin/content-pages" className="inline-flex items-center gap-1 text-sm text-neutral-500 underline">
+                    <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('admin.contentPages.title')}
+                </Link>
             </div>
 
             <form onSubmit={submit} className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                {field('slug', 'Slug (public URL: /pages/{slug})', (
+                {field('slug', t('admin.contentPages.form.slug'), (
                     <input value={data.slug} onChange={(e) => setData('slug', e.target.value)} className={`${inputCls} font-mono`} />
                 ), errors.slug)}
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {field('title_ar', 'Title (AR) *', (
+                    {field('title_ar', t('admin.contentPages.form.titleAr'), (
                         <input dir="rtl" value={data.title_ar} onChange={(e) => setData('title_ar', e.target.value)} className={inputCls} />
                     ), errors.title_ar)}
-                    {field('title_en', 'Title (EN)', (
+                    {field('title_en', t('admin.contentPages.form.titleEn'), (
                         <input value={data.title_en} onChange={(e) => setData('title_en', e.target.value)} className={inputCls} />
                     ), errors.title_en)}
                 </div>
 
-                {field('body_ar', 'Body (AR) *', (
+                {field('body_ar', t('admin.contentPages.form.bodyAr'), (
                     <textarea dir="rtl" rows={10} value={data.body_ar} onChange={(e) => setData('body_ar', e.target.value)} className={inputCls} />
                 ), errors.body_ar)}
-                {field('body_en', 'Body (EN)', (
+                {field('body_en', t('admin.contentPages.form.bodyEn'), (
                     <textarea rows={10} value={data.body_en} onChange={(e) => setData('body_en', e.target.value)} className={inputCls} />
                 ), errors.body_en)}
 
                 <label className="flex items-center gap-2 text-sm" id="field-is_published">
                     <input type="checkbox" checked={data.is_published} onChange={(e) => setData('is_published', e.target.checked)} />
-                    Published (visible on the storefront)
+                    {t('admin.contentPages.form.publishedLabel')}
                 </label>
 
                 <Button type="submit" variant="primary" disabled={processing}>
-                    Save page
+                    {t('admin.contentPages.form.save')}
                 </Button>
             </form>
         </AdminLayout>

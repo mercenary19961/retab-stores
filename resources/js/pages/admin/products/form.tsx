@@ -1,9 +1,10 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Upload } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface Category {
     id: number;
@@ -37,6 +38,7 @@ interface Product {
 }
 
 export default function ProductForm({ product, categories }: { product: Product | null; categories: Category[] }) {
+    const { t } = useAdminT();
     const editing = product !== null;
     useHighlightFields();
 
@@ -98,16 +100,18 @@ export default function ProductForm({ product, categories }: { product: Product 
 
     return (
         <AdminLayout>
-            <Head title={editing ? `Edit ${product.name_ar}` : 'New product'} />
+            <Head title={editing ? t('admin.products.form.editHead', { name: product.name_ar }) : t('admin.products.form.newTitle')} />
 
-            <Link href="/admin/products" className="text-sm text-neutral-500 hover:underline">← Products</Link>
-            <h1 className="mb-6 mt-1 text-2xl font-bold">{editing ? 'Edit product' : 'New product'}</h1>
+            <Link href="/admin/products" className="inline-flex items-center gap-1 text-sm text-neutral-500 hover:underline">
+                <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('admin.nav.products')}
+            </Link>
+            <h1 className="mb-6 mt-1 text-2xl font-bold">{editing ? t('admin.products.form.editTitle') : t('admin.products.form.newTitle')}</h1>
 
             <form onSubmit={submit} className="max-w-3xl space-y-6">
                 <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="font-bold">Details</h2>
+                    <h2 className="font-bold">{t('admin.products.form.details')}</h2>
                     <label className="block" id="field-category_id">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">Category *</span>
+                        <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')} *</span>
                         <select
                             value={data.category_id}
                             onChange={(e) => setData('category_id', Number(e.target.value))}
@@ -120,12 +124,12 @@ export default function ProductForm({ product, categories }: { product: Product 
                         {errors.category_id && <span className="text-xs text-red-500">{errors.category_id}</span>}
                     </label>
                     <div className="grid gap-4 sm:grid-cols-2">
-                        {text('name_ar', 'Name (Arabic)', { required: true })}
-                        {text('name_en', 'Name (English)')}
+                        {text('name_ar', t('admin.products.form.nameAr'), { required: true })}
+                        {text('name_en', t('admin.products.form.nameEn'))}
                     </div>
-                    {text('slug', 'Slug', { placeholder: 'auto-generated if blank' })}
+                    {text('slug', t('admin.products.form.slug'), { placeholder: t('admin.products.form.slugPlaceholder') })}
                     <label className="block" id="field-description_ar">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">Description (Arabic)</span>
+                        <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descAr')}</span>
                         <textarea
                             value={data.description_ar}
                             onChange={(e) => setData('description_ar', e.target.value)}
@@ -134,7 +138,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                         />
                     </label>
                     <label className="block" id="field-description_en">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">Description (English)</span>
+                        <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descEn')}</span>
                         <textarea
                             value={data.description_en}
                             onChange={(e) => setData('description_en', e.target.value)}
@@ -145,42 +149,42 @@ export default function ProductForm({ product, categories }: { product: Product 
                 </section>
 
                 <section className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="font-bold">Pricing & inventory</h2>
+                    <h2 className="font-bold">{t('admin.products.form.pricingInventory')}</h2>
                     <div className="grid gap-4 sm:grid-cols-2">
-                        {text('price', 'Price (SAR)', { required: true, type: 'number' })}
-                        {text('sale_price', 'Sale price (SAR)', { type: 'number' })}
-                        {text('sku', 'SKU', { required: true })}
-                        {text('smacc_sku', 'SMACC SKU')}
-                        {text('barcode', 'Barcode')}
-                        {text('stock', 'Stock', { required: true, type: 'number' })}
-                        {text('low_stock_threshold', 'Low-stock threshold', { type: 'number' })}
+                        {text('price', t('admin.products.form.priceSar'), { required: true, type: 'number' })}
+                        {text('sale_price', t('admin.products.form.salePriceSar'), { type: 'number' })}
+                        {text('sku', t('admin.products.form.sku'), { required: true })}
+                        {text('smacc_sku', t('admin.products.form.smaccSku'))}
+                        {text('barcode', t('admin.products.form.barcode'))}
+                        {text('stock', t('admin.products.form.stock'), { required: true, type: 'number' })}
+                        {text('low_stock_threshold', t('admin.products.form.lowStock'), { type: 'number' })}
                     </div>
                 </section>
 
                 <section className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="font-bold">Visibility</h2>
+                    <h2 className="font-bold">{t('admin.products.form.visibility')}</h2>
                     <label className="flex items-center gap-2 text-sm" id="field-is_active">
                         <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} />
-                        Active (visible in the storefront)
+                        {t('admin.products.form.activeLabel')}
                     </label>
                     <label className="flex items-center gap-2 text-sm" id="field-is_featured">
                         <input type="checkbox" checked={data.is_featured} onChange={(e) => setData('is_featured', e.target.checked)} />
-                        Featured
+                        {t('admin.products.form.featuredLabel')}
                     </label>
                 </section>
 
                 <div className="flex gap-3">
                     <Button type="submit" variant="primary" disabled={processing}>
-                        {editing ? 'Save changes' : 'Create product'}
+                        {editing ? t('admin.products.form.saveChanges') : t('admin.products.form.createProduct')}
                     </Button>
-                    <Button href="/admin/products" variant="secondary">Cancel</Button>
+                    <Button href="/admin/products" variant="secondary">{t('admin.common.cancel')}</Button>
                 </div>
             </form>
 
             {/* Images — only after the product exists (kept outside the text form). */}
             {editing && (
                 <section className="mt-6 max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="font-bold">Images</h2>
+                    <h2 className="font-bold">{t('admin.products.form.images')}</h2>
 
                     {product.images && product.images.length > 0 ? (
                         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
@@ -189,14 +193,14 @@ export default function ProductForm({ product, categories }: { product: Product 
                                     {img.url && <img src={img.url} alt="" className="aspect-square w-full object-cover" />}
                                     <div className="flex items-center justify-between gap-1 p-1 text-xs">
                                         {img.is_primary ? (
-                                            <span className="font-semibold text-neutral-900 dark:text-white">Primary</span>
+                                            <span className="font-semibold text-neutral-900 dark:text-white">{t('admin.products.form.primary')}</span>
                                         ) : (
                                             <button
                                                 type="button"
                                                 onClick={() => router.put(`/admin/products/${product.id}/images/${img.id}/primary`, {}, { preserveScroll: true })}
                                                 className="font-medium text-blue-600 hover:underline dark:text-blue-400"
                                             >
-                                                Set primary
+                                                {t('admin.products.form.setPrimary')}
                                             </button>
                                         )}
                                         <button
@@ -204,14 +208,14 @@ export default function ProductForm({ product, categories }: { product: Product 
                                             onClick={() => router.delete(`/admin/products/${product.id}/images/${img.id}`, { preserveScroll: true })}
                                             className="font-medium text-red-600 hover:underline dark:text-red-400"
                                         >
-                                            Delete
+                                            {t('admin.common.delete')}
                                         </button>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <p className="text-sm text-neutral-400">No images yet.</p>
+                        <p className="text-sm text-neutral-400">{t('admin.products.form.noImages')}</p>
                     )}
 
                     <form onSubmit={uploadImages} className="flex items-center gap-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
@@ -223,7 +227,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                             className="text-sm"
                         />
                         <Button type="submit" variant="primary" icon={Upload} disabled={imageForm.processing || imageForm.data.images.length === 0}>
-                            Upload
+                            {t('admin.common.upload')}
                         </Button>
                     </form>
                     {imageForm.errors.images && <p className="text-xs text-red-500">{imageForm.errors.images}</p>}
