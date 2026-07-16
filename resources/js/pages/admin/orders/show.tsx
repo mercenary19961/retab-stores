@@ -1,5 +1,28 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Ban, Check, Truck, X } from 'lucide-react';
+import {
+    ArrowLeft,
+    Ban,
+    Building2,
+    CalendarCheck,
+    Check,
+    CircleDollarSign,
+    CreditCard,
+    Globe,
+    History,
+    Mail,
+    MapPin,
+    Package,
+    PackageCheck,
+    PackageSearch,
+    Phone,
+    ShieldCheck,
+    Signpost,
+    Truck,
+    User,
+    UserCheck,
+    X,
+    type LucideIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
@@ -55,12 +78,24 @@ interface Can {
     cancel: boolean;
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Row({ label, value, icon: Icon }: { label: string; value: React.ReactNode; icon?: LucideIcon }) {
     return (
-        <div className="flex justify-between py-1 text-sm">
-            <span className="text-neutral-500">{label}</span>
-            <span>{value}</span>
+        <div className="flex items-center justify-between gap-3 py-1 text-sm">
+            <span className="flex items-center gap-2 text-neutral-500">
+                {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
+                {label}
+            </span>
+            <span className="text-end">{value}</span>
         </div>
+    );
+}
+
+function SectionHeader({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
+    return (
+        <h2 className="mb-3 flex items-center gap-2 font-bold">
+            <Icon className="h-4 w-4 text-brand-gold" />
+            {children}
+        </h2>
     );
 }
 
@@ -139,7 +174,7 @@ export default function OrderShow({ order, can }: { order: Order; can: Can }) {
                 <div className="space-y-6 lg:col-span-2">
                     {/* Items */}
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-3 font-bold">{t('admin.orders.show.items')}</h2>
+                        <SectionHeader icon={Package}>{t('admin.orders.show.items')}</SectionHeader>
                         <table className="w-full text-sm">
                             <thead className="text-left text-neutral-500">
                                 <tr>
@@ -175,7 +210,7 @@ export default function OrderShow({ order, can }: { order: Order; can: Can }) {
 
                     {/* Activity timeline */}
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-3 font-bold">{t('admin.orders.show.activity')}</h2>
+                        <SectionHeader icon={History}>{t('admin.orders.show.activity')}</SectionHeader>
                         {order.activities.length === 0 ? (
                             <p className="text-sm text-neutral-400">{t('admin.orders.show.noActivity')}</p>
                         ) : (
@@ -204,35 +239,35 @@ export default function OrderShow({ order, can }: { order: Order; can: Can }) {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-2 font-bold">{t('admin.common.customer')}</h2>
-                        <Row label={t('admin.common.name')} value={order.customer_name ?? '—'} />
-                        <Row label={t('admin.common.phone')} value={order.customer_phone ?? '—'} />
-                        <Row label={t('admin.common.email')} value={order.customer_email ?? '—'} />
+                        <SectionHeader icon={User}>{t('admin.common.customer')}</SectionHeader>
+                        <Row icon={User} label={t('admin.common.name')} value={order.customer_name ?? '—'} />
+                        <Row icon={Phone} label={t('admin.common.phone')} value={order.customer_phone ?? '—'} />
+                        <Row icon={Mail} label={t('admin.common.email')} value={order.customer_email ?? '—'} />
                     </section>
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-2 font-bold">{t('admin.common.shipping')}</h2>
-                        <Row label={t('admin.common.country')} value={addr.country ?? '—'} />
-                        <Row label={t('admin.common.city')} value={addr.city ?? '—'} />
-                        {addr.district && <Row label={t('admin.common.district')} value={addr.district} />}
-                        {addr.street && <Row label={t('admin.common.street')} value={addr.street} />}
-                        {addr.building && <Row label={t('admin.common.building')} value={addr.building} />}
-                        <Row label={t('admin.common.carrier')} value={order.carrier ?? '—'} />
-                        <Row label={t('admin.common.tracking')} value={order.tracking_number ?? '—'} />
+                        <SectionHeader icon={Truck}>{t('admin.common.shipping')}</SectionHeader>
+                        <Row icon={Globe} label={t('admin.common.country')} value={addr.country ?? '—'} />
+                        <Row icon={Building2} label={t('admin.common.city')} value={addr.city ?? '—'} />
+                        {addr.district && <Row icon={MapPin} label={t('admin.common.district')} value={addr.district} />}
+                        {addr.street && <Row icon={Signpost} label={t('admin.common.street')} value={addr.street} />}
+                        {addr.building && <Row icon={Building2} label={t('admin.common.building')} value={addr.building} />}
+                        <Row icon={Truck} label={t('admin.common.carrier')} value={order.carrier ?? '—'} />
+                        <Row icon={PackageSearch} label={t('admin.common.tracking')} value={order.tracking_number ?? '—'} />
                     </section>
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-2 font-bold">{t('admin.common.payment')}</h2>
-                        <Row label={t('admin.common.method')} value={order.payment_method ?? '—'} />
-                        <Row label={t('admin.common.status')} value={order.payment_status} />
+                        <SectionHeader icon={CreditCard}>{t('admin.common.payment')}</SectionHeader>
+                        <Row icon={CreditCard} label={t('admin.common.method')} value={order.payment_method ?? '—'} />
+                        <Row icon={CircleDollarSign} label={t('admin.common.status')} value={order.payment_status} />
                     </section>
 
                     {(order.confirmed_by || order.confirmed_at || order.delivered_at || order.admin_notes) && (
                         <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                            <h2 className="mb-2 font-bold">{t('admin.orders.show.admin')}</h2>
-                            {order.confirmed_by && <Row label={t('admin.orders.show.confirmedBy')} value={order.confirmed_by} />}
-                            {order.confirmed_at && <Row label={t('admin.orders.show.confirmedAt')} value={order.confirmed_at} />}
-                            {order.delivered_at && <Row label={t('admin.orders.show.deliveredAt')} value={order.delivered_at} />}
+                            <SectionHeader icon={ShieldCheck}>{t('admin.orders.show.admin')}</SectionHeader>
+                            {order.confirmed_by && <Row icon={UserCheck} label={t('admin.orders.show.confirmedBy')} value={order.confirmed_by} />}
+                            {order.confirmed_at && <Row icon={CalendarCheck} label={t('admin.orders.show.confirmedAt')} value={order.confirmed_at} />}
+                            {order.delivered_at && <Row icon={PackageCheck} label={t('admin.orders.show.deliveredAt')} value={order.delivered_at} />}
                             {order.admin_notes && <p className="mt-2 text-sm text-neutral-500">{order.admin_notes}</p>}
                         </section>
                     )}
