@@ -20,12 +20,16 @@ final readonly class RevertResult
     /**
      * @param  list<string>  $conflicts  Humanized field labels that changed since the entry.
      * @param  ActivityLog|null  $mirror  The new history entry the revert created.
+     * @param  int|null  $blockerId  The later change to undo first (for the "take me to it" link).
+     * @param  string|null  $blockerLabel  Human label of that blocking change.
      */
     private function __construct(
         public bool $ok,
         public ?string $reason = null,
         public array $conflicts = [],
         public ?ActivityLog $mirror = null,
+        public ?int $blockerId = null,
+        public ?string $blockerLabel = null,
     ) {}
 
     public static function ok(?ActivityLog $mirror): self
@@ -39,8 +43,8 @@ final readonly class RevertResult
     }
 
     /** @param list<string> $fields */
-    public static function conflict(array $fields): self
+    public static function conflict(array $fields, ?int $blockerId = null, ?string $blockerLabel = null): self
     {
-        return new self(false, self::REASON_CONFLICT, $fields);
+        return new self(false, self::REASON_CONFLICT, $fields, null, $blockerId, $blockerLabel);
     }
 }

@@ -20,6 +20,7 @@ import { I18nextProvider, useTranslation } from 'react-i18next';
 import adminI18n from '@/i18n/admin';
 import GlobalSearch from '@/components/admin/global-search';
 import UndoToast from '@/components/admin/undo-toast';
+import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
 
 type AdminLocale = 'en' | 'ar';
 const STORAGE_KEY = 'retab_admin_locale';
@@ -140,6 +141,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
                             {flash.error}
                         </div>
                     )}
+                    <RevertConflictBanner />
                     {children}
                 </main>
             </div>

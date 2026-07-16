@@ -1,4 +1,5 @@
 import { Head, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 
 interface FieldChange {
@@ -34,7 +35,17 @@ const ACTION_STYLES: Record<string, string> = {
     restored: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
 };
 
-export default function ChangeLogIndex({ logs }: { logs: Paginated }) {
+export default function ChangeLogIndex({ logs, highlight = null }: { logs: Paginated; highlight?: number | null }) {
+    // Scroll to and briefly flag the entry linked from a conflict banner.
+    const [flagged, setFlagged] = useState<number | null>(highlight);
+    useEffect(() => {
+        if (!highlight) return;
+        setFlagged(highlight);
+        document.getElementById(`log-${highlight}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const timer = setTimeout(() => setFlagged(null), 3500);
+        return () => clearTimeout(timer);
+    }, [highlight]);
+
     const revert = (row: LogRow) => {
         if (!window.confirm(`Revert this ${row.section.toLowerCase()} change? A new entry will record the revert.`)) return;
         router.post(`/admin/change-log/${row.id}/revert`, {}, { preserveScroll: true });
@@ -62,7 +73,13 @@ export default function ChangeLogIndex({ logs }: { logs: Paginated }) {
                         </thead>
                         <tbody>
                             {logs.data.map((row) => (
-                                <tr key={row.id} className="border-b border-neutral-100 align-top last:border-b-0 dark:border-neutral-800">
+                                <tr
+                                    key={row.id}
+                                    id={`log-${row.id}`}
+                                    className={`border-b border-neutral-100 align-top transition-colors duration-1000 last:border-b-0 dark:border-neutral-800 ${
+                                        flagged === row.id ? 'bg-amber-500/15 ring-2 ring-inset ring-amber-500/60' : ''
+                                    }`}
+                                >
                                     <td className="whitespace-nowrap px-4 py-3 text-neutral-500">{row.created_at}</td>
                                     <td className="whitespace-nowrap px-4 py-3">{row.section}</td>
                                     <td className="whitespace-nowrap px-4 py-3">

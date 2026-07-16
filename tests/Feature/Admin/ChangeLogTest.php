@@ -123,7 +123,7 @@ class ChangeLogTest extends TestCase
 
         $this->actingAs($staff)
             ->post("/admin/change-log/{$firstLog->id}/revert")
-            ->assertSessionHas('error');
+            ->assertSessionHas('revertConflict');
 
         $this->assertSame(7, $p->fresh()->stock);            // nothing written
         $this->assertNull($firstLog->fresh()->reverted_at);  // not stamped as done
@@ -221,7 +221,7 @@ class ChangeLogTest extends TestCase
         $mirror = $this->latestLog();
         $this->actingAs($staff)->put('/admin/settings', [CheckoutService::SHIPPING_FEE_KEY => 40]);
 
-        $this->actingAs($staff)->post("/admin/change-log/{$mirror->id}/revert")->assertSessionHas('error');
+        $this->actingAs($staff)->post("/admin/change-log/{$mirror->id}/revert")->assertSessionHas('revertConflict');
         $this->assertSame('40', (string) Setting::get(CheckoutService::SHIPPING_FEE_KEY));
     }
 
@@ -267,5 +267,46 @@ class ChangeLogTest extends TestCase
                 ->has('logs.data', 1)
                 ->where('logs.data.0.action', 'updated')
                 ->where('logs.data.0.revertable', true));
+    }
+
+    public function test_conflict_pins_the_blocking_change(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product(['price' => 50]);
+
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 60]));
+        $firstEdit = $this->latestLog();
+
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product->fresh(), ['price' => 75]));
+        $laterEdit = $this->latestLog();
+
+        // Reverting the older edit conflicts (price was changed again) and pins
+        // the later edit as the blocker to undo first.
+        $this->actingAs($staff)->post("/admin/change-log/{$firstEdit->id}/revert")
+            ->assertSessionHas('revertConflict', fn ($c) => $c['blockerId'] === $laterEdit->id && $c['fields'] !== []);
+
+        $this->assertSame('75.00', $product->fresh()->price); // nothing was clobbered
+    }
+
+    public function test_highlight_jumps_to_the_entry_page(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product();
+
+        // 22 update entries → the oldest lands on page 2 (20 per page).
+        $firstLogId = null;
+        for ($i = 1; $i <= 22; $i++) {
+            $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['name_ar' => "الاسم {$i}"]));
+            if ($i === 1) {
+                $firstLogId = $this->latestLog()->id;
+            }
+        }
+
+        $this->actingAs($staff)->get("/admin/change-log?highlight={$firstLogId}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('highlight', $firstLogId)
+                ->where('logs.current_page', 2)
+                ->where('logs.data', fn ($data) => collect($data)->pluck('id')->contains($firstLogId)));
     }
 }

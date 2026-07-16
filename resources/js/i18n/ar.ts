@@ -211,6 +211,10 @@ const ar = {
             confirm: 'هل تريد التراجع عن هذا التغيير؟',
             dismiss: 'إخفاء',
         },
+        revertConflict: {
+            message: 'لا يمكن التراجع الآن: {{fields}} تغيّرت في تعديل لاحق. تراجع عن ذلك التعديل أولاً.',
+            goToBlocker: 'اذهب إليه',
+        },
         search: {
             placeholder: 'ابحث عن منتج، طلب، عميل…',
             noResults: 'لا توجد نتائج',

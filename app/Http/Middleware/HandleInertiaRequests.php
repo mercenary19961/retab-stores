@@ -79,6 +79,9 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+                // Structured revert-conflict (fields + the blocking change to
+                // undo first) → rendered as a banner with a "take me to it" link.
+                'revertConflict' => $request->session()->get('revertConflict'),
             ],
             // Flashed "undo last save" pointer → the immediate toast after a
             // tracked admin save (staff only; the persistent per-section button

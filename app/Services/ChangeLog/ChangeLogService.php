@@ -246,13 +246,15 @@ class ChangeLogService
         $new = $log->new_data ?? [];
 
         $conflicts = [];
+        $conflictKeys = [];
         foreach (array_keys($old) as $key) {
             if ($this->normalize($current[$key] ?? null) !== $this->normalize($new[$key] ?? null)) {
                 $conflicts[] = $this->humanize($key);
+                $conflictKeys[] = $key;
             }
         }
         if ($conflicts !== []) {
-            return RevertResult::conflict($conflicts);
+            return $this->conflict($log, $conflicts, $conflictKeys);
         }
 
         return DB::transaction(function () use ($log, $subject, $old) {
@@ -325,13 +327,15 @@ class ChangeLogService
         }
 
         $conflicts = [];
+        $conflictKeys = [];
         foreach (array_keys($old) as $key) {
             if ($this->normalize(Setting::get($key)) !== $this->normalize($new[$key] ?? null)) {
                 $conflicts[] = $this->humanize($key);
+                $conflictKeys[] = $key;
             }
         }
         if ($conflicts !== []) {
-            return RevertResult::conflict($conflicts);
+            return $this->conflict($log, $conflicts, $conflictKeys);
         }
 
         return DB::transaction(function () use ($log, $old, $new) {
@@ -390,6 +394,36 @@ class ChangeLogService
     public function sectionKey(ActivityLog $log): ?string
     {
         return self::SECTION_KEYS[$log->subject_type] ?? null;
+    }
+
+    /**
+     * Build a conflict result and pin the blocker: the newest un-reverted change
+     * to the same subject that touched one of the conflicting fields — i.e. the
+     * one the admin must undo first. Powers the "take me to it" link.
+     *
+     * @param  list<string>  $conflicts  humanized labels
+     * @param  list<string>  $keys       raw field keys
+     */
+    private function conflict(ActivityLog $log, array $conflicts, array $keys): RevertResult
+    {
+        $blocker = ActivityLog::query()
+            ->where('subject_type', $log->subject_type)
+            ->when(
+                $log->subject_id !== null,
+                fn ($q) => $q->where('subject_id', $log->subject_id),
+                fn ($q) => $q->whereNull('subject_id'),
+            )
+            ->where('id', '>', $log->id)
+            ->whereNull('reverted_at')
+            ->orderByDesc('id')
+            ->get()
+            ->first(fn (ActivityLog $candidate) => array_intersect(array_keys($candidate->new_data ?? []), $keys) !== []);
+
+        return RevertResult::conflict(
+            $conflicts,
+            $blocker?->id,
+            $blocker ? ($blocker->label ?? $this->sectionLabel($blocker)) : null,
+        );
     }
 
     /** Clear a section's "undo last save" pointer (after revert, or a manual dismiss). */

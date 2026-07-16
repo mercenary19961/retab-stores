@@ -207,6 +207,10 @@ const en = {
             confirm: 'Undo this change?',
             dismiss: 'Dismiss',
         },
+        revertConflict: {
+            message: 'Can’t undo yet: {{fields}} changed in a later edit. Undo that later change first.',
+            goToBlocker: 'Take me to it',
+        },
         search: {
             placeholder: 'Search products, orders, customers…',
             noResults: 'No results',
