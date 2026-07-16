@@ -4,6 +4,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import OrderStatusBadge from '@/components/order-status-badge';
 import ExportButtons from '@/components/admin/export-buttons';
+import PaymentStatusBadge from '@/components/admin/payment-status-badge';
 import ResizableTh from '@/components/admin/resizable-th';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
@@ -153,8 +154,13 @@ export default function OrdersIndex({
                                 </td>
                                 <td className="truncate px-4 py-3" dir="auto">{order.customer_name ?? '—'}</td>
                                 <td className="px-4 py-3"><OrderStatusBadge status={order.status} /></td>
-                                <td className="truncate px-4 py-3 text-neutral-500">
-                                    {order.payment_method ?? '—'} · {order.payment_status}
+                                <td className="px-4 py-3">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                        <span className="truncate text-neutral-500">
+                                            {order.payment_method ? t(`admin.paymentMethod.${order.payment_method}`) : '—'}
+                                        </span>
+                                        <PaymentStatusBadge status={order.payment_status} />
+                                    </div>
                                 </td>
                                 <td className="px-4 py-3">{order.total} {t('admin.common.sar')}</td>
                                 <td className="truncate px-4 py-3 text-neutral-500">{order.created_at ?? '—'}</td>

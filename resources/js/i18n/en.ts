@@ -332,6 +332,20 @@ const en = {
             cancel: 'Cancel',
             upload: 'Upload',
         },
+        paymentStatus: {
+            pending: 'Pending',
+            authorized: 'Authorized',
+            paid: 'Paid',
+            refunded: 'Refunded',
+            partially_refunded: 'Partially refunded',
+            voided: 'Voided',
+            failed: 'Failed',
+        },
+        paymentMethod: {
+            card: 'Card',
+            tamara: 'Tamara',
+            bank_transfer: 'Bank transfer',
+        },
         products: {
             title: 'Products',
             searchPlaceholder: 'Search name or SKU…',

@@ -336,6 +336,20 @@ const ar = {
             cancel: 'إلغاء',
             upload: 'رفع',
         },
+        paymentStatus: {
+            pending: 'بانتظار الدفع',
+            authorized: 'مُفوَّض',
+            paid: 'مدفوع',
+            refunded: 'مُسترد',
+            partially_refunded: 'مُسترد جزئياً',
+            voided: 'مُلغى',
+            failed: 'فشل',
+        },
+        paymentMethod: {
+            card: 'بطاقة',
+            tamara: 'تمارا',
+            bank_transfer: 'تحويل بنكي',
+        },
         products: {
             title: 'المنتجات',
             searchPlaceholder: 'ابحث بالاسم أو الرمز…',

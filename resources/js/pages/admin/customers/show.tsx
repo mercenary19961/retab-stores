@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Calendar, Gift, Languages, Mail, MapPin, MessageCircle, Phone, ShoppingBag, User, type LucideIcon } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
+import PaymentStatusBadge from '@/components/admin/payment-status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
 
 function DlRow({ icon: Icon, label, value, mono, dir }: { icon: LucideIcon; label: string; value: React.ReactNode; mono?: boolean; dir?: 'auto' }) {
@@ -137,7 +138,7 @@ export default function CustomerShow({
                                             </Link>
                                         </td>
                                         <td className="py-2">{t(`status.${o.status}`)}</td>
-                                        <td className="py-2">{o.payment_status}</td>
+                                        <td className="py-2"><PaymentStatusBadge status={o.payment_status} /></td>
                                         <td className="py-2">{o.total.toFixed(2)} {t('admin.common.sar')}</td>
                                         <td className="py-2 text-neutral-500">{o.created_at ?? '—'}</td>
                                     </tr>

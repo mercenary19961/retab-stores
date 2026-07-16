@@ -27,6 +27,7 @@ import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import OrderStatusBadge from '@/components/order-status-badge';
+import PaymentStatusBadge from '@/components/admin/payment-status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
 
 interface Item {
@@ -258,8 +259,8 @@ export default function OrderShow({ order, can }: { order: Order; can: Can }) {
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={CreditCard}>{t('admin.common.payment')}</SectionHeader>
-                        <Row icon={CreditCard} label={t('admin.common.method')} value={order.payment_method ?? '—'} />
-                        <Row icon={CircleDollarSign} label={t('admin.common.status')} value={order.payment_status} />
+                        <Row icon={CreditCard} label={t('admin.common.method')} value={order.payment_method ? t(`admin.paymentMethod.${order.payment_method}`) : '—'} />
+                        <Row icon={CircleDollarSign} label={t('admin.common.status')} value={<PaymentStatusBadge status={order.payment_status} />} />
                     </section>
 
                     {(order.confirmed_by || order.confirmed_at || order.delivered_at || order.admin_notes) && (
