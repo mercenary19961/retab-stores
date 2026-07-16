@@ -225,23 +225,30 @@ class ChangeLogTest extends TestCase
         $this->assertSame('40', (string) Setting::get(CheckoutService::SHIPPING_FEE_KEY));
     }
 
-    public function test_content_page_creation_is_audit_only(): void
+    public function test_content_page_update_is_logged_and_revertable(): void
     {
         $staff = $this->staff();
-
-        $this->actingAs($staff)->post('/admin/content-pages', [
+        $page = ContentPage::create([
             'slug' => 'about',
             'title_ar' => 'من نحن',
             'body_ar' => 'نص',
             'is_published' => true,
+        ]);
+
+        $this->actingAs($staff)->put("/admin/content-pages/{$page->id}", [
+            'slug' => 'about',
+            'title_ar' => 'من نحن (محدّث)',
+            'body_ar' => 'نص جديد',
+            'is_published' => true,
         ])->assertRedirect();
 
         $log = $this->latestLog();
-        $this->assertSame(ActivityLog::ACTION_CREATED, $log->action);
+        $this->assertSame(ActivityLog::ACTION_UPDATED, $log->action);
         $this->assertSame(ContentPage::class, $log->subject_type);
 
-        $this->actingAs($staff)->post("/admin/change-log/{$log->id}/revert")->assertSessionHas('error');
-        $this->assertDatabaseHas('content_pages', ['slug' => 'about']);
+        // Content-page updates are revertable → restores the previous title.
+        $this->actingAs($staff)->post("/admin/change-log/{$log->id}/revert")->assertSessionHas('success');
+        $this->assertSame('من نحن', $page->fresh()->title_ar);
     }
 
     public function test_customers_cannot_access_the_change_log(): void

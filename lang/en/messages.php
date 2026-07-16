@@ -58,6 +58,7 @@ return [
 
     'admin' => [
         'settings_saved' => 'Settings saved.',
+        'content_reset' => 'Content restored to the project-handover defaults.',
         'page_saved' => 'Page saved.',
         'review_saved' => 'Review saved.',
         'review_deleted' => 'Review deleted.',

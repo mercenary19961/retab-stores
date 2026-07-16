@@ -58,6 +58,7 @@ return [
 
     'admin' => [
         'settings_saved' => 'تم حفظ الإعدادات.',
+        'content_reset' => 'تمت إعادة المحتوى إلى إعدادات التسليم الافتراضية.',
         'page_saved' => 'تم حفظ الصفحة.',
         'review_saved' => 'تم حفظ التقييم.',
         'review_deleted' => 'تم حذف التقييم.',

@@ -9,9 +9,25 @@ class ClientReviewSeeder extends Seeder
 {
     public function run(): void
     {
+        foreach (self::reviews() as $i => $r) {
+            ClientReview::updateOrCreate(
+                ['author_name' => $r['author_name'], 'body' => $r['body']],
+                $r + ['source' => 'manual', 'is_active' => true, 'sort_order' => $i],
+            );
+        }
+    }
+
+    /**
+     * The handover testimonial pool. Shared by the seeder and the admin
+     * "reset to handover defaults" safeguard.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function reviews(): array
+    {
         // Placeholder pool — the admin replaces these with real curated Google
         // Maps reviews. Keyed by author_name so re-seeding is idempotent.
-        $reviews = [
+        return [
             ['author_name' => 'Mohammad Ahmad', 'language' => 'en', 'rating' => 5, 'body' => 'Great variety of Saudi dates. The packaging is very nice and the prices are reasonable.'],
             ['author_name' => 'Sarah Al-Otaibi', 'language' => 'en', 'rating' => 5, 'body' => 'Ordered a gift box for Ramadan and it arrived beautifully wrapped and on time. Highly recommend.'],
             ['author_name' => 'خالد الزهراني', 'language' => 'ar', 'rating' => 5, 'body' => 'تمور فاخرة وطازجة، والتغليف أنيق جداً. تجربة شراء ممتازة وسرعة في التوصيل.'],
@@ -21,12 +37,5 @@ class ClientReviewSeeder extends Seeder
             ['author_name' => 'Yousef Al-Harbi', 'language' => 'en', 'rating' => 5, 'body' => 'Premium dates with a premium experience. Customer service answered all my questions quickly.'],
             ['author_name' => 'ريم المطيري', 'language' => 'ar', 'rating' => 5, 'body' => 'طلبت بوكس تمور مشكّل وكان أكثر من رائع، طعم أصيل وتغليف فخم. شكراً رطاب.'],
         ];
-
-        foreach ($reviews as $i => $r) {
-            ClientReview::updateOrCreate(
-                ['author_name' => $r['author_name'], 'body' => $r['body']],
-                $r + ['source' => 'manual', 'is_active' => true, 'sort_order' => $i],
-            );
-        }
     }
 }

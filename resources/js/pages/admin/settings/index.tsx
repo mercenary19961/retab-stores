@@ -1,10 +1,13 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { type FormEvent } from 'react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { RotateCcw } from 'lucide-react';
+import { type FormEvent, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
+
+const CONFIRM_WORD = 'RESET';
 
 type Settings = Record<string, string | null>;
 
@@ -30,7 +33,17 @@ const FIELDS: Field[] = [
     { key: 'social_linkedin', type: 'url', dir: 'ltr' },
 ];
 
-export default function SettingsIndex({ settings, defaults = {}, undoMeta = null }: { settings: Settings; defaults?: Record<string, string>; undoMeta?: UndoMeta | null }) {
+export default function SettingsIndex({
+    settings,
+    defaults = {},
+    undoMeta = null,
+    canReset = false,
+}: {
+    settings: Settings;
+    defaults?: Record<string, string>;
+    undoMeta?: UndoMeta | null;
+    canReset?: boolean;
+}) {
     const { t } = useAdminT();
     useHighlightFields();
     const flash = (usePage().props as { flash?: { success?: string | null } }).flash;
@@ -38,9 +51,22 @@ export default function SettingsIndex({ settings, defaults = {}, undoMeta = null
         Object.fromEntries(FIELDS.map((f) => [f.key, settings[f.key] ?? ''])) as Record<string, string>,
     );
 
+    const [confirming, setConfirming] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+
     const submit = (e: FormEvent) => {
         e.preventDefault();
         put('/admin/settings', { preserveScroll: true });
+    };
+
+    const doReset = () => {
+        router.post('/admin/settings/reset', {}, {
+            preserveScroll: true,
+            onFinish: () => {
+                setConfirming(false);
+                setConfirmText('');
+            },
+        });
     };
 
     return (
@@ -91,6 +117,49 @@ export default function SettingsIndex({ settings, defaults = {}, undoMeta = null
                     {t('admin.settings.save')}
                 </Button>
             </form>
+
+            {canReset && (
+                <section className="mt-8 max-w-lg rounded-lg border border-red-300 bg-red-50 p-5 dark:border-red-900/60 dark:bg-red-950/30">
+                    <h2 className="flex items-center gap-2 font-bold text-red-700 dark:text-red-300">
+                        <RotateCcw className="h-4 w-4" /> {t('admin.settings.reset.title')}
+                    </h2>
+                    <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{t('admin.settings.reset.lead')}</p>
+                    <ul className="mt-2 space-y-1 text-xs">
+                        <li className="text-amber-700 dark:text-amber-300">{t('admin.settings.reset.restores')}</li>
+                        <li className="text-neutral-500 dark:text-neutral-400">{t('admin.settings.reset.keeps')}</li>
+                    </ul>
+
+                    {!confirming ? (
+                        <div className="mt-4">
+                            <Button variant="danger" icon={RotateCcw} onClick={() => setConfirming(true)}>
+                                {t('admin.settings.reset.button')}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="mt-4 space-y-3">
+                            <label className="block">
+                                <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                                    {t('admin.settings.reset.confirmPrompt', { word: CONFIRM_WORD })}
+                                </span>
+                                <input
+                                    value={confirmText}
+                                    onChange={(e) => setConfirmText(e.target.value)}
+                                    autoFocus
+                                    className="mt-1 w-full rounded border border-red-300 px-3 py-2 text-sm dark:border-red-900 dark:bg-neutral-950"
+                                />
+                            </label>
+                            <div className="flex gap-2">
+                                <Button variant="danger" disabled={confirmText !== CONFIRM_WORD} onClick={doReset}>
+                                    {t('admin.settings.reset.confirm')}
+                                </Button>
+                                <Button variant="secondary" onClick={() => { setConfirming(false); setConfirmText(''); }}>
+                                    {t('admin.settings.reset.cancel')}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </section>
+            )}
         </AdminLayout>
     );
 }

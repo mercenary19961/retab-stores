@@ -44,8 +44,11 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Store settings + CMS pages.
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    // Admin-only safeguard: restore editable content to the project-handover defaults.
+    Route::post('settings/reset', [\App\Http\Controllers\Admin\SettingController::class, 'reset'])->name('settings.reset');
+    // Content pages are edit-only — the three baseline pages ship seeded; no adding/removing.
     Route::resource('content-pages', \App\Http\Controllers\Admin\ContentPageController::class)
-        ->only(['index', 'create', 'store', 'edit', 'update'])
+        ->only(['index', 'edit', 'update'])
         ->parameters(['content-pages' => 'contentPage']);
 
     // Curated client reviews (Google Maps testimonials pool) + bulk import.

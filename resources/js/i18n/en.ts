@@ -592,6 +592,16 @@ const en = {
                 shipping_flat_fee: 'One fixed price for all GCC destinations.',
                 bank_iban: 'Shown to bank-transfer customers on the order page.',
             },
+            reset: {
+                title: 'Reset to handover defaults',
+                lead: 'Restore store settings, content pages, and homepage reviews to exactly how they were at project handover. Your edits to those sections are discarded.',
+                restores: 'Restores: store settings, content pages, homepage reviews.',
+                keeps: 'Not affected: orders, customers, products, inventory, returns, payments.',
+                button: 'Reset to handover defaults',
+                confirmPrompt: 'Type {{word}} to confirm. This cannot be undone.',
+                confirm: 'Reset now',
+                cancel: 'Cancel',
+            },
         },
         changeLog: {
             title: 'Change Log',

@@ -3,11 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClientReview;
+use App\Models\ContentPage;
 use App\Models\Setting;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Services\CheckoutService;
+use Database\Seeders\ClientReviewSeeder;
+use Database\Seeders\ContentPageSeeder;
+use Database\Seeders\SettingsSeeder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 /**
@@ -61,7 +69,42 @@ class SettingController extends Controller
                 ->mapWithKeys(fn (string $key) => [$key => Setting::get($key)]),
             'defaults' => self::FOOTER_DEFAULTS, // shown as placeholders / effective fallback
             'undoMeta' => session('undo:settings'),
+            'canReset' => (bool) Auth::user()?->isAdmin(), // handover-reset is admin-only
         ]);
+    }
+
+    /**
+     * Admin-only safeguard: restore the editable CONTENT to its project-handover
+     * state — store settings, the three content pages, and the homepage review
+     * pool. Deliberately leaves all business data (orders, customers, products,
+     * inventory, returns, payments) untouched. Not reversible.
+     */
+    public function reset(): RedirectResponse
+    {
+        abort_unless((bool) Auth::user()?->isAdmin(), 403);
+
+        DB::transaction(function () {
+            // 1) Store settings → handover values (overwrites edits).
+            foreach (SettingsSeeder::defaults() as $key => $value) {
+                Setting::set($key, $value);
+            }
+
+            // 2) Content pages → handover text (force overwrite; the seeder itself
+            //    is intentionally non-destructive, so restore explicitly here).
+            foreach (ContentPageSeeder::pages() as $page) {
+                ContentPage::updateOrCreate(['slug' => $page['slug']], [...$page, 'is_published' => true]);
+            }
+
+            // 3) Homepage reviews → exactly the handover pool (discard curated ones).
+            ClientReview::query()->delete();
+            foreach (ClientReviewSeeder::reviews() as $i => $r) {
+                ClientReview::create($r + ['source' => 'manual', 'is_active' => true, 'sort_order' => $i]);
+            }
+        });
+
+        Log::warning('Site content reset to handover defaults', ['user_id' => Auth::id()]);
+
+        return back()->with('success', __('messages.admin.content_reset'));
     }
 
     public function update(Request $request, ChangeLogService $changeLog)
