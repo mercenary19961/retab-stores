@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Columns3, MoveHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';

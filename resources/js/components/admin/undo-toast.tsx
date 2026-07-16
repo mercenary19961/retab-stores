@@ -19,6 +19,9 @@ export default function UndoToast() {
         setVisible(true);
         const timer = setTimeout(() => setVisible(false), 6000);
         return () => clearTimeout(timer);
+        // Key only off the undo id: a new save re-shows the toast; unrelated prop
+        // updates must not. Including `undo` would re-fire on every reference change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [undo?.id]);
 
     if (!undo || !visible) return null;

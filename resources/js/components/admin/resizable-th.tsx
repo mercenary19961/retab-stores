@@ -38,7 +38,7 @@ export default function ResizableTh({
     const Icon = active ? (direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
 
     return (
-        <th style={{ width }} className={`relative overflow-hidden px-4 py-3 font-medium ${className ?? ''}`}>
+        <th data-col={colKey} style={{ width }} className={`relative overflow-hidden px-4 py-3 font-medium ${className ?? ''}`}>
             {sortable ? (
                 <button
                     type="button"
