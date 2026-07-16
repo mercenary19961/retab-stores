@@ -43,9 +43,9 @@ const NAV: NavItem[] = [
     { key: 'marketing', href: '/admin/marketing', icon: Megaphone, perm: 'marketing' },
     { key: 'reviews', href: '/admin/client-reviews', icon: Star, perm: 'reviews' },
     { key: 'contentPages', href: '/admin/content-pages', icon: FileText, perm: 'content_pages' },
-    { key: 'settings', href: '/admin/settings', icon: Settings, perm: 'settings' },
     { key: 'changeLog', href: '/admin/change-log', icon: History, perm: 'change_log' },
     { key: 'users', href: '/admin/users', icon: ShieldCheck, adminOnly: true },
+    { key: 'settings', href: '/admin/settings', icon: Settings, perm: 'settings' },
 ];
 
 function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) {
@@ -61,6 +61,10 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
     const user = props.auth?.user;
     const flash = props.flash;
     const currentPath = page.url.split('?')[0];
+
+    // Dismissible flash banner — re-shows whenever a new flash message arrives.
+    const [flashOpen, setFlashOpen] = useState(true);
+    useEffect(() => setFlashOpen(true), [flash?.success, flash?.error]);
 
     // Editors see only the sections they can view; admins (permissions === null) see all.
     const isAdmin = user?.role === 'admin';
@@ -211,14 +215,20 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: string }>) 
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-                    {flash?.success && (
-                        <div className="mb-4 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
-                            {flash.success}
+                    {flashOpen && flash?.success && (
+                        <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
+                            <span dir="auto">{flash.success}</span>
+                            <button type="button" onClick={() => setFlashOpen(false)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-green-300/70 transition-colors hover:text-green-100">
+                                <X className="h-4 w-4" />
+                            </button>
                         </div>
                     )}
-                    {flash?.error && (
-                        <div className="mb-4 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-200">
-                            {flash.error}
+                    {flashOpen && flash?.error && (
+                        <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-200">
+                            <span dir="auto">{flash.error}</span>
+                            <button type="button" onClick={() => setFlashOpen(false)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-red-300/70 transition-colors hover:text-red-100">
+                                <X className="h-4 w-4" />
+                            </button>
                         </div>
                     )}
                     <RevertConflictBanner />
