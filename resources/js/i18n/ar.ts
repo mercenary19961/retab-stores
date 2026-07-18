@@ -682,6 +682,8 @@ const ar = {
             bulkImport: 'استيراد جماعي',
             newReview: 'تقييم جديد',
             empty: 'لا توجد تقييمات بعد.',
+            activeBadge: 'مفعّل',
+            hiddenBadge: 'مخفي',
             cols: {
                 author: 'الكاتب',
                 review: 'المراجعة',

@@ -678,6 +678,8 @@ const en = {
             bulkImport: 'Bulk import',
             newReview: 'New review',
             empty: 'No reviews yet.',
+            activeBadge: 'Active',
+            hiddenBadge: 'Hidden',
             cols: {
                 author: 'Author',
                 review: 'Review',
