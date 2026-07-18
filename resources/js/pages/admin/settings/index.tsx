@@ -12,7 +12,7 @@ const CONFIRM_WORD = 'RESET';
 type Settings = Record<string, string | null>;
 
 // Labels/hints are translated by key (admin.settings.fields.*, .hints.*).
-// `wide` fields span the full 2-column grid row.
+// `wide` fields span the full 2-column grid row inside a card.
 type FieldDef = { key: string; type?: string; dir?: string; wide?: boolean };
 type SectionDef = { key: string; icon: LucideIcon; fields: FieldDef[] };
 
@@ -63,7 +63,10 @@ const ALL_KEYS = SECTIONS.flatMap((s) => s.fields.map((f) => f.key));
 const INPUT =
     'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm transition-colors placeholder:text-neutral-400 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
 
-const CARD = 'rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6';
+// `mb-6 break-inside-avoid` = masonry spacing; cards flow into two balanced
+// columns on wide screens (CSS multi-column).
+const CARD =
+    'mb-6 break-inside-avoid scroll-mt-4 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6';
 
 export default function SettingsIndex({
     settings,
@@ -138,59 +141,50 @@ export default function SettingsIndex({
         );
     };
 
+    const sectionHeader = (Icon: LucideIcon, titleKey: string) => (
+        <div className="mb-5 flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-gold">
+                <Icon className="h-5 w-5" />
+            </div>
+            <div>
+                <h2 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {t(`admin.settings.sections.${titleKey}.title`)}
+                </h2>
+                <p className="text-sm text-neutral-500">{t(`admin.settings.sections.${titleKey}.desc`)}</p>
+            </div>
+        </div>
+    );
+
     const pulseOn = data.admin_help_pulse === '1';
 
     return (
         <AdminLayout title={t('admin.settings.title')}>
             <Head title={t('admin.settings.title')} />
 
-            <div className="max-w-3xl">
-                {flash?.success && (
-                    <div className="mb-4 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
-                        {flash.success}
-                    </div>
-                )}
+            {flash?.success && (
+                <div className="mb-4 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
+                    {flash.success}
+                </div>
+            )}
 
-                {undoMeta && (
-                    <div className="mb-4">
-                        <UndoButton section="settings" undoMeta={undoMeta} />
-                    </div>
-                )}
+            {undoMeta && (
+                <div className="mb-4">
+                    <UndoButton section="settings" undoMeta={undoMeta} />
+                </div>
+            )}
 
-                <form onSubmit={submit} className="space-y-6">
-                    {SECTIONS.map((s) => {
-                        const Icon = s.icon;
-                        return (
-                            <section key={s.key} className={CARD}>
-                                <div className="mb-5 flex items-start gap-3">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-gold">
-                                        <Icon className="h-5 w-5" />
-                                    </div>
-                                    <div>
-                                        <h2 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                                            {t(`admin.settings.sections.${s.key}.title`)}
-                                        </h2>
-                                        <p className="text-sm text-neutral-500">{t(`admin.settings.sections.${s.key}.desc`)}</p>
-                                    </div>
-                                </div>
-                                <div className="grid gap-4 sm:grid-cols-2">{s.fields.map(renderField)}</div>
-                            </section>
-                        );
-                    })}
+            <form onSubmit={submit} className="space-y-6">
+                <div className="gap-6 xl:columns-2">
+                    {SECTIONS.map((s) => (
+                        <section key={s.key} className={CARD}>
+                            {sectionHeader(s.icon, s.key)}
+                            <div className="grid gap-4 sm:grid-cols-2">{s.fields.map(renderField)}</div>
+                        </section>
+                    ))}
 
                     {/* Admin-panel preferences (not storefront) — holds the help beam toggle. */}
                     <section id="help-pulse" className={CARD}>
-                        <div className="mb-5 flex items-start gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-gold">
-                                <SlidersHorizontal className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <h2 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                                    {t('admin.settings.sections.preferences.title')}
-                                </h2>
-                                <p className="text-sm text-neutral-500">{t('admin.settings.sections.preferences.desc')}</p>
-                            </div>
-                        </div>
+                        {sectionHeader(SlidersHorizontal, 'preferences')}
                         <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
                             <div className="min-w-0">
                                 <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
@@ -216,64 +210,64 @@ export default function SettingsIndex({
                             </button>
                         </div>
                     </section>
+                </div>
 
-                    {/* Floating save bar — always in reach while scrolling the form. */}
-                    <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95">
-                        <span className="hidden text-xs text-neutral-400 sm:inline">{t('admin.settings.saveHint')}</span>
-                        <Button type="submit" variant="primary" disabled={processing} className="ms-auto">
-                            {t('admin.settings.save')}
-                        </Button>
-                    </div>
-                </form>
+                {/* Floating save bar — always in reach while scrolling the form. */}
+                <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95">
+                    <span className="hidden text-xs text-neutral-400 sm:inline">{t('admin.settings.saveHint')}</span>
+                    <Button type="submit" variant="primary" disabled={processing} className="ms-auto">
+                        {t('admin.settings.save')}
+                    </Button>
+                </div>
+            </form>
 
-                {canReset && (
-                    <section className="mt-8 rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 sm:p-6">
-                        <div className="flex items-start gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-600 dark:text-red-300">
-                                <RotateCcw className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0">
-                                <h2 className="font-semibold text-red-700 dark:text-red-300">{t('admin.settings.reset.title')}</h2>
-                                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{t('admin.settings.reset.lead')}</p>
-                                <ul className="mt-2 space-y-1 text-xs">
-                                    <li className="text-amber-700 dark:text-amber-300">{t('admin.settings.reset.restores')}</li>
-                                    <li className="text-neutral-500 dark:text-neutral-400">{t('admin.settings.reset.keeps')}</li>
-                                </ul>
+            {canReset && (
+                <section className="mt-6 rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 sm:p-6">
+                    <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-600 dark:text-red-300">
+                            <RotateCcw className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="font-semibold text-red-700 dark:text-red-300">{t('admin.settings.reset.title')}</h2>
+                            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{t('admin.settings.reset.lead')}</p>
+                            <ul className="mt-2 space-y-1 text-xs">
+                                <li className="text-amber-700 dark:text-amber-300">{t('admin.settings.reset.restores')}</li>
+                                <li className="text-neutral-500 dark:text-neutral-400">{t('admin.settings.reset.keeps')}</li>
+                            </ul>
 
-                                {!confirming ? (
-                                    <div className="mt-4">
-                                        <Button variant="danger" icon={RotateCcw} onClick={() => setConfirming(true)}>
-                                            {t('admin.settings.reset.button')}
+                            {!confirming ? (
+                                <div className="mt-4">
+                                    <Button variant="danger" icon={RotateCcw} onClick={() => setConfirming(true)}>
+                                        {t('admin.settings.reset.button')}
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="mt-4 space-y-3">
+                                    <label className="block">
+                                        <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                                            {t('admin.settings.reset.confirmPrompt', { word: CONFIRM_WORD })}
+                                        </span>
+                                        <input
+                                            value={confirmText}
+                                            onChange={(e) => setConfirmText(e.target.value)}
+                                            autoFocus
+                                            className="mt-1 w-full max-w-xs rounded-lg border border-red-300 px-3 py-2 text-sm dark:border-red-900 dark:bg-neutral-950"
+                                        />
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <Button variant="danger" disabled={confirmText !== CONFIRM_WORD} onClick={doReset}>
+                                            {t('admin.settings.reset.confirm')}
+                                        </Button>
+                                        <Button variant="secondary" onClick={() => { setConfirming(false); setConfirmText(''); }}>
+                                            {t('admin.settings.reset.cancel')}
                                         </Button>
                                     </div>
-                                ) : (
-                                    <div className="mt-4 space-y-3">
-                                        <label className="block">
-                                            <span className="text-sm text-neutral-600 dark:text-neutral-300">
-                                                {t('admin.settings.reset.confirmPrompt', { word: CONFIRM_WORD })}
-                                            </span>
-                                            <input
-                                                value={confirmText}
-                                                onChange={(e) => setConfirmText(e.target.value)}
-                                                autoFocus
-                                                className="mt-1 w-full max-w-xs rounded-lg border border-red-300 px-3 py-2 text-sm dark:border-red-900 dark:bg-neutral-950"
-                                            />
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <Button variant="danger" disabled={confirmText !== CONFIRM_WORD} onClick={doReset}>
-                                                {t('admin.settings.reset.confirm')}
-                                            </Button>
-                                            <Button variant="secondary" onClick={() => { setConfirming(false); setConfirmText(''); }}>
-                                                {t('admin.settings.reset.cancel')}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
-                    </section>
-                )}
-            </div>
+                    </div>
+                </section>
+            )}
         </AdminLayout>
     );
 }
