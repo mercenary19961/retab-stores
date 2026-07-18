@@ -159,34 +159,51 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load('images');
-
         return Inertia::render('admin/products/form', [
-            'product' => [
-                'id' => $product->id,
-                'category_id' => $product->category_id,
-                'name_ar' => $product->name_ar,
-                'name_en' => $product->name_en,
-                'slug' => $product->slug,
-                'description_ar' => $product->description_ar,
-                'description_en' => $product->description_en,
-                'price' => (float) $product->price,
-                'sale_price' => $product->sale_price !== null ? (float) $product->sale_price : null,
-                'sku' => $product->sku,
-                'smacc_sku' => $product->smacc_sku,
-                'barcode' => $product->barcode,
-                'stock' => $product->stock,
-                'low_stock_threshold' => $product->low_stock_threshold,
-                'is_active' => $product->is_active,
-                'is_featured' => $product->is_featured,
-                'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
-                    'id' => $img->id,
-                    'url' => Media::url($img->path),
-                    'is_primary' => $img->is_primary,
-                ]),
-            ],
+            'product' => $this->productData($product),
             'categories' => $this->categoryOptions(),
         ]);
+    }
+
+    /** JSON product payload for the in-list edit modal (same shape as the edit page). */
+    public function detail(Product $product)
+    {
+        return response()->json(['product' => $this->productData($product)]);
+    }
+
+    /**
+     * Full editable product payload (fields + images), shared by the edit page
+     * and the in-list modal.
+     *
+     * @return array<string, mixed>
+     */
+    private function productData(Product $product): array
+    {
+        $product->load('images');
+
+        return [
+            'id' => $product->id,
+            'category_id' => $product->category_id,
+            'name_ar' => $product->name_ar,
+            'name_en' => $product->name_en,
+            'slug' => $product->slug,
+            'description_ar' => $product->description_ar,
+            'description_en' => $product->description_en,
+            'price' => (float) $product->price,
+            'sale_price' => $product->sale_price !== null ? (float) $product->sale_price : null,
+            'sku' => $product->sku,
+            'smacc_sku' => $product->smacc_sku,
+            'barcode' => $product->barcode,
+            'stock' => $product->stock,
+            'low_stock_threshold' => $product->low_stock_threshold,
+            'is_active' => $product->is_active,
+            'is_featured' => $product->is_featured,
+            'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
+                'id' => $img->id,
+                'url' => Media::url($img->path),
+                'is_primary' => $img->is_primary,
+            ]),
+        ];
     }
 
     public function update(Request $request, Product $product, ChangeLogService $changeLog)

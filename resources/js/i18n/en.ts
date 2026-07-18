@@ -497,6 +497,7 @@ const en = {
             newProduct: 'New product',
             count: '{{n}} products',
             empty: 'No products.',
+            detailLoadError: 'Could not load this product.',
             deleteConfirm: 'Delete “{{name}}”? It will be hidden but order history is kept.',
             featured: 'Featured',
             active: 'Active',

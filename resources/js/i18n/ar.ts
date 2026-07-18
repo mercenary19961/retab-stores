@@ -501,6 +501,7 @@ const ar = {
             newProduct: 'منتج جديد',
             count: '{{n}} منتج',
             empty: 'لا توجد منتجات.',
+            detailLoadError: 'تعذّر تحميل هذا المنتج.',
             deleteConfirm: 'حذف "{{name}}"؟ سيُخفى المنتج مع الاحتفاظ بسجل الطلبات.',
             featured: 'مميّز',
             active: 'نشط',

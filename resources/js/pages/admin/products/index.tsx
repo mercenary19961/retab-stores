@@ -1,9 +1,11 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Columns3, MoveHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
+import Modal from '@/components/admin/modal';
+import ProductFormBody, { type Product } from '@/components/admin/product-form-body';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
@@ -55,6 +57,41 @@ interface Paginator<T> {
     total: number;
 }
 
+// Edit modal body: fetches the full product (fields + images), then reuses the
+// shared form. Re-fetches after image edits so the gallery stays current.
+function ProductEditor({ productId, categories, onSaved }: { productId: number; categories: Category[]; onSaved: () => void }) {
+    const { t } = useAdminT();
+    const [product, setProduct] = useState<Product | null>(null);
+    const [failed, setFailed] = useState(false);
+    const [reload, setReload] = useState(0);
+
+    useEffect(() => {
+        let alive = true;
+        fetch(`/admin/products/${productId}/detail`, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then((r) => {
+                if (!r.ok) throw new Error();
+                return r.json();
+            })
+            .then((d: { product: Product }) => alive && setProduct(d.product))
+            .catch(() => alive && setFailed(true));
+        return () => { alive = false; };
+    }, [productId, reload]);
+
+    if (failed) return <p className="py-6 text-sm text-red-500">{t('admin.products.detailLoadError')}</p>;
+    if (!product) return <p className="py-8 text-center text-sm text-neutral-400">{t('admin.common.loading')}</p>;
+
+    return (
+        <ProductFormBody
+            key={product.id}
+            product={product}
+            categories={categories}
+            modal
+            onSaved={onSaved}
+            onImageChanged={() => setReload((n) => n + 1)}
+        />
+    );
+}
+
 export default function ProductsIndex({
     products,
     filters,
@@ -69,6 +106,7 @@ export default function ProductsIndex({
     const { t } = useAdminT();
     const [search, setSearch] = useState(filters.search ?? '');
     const rc = useResizableColumns({ tableKey: 'products', columns: COLUMNS });
+    const [editing, setEditing] = useState<ProductRow | 'new' | null>(null);
 
     const query = (next: Record<string, unknown>) => {
         router.get(
@@ -135,7 +173,7 @@ export default function ProductsIndex({
                 />
 
                 <div className="sm:ms-auto">
-                    <Button href="/admin/products/create" variant="primary" icon={Plus} className="w-full sm:w-auto">{t('admin.products.newProduct')}</Button>
+                    <Button variant="primary" icon={Plus} className="w-full sm:w-auto" onClick={() => setEditing('new')}>{t('admin.products.newProduct')}</Button>
                 </div>
             </div>
 
@@ -213,7 +251,7 @@ export default function ProductsIndex({
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end gap-2">
-                                        <Button size="sm" variant="secondary" icon={Pencil} href={`/admin/products/${p.id}/edit`}>{t('admin.common.edit')}</Button>
+                                        <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(p)}>{t('admin.common.edit')}</Button>
                                         <Button size="sm" variant="danger" icon={Trash2} onClick={() => destroy(p)}>{t('admin.common.delete')}</Button>
                                     </div>
                                 </td>
@@ -237,6 +275,16 @@ export default function ProductsIndex({
                     ))}
                 </div>
             )}
+
+            <Modal
+                open={editing !== null}
+                onClose={() => setEditing(null)}
+                size="lg"
+                title={editing && editing !== 'new' ? t('admin.products.form.editHead', { name: editing.name_ar }) : t('admin.products.form.newTitle')}
+            >
+                {editing === 'new' && <ProductFormBody modal product={null} categories={categories} onSaved={() => setEditing(null)} />}
+                {editing && editing !== 'new' && <ProductEditor key={editing.id} productId={editing.id} categories={categories} onSaved={() => setEditing(null)} />}
+            </Modal>
         </AdminLayout>
     );
 }
