@@ -651,6 +651,11 @@ const ar = {
             title: 'صفحات المحتوى',
             newPage: 'صفحة جديدة',
             empty: 'لا توجد صفحات.',
+            publishedBadge: 'منشورة',
+            draftBadge: 'مسودة',
+            updatedBy: 'آخر تحديث بواسطة {{by}} بتاريخ {{at}}',
+            updatedAt: 'آخر تحديث بتاريخ {{at}}',
+            neverUpdated: 'لم تُعدَّل بعد',
             cols: {
                 slug: 'المُعرّف',
                 titleAr: 'العنوان (عربي)',

@@ -647,6 +647,11 @@ const en = {
             title: 'Content pages',
             newPage: 'New page',
             empty: 'No pages.',
+            publishedBadge: 'Published',
+            draftBadge: 'Draft',
+            updatedBy: 'Last updated by {{by}} on {{at}}',
+            updatedAt: 'Last updated on {{at}}',
+            neverUpdated: 'Not edited yet',
             cols: {
                 slug: 'Slug',
                 titleAr: 'Title (AR)',

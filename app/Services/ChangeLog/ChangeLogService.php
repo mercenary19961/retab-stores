@@ -37,7 +37,7 @@ use Throwable;
 class ChangeLogService
 {
     /** Metadata never snapshotted, diffed, or written back. */
-    private const SKIP_KEYS = ['id', 'created_at', 'updated_at', 'deleted_at'];
+    private const SKIP_KEYS = ['id', 'created_at', 'updated_at', 'deleted_at', 'updated_by'];
 
     /** subject_type => actions that may be reverted. Everything else is audit-only. */
     private const REVERTABLE = [
