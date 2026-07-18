@@ -50,6 +50,11 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $request->user()?->isEditor() ? $request->user()->resolvedPermissions() : null,
             ],
             'locale' => session('locale', 'ar'),
+            // Global toggle for the admin "How it works" attention beam (staff only;
+            // per-session dismissal is client-side). Default on when unset.
+            'helpPulse' => fn () => $request->user()?->isStaff()
+                ? \App\Models\Setting::get('admin_help_pulse', '1') !== '0'
+                : null,
             // Null while unset → the Turnstile widget renders nothing (dev).
             'turnstileSiteKey' => config('services.turnstile.site_key'),
             // Storefront nav tree (parents + active children) for the navbar.

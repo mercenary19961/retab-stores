@@ -156,6 +156,31 @@ html[dir='rtl'] .cta-shimmer {
 }
 
 /*
+ * "How it works" attention beam — a slow gold glow on the help button until the
+ * user opens the drawer (stops for the session) or disables it in Settings.
+ * brand-gold = rgb(175 144 86); the resting border is neutral-700.
+ */
+.help-beam {
+    animation: help-beam-pulse 2.6s ease-in-out infinite;
+}
+@keyframes help-beam-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgb(175 144 86 / 0);
+        border-color: rgb(64 64 64);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgb(175 144 86 / 0.35);
+        border-color: rgb(175 144 86 / 0.9);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .help-beam {
+        animation: none;
+    }
+}
+
+/*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
   looks the same as it did with Tailwind CSS v3.

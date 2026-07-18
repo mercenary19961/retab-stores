@@ -337,6 +337,7 @@ const en = {
         help: {
             button: 'How it works',
             rulesTitle: 'Good to know',
+            turnOffPulse: 'Turn off this attention pulse in Settings',
             pages: {
                 dashboard: {
                     intro: 'Your store at a glance: revenue trend, work that needs action, stock health, and what customers are buying.',
@@ -709,6 +710,10 @@ const en = {
         settings: {
             title: 'Settings',
             save: 'Save settings',
+            helpPulse: {
+                label: 'Attention pulse on “How it works”',
+                hint: 'Gently pulses the How it works button once each session until it is opened. Turn off to hide it for all staff.',
+            },
             groups: {
                 footerContact: 'Footer & contact',
             },

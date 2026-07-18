@@ -43,6 +43,8 @@ class SettingController extends Controller
         'social_instagram' => ['nullable', 'url', 'max:255'],
         'social_x' => ['nullable', 'url', 'max:255'],
         'social_linkedin' => ['nullable', 'url', 'max:255'],
+        // Admin UX: the "How it works" attention beam (stored '1'/'0').
+        'admin_help_pulse' => ['boolean'],
     ];
 
     /**
@@ -110,6 +112,12 @@ class SettingController extends Controller
     public function update(Request $request, ChangeLogService $changeLog)
     {
         $data = $request->validate(self::FIELDS);
+
+        // Normalise the boolean toggle to a clean '1'/'0' string (a raw PHP false
+        // would persist as '' and read back as "on").
+        if (array_key_exists('admin_help_pulse', $data)) {
+            $data['admin_help_pulse'] = $request->boolean('admin_help_pulse') ? '1' : '0';
+        }
 
         DB::transaction(function () use ($data, $changeLog) {
             $old = [];

@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { RotateCcw } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
@@ -48,11 +48,25 @@ export default function SettingsIndex({
     useHighlightFields();
     const flash = (usePage().props as { flash?: { success?: string | null } }).flash;
     const { data, setData, put, processing, errors } = useForm(
-        Object.fromEntries(FIELDS.map((f) => [f.key, settings[f.key] ?? ''])) as Record<string, string>,
+        Object.fromEntries([
+            ...FIELDS.map((f) => [f.key, settings[f.key] ?? '']),
+            // Attention-beam toggle, kept as '1'/'0' so the whole form stays string-typed.
+            ['admin_help_pulse', settings['admin_help_pulse'] === '0' ? '0' : '1'],
+        ]) as Record<string, string>,
     );
 
     const [confirming, setConfirming] = useState(false);
     const [confirmText, setConfirmText] = useState('');
+
+    // Deep link from the help drawer (/admin/settings#help-pulse): scroll to the
+    // toggle and pulse it so the setting is easy to find.
+    useEffect(() => {
+        if (window.location.hash !== '#help-pulse') return;
+        const el = document.getElementById('help-pulse');
+        if (!el) return;
+        el.scrollIntoView({ block: 'center' });
+        el.classList.add('field-highlight');
+    }, []);
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -86,6 +100,19 @@ export default function SettingsIndex({
             )}
 
             <form onSubmit={submit} className="max-w-lg space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                <label id="help-pulse" className="flex items-start gap-3 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+                    <input
+                        type="checkbox"
+                        checked={data.admin_help_pulse === '1'}
+                        onChange={(e) => setData('admin_help_pulse', e.target.checked ? '1' : '0')}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold"
+                    />
+                    <span>
+                        <span className="text-sm font-medium">{t('admin.settings.helpPulse.label')}</span>
+                        <span className="block text-xs text-neutral-400">{t('admin.settings.helpPulse.hint')}</span>
+                    </span>
+                </label>
+
                 {FIELDS.map((f) => {
                     const hint = t(`admin.settings.hints.${f.key}`, { defaultValue: '' });
                     return (

@@ -29,6 +29,9 @@ import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
 type AdminLocale = 'en' | 'ar';
 const STORAGE_KEY = 'retab_admin_locale';
 const SIDEBAR_KEY = 'retab_admin_sidebar_collapsed';
+// Per-session flag: set once the help drawer is opened, so the attention beam
+// stops for the rest of the session and resumes next session (sessionStorage).
+const HELP_SEEN_KEY = 'retab_admin_help_seen';
 
 // `perm` = the permission SECTION an editor needs "<perm>.view" to see the item.
 // No `perm` = always visible to staff (dashboard). `adminOnly` = admins only.
@@ -65,6 +68,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
             permissions?: Record<string, Record<string, boolean>> | null;
         };
         flash?: { success?: string | null; error?: string | null };
+        helpPulse?: boolean | null;
     };
     const user = props.auth?.user;
     const flash = props.flash;
@@ -98,6 +102,18 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
     const helpRaw = helpKey ? (t(helpKey, { returnObjects: true, defaultValue: null }) as unknown) : null;
     const help = helpRaw && typeof helpRaw === 'object' ? (helpRaw as HelpContent) : null;
     const [helpOpen, setHelpOpen] = useState(false);
+
+    // Attention beam: pulses the help button until opened this session, unless the
+    // global setting turns it off. Only those who can reach Settings get the
+    // "turn it off" link in the drawer.
+    const helpPulseEnabled = props.helpPulse ?? true;
+    const [helpSeen, setHelpSeen] = useState(false);
+    const canManageSettings = isAdmin || Boolean(permissions?.settings?.view);
+    const openHelp = () => {
+        setHelpOpen(true);
+        setHelpSeen(true);
+        if (typeof window !== 'undefined') sessionStorage.setItem(HELP_SEEN_KEY, '1');
+    };
 
     const renderNavItem = (item: NavItem) => {
         const active =
@@ -150,6 +166,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
         setCollapsed(localStorage.getItem(SIDEBAR_KEY) === '1');
+        if (sessionStorage.getItem(HELP_SEEN_KEY) === '1') setHelpSeen(true);
         const id = requestAnimationFrame(() => setMounted(true));
         return () => cancelAnimationFrame(id);
     }, []);
@@ -240,8 +257,10 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                     {help && (
                         <button
                             type="button"
-                            onClick={() => setHelpOpen(true)}
-                            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 py-1.5 text-xs font-medium text-neutral-300 transition-colors hover:border-brand-gold hover:text-brand-gold"
+                            onClick={openHelp}
+                            className={`flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 py-1.5 text-xs font-medium text-neutral-300 transition-colors hover:border-brand-gold hover:text-brand-gold ${
+                                helpPulseEnabled && mounted && !helpSeen && !helpOpen ? 'help-beam' : ''
+                            }`}
                         >
                             <Info className="h-4 w-4 text-brand-gold" />
                             <span className="hidden sm:inline">{t('admin.help.button')}</span>
@@ -353,6 +372,15 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                                         ))}
                                     </ul>
                                 </>
+                            )}
+                            {canManageSettings && (
+                                <Link
+                                    href="/admin/settings#help-pulse"
+                                    onClick={() => setHelpOpen(false)}
+                                    className="mt-6 flex items-center gap-1.5 border-t border-neutral-800 pt-4 text-xs text-neutral-400 transition-colors hover:text-brand-gold"
+                                >
+                                    <Settings className="h-3.5 w-3.5 shrink-0" /> {t('admin.help.turnOffPulse')}
+                                </Link>
                             )}
                         </div>
                     </aside>

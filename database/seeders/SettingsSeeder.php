@@ -38,6 +38,9 @@ class SettingsSeeder extends Seeder
             'bank_beneficiary' => 'شركة مصنع رطاب الوطن للتمور',
             'bank_account' => '145608010008130',
             'bank_iban' => 'SA9780000145608010008130',
+
+            // Admin UX default: the "How it works" attention beam is on at handover.
+            'admin_help_pulse' => '1',
         ];
     }
 }
