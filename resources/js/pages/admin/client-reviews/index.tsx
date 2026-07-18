@@ -1,8 +1,11 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { Columns3, MoveHorizontal, Pencil, Plus, Trash2, Upload } from 'lucide-react';
+import { type FormEvent, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import Modal from '@/components/admin/modal';
 import ResizableTh from '@/components/admin/resizable-th';
+import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
@@ -28,10 +31,90 @@ interface ReviewRow {
     updated_at: string | null;
 }
 
+const INPUT =
+    'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
+
+// Modal body: create (review = null) or edit an existing review in place.
+function ReviewForm({ review, onClose }: { review: ReviewRow | null; onClose: () => void }) {
+    const { t } = useAdminT();
+    const { data, setData, post, put, processing, errors, isDirty } = useForm({
+        author_name: review?.author_name ?? '',
+        body: review?.body ?? '',
+        rating: review?.rating ?? 5,
+        language: review?.language ?? '',
+        is_active: review?.is_active ?? true,
+    });
+
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        const opts = { preserveScroll: true, preserveState: true, onSuccess: () => onClose() };
+        if (review) put(`/admin/client-reviews/${review.id}`, opts);
+        else post('/admin/client-reviews', opts);
+    };
+
+    const err = (msg?: string) => msg && <span className="mt-1 block text-xs text-red-500">{msg}</span>;
+
+    return (
+        <form onSubmit={submit} className="space-y-4">
+            <label className="block">
+                <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300">{t('admin.reviews.form.authorName')}</span>
+                <input dir="auto" autoFocus value={data.author_name} onChange={(e) => setData('author_name', e.target.value)} className={INPUT} />
+                {err(errors.author_name)}
+            </label>
+
+            <label className="block">
+                <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300">{t('admin.reviews.form.reviewText')}</span>
+                <textarea dir="auto" rows={5} value={data.body} onChange={(e) => setData('body', e.target.value)} className={INPUT} />
+                {err(errors.body)}
+            </label>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                    <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300">{t('admin.reviews.form.rating')}</span>
+                    <Select
+                        value={String(data.rating)}
+                        onChange={(v) => setData('rating', Number(v))}
+                        options={[5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: `${n} ★` }))}
+                        className="mt-1 w-full"
+                    />
+                    {err(errors.rating)}
+                </label>
+                <label className="block">
+                    <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300">{t('admin.reviews.form.language')}</span>
+                    <Select
+                        value={data.language}
+                        onChange={(v) => setData('language', v)}
+                        options={[
+                            { value: '', label: t('admin.reviews.form.languageUnset') },
+                            { value: 'ar', label: t('admin.reviews.form.arabic') },
+                            { value: 'en', label: t('admin.reviews.form.english') },
+                        ]}
+                        className="mt-1 w-full"
+                    />
+                    {err(errors.language)}
+                </label>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+                {t('admin.reviews.form.activeLabel')}
+            </label>
+
+            <div className="flex justify-end gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                <Button type="button" variant="secondary" onClick={onClose}>{t('admin.common.cancel')}</Button>
+                <Button type="submit" variant="primary" disabled={processing || !isDirty}>{t('admin.reviews.form.save')}</Button>
+            </div>
+        </form>
+    );
+}
+
 export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }) {
     const { t } = useAdminT();
     const rc = useResizableColumns({ tableKey: 'client_reviews', columns: COLUMNS });
     const activeCount = reviews.filter((r) => r.is_active).length;
+
+    // null = closed, 'new' = create, ReviewRow = edit that review — all in a modal.
+    const [editing, setEditing] = useState<ReviewRow | 'new' | null>(null);
 
     const destroy = (r: ReviewRow) => {
         if (!window.confirm(t('admin.reviews.form.deleteConfirm'))) return;
@@ -55,7 +138,7 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                 </div>
                 <div className="flex gap-2">
                     <Button href="/admin/client-reviews/import" variant="secondary" icon={Upload}>{t('admin.reviews.bulkImport')}</Button>
-                    <Button href="/admin/client-reviews/create" variant="primary" icon={Plus}>{t('admin.reviews.newReview')}</Button>
+                    <Button variant="primary" icon={Plus} onClick={() => setEditing('new')}>{t('admin.reviews.newReview')}</Button>
                 </div>
             </div>
 
@@ -102,7 +185,7 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                                 <td className="truncate px-4 py-3 align-top text-neutral-500">{r.updated_at ?? '—'}</td>
                                 <td className="px-4 py-3 align-top">
                                     <div className="flex items-center justify-end gap-2">
-                                        <Button size="sm" variant="secondary" icon={Pencil} href={`/admin/client-reviews/${r.id}/edit`}>{t('admin.common.edit')}</Button>
+                                        <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(r)}>{t('admin.common.edit')}</Button>
                                         <Button size="sm" variant="danger" icon={Trash2} onClick={() => destroy(r)}>{t('admin.common.delete')}</Button>
                                     </div>
                                 </td>
@@ -111,6 +194,16 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                     </tbody>
                 </table>
             </StickyScrollWrapper>
+
+            <Modal
+                open={editing !== null}
+                onClose={() => setEditing(null)}
+                title={editing && editing !== 'new' ? t('admin.reviews.form.editTitle', { name: editing.author_name }) : t('admin.reviews.form.newTitle')}
+            >
+                {editing !== null && (
+                    <ReviewForm key={editing === 'new' ? 'new' : editing.id} review={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+                )}
+            </Modal>
         </AdminLayout>
     );
 }
