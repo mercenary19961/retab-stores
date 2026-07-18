@@ -266,8 +266,8 @@ const en = {
             },
             inventory: {
                 title: 'Inventory health',
-                syncOk: 'Stock synced {{hours}}h ago',
-                syncStale: 'Stock not synced in {{hours}}h, run today’s import',
+                syncOk: 'Stock synced {{ago}}',
+                syncStale: 'Stock last synced {{ago}}, run today’s import',
                 syncNever: 'Stock never synced from SMACC',
                 outOfStock: 'Out of stock',
                 lowStock: 'Low stock',

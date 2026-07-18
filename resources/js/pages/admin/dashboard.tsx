@@ -49,7 +49,7 @@ interface LowStockRow {
     stock: number;
 }
 interface Inventory {
-    lastSynced: { at: string | null; hours: number | null; stale: boolean };
+    lastSynced: { at: string | null; minutes: number | null; stale: boolean };
     outOfStock: number;
     lowStock: number;
     activeProducts: number;
@@ -89,6 +89,20 @@ const TASK_ICON: Record<string, LucideIcon> = {
     readyToShip: Truck,
     tamaraExpiring: Clock,
 };
+
+/**
+ * Friendly "N minutes/hours/days/weeks ago" for the last-sync banner, localized
+ * and pluralized by the browser (respects the admin language toggle).
+ */
+function syncedAgo(minutes: number, locale: string): string {
+    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+    if (minutes < 60) return rtf.format(-minutes, 'minute');
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return rtf.format(-hours, 'hour');
+    const days = Math.round(hours / 24);
+    if (days < 14) return rtf.format(-days, 'day');
+    return rtf.format(-Math.round(days / 7), 'week');
+}
 
 export default function AdminDashboard({
     kpis,
@@ -229,11 +243,11 @@ export default function AdminDashboard({
                                 : 'border-neutral-800 bg-neutral-950/40 text-neutral-400'
                         }`}
                     >
-                        {inventory.lastSynced.at === null
+                        {inventory.lastSynced.at === null || inventory.lastSynced.minutes === null
                             ? t('admin.dashboard.inventory.syncNever')
                             : inventory.lastSynced.stale
-                              ? t('admin.dashboard.inventory.syncStale', { hours: inventory.lastSynced.hours })
-                              : t('admin.dashboard.inventory.syncOk', { hours: inventory.lastSynced.hours })}
+                              ? t('admin.dashboard.inventory.syncStale', { ago: syncedAgo(inventory.lastSynced.minutes, i18n.language) })
+                              : t('admin.dashboard.inventory.syncOk', { ago: syncedAgo(inventory.lastSynced.minutes, i18n.language) })}
                     </div>
 
                     <div className="mb-4 grid grid-cols-3 gap-3 text-center">

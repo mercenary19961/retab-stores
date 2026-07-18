@@ -170,18 +170,19 @@ class DashboardController extends Controller
         ];
     }
 
-    /** @return array{at:string|null, hours:int|null, stale:bool} */
+    /** @return array{at:string|null, minutes:int|null, stale:bool} */
     private function lastSynced(): array
     {
         $raw = Setting::get(SmaccImportService::LAST_SYNCED_KEY);
         if (! $raw) {
-            return ['at' => null, 'hours' => null, 'stale' => true];
+            return ['at' => null, 'minutes' => null, 'stale' => true];
         }
 
         $at = Carbon::parse($raw);
-        $hours = (int) $at->diffInHours(now());
+        // Pass elapsed minutes; the client picks the friendly unit (min/hours/days/weeks).
+        $minutes = (int) $at->diffInMinutes(now());
 
-        return ['at' => $at->toDateTimeString(), 'hours' => $hours, 'stale' => $hours >= 24];
+        return ['at' => $at->toDateTimeString(), 'minutes' => $minutes, 'stale' => $minutes >= 24 * 60];
     }
 
     /**
