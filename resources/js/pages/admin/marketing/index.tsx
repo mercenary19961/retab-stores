@@ -85,6 +85,11 @@ export default function MarketingIndex({
     const { t: tr, i18n } = useAdminT();
     const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
 
+    // Localized display labels for enum-like values (category / status / language / delivery funnel).
+    // The stored value stays English — it's what our API and Meta expect — only the label localizes;
+    // unknown values fall back to the raw string.
+    const label = (group: string, key: string) => tr(`admin.marketing.${group}.${key}`, { defaultValue: key });
+
     // Header title: only the "WhatsApp" word (+ icon) is brand-green; the rest white.
     const titleText = tr('admin.marketing.title');
     const brandWord = tr('admin.marketing.brandWord');
@@ -117,8 +122,8 @@ export default function MarketingIndex({
     const body = String(tpl.body);
     const detected = detectPlaceholders(body);
     const bodyExample = i18n.language === 'en'
-        ? 'Ramadan offer: {{1}}% off {{2}} — order now! 🌴'
-        : 'عرض رمضان: خصم {{1}}٪ على {{2}} — اطلب الآن! 🌴';
+        ? 'Ramadan offer: {{1}}% off {{2}}, order now! 🌴'
+        : 'عرض رمضان: خصم {{1}}٪ على {{2}}، اطلب الآن! 🌴';
 
     const saveTemplate = (e: FormEvent) => {
         e.preventDefault();
@@ -171,11 +176,11 @@ export default function MarketingIndex({
                             <li key={t.id} className="flex items-center justify-between rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
                                 <div>
                                     <span className="font-mono">{t.name}</span>
-                                    <span className="ms-2 text-xs text-neutral-400">{t.language} · {t.category} · {t.param_count} {tr('admin.marketing.vars')}</span>
+                                    <span className="ms-2 text-xs text-neutral-400">{label('lang', t.language)} · {label('categories', t.category)} · {t.param_count} {tr('admin.marketing.vars')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className={`rounded-full px-2 py-0.5 text-xs ${t.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800'}`}>
-                                        {t.status}
+                                        {label('templateStatus', t.status)}
                                     </span>
                                     <Button
                                         size="sm"
@@ -212,7 +217,7 @@ export default function MarketingIndex({
                                 <Select
                                     value={String(tpl.language)}
                                     onChange={(v) => setTpl({ ...tpl, language: v })}
-                                    options={[{ value: 'ar', label: 'ar' }, { value: 'en', label: 'en' }]}
+                                    options={[{ value: 'ar', label: label('lang', 'ar') }, { value: 'en', label: label('lang', 'en') }]}
                                     className="mt-1 w-full"
                                 />
                                 <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.language')}</span>
@@ -222,7 +227,7 @@ export default function MarketingIndex({
                                 <Select
                                     value={String(tpl.category)}
                                     onChange={(v) => setTpl({ ...tpl, category: v })}
-                                    options={[{ value: 'marketing', label: 'marketing' }, { value: 'utility', label: 'utility' }]}
+                                    options={[{ value: 'marketing', label: label('categories', 'marketing') }, { value: 'utility', label: label('categories', 'utility') }]}
                                     className="mt-1 w-full"
                                 />
                                 <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.category')}</span>
@@ -251,7 +256,7 @@ export default function MarketingIndex({
                             <Select
                                 value={String(tpl.status)}
                                 onChange={(v) => setTpl({ ...tpl, status: v })}
-                                options={['draft', 'pending', 'approved', 'rejected'].map((s) => ({ value: s, label: s }))}
+                                options={['draft', 'pending', 'approved', 'rejected'].map((s) => ({ value: s, label: label('templateStatus', s) }))}
                                 className="mt-1 w-full"
                             />
                             <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.status')}</span>
@@ -279,7 +284,7 @@ export default function MarketingIndex({
                                     onChange={(v) => { const id = Number(v) || ''; setTemplateId(id); setParams([]); }}
                                     options={[
                                         { value: '', label: tr('admin.marketing.pickTemplate') },
-                                        ...templates.filter((t) => t.status === 'approved').map((t) => ({ value: String(t.id), label: `${t.name} (${t.language})` })),
+                                        ...templates.filter((t) => t.status === 'approved').map((t) => ({ value: String(t.id), label: `${t.name} (${label('lang', t.language)})` })),
                                     ]}
                                     className="mt-1 w-full"
                                 />
@@ -318,11 +323,11 @@ export default function MarketingIndex({
                                 <li key={c.id} className="rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
                                     <div className="flex items-center justify-between">
                                         <span className="font-mono">#{c.id} {c.template}</span>
-                                        <span className="text-xs text-neutral-400">{c.sent_at ?? c.status}</span>
+                                        <span className="text-xs text-neutral-400">{c.sent_at ?? label('templateStatus', c.status)}</span>
                                     </div>
                                     <div className="mt-1 text-xs text-neutral-500">
                                         {tr('admin.marketing.audience', { count: c.audience_count })}
-                                        {Object.entries(c.stats).map(([k, v]) => ` · ${k} ${v}`)}
+                                        {Object.entries(c.stats).map(([k, v]) => ` · ${label('funnel', k)} ${v}`)}
                                     </div>
                                 </li>
                             ))}
