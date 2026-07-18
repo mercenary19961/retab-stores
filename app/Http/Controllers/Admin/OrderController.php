@@ -105,9 +105,26 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
+        return Inertia::render('admin/orders/show', $this->detailData($order));
+    }
+
+    /** JSON detail for the in-list order modal (same payload as the show page). */
+    public function detail(Order $order)
+    {
+        return response()->json($this->detailData($order));
+    }
+
+    /**
+     * Full order payload + available lifecycle actions, shared by the show page
+     * and the in-list modal.
+     *
+     * @return array<string, mixed>
+     */
+    private function detailData(Order $order): array
+    {
         $order->load(['items', 'activities.user', 'confirmedBy', 'coupon']);
 
-        return Inertia::render('admin/orders/show', [
+        return [
             'order' => [
                 'order_number' => $order->order_number,
                 'customer_name' => $order->customer_name,
@@ -151,7 +168,7 @@ class OrderController extends Controller
                 'ship' => $order->status === OrderStatus::Confirmed && ! $order->tracking_number,
                 'cancel' => in_array($order->status, [OrderStatus::Confirmed], true),
             ],
-        ]);
+        ];
     }
 
     public function confirm(Order $order)

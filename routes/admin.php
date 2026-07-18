@@ -17,6 +17,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Orders.
     Route::get('orders', [OrderController::class, 'index'])->middleware('permission:orders.view')->name('orders.index');
     Route::get('orders/export', [OrderController::class, 'export'])->middleware('permission:orders.export')->name('orders.export');
+    Route::get('orders/{order:order_number}/detail', [OrderController::class, 'detail'])->middleware('permission:orders.view')->name('orders.detail');
     Route::get('orders/{order:order_number}', [OrderController::class, 'show'])->middleware('permission:orders.view')->name('orders.show');
     Route::middleware('permission:orders.manage')->group(function () {
         Route::post('orders/{order:order_number}/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');

@@ -545,6 +545,7 @@ const en = {
             title: 'Orders',
             count: '{{n}} orders',
             empty: 'No orders.',
+            detailLoadError: 'Could not load this order.',
             cols: {
                 order: 'Order',
                 customer: 'Customer',

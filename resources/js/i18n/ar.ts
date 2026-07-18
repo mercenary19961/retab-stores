@@ -549,6 +549,7 @@ const ar = {
             title: 'الطلبات',
             count: '{{n}} طلب',
             empty: 'لا توجد طلبات.',
+            detailLoadError: 'تعذّر تحميل هذا الطلب.',
             cols: {
                 order: 'الطلب',
                 customer: 'العميل',
