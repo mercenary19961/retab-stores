@@ -341,6 +341,7 @@ const en = {
             lead: 'You are about to delete “{{name}}”.',
             reversible: 'You can restore it later from the Change Log.',
             permanent: 'This cannot be undone.',
+            confirmWord: 'delete',
             prompt: 'Type {{word}} to confirm.',
             confirm: 'Delete',
         },

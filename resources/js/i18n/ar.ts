@@ -345,6 +345,7 @@ const ar = {
             lead: 'أنت على وشك حذف «{{name}}».',
             reversible: 'يمكنك استعادته لاحقاً من سجل التغييرات.',
             permanent: 'لا يمكن التراجع عن هذا.',
+            confirmWord: 'احذف',
             prompt: 'اكتب {{word}} للتأكيد.',
             confirm: 'حذف',
         },

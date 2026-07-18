@@ -4,8 +4,6 @@ import Button from '@/components/admin/button';
 import Modal from '@/components/admin/modal';
 import { useAdminT } from '@/i18n/use-admin-t';
 
-const CONFIRM_WORD = 'delete'; // matched case-insensitively
-
 /**
  * Guarded delete trigger (inspired by Sky Amman's ConfirmDeleteButton): a danger
  * button that opens a modal requiring the admin to TYPE a confirm word before the
@@ -26,6 +24,7 @@ export default function ConfirmDeleteButton({
     label?: string;
 }) {
     const { t } = useAdminT();
+    const confirmWord = t('admin.deleteModal.confirmWord'); // localized: "delete" / "احذف"
     const [open, setOpen] = useState(false);
     const [text, setText] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +36,7 @@ export default function ConfirmDeleteButton({
         return () => clearTimeout(id);
     }, [open]);
 
-    const ready = text.trim().toLowerCase() === CONFIRM_WORD;
+    const ready = text.trim().toLowerCase() === confirmWord.toLowerCase();
 
     const confirm = () => {
         if (!ready) return;
@@ -68,13 +67,14 @@ export default function ConfirmDeleteButton({
                     </div>
 
                     <label className="block">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.deleteModal.prompt', { word: CONFIRM_WORD })}</span>
+                        <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.deleteModal.prompt', { word: confirmWord })}</span>
                         <input
                             ref={inputRef}
+                            dir="auto"
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && confirm()}
-                            placeholder={CONFIRM_WORD}
+                            placeholder={confirmWord}
                             autoComplete="off"
                             className="mt-1 w-full rounded-lg border border-red-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-red-900 dark:bg-neutral-950"
                         />
