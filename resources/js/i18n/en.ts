@@ -333,6 +333,8 @@ const en = {
             cancel: 'Cancel',
             upload: 'Upload',
             close: 'Close',
+            loading: 'Loading…',
+            view: 'View',
         },
         help: {
             button: 'How it works',
@@ -618,6 +620,7 @@ const en = {
             searchPlaceholder: 'Search name / email / phone…',
             count: '{{n}} customers',
             empty: 'No customers.',
+            detailLoadError: 'Could not load customer details.',
             filters: {
                 all: 'All',
                 optedIn: 'Opted in',

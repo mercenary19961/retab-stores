@@ -53,6 +53,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::middleware('permission:customers.view')->group(function () {
         Route::get('customers', [\App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('customers.index');
         Route::get('customers/export', [\App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('customers.export');
+        Route::get('customers/{customer}/detail', [\App\Http\Controllers\Admin\CustomerController::class, 'detail'])->name('customers.detail');
         Route::get('customers/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'show'])->name('customers.show');
     });
 

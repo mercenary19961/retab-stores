@@ -337,6 +337,8 @@ const ar = {
             cancel: 'إلغاء',
             upload: 'رفع',
             close: 'إغلاق',
+            loading: 'جارٍ التحميل…',
+            view: 'عرض',
         },
         help: {
             button: 'كيف تعمل هذه الصفحة',
@@ -622,6 +624,7 @@ const ar = {
             searchPlaceholder: 'ابحث بالاسم / البريد / الهاتف…',
             count: '{{n}} عميل',
             empty: 'لا يوجد عملاء.',
+            detailLoadError: 'تعذّر تحميل تفاصيل العميل.',
             filters: {
                 all: 'الكل',
                 optedIn: 'مشترك',
