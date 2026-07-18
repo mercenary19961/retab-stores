@@ -3,6 +3,7 @@ import {
     Boxes,
     FileText,
     History,
+    Info,
     Languages,
     LayoutDashboard,
     LogOut,
@@ -32,6 +33,9 @@ const SIDEBAR_KEY = 'retab_admin_sidebar_collapsed';
 // `perm` = the permission SECTION an editor needs "<perm>.view" to see the item.
 // No `perm` = always visible to staff (dashboard). `adminOnly` = admins only.
 type NavItem = { key: string; href: string; icon: LucideIcon; perm?: string; adminOnly?: boolean };
+
+// Per-page "How it works" help, authored in i18n under `admin.help.pages.<navKey>`.
+type HelpContent = { intro?: string; steps?: string[]; rules?: string[] };
 
 const NAV: NavItem[] = [
     { key: 'dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -87,6 +91,13 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
         (item) => currentPath === item.href || (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href)),
     );
     const TitleIcon = activeNavItem?.icon;
+
+    // Per-page help drawer, keyed off the active section so every page gets one
+    // for free (content lives in i18n under `admin.help.pages.<navKey>`).
+    const helpKey = activeNavItem ? `admin.help.pages.${activeNavItem.key}` : null;
+    const helpRaw = helpKey ? (t(helpKey, { returnObjects: true, defaultValue: null }) as unknown) : null;
+    const help = helpRaw && typeof helpRaw === 'object' ? (helpRaw as HelpContent) : null;
+    const [helpOpen, setHelpOpen] = useState(false);
 
     const renderNavItem = (item: NavItem) => {
         const active =
@@ -144,7 +155,12 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
     }, []);
     useEffect(() => router.on('navigate', () => setSidebarOpen(false)), []);
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSidebarOpen(false);
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setSidebarOpen(false);
+                setHelpOpen(false);
+            }
+        };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, []);
@@ -221,6 +237,16 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                             title
                         )}
                     </h1>
+                    {help && (
+                        <button
+                            type="button"
+                            onClick={() => setHelpOpen(true)}
+                            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 py-1.5 text-xs font-medium text-neutral-300 transition-colors hover:border-brand-gold hover:text-brand-gold"
+                        >
+                            <Info className="h-4 w-4 text-brand-gold" />
+                            <span className="hidden sm:inline">{t('admin.help.button')}</span>
+                        </button>
+                    )}
                     <div className="flex flex-1 justify-center">
                         <GlobalSearch />
                     </div>
@@ -268,6 +294,70 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
             </div>
 
             <UndoToast />
+
+            {/* Per-page "How it works" drawer. Slides from the reading-end side
+                (right in LTR, left in RTL). Physical transform, so RTL is handled
+                explicitly rather than via a logical utility Tailwind may drop. */}
+            {help && (
+                <>
+                    <div
+                        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${helpOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+                        onClick={() => setHelpOpen(false)}
+                        aria-hidden="true"
+                    />
+                    <aside
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={t('admin.help.button')}
+                        style={{ transform: helpOpen ? 'translateX(0)' : isRTL ? 'translateX(-100%)' : 'translateX(100%)' }}
+                        className={`fixed inset-y-0 ${isRTL ? 'left-0' : 'right-0'} z-50 flex w-full max-w-sm flex-col bg-neutral-900 shadow-2xl transition-transform duration-300`}
+                    >
+                        <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-800 px-5">
+                            <h2 className="flex items-center gap-2 font-bold text-neutral-100">
+                                <Info className="h-5 w-5 text-brand-gold" /> {t('admin.help.button')}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => setHelpOpen(false)}
+                                aria-label={t('admin.common.close')}
+                                className="rounded p-1 text-neutral-400 transition-colors hover:text-white"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto px-5 py-5">
+                            {help.intro && <p className="mb-4 text-sm text-neutral-400">{help.intro}</p>}
+                            {help.steps && help.steps.length > 0 && (
+                                <ol className="space-y-3">
+                                    {help.steps.map((step, i) => (
+                                        <li key={i} className="flex gap-3 text-sm text-neutral-200">
+                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-teal/25 text-xs font-bold text-brand-gold">
+                                                {i + 1}
+                                            </span>
+                                            <span dir="auto">{step}</span>
+                                        </li>
+                                    ))}
+                                </ol>
+                            )}
+                            {help.rules && help.rules.length > 0 && (
+                                <>
+                                    <p className="mt-6 mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                                        {t('admin.help.rulesTitle')}
+                                    </p>
+                                    <ul className="space-y-2">
+                                        {help.rules.map((rule, i) => (
+                                            <li key={i} className="flex gap-2 text-sm text-neutral-400">
+                                                <span className="text-brand-gold">•</span>
+                                                <span dir="auto">{rule}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+                        </div>
+                    </aside>
+                </>
+            )}
         </div>
     );
 }

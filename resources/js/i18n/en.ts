@@ -332,6 +332,146 @@ const en = {
             by: 'by {{user}}',
             cancel: 'Cancel',
             upload: 'Upload',
+            close: 'Close',
+        },
+        help: {
+            button: 'How it works',
+            rulesTitle: 'Good to know',
+            pages: {
+                dashboard: {
+                    intro: 'Your store at a glance: revenue trend, work that needs action, stock health, and what customers are buying.',
+                    rules: [
+                        'The KPI cards compare the last 30 days against the previous 30; the arrow shows the trend.',
+                        'Revenue and order counts include paid orders only, not pending or cancelled ones.',
+                        'The tasks panel highlights orders awaiting confirmation, returns to review, and Tamara authorizations nearing expiry.',
+                    ],
+                },
+                orders: {
+                    steps: [
+                        'A customer orders and pays, so the order arrives here as Awaiting confirmation.',
+                        'Open it, check stock, then Confirm to deduct stock and alert the courier, or Mark unavailable to apologise to the customer.',
+                        'Follow it through to Delivered. A customer can cancel only before you confirm.',
+                    ],
+                    rules: [
+                        'Every order is prepaid, there is no cash on delivery.',
+                        'Card orders refund on rejection, Tamara orders are captured only when you confirm, so confirm within 24 to 48 hours.',
+                        'The internal note on an order is for staff only, the customer never sees it.',
+                    ],
+                },
+                products: {
+                    steps: [
+                        'Add or edit a product with its Arabic name (English is optional and falls back to Arabic).',
+                        'Upload images: the first becomes the main one, and you can change which is primary.',
+                        'Set price and stock, and give it the SMACC SKU so the daily import can match it.',
+                    ],
+                    rules: [
+                        'Weight is descriptive text in the title, not a field, because shipping is a flat rate.',
+                        'Deleting a product is reversible from the Change Log.',
+                        'Stock here is a mirror of SMACC, refreshed by the daily import.',
+                    ],
+                },
+                inventory: {
+                    steps: [
+                        'In SMACC, record today’s online sales, then export the inventory to an Excel file.',
+                        'Upload that file here to get a diff preview of every change before anything is applied.',
+                        'Review the preview (unmatched rows are flagged), then apply. The import is logged and can be undone.',
+                    ],
+                    rules: [
+                        'SMACC is the source of truth, the website stock is a daily mirror.',
+                        'Always record online sales in SMACC before exporting, or the import refills already-sold units.',
+                        'Rows match by SMACC SKU, products without one are matched by name.',
+                    ],
+                },
+                returns: {
+                    steps: [
+                        'A customer files a return from their order within 3 days of delivery, with photos.',
+                        'Review it here: the photos, the reason, and a refund preview.',
+                        'Approve or reject, then resolve it as an exchange or a refund.',
+                    ],
+                    rules: [
+                        'Returns are for defective or damaged goods only, per the store policy.',
+                        'Refunds are real: cards refund through Moyasar, Tamara through Tamara, bank transfers are refunded manually.',
+                        'Shipping fees are refunded only when the goods arrived damaged.',
+                    ],
+                },
+                customers: {
+                    steps: [
+                        'Search or filter the list, for example by marketing opt-in.',
+                        'Open a customer to see their profile, loyalty progress, and recent orders.',
+                    ],
+                    rules: [
+                        'This page is read-only, customers manage their own accounts.',
+                        'Loyalty rewards a customer with a 15% coupon after 5 confirmed purchases.',
+                    ],
+                },
+                marketing: {
+                    steps: [
+                        'Author the template in Meta Business Manager and submit it for approval.',
+                        'Mirror it here (name, language, category, body) and set its status once Meta approves it.',
+                        'Pick an approved template, fill its variables, and send to your opt-in customers.',
+                    ],
+                    rules: [
+                        'Only Meta-approved templates can be sent.',
+                        'Marketing goes only to opted-in customers, and each sends in the template’s own language.',
+                        'Free text is allowed only inside a customer’s 24-hour reply window, otherwise use a template.',
+                    ],
+                },
+                reviews: {
+                    steps: [
+                        'Add a testimonial with the author name, text, and a star rating.',
+                        'Set its language and toggle it active to show it on the storefront.',
+                    ],
+                    rules: [
+                        'Only active testimonials appear on the site.',
+                        'These are curated testimonials you enter, separate from product reviews left by shoppers.',
+                    ],
+                },
+                contentPages: {
+                    steps: [
+                        'Open a page (such as the return policy, about, or contact) to edit it.',
+                        'Edit the Arabic content (English is optional) and save, the public page updates instantly.',
+                    ],
+                    rules: [
+                        'You can edit existing pages but not add or delete pages.',
+                        'Arabic is required, English falls back to Arabic when empty.',
+                        'Edits are tracked in the Change Log and can be reverted.',
+                    ],
+                },
+                changeLog: {
+                    intro: 'A history of staff changes across products, settings, and content, with the ability to undo them.',
+                    steps: [
+                        'Browse the log to see who changed what and when, with a field-by-field diff.',
+                        'Use Revert on an entry to restore its previous values.',
+                    ],
+                    rules: [
+                        'Revert is blocked if a field changed again since, so you never overwrite newer edits by accident.',
+                        'A revert is itself logged, so you can redo it by reverting that entry.',
+                        'Orders, returns, and payments are not here, they have their own audit trail.',
+                    ],
+                },
+                users: {
+                    steps: [
+                        'Add an editor account with a name, email, and password.',
+                        'Toggle exactly which sections and actions each editor can access.',
+                    ],
+                    rules: [
+                        'Only admins can see and manage this page.',
+                        'Editors see only the sections you grant them, admins have full access.',
+                        'Some actions, like sending campaigns or reverting changes, are off by default.',
+                    ],
+                },
+                settings: {
+                    steps: [
+                        'Set the flat shipping fee, the bank transfer details, and the store legal name.',
+                        'Save, and the storefront picks up the changes immediately.',
+                    ],
+                    rules: [
+                        'The bank IBAN shown here is your public receiving account for manual transfers.',
+                        'Reset to handover point restores the original content, it is admin-only, so use it with care.',
+                        'Settings changes are tracked in the Change Log.',
+                    ],
+                },
+            },
         },
         paymentStatus: {
             pending: 'Pending',
@@ -745,15 +885,6 @@ const en = {
                 body: 'Paste the approved body; use numbered placeholders for each variable (highlighted below).',
                 status: 'Must match the template’s real status in Meta.',
                 mismatch: 'The body has {{body}} placeholder(s) but the count is {{count}}.',
-            },
-            help: {
-                title: 'How WhatsApp marketing works',
-                step1: 'Author the template in Meta Business Manager and submit it for approval.',
-                step2: 'Mirror it here (name, language, category, body) and set its status once Meta approves it.',
-                step3: 'Pick an approved template, fill its variables, and send to your opt-in customers.',
-                rule1: 'Only Meta-approved templates can be sent.',
-                rule2: 'Marketing goes only to opted-in customers; each sends in the template’s own language.',
-                rule3: 'Free text is allowed only inside a customer’s 24-hour reply window; otherwise use a template.',
             },
             categories: {
                 marketing: 'Marketing',

@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { FileText, History, Info, Megaphone, Pencil, Send } from 'lucide-react';
+import { FileText, History, Megaphone, Pencil, Send } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
@@ -147,22 +147,6 @@ export default function MarketingIndex({
 
             {flash?.success && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>}
             {flash?.error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{flash.error}</div>}
-
-            <details className="mb-6 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                <summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-                    <Info className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.help.title')}
-                </summary>
-                <ol className="mt-3 list-inside list-decimal space-y-1.5 text-sm text-neutral-500 dark:text-neutral-400">
-                    <li>{tr('admin.marketing.help.step1')}</li>
-                    <li>{tr('admin.marketing.help.step2')}</li>
-                    <li>{tr('admin.marketing.help.step3')}</li>
-                </ol>
-                <ul className="mt-3 space-y-1 border-t border-neutral-100 pt-3 text-xs text-neutral-500 dark:border-neutral-800">
-                    <li>• {tr('admin.marketing.help.rule1')}</li>
-                    <li>• {tr('admin.marketing.help.rule2')}</li>
-                    <li>• {tr('admin.marketing.help.rule3')}</li>
-                </ul>
-            </details>
 
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Templates registry */}
