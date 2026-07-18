@@ -210,6 +210,55 @@ export default function SettingsIndex({
                             </button>
                         </div>
                     </section>
+
+                    {canReset && (
+                        <section className="mb-6 break-inside-avoid rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 sm:p-6">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-600 dark:text-red-300">
+                                    <RotateCcw className="h-5 w-5" />
+                                </div>
+                                <div className="min-w-0">
+                                    <h2 className="font-semibold text-red-700 dark:text-red-300">{t('admin.settings.reset.title')}</h2>
+                                    <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{t('admin.settings.reset.lead')}</p>
+                                    <ul className="mt-2 space-y-1 text-xs">
+                                        <li className="text-amber-700 dark:text-amber-300">{t('admin.settings.reset.restores')}</li>
+                                        <li className="text-neutral-500 dark:text-neutral-400">{t('admin.settings.reset.keeps')}</li>
+                                    </ul>
+
+                                    {!confirming ? (
+                                        <div className="mt-4">
+                                            <Button variant="danger" icon={RotateCcw} onClick={() => setConfirming(true)}>
+                                                {t('admin.settings.reset.button')}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-4 space-y-3">
+                                            <label className="block">
+                                                <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                                                    {t('admin.settings.reset.confirmPrompt', { word: CONFIRM_WORD })}
+                                                </span>
+                                                <input
+                                                    value={confirmText}
+                                                    onChange={(e) => setConfirmText(e.target.value)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                                                    autoFocus
+                                                    className="mt-1 w-full max-w-xs rounded-lg border border-red-300 px-3 py-2 text-sm dark:border-red-900 dark:bg-neutral-950"
+                                                />
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <Button variant="danger" disabled={confirmText !== CONFIRM_WORD} onClick={doReset}>
+                                                    {t('admin.settings.reset.confirm')}
+                                                </Button>
+                                                <Button variant="secondary" onClick={() => { setConfirming(false); setConfirmText(''); }}>
+                                                    {t('admin.settings.reset.cancel')}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+                    )}
                 </div>
 
                 {/* Just the save button — disabled until something actually changes. */}
@@ -220,54 +269,6 @@ export default function SettingsIndex({
                     <span className="text-xs text-neutral-400">{t('admin.settings.saveHint')}</span>
                 </div>
             </form>
-
-            {canReset && (
-                <section className="mt-6 max-w-3xl rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 sm:p-6">
-                    <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-600 dark:text-red-300">
-                            <RotateCcw className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0">
-                            <h2 className="font-semibold text-red-700 dark:text-red-300">{t('admin.settings.reset.title')}</h2>
-                            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{t('admin.settings.reset.lead')}</p>
-                            <ul className="mt-2 space-y-1 text-xs">
-                                <li className="text-amber-700 dark:text-amber-300">{t('admin.settings.reset.restores')}</li>
-                                <li className="text-neutral-500 dark:text-neutral-400">{t('admin.settings.reset.keeps')}</li>
-                            </ul>
-
-                            {!confirming ? (
-                                <div className="mt-4">
-                                    <Button variant="danger" icon={RotateCcw} onClick={() => setConfirming(true)}>
-                                        {t('admin.settings.reset.button')}
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="mt-4 space-y-3">
-                                    <label className="block">
-                                        <span className="text-sm text-neutral-600 dark:text-neutral-300">
-                                            {t('admin.settings.reset.confirmPrompt', { word: CONFIRM_WORD })}
-                                        </span>
-                                        <input
-                                            value={confirmText}
-                                            onChange={(e) => setConfirmText(e.target.value)}
-                                            autoFocus
-                                            className="mt-1 w-full max-w-xs rounded-lg border border-red-300 px-3 py-2 text-sm dark:border-red-900 dark:bg-neutral-950"
-                                        />
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <Button variant="danger" disabled={confirmText !== CONFIRM_WORD} onClick={doReset}>
-                                            {t('admin.settings.reset.confirm')}
-                                        </Button>
-                                        <Button variant="secondary" onClick={() => { setConfirming(false); setConfirmText(''); }}>
-                                            {t('admin.settings.reset.cancel')}
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-            )}
         </AdminLayout>
     );
 }
