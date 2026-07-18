@@ -1,9 +1,12 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Columns3, MoveHorizontal } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Columns3, Eye, MoveHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
+import Modal from '@/components/admin/modal';
 import ResizableTh from '@/components/admin/resizable-th';
+import ReturnDetailView, { type RefundPreview, type ReturnDetail, type ReturnOrderSummary } from '@/components/admin/return-detail-view';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
@@ -15,6 +18,7 @@ const COLUMNS: ColumnDef[] = [
     { key: 'status', defaultWidth: 120, minWidth: 90 },
     { key: 'reason', defaultWidth: 260, minWidth: 140 },
     { key: 'filed', defaultWidth: 160, minWidth: 120 },
+    { key: 'actions', defaultWidth: 120, minWidth: 90 },
 ];
 
 interface ReturnRow {
@@ -24,6 +28,45 @@ interface ReturnRow {
     status: string;
     reason: string;
     created_at: string | null;
+}
+
+type DetailPayload = { orderReturn: ReturnDetail; order: ReturnOrderSummary; refundPreview: RefundPreview };
+
+// Modal body: fetches the return, drives its review/resolve actions, and
+// re-fetches after each (Inertia handles CSRF and refreshes the list behind it).
+function ReturnModalBody({ returnId }: { returnId: number }) {
+    const { t } = useAdminT();
+    const [data, setData] = useState<DetailPayload | null>(null);
+    const [failed, setFailed] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [reload, setReload] = useState(0);
+
+    useEffect(() => {
+        let alive = true;
+        fetch(`/admin/returns/${returnId}/detail`, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then((r) => {
+                if (!r.ok) throw new Error();
+                return r.json();
+            })
+            .then((d: DetailPayload) => alive && setData(d))
+            .catch(() => alive && setFailed(true));
+        return () => { alive = false; };
+    }, [returnId, reload]);
+
+    const act = (action: string, payload: Record<string, string | boolean>) => {
+        router.post(`/admin/returns/${returnId}/${action}`, payload, {
+            preserveScroll: true,
+            preserveState: true,
+            onStart: () => setBusy(true),
+            onSuccess: () => setReload((n) => n + 1),
+            onFinish: () => setBusy(false),
+        });
+    };
+
+    if (failed) return <p className="py-6 text-sm text-red-500">{t('admin.returns.detailLoadError')}</p>;
+    if (!data) return <p className="py-8 text-center text-sm text-neutral-400">{t('admin.common.loading')}</p>;
+
+    return <ReturnDetailView orderReturn={data.orderReturn} order={data.order} refundPreview={data.refundPreview} onAction={act} busy={busy} />;
 }
 
 interface Filters {
@@ -51,6 +94,7 @@ export default function ReturnsIndex({
 }) {
     const { t } = useAdminT();
     const rc = useResizableColumns({ tableKey: 'returns', columns: COLUMNS });
+    const [viewing, setViewing] = useState<ReturnRow | null>(null);
 
     const query = (next: Record<string, unknown>) => {
         router.get(
@@ -127,28 +171,30 @@ export default function ReturnsIndex({
                             <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.status')}</ResizableTh>
                             <ResizableTh colKey="reason" width={rc.widths.reason} resizeProps={rc.getResizeHandleProps('reason')} resizing={rc.resizing === 'reason'}>{t('admin.returns.cols.reason')}</ResizableTh>
                             <ResizableTh colKey="filed" width={rc.widths.filed} resizeProps={rc.getResizeHandleProps('filed')} resizing={rc.resizing === 'filed'} sortKey="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.filed')}</ResizableTh>
+                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'} className="text-end">{t('admin.common.actions')}</ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
                         {returns.data.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-neutral-400">
+                                <td colSpan={7} className="px-4 py-8 text-center text-neutral-400">
                                     {t('admin.returns.empty')}
                                 </td>
                             </tr>
                         )}
                         {returns.data.map((r) => (
                             <tr key={r.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
-                                <td className="px-4 py-3">
-                                    <Link href={`/admin/returns/${r.id}`} className="block truncate font-mono text-blue-600 underline dark:text-blue-400">
-                                        #{r.id}
-                                    </Link>
-                                </td>
+                                <td className="truncate px-4 py-3 font-mono font-medium text-neutral-800 dark:text-neutral-100">#{r.id}</td>
                                 <td className="truncate px-4 py-3 font-mono">{r.order_number ?? '—'}</td>
                                 <td className="truncate px-4 py-3">{r.customer ?? '—'}</td>
                                 <td className="truncate px-4 py-3">{t(`admin.returns.status.${r.status}`)}</td>
                                 <td className="truncate px-4 py-3 text-neutral-500" dir="auto">{r.reason}</td>
                                 <td className="truncate px-4 py-3 text-neutral-500">{r.created_at ?? '—'}</td>
+                                <td className="px-4 py-3">
+                                    <div className="flex justify-end">
+                                        <Button size="sm" variant="secondary" icon={Eye} onClick={() => setViewing(r)}>{t('admin.common.view')}</Button>
+                                    </div>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -169,6 +215,15 @@ export default function ReturnsIndex({
                     ))}
                 </div>
             )}
+
+            <Modal
+                open={viewing !== null}
+                onClose={() => setViewing(null)}
+                size="lg"
+                title={<span className="font-mono">#{viewing?.id}</span>}
+            >
+                {viewing && <ReturnModalBody key={viewing.id} returnId={viewing.id} />}
+            </Modal>
         </AdminLayout>
     );
 }

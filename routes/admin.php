@@ -90,6 +90,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     // Returns review + resolution.
     Route::get('returns', [ReturnController::class, 'index'])->middleware('permission:returns.view')->name('returns.index');
     Route::get('returns/export', [ReturnController::class, 'export'])->middleware('permission:returns.view')->name('returns.export');
+    Route::get('returns/{orderReturn}/detail', [ReturnController::class, 'detail'])->middleware('permission:returns.view')->name('returns.detail');
     Route::get('returns/{orderReturn}', [ReturnController::class, 'show'])->middleware('permission:returns.view')->name('returns.show');
     Route::middleware('permission:returns.resolve')->group(function () {
         Route::post('returns/{orderReturn}/approve', [ReturnController::class, 'approve'])->name('returns.approve');

@@ -598,6 +598,7 @@ const en = {
             title: 'Returns',
             count: '{{n}} returns',
             empty: 'No returns.',
+            detailLoadError: 'Could not load this return.',
             cols: {
                 return: 'Return',
                 order: 'Order',

@@ -602,6 +602,7 @@ const ar = {
             title: 'المرتجعات',
             count: '{{n}} مرتجع',
             empty: 'لا توجد مرتجعات.',
+            detailLoadError: 'تعذّر تحميل هذا المرتجع.',
             cols: {
                 return: 'المرتجع',
                 order: 'الطلب',
