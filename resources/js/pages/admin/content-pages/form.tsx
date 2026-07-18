@@ -19,7 +19,7 @@ interface PageData {
 export default function ContentPageForm({ page }: { page: PageData | null }) {
     const { t } = useAdminT();
     useHighlightFields();
-    const { data, setData, post, put, processing, errors } = useForm({
+    const { data, setData, post, put, processing, errors, isDirty } = useForm({
         slug: page?.slug ?? '',
         title_ar: page?.title_ar ?? '',
         title_en: page?.title_en ?? '',
@@ -83,7 +83,7 @@ export default function ContentPageForm({ page }: { page: PageData | null }) {
                     {t('admin.contentPages.form.publishedLabel')}
                 </label>
 
-                <Button type="submit" variant="primary" disabled={processing}>
+                <Button type="submit" variant="primary" disabled={processing || !isDirty}>
                     {t('admin.contentPages.form.save')}
                 </Button>
             </form>

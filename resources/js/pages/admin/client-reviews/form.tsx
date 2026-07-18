@@ -17,7 +17,7 @@ interface ReviewData {
 
 export default function ClientReviewForm({ review }: { review: ReviewData | null }) {
     const { t } = useAdminT();
-    const { data, setData, post, put, processing, errors } = useForm({
+    const { data, setData, post, put, processing, errors, isDirty } = useForm({
         author_name: review?.author_name ?? '',
         body: review?.body ?? '',
         rating: review?.rating ?? 5,
@@ -98,7 +98,7 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
                 </label>
 
                 <div className="flex items-center justify-between pt-2">
-                    <Button type="submit" variant="primary" disabled={processing}>{t('admin.reviews.form.save')}</Button>
+                    <Button type="submit" variant="primary" disabled={processing || !isDirty}>{t('admin.reviews.form.save')}</Button>
                     {review && (
                         <Button type="button" variant="danger" icon={Trash2} onClick={destroy}>{t('admin.common.delete')}</Button>
                     )}

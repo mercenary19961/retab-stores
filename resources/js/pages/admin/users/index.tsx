@@ -124,7 +124,7 @@ export default function UsersIndex({
                         {addForm.errors.password && <span className="text-xs text-red-400">{addForm.errors.password}</span>}
                     </label>
                     <div className="flex items-end gap-2 sm:col-span-1">
-                        <Button type="submit" variant="success" disabled={addForm.processing}>{t('admin.users.create')}</Button>
+                        <Button type="submit" variant="success" disabled={addForm.processing || !addForm.isDirty}>{t('admin.users.create')}</Button>
                         <Button type="button" variant="secondary" onClick={() => setAdding(false)}>{t('admin.users.cancel')}</Button>
                     </div>
                 </form>

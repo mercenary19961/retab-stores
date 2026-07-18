@@ -83,7 +83,7 @@ export default function SettingsIndex({
     const rtl = i18n.language === 'ar';
     useHighlightFields();
     const flash = (usePage().props as { flash?: { success?: string | null } }).flash;
-    const { data, setData, put, processing, errors } = useForm(
+    const { data, setData, put, processing, errors, isDirty } = useForm(
         Object.fromEntries([
             ...ALL_KEYS.map((k) => [k, settings[k] ?? '']),
             // Attention-beam toggle, kept as '1'/'0' so the whole form stays string-typed.
@@ -212,17 +212,17 @@ export default function SettingsIndex({
                     </section>
                 </div>
 
-                {/* Floating save bar — always in reach while scrolling the form. */}
-                <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95">
-                    <span className="hidden text-xs text-neutral-400 sm:inline">{t('admin.settings.saveHint')}</span>
-                    <Button type="submit" variant="primary" disabled={processing} className="ms-auto">
+                {/* Just the save button — disabled until something actually changes. */}
+                <div className="flex items-center gap-3">
+                    <Button type="submit" variant="primary" disabled={processing || !isDirty}>
                         {t('admin.settings.save')}
                     </Button>
+                    <span className="text-xs text-neutral-400">{t('admin.settings.saveHint')}</span>
                 </div>
             </form>
 
             {canReset && (
-                <section className="mt-6 rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 sm:p-6">
+                <section className="mt-6 max-w-3xl rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 sm:p-6">
                     <div className="flex items-start gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-600 dark:text-red-300">
                             <RotateCcw className="h-5 w-5" />

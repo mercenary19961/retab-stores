@@ -43,7 +43,7 @@ export default function ProductForm({ product, categories }: { product: Product 
     const editing = product !== null;
     useHighlightFields();
 
-    const { data, setData, post, put, processing, errors } = useForm({
+    const { data, setData, post, put, processing, errors, isDirty } = useForm({
         category_id: product?.category_id ?? categories[0]?.id ?? '',
         name_ar: product?.name_ar ?? '',
         name_en: product?.name_en ?? '',
@@ -172,7 +172,7 @@ export default function ProductForm({ product, categories }: { product: Product 
                 </section>
 
                 <div className="flex gap-3">
-                    <Button type="submit" variant="primary" disabled={processing}>
+                    <Button type="submit" variant="primary" disabled={processing || !isDirty}>
                         {editing ? t('admin.products.form.saveChanges') : t('admin.products.form.createProduct')}
                     </Button>
                     <Button href="/admin/products" variant="secondary">{t('admin.common.cancel')}</Button>

@@ -11,7 +11,7 @@ Sarah Al-Otaibi | 5 | Beautiful packaging and fast delivery.
 
 export default function ClientReviewsImport() {
     const { t } = useAdminT();
-    const { data, setData, post, processing, errors } = useForm({ data: '' });
+    const { data, setData, post, processing, errors, isDirty } = useForm({ data: '' });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -52,7 +52,7 @@ export default function ClientReviewsImport() {
                     {errors.data && <span className="block text-xs text-red-500">{errors.data}</span>}
                 </label>
 
-                <Button type="submit" variant="primary" icon={Upload} disabled={processing}>
+                <Button type="submit" variant="primary" icon={Upload} disabled={processing || !isDirty}>
                     {t('admin.reviews.import.submit')}
                 </Button>
             </form>

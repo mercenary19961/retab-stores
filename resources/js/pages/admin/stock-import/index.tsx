@@ -23,7 +23,7 @@ interface HistoryRow {
 
 export default function StockImportIndex({ lastSynced, history }: { lastSynced: LastSynced; history: HistoryRow[] }) {
     const { t } = useAdminT();
-    const { setData, post, processing, errors } = useForm<{ file: File | null }>({ file: null });
+    const { setData, post, processing, errors, isDirty } = useForm<{ file: File | null }>({ file: null });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -79,7 +79,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                             className="block w-full text-sm"
                         />
                         {errors.file && <p className="mt-1 text-xs text-red-500">{errors.file}</p>}
-                        <Button type="submit" variant="primary" disabled={processing} className="mt-4 w-full">
+                        <Button type="submit" variant="primary" disabled={processing || !isDirty} className="mt-4 w-full">
                             {t('admin.inventory.previewChanges')}
                         </Button>
                     </form>

@@ -125,6 +125,13 @@ export default function MarketingIndex({
         ? 'Ramadan offer: {{1}}% off {{2}}, order now! 🌴'
         : 'عرض رمضان: خصم {{1}}٪ على {{2}}، اطلب الآن! 🌴';
 
+    // Disable Add/Update until the template form differs from its baseline
+    // (the edited template, or the empty defaults when creating).
+    const tplBaseline = editing ? templates.find((tp) => tp.id === editing) : undefined;
+    const templateDirty = (['name', 'language', 'category', 'body', 'param_count', 'status'] as const).some(
+        (k) => String(tpl[k]) !== String(tplBaseline ? tplBaseline[k] : emptyTemplate[k as keyof typeof emptyTemplate]),
+    );
+
     const saveTemplate = (e: FormEvent) => {
         e.preventDefault();
         const opts = { preserveScroll: true, onSuccess: () => { setEditing(null); setTpl(emptyTemplate); } };
@@ -246,7 +253,7 @@ export default function MarketingIndex({
                             <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.status')}</span>
                         </label>
                         <div className="flex gap-2">
-                            <Button type="submit" variant="primary">{editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}</Button>
+                            <Button type="submit" variant="primary" disabled={!templateDirty}>{editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}</Button>
                             {editing && (
                                 <Button type="button" variant="secondary" onClick={() => { setEditing(null); setTpl(emptyTemplate); }}>{tr('admin.common.cancel')}</Button>
                             )}
