@@ -544,6 +544,8 @@ const ar = {
                 noImages: 'لا توجد صور بعد.',
                 primary: 'رئيسية',
                 setPrimary: 'تعيين كرئيسية',
+                imageRequired: 'يجب أن يحتوي المنتج على صورة واحدة على الأقل.',
+                selectImages: 'أضف صورة أو أكثر',
             },
         },
         orders: {

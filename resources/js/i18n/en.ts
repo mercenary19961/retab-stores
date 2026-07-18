@@ -540,6 +540,8 @@ const en = {
                 noImages: 'No images yet.',
                 primary: 'Primary',
                 setPrimary: 'Set primary',
+                imageRequired: 'A product must have at least one image.',
+                selectImages: 'Add one or more images',
             },
         },
         orders: {

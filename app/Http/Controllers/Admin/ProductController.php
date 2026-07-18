@@ -149,8 +149,28 @@ class ProductController extends Controller
     {
         $data = $this->validateProduct($request);
 
-        DB::transaction(function () use ($data, $changeLog) {
+        // Images are collected in the create form and sent with the product (the
+        // admin UI requires at least one). First image becomes the primary.
+        $images = [];
+        if ($request->hasFile('images')) {
+            $request->validate([
+                'images' => ['array', 'max:8'],
+                'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+            ]);
+            $images = array_values($request->file('images'));
+        }
+
+        DB::transaction(function () use ($data, $images, $changeLog) {
             $product = Product::create($data);
+
+            foreach ($images as $i => $file) {
+                $product->images()->create([
+                    'path' => Media::storeImage($file, "products/{$product->id}"),
+                    'sort_order' => $i + 1,
+                    'is_primary' => $i === 0,
+                ]);
+            }
+
             $changeLog->logCreated($product, $product->name_ar);
         });
 

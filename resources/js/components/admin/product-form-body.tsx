@@ -1,6 +1,6 @@
 import { router, useForm } from '@inertiajs/react';
 import { Eye, Image as ImageIcon, Info, Star, Tag, Trash2, Upload } from 'lucide-react';
-import { type FormEvent } from 'react';
+import { type FormEvent, useEffect, useMemo } from 'react';
 import Button from '@/components/admin/button';
 import Select from '@/components/admin/select';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
@@ -43,8 +43,9 @@ const CARD = 'space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:b
 /**
  * The product create/edit form body (details, pricing, visibility, images),
  * shared by the full page and the in-list modal. In `modal` mode, saves and
- * image edits preserve state and call back (close / re-fetch) instead of the
- * page's default redirect-and-navigate.
+ * image edits preserve state and call back (close / re-fetch). Every product
+ * must have at least one image: on create it's collected + sent with the form;
+ * on edit the Save button is blocked while the product has no images.
  */
 export default function ProductFormBody({
     product,
@@ -63,7 +64,7 @@ export default function ProductFormBody({
     const editing = product !== null;
     useHighlightFields();
 
-    const { data, setData, post, put, processing, errors, isDirty } = useForm({
+    const { data, setData, post, put, processing, errors, isDirty, transform } = useForm({
         category_id: product?.category_id ?? categories[0]?.id ?? '',
         name_ar: product?.name_ar ?? '',
         name_en: product?.name_en ?? '',
@@ -79,17 +80,33 @@ export default function ProductFormBody({
         low_stock_threshold: product?.low_stock_threshold ?? '',
         is_active: product?.is_active ?? true,
         is_featured: product?.is_featured ?? false,
+        images: [] as File[], // create only — the new product's images, sent with the form
     });
+
+    // Every product needs at least one image (create: chosen files; edit: existing).
+    const hasImages = editing ? (product?.images?.length ?? 0) > 0 : data.images.length > 0;
+
+    // Object-URL previews for the create picker (revoked when the selection changes).
+    const previews = useMemo(() => data.images.map((f) => URL.createObjectURL(f)), [data.images]);
+    useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        const opts = modal ? { preserveScroll: true, preserveState: true, onSuccess: onSaved } : {};
-        if (editing) put(`/admin/products/${product.id}`, opts);
-        else post('/admin/products', opts);
+        if (!hasImages) return;
+        if (editing) {
+            put(`/admin/products/${product.id}`, modal ? { preserveScroll: true, preserveState: true, onSuccess: onSaved } : {});
+        } else {
+            // Booleans as '1'/'0' so they survive the multipart (FormData) encoding.
+            transform((d) => ({ ...d, is_active: d.is_active ? '1' : '0', is_featured: d.is_featured ? '1' : '0' }));
+            post('/admin/products', {
+                forceFormData: true,
+                preserveScroll: true,
+                ...(modal ? { preserveState: true, onSuccess: onSaved } : {}),
+            });
+        }
     };
 
-    // Image edits (upload/delete/set-primary). In modal mode keep the modal open
-    // and re-fetch; on the page, let Inertia re-render with the fresh images.
+    // Existing-image edits (edit mode). In modal, keep the modal open + re-fetch.
     const imgOpts = modal ? { preserveScroll: true, preserveState: true, onSuccess: onImageChanged } : { preserveScroll: true };
     const imageForm = useForm<{ images: File[] }>({ images: [] });
 
@@ -182,12 +199,40 @@ export default function ProductFormBody({
                     </label>
                 </section>
 
-                <Button type="submit" variant="primary" disabled={processing || !isDirty}>
-                    {editing ? t('admin.products.form.saveChanges') : t('admin.products.form.createProduct')}
-                </Button>
+                {/* On create, images are chosen here and sent with the product. */}
+                {!editing && (
+                    <section className={CARD} id="field-images">
+                        <h2 className="flex items-center gap-2 font-bold"><ImageIcon className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.images')} <span className="text-red-500">*</span></h2>
+                        {previews.length > 0 && (
+                            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                                {previews.map((url, i) => (
+                                    <img key={i} src={url} alt="" className={`aspect-square w-full rounded-lg border object-cover ${i === 0 ? 'border-brand-gold' : 'border-neutral-200 dark:border-neutral-700'}`} />
+                                ))}
+                            </div>
+                        )}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                multiple
+                                onChange={(e) => setData('images', Array.from(e.target.files ?? []))}
+                                className="text-sm"
+                            />
+                            <span className="text-xs text-neutral-400">{t('admin.products.form.selectImages')}</span>
+                        </div>
+                        {errors['images' as keyof typeof errors] && <p className="text-xs text-red-500">{errors['images' as keyof typeof errors]}</p>}
+                    </section>
+                )}
+
+                <div className="space-y-2">
+                    <Button type="submit" variant="primary" disabled={processing || !isDirty || !hasImages}>
+                        {editing ? t('admin.products.form.saveChanges') : t('admin.products.form.createProduct')}
+                    </Button>
+                    {!hasImages && <p className="text-xs text-red-500">{t('admin.products.form.imageRequired')}</p>}
+                </div>
             </form>
 
-            {/* Images — only after the product exists (kept outside the text form). */}
+            {/* Existing product images (edit only) — managed via dedicated endpoints. */}
             {editing && (
                 <section className={CARD}>
                     <h2 className="flex items-center gap-2 font-bold"><ImageIcon className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.images')}</h2>
@@ -215,7 +260,7 @@ export default function ProductFormBody({
                             ))}
                         </div>
                     ) : (
-                        <p className="text-sm text-neutral-400">{t('admin.products.form.noImages')}</p>
+                        <p className="text-sm text-red-500">{t('admin.products.form.imageRequired')}</p>
                     )}
 
                     <form onSubmit={uploadImages} className="flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
