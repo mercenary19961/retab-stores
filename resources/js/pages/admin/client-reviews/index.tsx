@@ -1,8 +1,9 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Columns3, MoveHorizontal, Pencil, Plus, Trash2, Upload } from 'lucide-react';
+import { Columns3, MoveHorizontal, Pencil, Plus, Upload } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Modal from '@/components/admin/modal';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
@@ -116,11 +117,6 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
     // null = closed, 'new' = create, ReviewRow = edit that review — all in a modal.
     const [editing, setEditing] = useState<ReviewRow | 'new' | null>(null);
 
-    const destroy = (r: ReviewRow) => {
-        if (!window.confirm(t('admin.reviews.form.deleteConfirm'))) return;
-        router.delete(`/admin/client-reviews/${r.id}`, { preserveScroll: true });
-    };
-
     return (
         <AdminLayout title={t('admin.reviews.title')}>
             <Head title={t('admin.reviews.title')} />
@@ -186,7 +182,10 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                                 <td className="px-4 py-3 align-top">
                                     <div className="flex items-center justify-end gap-2">
                                         <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(r)}>{t('admin.common.edit')}</Button>
-                                        <Button size="sm" variant="danger" icon={Trash2} onClick={() => destroy(r)}>{t('admin.common.delete')}</Button>
+                                        <ConfirmDeleteButton
+                                            itemName={r.author_name}
+                                            onConfirm={() => router.delete(`/admin/client-reviews/${r.id}`, { preserveScroll: true })}
+                                        />
                                     </div>
                                 </td>
                             </tr>

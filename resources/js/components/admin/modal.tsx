@@ -16,7 +16,7 @@ export default function Modal({
     open: boolean;
     onClose: () => void;
     title?: ReactNode;
-    size?: 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg';
     children: ReactNode;
 }) {
     const { t } = useAdminT();
@@ -39,7 +39,7 @@ export default function Modal({
                 role="dialog"
                 aria-modal="true"
                 className={`relative z-10 my-6 w-full rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-900 ${
-                    size === 'lg' ? 'max-w-4xl' : 'max-w-2xl'
+                    size === 'lg' ? 'max-w-4xl' : size === 'sm' ? 'max-w-md' : 'max-w-2xl'
                 }`}
             >
                 <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">

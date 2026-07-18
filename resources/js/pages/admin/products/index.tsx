@@ -1,8 +1,9 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { Columns3, MoveHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Columns3, MoveHorizontal, Pencil, Plus } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
 import ProductFormBody, { type Product } from '@/components/admin/product-form-body';
@@ -127,11 +128,6 @@ export default function ProductsIndex({
         query({ sort: col, direction });
     };
 
-    const destroy = (p: ProductRow) => {
-        if (!window.confirm(t('admin.products.deleteConfirm', { name: p.name_ar }))) return;
-        router.delete(`/admin/products/${p.id}`, { preserveScroll: true });
-    };
-
     const exportParams = {
         search: filters.search,
         category: filters.category,
@@ -252,7 +248,11 @@ export default function ProductsIndex({
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end gap-2">
                                         <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(p)}>{t('admin.common.edit')}</Button>
-                                        <Button size="sm" variant="danger" icon={Trash2} onClick={() => destroy(p)}>{t('admin.common.delete')}</Button>
+                                        <ConfirmDeleteButton
+                                            itemName={p.name_ar}
+                                            reversible
+                                            onConfirm={() => router.delete(`/admin/products/${p.id}`, { preserveScroll: true })}
+                                        />
                                     </div>
                                 </td>
                             </tr>

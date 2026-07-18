@@ -340,6 +340,14 @@ const ar = {
             loading: 'جارٍ التحميل…',
             view: 'عرض',
         },
+        deleteModal: {
+            title: 'تأكيد الحذف',
+            lead: 'أنت على وشك حذف «{{name}}».',
+            reversible: 'يمكنك استعادته لاحقاً من سجل التغييرات.',
+            permanent: 'لا يمكن التراجع عن هذا.',
+            prompt: 'اكتب {{word}} للتأكيد.',
+            confirm: 'حذف',
+        },
         help: {
             button: 'كيف تعمل هذه الصفحة',
             rulesTitle: 'معلومات مهمة',

@@ -1,8 +1,9 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { ShieldCheck, Trash2, UserPlus } from 'lucide-react';
+import { ShieldCheck, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import { useAdminT } from '@/i18n/use-admin-t';
 
 type Perms = Record<string, Record<string, boolean>>;
@@ -54,7 +55,6 @@ export default function UsersIndex({
     };
 
     const removeEditor = (s: Staff) => {
-        if (!window.confirm(t('admin.users.removeConfirm'))) return;
         router.delete(`/admin/users/${s.id}`, {
             preserveScroll: true,
             onSuccess: () => setSelectedId((cur) => (cur === s.id ? null : cur)),
@@ -182,7 +182,11 @@ export default function UsersIndex({
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <Button size="sm" variant="secondary" onClick={savePerms}>{t('admin.users.save')}</Button>
-                                    <Button size="sm" variant="danger" icon={Trash2} onClick={() => removeEditor(selected)}>{t('admin.users.remove')}</Button>
+                                    <ConfirmDeleteButton
+                                        itemName={selected.name ?? selected.email}
+                                        label={t('admin.users.remove')}
+                                        onConfirm={() => removeEditor(selected)}
+                                    />
                                 </div>
                             </div>
 

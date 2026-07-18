@@ -336,6 +336,14 @@ const en = {
             loading: 'Loading…',
             view: 'View',
         },
+        deleteModal: {
+            title: 'Confirm deletion',
+            lead: 'You are about to delete “{{name}}”.',
+            reversible: 'You can restore it later from the Change Log.',
+            permanent: 'This cannot be undone.',
+            prompt: 'Type {{word}} to confirm.',
+            confirm: 'Delete',
+        },
         help: {
             button: 'How it works',
             rulesTitle: 'Good to know',
