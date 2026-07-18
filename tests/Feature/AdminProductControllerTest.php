@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -58,15 +60,43 @@ class AdminProductControllerTest extends TestCase
 
     public function test_store_creates_product_and_auto_generates_slug(): void
     {
+        Storage::fake('public');
         $category = $this->category();
 
         $this->actingAs($this->staff())
-            ->post('/admin/products', $this->validPayload($category, ['name_en' => 'Sukkari Dates', 'sku' => 'SUK-1']))
+            ->post('/admin/products', $this->validPayload($category, [
+                'name_en' => 'Sukkari Dates',
+                'sku' => 'SUK-1',
+                'images' => [UploadedFile::fake()->image('a.jpg')],
+            ]))
             ->assertRedirect(route('admin.products.index'));
 
         $product = Product::firstOrFail();
         $this->assertSame('sukkari-dates', $product->slug); // derived from name_en
         $this->assertSame(100, $product->stock);
+    }
+
+    public function test_store_requires_at_least_one_image(): void
+    {
+        $category = $this->category();
+
+        $this->actingAs($this->staff())
+            ->post('/admin/products', $this->validPayload($category, ['sku' => 'NO-IMG']))
+            ->assertSessionHasErrors('images');
+
+        $this->assertSame(0, Product::count());
+    }
+
+    public function test_update_is_rejected_when_the_product_has_no_images(): void
+    {
+        $category = $this->category();
+        $product = Product::create($this->validPayload($category, ['slug' => 'p-noimg', 'sku' => 'NOIMG-1']));
+
+        $this->actingAs($this->staff())
+            ->put("/admin/products/{$product->id}", $this->validPayload($category, ['slug' => 'p-noimg', 'sku' => $product->sku, 'stock' => 3]))
+            ->assertSessionHasErrors('images');
+
+        $this->assertSame(100, $product->fresh()->stock); // save was blocked
     }
 
     public function test_store_rejects_sale_price_not_below_price(): void
@@ -82,6 +112,7 @@ class AdminProductControllerTest extends TestCase
     {
         $category = $this->category();
         $product = Product::create($this->validPayload($category, ['slug' => 'p-edit']));
+        $product->images()->create(['path' => 'products/seed.jpg', 'sort_order' => 1, 'is_primary' => true]);
 
         $this->actingAs($this->staff())
             ->put("/admin/products/{$product->id}", $this->validPayload($category, [

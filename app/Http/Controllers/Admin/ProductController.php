@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
@@ -149,16 +150,13 @@ class ProductController extends Controller
     {
         $data = $this->validateProduct($request);
 
-        // Images are collected in the create form and sent with the product (the
-        // admin UI requires at least one). First image becomes the primary.
-        $images = [];
-        if ($request->hasFile('images')) {
-            $request->validate([
-                'images' => ['array', 'max:8'],
-                'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
-            ]);
-            $images = array_values($request->file('images'));
-        }
+        // Every product must ship with at least one image — collected in the
+        // create form and sent with it. First image becomes the primary.
+        $request->validate([
+            'images' => ['required', 'array', 'min:1', 'max:8'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+        ], ['images.required' => __('messages.admin.product_needs_image')]);
+        $images = array_values($request->file('images'));
 
         DB::transaction(function () use ($data, $images, $changeLog) {
             $product = Product::create($data);
@@ -229,6 +227,12 @@ class ProductController extends Controller
     public function update(Request $request, Product $product, ChangeLogService $changeLog)
     {
         $data = $this->validateProduct($request, $product);
+
+        // A product can't be saved with no images (they're managed separately, so
+        // check the current state rather than the request).
+        if (! $product->images()->exists()) {
+            throw ValidationException::withMessages(['images' => __('messages.admin.product_needs_image')]);
+        }
 
         DB::transaction(function () use ($product, $data, $changeLog) {
             $before = $product->attributesToArray();

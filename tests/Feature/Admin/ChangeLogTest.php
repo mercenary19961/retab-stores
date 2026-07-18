@@ -10,6 +10,8 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -31,7 +33,7 @@ class ChangeLogTest extends TestCase
     {
         $category = Category::firstOrCreate(['slug' => 'dates'], ['name_ar' => 'تمور', 'is_active' => true]);
 
-        return Product::create(array_merge([
+        $product = Product::create(array_merge([
             'category_id' => $category->id,
             'name_ar' => 'منتج',
             'slug' => 'p-' . uniqid(),
@@ -39,6 +41,11 @@ class ChangeLogTest extends TestCase
             'sku' => 'SKU-' . uniqid(),
             'stock' => 10,
         ], $overrides));
+
+        // Products must have an image to be updatable (see ProductController::update).
+        $product->images()->create(['path' => 'products/seed.jpg', 'sort_order' => 1, 'is_primary' => true]);
+
+        return $product;
     }
 
     /** Full valid PUT payload mirroring the product's current state. */
@@ -167,6 +174,7 @@ class ChangeLogTest extends TestCase
     {
         $staff = $this->staff();
         $category = Category::firstOrCreate(['slug' => 'dates'], ['name_ar' => 'تمور', 'is_active' => true]);
+        Storage::fake('public');
 
         $this->actingAs($staff)->post('/admin/products', [
             'category_id' => $category->id,
@@ -174,6 +182,7 @@ class ChangeLogTest extends TestCase
             'price' => 30,
             'sku' => 'SKU-NEW',
             'stock' => 5,
+            'images' => [UploadedFile::fake()->image('a.jpg')],
         ])->assertRedirect();
 
         $log = $this->latestLog();

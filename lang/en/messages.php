@@ -81,6 +81,7 @@ return [
         'product_created' => 'Product added.',
         'product_updated' => 'Product updated.',
         'product_deleted' => 'Product deleted.',
+        'product_needs_image' => 'A product must have at least one image.',
         'import_expired' => 'The import file has expired. Please upload it again.',
         'import_applied' => 'Stock updated: :count products.',
         'import_undone' => 'Import undone and previous stock restored.',

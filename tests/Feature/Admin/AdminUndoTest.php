@@ -25,10 +25,15 @@ class AdminUndoTest extends TestCase
 
     private function product(Category $c, string $name = 'سكري'): Product
     {
-        return Product::create([
+        $product = Product::create([
             'category_id' => $c->id, 'name_ar' => $name, 'slug' => 'p-' . uniqid(),
             'price' => 50, 'sku' => 'SK-' . uniqid(), 'stock' => 100, 'is_active' => true, 'is_featured' => false,
         ]);
+
+        // Products must have an image to be updatable (see ProductController::update).
+        $product->images()->create(['path' => 'products/seed.jpg', 'sort_order' => 1, 'is_primary' => true]);
+
+        return $product;
     }
 
     private function payload(Product $p, array $overrides = []): array
