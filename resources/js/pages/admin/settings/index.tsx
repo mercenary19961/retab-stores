@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { RotateCcw } from 'lucide-react';
-import { type FormEvent, useEffect, useState } from 'react';
+import { Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
+import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
@@ -11,27 +11,59 @@ const CONFIRM_WORD = 'RESET';
 
 type Settings = Record<string, string | null>;
 
-// Labels/hints/group headers are translated by key (admin.settings.fields.* etc.).
-type Field = { key: string; type?: string; dir?: string; group?: string };
+// Labels/hints are translated by key (admin.settings.fields.*, .hints.*).
+// `wide` fields span the full 2-column grid row.
+type FieldDef = { key: string; type?: string; dir?: string; wide?: boolean };
+type SectionDef = { key: string; icon: LucideIcon; fields: FieldDef[] };
 
-const FIELDS: Field[] = [
-    { key: 'shipping_flat_fee', type: 'number' },
-    { key: 'legal_name', dir: 'auto' },
-    { key: 'bank_name', dir: 'auto' },
-    { key: 'bank_beneficiary', dir: 'auto' },
-    { key: 'bank_account' },
-    { key: 'bank_iban' },
-    // Footer / contact block — shown site-wide. Blank = fall back to the default (placeholder).
-    { key: 'contact_phone', dir: 'ltr', group: 'footerContact' },
-    { key: 'contact_email', type: 'email', dir: 'ltr' },
-    { key: 'commercial_registration', dir: 'ltr' },
-    { key: 'vat_number', dir: 'ltr' },
-    { key: 'social_snapchat', type: 'url', dir: 'ltr' },
-    { key: 'social_facebook', type: 'url', dir: 'ltr' },
-    { key: 'social_instagram', type: 'url', dir: 'ltr' },
-    { key: 'social_x', type: 'url', dir: 'ltr' },
-    { key: 'social_linkedin', type: 'url', dir: 'ltr' },
+const SECTIONS: SectionDef[] = [
+    {
+        key: 'store',
+        icon: Store,
+        fields: [
+            { key: 'shipping_flat_fee', type: 'number' },
+            { key: 'legal_name', dir: 'auto', wide: true },
+        ],
+    },
+    {
+        key: 'bank',
+        icon: Landmark,
+        fields: [
+            { key: 'bank_name', dir: 'auto' },
+            { key: 'bank_beneficiary', dir: 'auto' },
+            { key: 'bank_account', dir: 'ltr' },
+            { key: 'bank_iban', dir: 'ltr', wide: true },
+        ],
+    },
+    {
+        key: 'contact',
+        icon: Phone,
+        fields: [
+            { key: 'contact_phone', type: 'tel', dir: 'ltr' },
+            { key: 'contact_email', type: 'email', dir: 'ltr' },
+            { key: 'commercial_registration', dir: 'ltr' },
+            { key: 'vat_number', dir: 'ltr' },
+        ],
+    },
+    {
+        key: 'social',
+        icon: Share2,
+        fields: [
+            { key: 'social_snapchat', type: 'url', dir: 'ltr' },
+            { key: 'social_facebook', type: 'url', dir: 'ltr' },
+            { key: 'social_instagram', type: 'url', dir: 'ltr' },
+            { key: 'social_x', type: 'url', dir: 'ltr' },
+            { key: 'social_linkedin', type: 'url', dir: 'ltr' },
+        ],
+    },
 ];
+
+const ALL_KEYS = SECTIONS.flatMap((s) => s.fields.map((f) => f.key));
+
+const INPUT =
+    'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm transition-colors placeholder:text-neutral-400 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
+
+const CARD = 'rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6';
 
 export default function SettingsIndex({
     settings,
@@ -44,12 +76,13 @@ export default function SettingsIndex({
     undoMeta?: UndoMeta | null;
     canReset?: boolean;
 }) {
-    const { t } = useAdminT();
+    const { t, i18n } = useAdminT();
+    const rtl = i18n.language === 'ar';
     useHighlightFields();
     const flash = (usePage().props as { flash?: { success?: string | null } }).flash;
     const { data, setData, put, processing, errors } = useForm(
         Object.fromEntries([
-            ...FIELDS.map((f) => [f.key, settings[f.key] ?? '']),
+            ...ALL_KEYS.map((k) => [k, settings[k] ?? '']),
             // Attention-beam toggle, kept as '1'/'0' so the whole form stays string-typed.
             ['admin_help_pulse', settings['admin_help_pulse'] === '0' ? '0' : '1'],
         ]) as Record<string, string>,
@@ -59,7 +92,7 @@ export default function SettingsIndex({
     const [confirmText, setConfirmText] = useState('');
 
     // Deep link from the help drawer (/admin/settings#help-pulse): scroll to the
-    // toggle and pulse it so the setting is easy to find.
+    // preferences card and pulse it so the setting is easy to find.
     useEffect(() => {
         if (window.location.hash !== '#help-pulse') return;
         const el = document.getElementById('help-pulse');
@@ -83,110 +116,164 @@ export default function SettingsIndex({
         });
     };
 
+    const renderField = (f: FieldDef): ReactNode => {
+        const hint = t(`admin.settings.hints.${f.key}`, { defaultValue: '' });
+        return (
+            <label key={f.key} id={`field-${f.key}`} className={`block ${f.wide ? 'sm:col-span-2' : ''}`}>
+                <span className="mb-1 block text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                    {t(`admin.settings.fields.${f.key}`)}
+                </span>
+                <input
+                    type={f.type ?? 'text'}
+                    step={f.type === 'number' ? '0.01' : undefined}
+                    dir={f.dir}
+                    value={data[f.key]}
+                    placeholder={defaults[f.key]}
+                    onChange={(e) => setData(f.key, e.target.value)}
+                    className={INPUT}
+                />
+                {hint && <span className="mt-1 block text-xs text-neutral-400">{hint}</span>}
+                {errors[f.key] && <span className="mt-1 block text-xs text-red-500">{errors[f.key]}</span>}
+            </label>
+        );
+    };
+
+    const pulseOn = data.admin_help_pulse === '1';
+
     return (
         <AdminLayout title={t('admin.settings.title')}>
             <Head title={t('admin.settings.title')} />
 
-            {flash?.success && (
-                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                    {flash.success}
-                </div>
-            )}
+            <div className="max-w-3xl">
+                {flash?.success && (
+                    <div className="mb-4 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
+                        {flash.success}
+                    </div>
+                )}
 
-            {undoMeta && (
-                <div className="mb-4">
-                    <UndoButton section="settings" undoMeta={undoMeta} />
-                </div>
-            )}
+                {undoMeta && (
+                    <div className="mb-4">
+                        <UndoButton section="settings" undoMeta={undoMeta} />
+                    </div>
+                )}
 
-            <form onSubmit={submit} className="max-w-lg space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                <label id="help-pulse" className="flex items-start gap-3 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
-                    <input
-                        type="checkbox"
-                        checked={data.admin_help_pulse === '1'}
-                        onChange={(e) => setData('admin_help_pulse', e.target.checked ? '1' : '0')}
-                        className="mt-0.5 h-4 w-4 shrink-0 accent-brand-gold"
-                    />
-                    <span>
-                        <span className="text-sm font-medium">{t('admin.settings.helpPulse.label')}</span>
-                        <span className="block text-xs text-neutral-400">{t('admin.settings.helpPulse.hint')}</span>
-                    </span>
-                </label>
+                <form onSubmit={submit} className="space-y-6">
+                    {SECTIONS.map((s) => {
+                        const Icon = s.icon;
+                        return (
+                            <section key={s.key} className={CARD}>
+                                <div className="mb-5 flex items-start gap-3">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-gold">
+                                        <Icon className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                            {t(`admin.settings.sections.${s.key}.title`)}
+                                        </h2>
+                                        <p className="text-sm text-neutral-500">{t(`admin.settings.sections.${s.key}.desc`)}</p>
+                                    </div>
+                                </div>
+                                <div className="grid gap-4 sm:grid-cols-2">{s.fields.map(renderField)}</div>
+                            </section>
+                        );
+                    })}
 
-                {FIELDS.map((f) => {
-                    const hint = t(`admin.settings.hints.${f.key}`, { defaultValue: '' });
-                    return (
-                        <div key={f.key}>
-                            {f.group && (
-                                <h2 className="mb-1 mt-4 border-t border-neutral-200 pt-4 text-xs font-semibold uppercase tracking-wide text-neutral-400 dark:border-neutral-800">
-                                    {t(`admin.settings.groups.${f.group}`)}
+                    {/* Admin-panel preferences (not storefront) — holds the help beam toggle. */}
+                    <section id="help-pulse" className={CARD}>
+                        <div className="mb-5 flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-gold">
+                                <SlidersHorizontal className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h2 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                    {t('admin.settings.sections.preferences.title')}
                                 </h2>
-                            )}
-                            <label className="block" id={`field-${f.key}`}>
-                                <span className="text-sm text-neutral-500">{t(`admin.settings.fields.${f.key}`)}</span>
-                                <input
-                                    type={f.type ?? 'text'}
-                                    step={f.type === 'number' ? '0.01' : undefined}
-                                    dir={f.dir}
-                                    value={data[f.key]}
-                                    placeholder={defaults[f.key]}
-                                    onChange={(e) => setData(f.key, e.target.value)}
-                                    className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
-                                />
-                                {hint && <span className="text-xs text-neutral-400">{hint}</span>}
-                                {errors[f.key] && <span className="block text-xs text-red-500">{errors[f.key]}</span>}
-                            </label>
-                        </div>
-                    );
-                })}
-
-                <Button type="submit" variant="primary" disabled={processing}>
-                    {t('admin.settings.save')}
-                </Button>
-            </form>
-
-            {canReset && (
-                <section className="mt-8 max-w-lg rounded-lg border border-red-300 bg-red-50 p-5 dark:border-red-900/60 dark:bg-red-950/30">
-                    <h2 className="flex items-center gap-2 font-bold text-red-700 dark:text-red-300">
-                        <RotateCcw className="h-4 w-4" /> {t('admin.settings.reset.title')}
-                    </h2>
-                    <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{t('admin.settings.reset.lead')}</p>
-                    <ul className="mt-2 space-y-1 text-xs">
-                        <li className="text-amber-700 dark:text-amber-300">{t('admin.settings.reset.restores')}</li>
-                        <li className="text-neutral-500 dark:text-neutral-400">{t('admin.settings.reset.keeps')}</li>
-                    </ul>
-
-                    {!confirming ? (
-                        <div className="mt-4">
-                            <Button variant="danger" icon={RotateCcw} onClick={() => setConfirming(true)}>
-                                {t('admin.settings.reset.button')}
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="mt-4 space-y-3">
-                            <label className="block">
-                                <span className="text-sm text-neutral-600 dark:text-neutral-300">
-                                    {t('admin.settings.reset.confirmPrompt', { word: CONFIRM_WORD })}
-                                </span>
-                                <input
-                                    value={confirmText}
-                                    onChange={(e) => setConfirmText(e.target.value)}
-                                    autoFocus
-                                    className="mt-1 w-full rounded border border-red-300 px-3 py-2 text-sm dark:border-red-900 dark:bg-neutral-950"
-                                />
-                            </label>
-                            <div className="flex gap-2">
-                                <Button variant="danger" disabled={confirmText !== CONFIRM_WORD} onClick={doReset}>
-                                    {t('admin.settings.reset.confirm')}
-                                </Button>
-                                <Button variant="secondary" onClick={() => { setConfirming(false); setConfirmText(''); }}>
-                                    {t('admin.settings.reset.cancel')}
-                                </Button>
+                                <p className="text-sm text-neutral-500">{t('admin.settings.sections.preferences.desc')}</p>
                             </div>
                         </div>
-                    )}
-                </section>
-            )}
+                        <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+                            <div className="min-w-0">
+                                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                                    {t('admin.settings.helpPulse.label')}
+                                </span>
+                                <p className="text-xs text-neutral-400">{t('admin.settings.helpPulse.hint')}</p>
+                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={pulseOn}
+                                aria-label={t('admin.settings.helpPulse.label')}
+                                onClick={() => setData('admin_help_pulse', pulseOn ? '0' : '1')}
+                                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
+                                    pulseOn ? 'bg-brand-teal' : 'bg-neutral-300 dark:bg-neutral-600'
+                                }`}
+                            >
+                                <span
+                                    aria-hidden
+                                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                                    style={{ insetInlineStart: '0.125rem', transform: pulseOn ? `translateX(${rtl ? '-1.25rem' : '1.25rem'})` : 'translateX(0)' }}
+                                />
+                            </button>
+                        </div>
+                    </section>
+
+                    {/* Floating save bar — always in reach while scrolling the form. */}
+                    <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95">
+                        <span className="hidden text-xs text-neutral-400 sm:inline">{t('admin.settings.saveHint')}</span>
+                        <Button type="submit" variant="primary" disabled={processing} className="ms-auto">
+                            {t('admin.settings.save')}
+                        </Button>
+                    </div>
+                </form>
+
+                {canReset && (
+                    <section className="mt-8 rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 sm:p-6">
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-600 dark:text-red-300">
+                                <RotateCcw className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                                <h2 className="font-semibold text-red-700 dark:text-red-300">{t('admin.settings.reset.title')}</h2>
+                                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{t('admin.settings.reset.lead')}</p>
+                                <ul className="mt-2 space-y-1 text-xs">
+                                    <li className="text-amber-700 dark:text-amber-300">{t('admin.settings.reset.restores')}</li>
+                                    <li className="text-neutral-500 dark:text-neutral-400">{t('admin.settings.reset.keeps')}</li>
+                                </ul>
+
+                                {!confirming ? (
+                                    <div className="mt-4">
+                                        <Button variant="danger" icon={RotateCcw} onClick={() => setConfirming(true)}>
+                                            {t('admin.settings.reset.button')}
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 space-y-3">
+                                        <label className="block">
+                                            <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                                                {t('admin.settings.reset.confirmPrompt', { word: CONFIRM_WORD })}
+                                            </span>
+                                            <input
+                                                value={confirmText}
+                                                onChange={(e) => setConfirmText(e.target.value)}
+                                                autoFocus
+                                                className="mt-1 w-full max-w-xs rounded-lg border border-red-300 px-3 py-2 text-sm dark:border-red-900 dark:bg-neutral-950"
+                                            />
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <Button variant="danger" disabled={confirmText !== CONFIRM_WORD} onClick={doReset}>
+                                                {t('admin.settings.reset.confirm')}
+                                            </Button>
+                                            <Button variant="secondary" onClick={() => { setConfirming(false); setConfirmText(''); }}>
+                                                {t('admin.settings.reset.cancel')}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                )}
+            </div>
         </AdminLayout>
     );
 }

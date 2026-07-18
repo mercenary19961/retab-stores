@@ -714,6 +714,14 @@ const en = {
                 label: 'Attention pulse on “How it works”',
                 hint: 'Gently pulses the How it works button once each session until it is opened. Turn off to hide it for all staff.',
             },
+            saveHint: 'Changes apply to the storefront right away.',
+            sections: {
+                store: { title: 'Store', desc: 'Shipping price and the legal entity name.' },
+                bank: { title: 'Bank transfer', desc: 'Account details shown to customers paying by manual transfer.' },
+                contact: { title: 'Contact & registration', desc: 'Shown in the storefront footer.' },
+                social: { title: 'Social links', desc: 'Footer icons. Leave a field blank to hide that icon.' },
+                preferences: { title: 'Admin preferences', desc: 'Options for this admin panel, not the storefront.' },
+            },
             groups: {
                 footerContact: 'Footer & contact',
             },
