@@ -9,11 +9,13 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderReturn;
 use App\Models\User;
+use App\Notifications\ReturnRequestedNotification;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\Tamara\TamaraService;
 use App\Support\Media;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use RuntimeException;
 
 /**
@@ -110,6 +112,7 @@ class ReturnService
         });
 
         $this->whatsapp->notifyAdminsReturnRequested($return);
+        Notification::send(User::staff()->get(), new ReturnRequestedNotification($return));
 
         return $return;
     }

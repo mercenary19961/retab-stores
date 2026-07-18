@@ -99,7 +99,35 @@ class HandleInertiaRequests extends Middleware
             // tracked admin save (staff only; the persistent per-section button
             // is passed as a page prop instead).
             'undo' => fn () => $request->user()?->isStaff() ? $request->session()->get('undo') : null,
+            // Admin notification bell (staff only): unread count + latest items.
+            // Structured `data` is rendered client-side so it follows the admin
+            // language toggle. Closure → resolved only for Inertia page responses.
+            'notifications' => fn () => $request->user()?->isStaff()
+                ? $this->adminNotifications($request->user())
+                : null,
         ]);
+    }
+
+    /**
+     * Recent admin-bell notifications for a staff user: unread count + the latest
+     * 10 rows (structured `data` payloads). Two cheap indexed queries.
+     *
+     * @return array{unread:int, items:list<array<string, mixed>>}
+     */
+    private function adminNotifications(\App\Models\User $user): array
+    {
+        $items = $user->notifications()->latest()->limit(10)->get()
+            ->map(fn ($n) => [
+                'id' => $n->id,
+                'read' => $n->read_at !== null,
+                'created_at' => $n->created_at?->toIso8601String(),
+                'data' => $n->data,
+            ])->all();
+
+        return [
+            'unread' => $user->unreadNotifications()->count(),
+            'items' => $items,
+        ];
     }
 
     /**

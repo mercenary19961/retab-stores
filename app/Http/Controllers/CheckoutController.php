@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Enums\PaymentMethod;
 use App\Models\Order;
 use App\Models\Setting;
+use App\Models\User;
+use App\Notifications\NewOrderNotification;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\Tamara\TamaraService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 
 class CheckoutController
@@ -83,8 +86,10 @@ class CheckoutController
         $session = $request->session();
         $session->push('placed_orders', $order->order_number);
 
-        // Alert staff that a new order needs attention (verify transfer / check stock).
+        // Alert staff that a new order needs attention (verify transfer / check stock)
+        // across all three channels: WhatsApp + the in-panel notification bell.
         $this->whatsapp->notifyAdminsNewOrder($order);
+        Notification::send(User::staff()->get(), new NewOrderNotification($order));
 
         if (in_array($data['payment_method'], ['card', 'tamara'], true)) {
             try {

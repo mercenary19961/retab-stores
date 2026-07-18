@@ -344,6 +344,24 @@ const en = {
             undo: 'Undo last change',
             top: 'Scroll to top',
         },
+        notifications: {
+            title: 'Notifications',
+            markAllRead: 'Mark all read',
+            empty: 'You are all caught up',
+            items: {
+                newOrder: {
+                    title: 'New order {{order}}',
+                    body: '{{total}} {{currency}}, needs review',
+                },
+                returnRequested: {
+                    title: 'Return requested for {{order}}',
+                    body: 'A customer filed a defect return',
+                },
+                generic: {
+                    title: 'New notification',
+                },
+            },
+        },
         deleteModal: {
             title: 'Confirm deletion',
             lead: 'You are about to delete “{{name}}”.',

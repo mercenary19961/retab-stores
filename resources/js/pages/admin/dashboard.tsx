@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import { useAdminT } from '@/i18n/use-admin-t';
+import { relativeTimeFromMinutes } from '@/lib/relative-time';
 
 interface Kpis {
     currency: string;
@@ -90,19 +91,6 @@ const TASK_ICON: Record<string, LucideIcon> = {
     tamaraExpiring: Clock,
 };
 
-/**
- * Friendly "N minutes/hours/days/weeks ago" for the last-sync banner, localized
- * and pluralized by the browser (respects the admin language toggle).
- */
-function syncedAgo(minutes: number, locale: string): string {
-    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
-    if (minutes < 60) return rtf.format(-minutes, 'minute');
-    const hours = Math.round(minutes / 60);
-    if (hours < 24) return rtf.format(-hours, 'hour');
-    const days = Math.round(hours / 24);
-    if (days < 14) return rtf.format(-days, 'day');
-    return rtf.format(-Math.round(days / 7), 'week');
-}
 
 export default function AdminDashboard({
     kpis,
@@ -246,8 +234,8 @@ export default function AdminDashboard({
                         {inventory.lastSynced.at === null || inventory.lastSynced.minutes === null
                             ? t('admin.dashboard.inventory.syncNever')
                             : inventory.lastSynced.stale
-                              ? t('admin.dashboard.inventory.syncStale', { ago: syncedAgo(inventory.lastSynced.minutes, i18n.language) })
-                              : t('admin.dashboard.inventory.syncOk', { ago: syncedAgo(inventory.lastSynced.minutes, i18n.language) })}
+                              ? t('admin.dashboard.inventory.syncStale', { ago: relativeTimeFromMinutes(inventory.lastSynced.minutes, i18n.language) })
+                              : t('admin.dashboard.inventory.syncOk', { ago: relativeTimeFromMinutes(inventory.lastSynced.minutes, i18n.language) })}
                     </div>
 
                     <div className="mb-4 grid grid-cols-3 gap-3 text-center">

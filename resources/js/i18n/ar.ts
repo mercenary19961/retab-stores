@@ -348,6 +348,24 @@ const ar = {
             undo: 'التراجع عن آخر تغيير',
             top: 'إلى الأعلى',
         },
+        notifications: {
+            title: 'التنبيهات',
+            markAllRead: 'تعليم الكل كمقروء',
+            empty: 'لا توجد تنبيهات جديدة',
+            items: {
+                newOrder: {
+                    title: 'طلب جديد {{order}}',
+                    body: '{{total}} {{currency}}، بانتظار المراجعة',
+                },
+                returnRequested: {
+                    title: 'طلب إرجاع للطلب {{order}}',
+                    body: 'قام أحد العملاء بتقديم طلب إرجاع لعيب',
+                },
+                generic: {
+                    title: 'تنبيه جديد',
+                },
+            },
+        },
         deleteModal: {
             title: 'تأكيد الحذف',
             lead: 'أنت على وشك حذف «{{name}}».',

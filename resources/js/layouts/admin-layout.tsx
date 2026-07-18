@@ -24,6 +24,7 @@ import { I18nextProvider, useTranslation } from 'react-i18next';
 import adminI18n from '@/i18n/admin';
 import AdminContextMenu from '@/components/admin/context-menu';
 import GlobalSearch from '@/components/admin/global-search';
+import NotificationBell from '@/components/admin/notification-bell';
 import UndoToast from '@/components/admin/undo-toast';
 import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
 
@@ -271,6 +272,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                         <GlobalSearch />
                     </div>
                     <div className="flex shrink-0 items-center gap-3 text-sm">
+                        <NotificationBell />
                         <button
                             type="button"
                             onClick={toggleLocale}

@@ -14,6 +14,10 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('search', [\App\Http\Controllers\Admin\GlobalSearchController::class, 'search'])->name('search');
     Route::put('preferences/table-widths', [\App\Http\Controllers\Admin\PreferenceController::class, 'tableWidths'])->name('preferences.table-widths');
 
+    // Notification bell (every staff member has their own copies — no extra permission).
+    Route::post('notifications/read-all', [\App\Http\Controllers\Admin\NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::get('notifications/{notification}', [\App\Http\Controllers\Admin\NotificationController::class, 'open'])->name('notifications.open');
+
     // Orders.
     Route::get('orders', [OrderController::class, 'index'])->middleware('permission:orders.view')->name('orders.index');
     Route::get('orders/export', [OrderController::class, 'export'])->middleware('permission:orders.export')->name('orders.export');
