@@ -32,7 +32,7 @@ export default function UndoButton({ section, undoMeta }: { section: string; und
 
     return (
         <div className="group/undo relative inline-flex items-center gap-1 rounded-lg border border-brand-gold/40 bg-brand-gold/10 py-1.5 pe-1.5 ps-3 text-sm text-brand-gold">
-            <button type="button" onClick={revert} className="flex items-center gap-2 font-medium">
+            <button type="button" data-undo onClick={revert} className="flex items-center gap-2 font-medium">
                 <History className="h-4 w-4" />
                 <span>{t('admin.undo.button')}</span>
                 {undoMeta.changes.length > 0 && <span className="text-xs opacity-70">({undoMeta.changes.length})</span>}

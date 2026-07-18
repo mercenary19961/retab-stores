@@ -340,6 +340,14 @@ const ar = {
             loading: 'جارٍ التحميل…',
             view: 'عرض',
         },
+        contextMenu: {
+            back: 'رجوع',
+            forward: 'تقدّم',
+            reload: 'إعادة تحميل',
+            save: 'حفظ',
+            undo: 'التراجع عن آخر تغيير',
+            top: 'إلى الأعلى',
+        },
         deleteModal: {
             title: 'تأكيد الحذف',
             lead: 'أنت على وشك حذف «{{name}}».',

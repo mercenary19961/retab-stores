@@ -22,6 +22,7 @@ import {
 import { useEffect, useState, type PropsWithChildren, type ReactNode } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import adminI18n from '@/i18n/admin';
+import AdminContextMenu from '@/components/admin/context-menu';
 import GlobalSearch from '@/components/admin/global-search';
 import UndoToast from '@/components/admin/undo-toast';
 import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
@@ -313,6 +314,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
             </div>
 
             <UndoToast />
+            <AdminContextMenu />
 
             {/* Per-page "How it works" drawer. Slides from the reading-end side
                 (right in LTR, left in RTL). Physical transform, so RTL is handled

@@ -336,6 +336,14 @@ const en = {
             loading: 'Loading…',
             view: 'View',
         },
+        contextMenu: {
+            back: 'Back',
+            forward: 'Forward',
+            reload: 'Reload',
+            save: 'Save',
+            undo: 'Undo last change',
+            top: 'Scroll to top',
+        },
         deleteModal: {
             title: 'Confirm deletion',
             lead: 'You are about to delete “{{name}}”.',
