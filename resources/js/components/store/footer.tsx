@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 /**
  * Store footer (from the Figma design). The background artwork is effectively a
  * flat cream, so it's a CSS colour rather than an image. Everything else is real
- * markup: text (translatable, Tajawal), the brand logo, the two official badges
+ * markup: text (translatable, Thmanyah Sans), the brand logo, the two official badges
  * (commercial registration + VAT) and the contact/social icon set.
  *
  * Business details (contact, CR, VAT, social URLs) are admin-editable: they come

@@ -7,14 +7,51 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Arabic-first typography: under RTL, Tajawal leads the sans stack. Tailwind
+ * Thmanyah Sans — the brand typeface (self-hosted, licensed WOFF2). Only the
+ * weights the UI actually uses are declared; each is fingerprinted by Vite
+ * (hashed filename) on build. `font-display: swap` keeps text visible in the
+ * fallback while the file loads, so the font never blocks first paint.
+ * NB: the licence forbids modifying/subsetting the font, so the files ship
+ * as-is (~78 KB each) — do not run them through a subsetter.
+ */
+@font-face {
+    font-family: 'Thmanyah Sans';
+    src: url('../fonts/thmanyahsans-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Thmanyah Sans';
+    src: url('../fonts/thmanyahsans-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Thmanyah Sans';
+    src: url('../fonts/thmanyahsans-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Thmanyah Sans';
+    src: url('../fonts/thmanyahsans-Black.woff2') format('woff2');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/*
+ * Arabic-first typography: under RTL, Thmanyah Sans leads the sans stack. Tailwind
  * v4's `font-sans` utility resolves var(--font-sans), so overriding the token
  * here cascades into every font-sans element ([dir] attr set from the session
  * locale in app.blade.php). Latin text inside RTL pages falls back cleanly.
  */
 html[dir='rtl'] {
     --font-sans:
-        'Tajawal', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Thmanyah Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 @theme {
@@ -26,8 +63,8 @@ html[dir='rtl'] {
     --color-brand-teal: #1b4e53;
     --color-brand-cream: #f5f1ea;
 
-    /* Brand heading font — Tajawal (heavy Arabic sans). Utility: font-heading. */
-    --font-heading: 'Tajawal', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    /* Brand heading font — Thmanyah Sans (Bold/Black). Utility: font-heading. */
+    --font-heading: 'Thmanyah Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
