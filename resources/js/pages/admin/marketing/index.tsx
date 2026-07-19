@@ -76,11 +76,13 @@ function WhatsappIcon({ className }: { className?: string }) {
 export default function MarketingIndex({
     templates,
     campaigns,
-    audienceCount,
+    segmentCounts,
+    segments,
 }: {
     templates: Template[];
     campaigns: Campaign[];
-    audienceCount: number;
+    segmentCounts: Record<string, number>;
+    segments: string[];
 }) {
     const { t: tr, i18n } = useAdminT();
     const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
@@ -116,7 +118,10 @@ export default function MarketingIndex({
     // Campaign composer.
     const [templateId, setTemplateId] = useState<number | ''>('');
     const [params, setParams] = useState<string[]>([]);
+    const [segment, setSegment] = useState('all');
     const selected = templates.find((t) => t.id === templateId);
+    // Live recipient count for the chosen segment (drives the "Send to N" button).
+    const audienceCount = segmentCounts[segment] ?? 0;
 
     // Template body helpers (live preview + auto variable detection).
     const body = String(tpl.body);
@@ -145,7 +150,8 @@ export default function MarketingIndex({
         router.post('/admin/marketing/campaigns', {
             whatsapp_template_id: selected.id,
             params: params.slice(0, selected.param_count),
-        }, { preserveScroll: true, onSuccess: () => { setTemplateId(''); setParams([]); } });
+            segment,
+        }, { preserveScroll: true, onSuccess: () => { setTemplateId(''); setParams([]); setSegment('all'); } });
     };
 
     return (
@@ -281,6 +287,17 @@ export default function MarketingIndex({
                                 />
                             </label>
 
+                            <label className="block text-sm">
+                                <span className="text-neutral-500">{tr('admin.marketing.segment')}</span>
+                                <Select
+                                    value={segment}
+                                    onChange={(v) => setSegment(v)}
+                                    options={segments.map((s) => ({ value: s, label: `${label('segments', s)} (${segmentCounts[s] ?? 0})` }))}
+                                    className="mt-1 w-full"
+                                />
+                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.segmentHint')}</span>
+                            </label>
+
                             {selected && Array.from({ length: selected.param_count }).map((_, i) => (
                                 <label key={i} className="block text-sm">
                                     <span className="text-neutral-500">{tr('admin.marketing.variable', { n: i + 1 })}</span>
@@ -304,7 +321,7 @@ export default function MarketingIndex({
                                 </div>
                             )}
 
-                            <Button type="submit" variant="primary" icon={Send} disabled={!selected}>
+                            <Button type="submit" variant="primary" icon={Send} disabled={!selected || audienceCount === 0}>
                                 {tr('admin.marketing.sendTo', { count: audienceCount })}
                             </Button>
                         </form>

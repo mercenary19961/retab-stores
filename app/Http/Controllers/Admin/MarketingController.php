@@ -40,7 +40,10 @@ class MarketingController extends Controller
                     'sent_at' => $c->sent_at?->toDateTimeString(),
                     'stats' => $c->status === 'draft' ? [] : $c->stats(),
                 ]),
-            'audienceCount' => (clone $this->campaigns->audience())->count(),
+            // Recipient count per selectable segment → the composer shows a live
+            // "Send to N" as the owner switches segment.
+            'segmentCounts' => $this->campaigns->segmentCounts(),
+            'segments' => CampaignService::SEGMENTS,
         ]);
     }
 
@@ -66,6 +69,7 @@ class MarketingController extends Controller
             'whatsapp_template_id' => ['required', 'integer', 'exists:whatsapp_templates,id'],
             'params' => ['array'],
             'params.*' => ['required', 'string', 'max:255'],
+            'segment' => ['nullable', \Illuminate\Validation\Rule::in(CampaignService::SEGMENTS)],
         ]);
 
         $template = WhatsappTemplate::findOrFail($data['whatsapp_template_id']);
@@ -79,6 +83,7 @@ class MarketingController extends Controller
             'params' => array_values($data['params'] ?? []),
             // Explicit, not the column default: create() doesn't hydrate DB
             // defaults, and CampaignService's status gate reads the model.
+            'segment' => $data['segment'] ?? 'all',
             'status' => 'draft',
         ]);
 

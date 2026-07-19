@@ -32,7 +32,7 @@ class SendWhatsappCampaign implements ShouldQueue
             return;
         }
 
-        $campaigns->audience()->chunkById(100, function ($users) use ($whatsapp, $campaign) {
+        $campaigns->audience($campaign->segment)->chunkById(100, function ($users) use ($whatsapp, $campaign) {
             foreach ($users as $user) {
                 $whatsapp->sendCampaignMessage($user, $campaign);
             }
