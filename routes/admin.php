@@ -61,6 +61,16 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::put('coupons/{coupon}', [\App\Http\Controllers\Admin\CouponController::class, 'update'])->middleware('permission:coupons.edit')->name('coupons.update');
     Route::delete('coupons/{coupon}', [\App\Http\Controllers\Admin\CouponController::class, 'destroy'])->middleware('permission:coupons.delete')->name('coupons.destroy');
 
+    // Discounts — bulk + CSV scheduled product sales.
+    Route::get('discounts', [\App\Http\Controllers\Admin\DiscountController::class, 'index'])->middleware('permission:discounts.view')->name('discounts.index');
+    Route::middleware('permission:discounts.manage')->group(function () {
+        Route::post('discounts/apply', [\App\Http\Controllers\Admin\DiscountController::class, 'apply'])->name('discounts.apply');
+        Route::post('discounts/import/preview', [\App\Http\Controllers\Admin\DiscountController::class, 'previewImport'])->name('discounts.import.preview');
+        Route::post('discounts/import/apply', [\App\Http\Controllers\Admin\DiscountController::class, 'applyImport'])->name('discounts.import.apply');
+        Route::post('discounts/clear', [\App\Http\Controllers\Admin\DiscountController::class, 'clear'])->name('discounts.clear');
+        Route::post('discounts/undo/{activityLog}', [\App\Http\Controllers\Admin\DiscountController::class, 'undo'])->name('discounts.undo');
+    });
+
     // Customer directory (read-only).
     Route::middleware('permission:customers.view')->group(function () {
         Route::get('customers', [\App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('customers.index');
