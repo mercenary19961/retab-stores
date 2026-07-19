@@ -5,6 +5,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Modal from '@/components/admin/modal';
+import Pagination, { type Paginator } from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
@@ -193,10 +194,9 @@ function CouponForm({ coupon, onClose }: { coupon: CouponRow | null; onClose: ()
     );
 }
 
-export default function CouponsIndex({ coupons }: { coupons: CouponRow[] }) {
+export default function CouponsIndex({ coupons, activeCount }: { coupons: Paginator<CouponRow>; activeCount: number }) {
     const { t } = useAdminT();
     const rc = useResizableColumns({ tableKey: 'coupons', columns: COLUMNS });
-    const activeCount = coupons.filter((c) => c.status === 'active').length;
     const [editing, setEditing] = useState<CouponRow | 'new' | null>(null);
 
     const sar = t('admin.common.sar');
@@ -224,7 +224,7 @@ export default function CouponsIndex({ coupons }: { coupons: CouponRow[] }) {
 
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm text-neutral-400">{t('admin.coupons.summary', { active: activeCount, total: coupons.length })}</span>
+                    <span className="text-sm text-neutral-400">{t('admin.coupons.summary', { active: activeCount, total: coupons.total })}</span>
                     {rc.isDefault ? (
                         <span className="hidden items-center gap-1.5 text-xs text-neutral-500 lg:inline-flex">
                             <MoveHorizontal className="h-3.5 w-3.5" /> {t('admin.common.dragToResize')}
@@ -249,10 +249,10 @@ export default function CouponsIndex({ coupons }: { coupons: CouponRow[] }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {coupons.length === 0 && (
+                        {coupons.data.length === 0 && (
                             <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-400">{t('admin.coupons.empty')}</td></tr>
                         )}
-                        {coupons.map((c) => (
+                        {coupons.data.map((c) => (
                             <tr key={c.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
                                 <td className="truncate px-4 py-3 font-mono font-medium text-neutral-800 dark:text-neutral-100">{c.code}</td>
                                 <td className="truncate px-4 py-3 text-neutral-600 dark:text-neutral-300">{discountLabel(c)}</td>
@@ -282,6 +282,8 @@ export default function CouponsIndex({ coupons }: { coupons: CouponRow[] }) {
                     </tbody>
                 </table>
             </StickyScrollWrapper>
+
+            <Pagination paginator={coupons} />
 
             <Modal
                 open={editing !== null}

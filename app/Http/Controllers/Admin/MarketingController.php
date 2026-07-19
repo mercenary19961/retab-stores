@@ -29,9 +29,8 @@ class MarketingController extends Controller
                 ->map(fn (WhatsappTemplate $t) => $t->only('id', 'name', 'language', 'category', 'body', 'param_count', 'status')),
             'campaigns' => WhatsappCampaign::with('template:id,name,language')
                 ->latest()
-                ->limit(20)
-                ->get()
-                ->map(fn (WhatsappCampaign $c) => [
+                ->paginate(8, ['*'], 'cpage')
+                ->through(fn (WhatsappCampaign $c) => [
                     'id' => $c->id,
                     'template' => $c->template?->name,
                     'params' => $c->params,

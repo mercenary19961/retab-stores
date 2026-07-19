@@ -122,7 +122,7 @@ export default function DiscountsIndex({
             {discounted.length === 0 ? (
                 <p className="py-6 text-center text-sm text-neutral-400">{t('admin.discounts.current.empty')}</p>
             ) : (
-                <StickyScrollWrapper>
+                <StickyScrollWrapper className="max-h-[26rem] overflow-y-auto">
                     <table className="min-w-full text-sm">
                         <thead className="border-b border-neutral-200 text-left text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
                             <tr>
@@ -165,7 +165,7 @@ export default function DiscountsIndex({
             {history.length === 0 ? (
                 <p className="py-4 text-center text-sm text-neutral-400">{t('admin.discounts.history.empty')}</p>
             ) : (
-                <ul className="space-y-2 text-sm">
+                <ul className="max-h-80 space-y-2 overflow-y-auto text-sm">
                     {history.map((h) => (
                         <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
                             <div>
