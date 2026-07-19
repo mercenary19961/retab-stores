@@ -294,9 +294,13 @@ export default function MarketingIndex({
                             ))}
 
                             {selected && selected.body && (
-                                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950" dir="auto">
+                                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
                                     <p className="mb-1 text-xs font-medium uppercase text-neutral-400">{tr('admin.marketing.customerPreview')}</p>
-                                    <p className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{renderTemplate(selected.body, params)}</p>
+                                    {/* dir="auto" must sit on the message itself, not the wrapper: on the wrapper it
+                                        would detect direction from the English label above and force the whole box LTR,
+                                        misplacing Arabic punctuation. On the message it mirrors WhatsApp's own
+                                        first-strong-character direction detection. */}
+                                    <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{renderTemplate(selected.body, params)}</p>
                                 </div>
                             )}
 
