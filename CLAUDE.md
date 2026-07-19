@@ -2,7 +2,7 @@
 
 > Quick reference for AI assistants and developers
 
-> **📍 Doc sync:** CLAUDE.md last synced to commit `e15001d` — 2026-07-18 16:31 (Sat) [`construction_phase`].
+> **📍 Doc sync:** CLAUDE.md last synced to commit `7fd1571` — 2026-07-19 11:40 (Sun) [`construction_phase`].
 > _Convention: whenever you edit this file, refresh this line to the current commit — run_ `git log -1 --format="%h %cd" --date=format:"%Y-%m-%d %H:%M (%a)"` _and paste the hash + date + time. Anchors the doc to a known code state; pairs with the prose `> Last updated:` log at the bottom of Build Progress._
 
 > **📌 Log the tricky stuff.** Whenever you hit an **issue, blocker, non-obvious behavior, or anything that cost real debugging time**, write it down with its **symptom → root cause → fix** — inline near the relevant section (retab's style, e.g. the MariaDB `db:show` and dual-push `--add --push` notes) and/or a one-liner in the `> Last updated:` log. The same stack is reused across projects (Sky Amman, HardRock, hardrock-ecom-demo), so a gotcha captured once saves the next project too. Traps → document as a gotcha; reusable patterns → note under Architecture/Decisions. When in doubt, over-document.
@@ -104,6 +104,7 @@ Source: retabstore.com policy. **Defect/damage-only** (matches food/perishable n
 - Use the **direct Meta Cloud API** (no BSP) — lowest cost, full control, under the same Meta Business Manager as the client's ads. We build the integration in Laravel (send + webhooks for delivery/read status).
 - **Message types:** order confirmation / apology+suggest / "courier coming" / loyalty = **Utility** templates; monthly offers = **Marketing** templates (**opt-in required**). All business-initiated messages outside a customer's 24h reply window MUST be **Meta-approved templates** (free text only inside the 24h window).
 - **Admin "marketing" section = two parts:** (a) **template manager** — compose + submit to Meta + track approval status (or manage templates in Meta Business Manager initially); (b) **campaign sender** — pick an approved template → fill variables → send to the opt-in segment → track delivery via webhook.
+- **🔭 FUTURE IMPROVEMENT (deferred — auto-sync template approval status).** Today the template's "Meta approval status" (`draft/pending/approved/rejected` on `whatsapp_templates`) is a **manual mirror** of the real status in Meta Business Manager — templates are authored + approved THERE, and a human flips the flag here to match (the send guardrail `WhatsappTemplate::isApproved()` + the sender dropdown trust this flag but never verify it against Meta). If the manual step becomes error-prone, wire **Meta's Template Management API** to (a) **submit** templates to Meta straight from the `/admin/marketing` screen, and (b) subscribe to the **`message_template_status_update` webhook** so the local status flips to Approved/Rejected automatically. That removes the human sync step entirely (and the drift risk of a locally-"approved" template Meta actually rejects → per-message `failed` sends). Scope it when asked.
 - **Guardrails:** marketing only to opted-in contacts; plan for Meta's template-approval lag; respect Meta's daily conversation limits + quality rating.
 - Synergy: **click-to-WhatsApp ads** from the client's Meta campaigns start chats + open the free 24h window.
 
