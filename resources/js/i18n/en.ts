@@ -254,6 +254,8 @@ const en = {
             trend: {
                 title: 'Daily revenue (30 days)',
                 empty: 'No sales in this period.',
+                peak: 'Peak {{value}}',
+                orders: '{{n}} orders',
             },
             tasks: {
                 title: 'Needs attention',
