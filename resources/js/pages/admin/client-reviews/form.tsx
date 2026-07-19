@@ -1,6 +1,10 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
+import Select from '@/components/admin/select';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface ReviewData {
     id: number;
@@ -12,7 +16,8 @@ interface ReviewData {
 }
 
 export default function ClientReviewForm({ review }: { review: ReviewData | null }) {
-    const { data, setData, post, put, processing, errors } = useForm({
+    const { t } = useAdminT();
+    const { data, setData, post, put, processing, errors, isDirty } = useForm({
         author_name: review?.author_name ?? '',
         body: review?.body ?? '',
         rating: review?.rating ?? 5,
@@ -30,7 +35,7 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
     };
 
     const destroy = () => {
-        if (review && confirm('Delete this review?')) {
+        if (review && confirm(t('admin.reviews.form.deleteConfirm'))) {
             router.delete(`/admin/client-reviews/${review.id}`);
         }
     };
@@ -46,56 +51,56 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
     const inputCls = 'mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950';
 
     return (
-        <AdminLayout title={review ? `Edit: ${review.author_name}` : 'New review'}>
-            <Head title={review ? `Edit review` : 'New review'} />
+        <AdminLayout title={review ? t('admin.reviews.form.editTitle', { name: review.author_name }) : t('admin.reviews.form.newTitle')}>
+            <Head title={review ? t('admin.reviews.form.editHead') : t('admin.reviews.form.newTitle')} />
 
             <div className="mb-4">
-                <Link href="/admin/client-reviews" className="text-sm text-neutral-500 underline">← Client reviews</Link>
+                <Link href="/admin/client-reviews" className="inline-flex items-center gap-1 text-sm text-neutral-500 underline">
+                    <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('admin.reviews.title')}
+                </Link>
             </div>
 
             <form onSubmit={submit} className="max-w-2xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                {field('Author name *', (
+                {field(t('admin.reviews.form.authorName'), (
                     <input dir="auto" value={data.author_name} onChange={(e) => setData('author_name', e.target.value)} className={inputCls} />
                 ), errors.author_name)}
 
-                {field('Review text *', (
+                {field(t('admin.reviews.form.reviewText'), (
                     <textarea dir="auto" rows={5} value={data.body} onChange={(e) => setData('body', e.target.value)} className={inputCls} />
                 ), errors.body)}
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {field('Rating *', (
-                        <select value={data.rating} onChange={(e) => setData('rating', Number(e.target.value))} className={inputCls}>
-                            {[5, 4, 3, 2, 1].map((n) => (
-                                <option key={n} value={n}>{n} ★</option>
-                            ))}
-                        </select>
+                    {field(t('admin.reviews.form.rating'), (
+                        <Select
+                            value={String(data.rating)}
+                            onChange={(v) => setData('rating', Number(v))}
+                            options={[5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: `${n} ★` }))}
+                            className="mt-1 w-full"
+                        />
                     ), errors.rating)}
-                    {field('Language (as written)', (
-                        <select value={data.language} onChange={(e) => setData('language', e.target.value)} className={inputCls}>
-                            <option value="">— unset —</option>
-                            <option value="ar">Arabic</option>
-                            <option value="en">English</option>
-                        </select>
+                    {field(t('admin.reviews.form.language'), (
+                        <Select
+                            value={data.language}
+                            onChange={(v) => setData('language', v)}
+                            options={[
+                                { value: '', label: t('admin.reviews.form.languageUnset') },
+                                { value: 'ar', label: t('admin.reviews.form.arabic') },
+                                { value: 'en', label: t('admin.reviews.form.english') },
+                            ]}
+                            className="mt-1 w-full"
+                        />
                     ), errors.language)}
                 </div>
 
                 <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} />
-                    Active — include in the homepage rotation pool
+                    {t('admin.reviews.form.activeLabel')}
                 </label>
 
                 <div className="flex items-center justify-between pt-2">
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="rounded-lg bg-neutral-900 px-5 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-                    >
-                        Save review
-                    </button>
+                    <Button type="submit" variant="primary" disabled={processing || !isDirty}>{t('admin.reviews.form.save')}</Button>
                     {review && (
-                        <button type="button" onClick={destroy} className="text-sm font-medium text-red-600 hover:underline">
-                            Delete
-                        </button>
+                        <Button type="button" variant="danger" icon={Trash2} onClick={destroy}>{t('admin.common.delete')}</Button>
                     )}
                 </div>
             </form>

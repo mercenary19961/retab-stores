@@ -1,3 +1,5 @@
+import { useAdminT } from '@/i18n/use-admin-t';
+
 const STATUS_LABELS: Record<string, string> = {
     pending_payment: 'Pending payment',
     awaiting_confirmation: 'Awaiting confirmation',
@@ -21,9 +23,10 @@ const STATUS_CLASSES: Record<string, string> = {
 export const ORDER_STATUS_LABELS = STATUS_LABELS;
 
 export default function OrderStatusBadge({ status }: { status: string }) {
+    const { t } = useAdminT();
     return (
         <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASSES[status] ?? ''}`}>
-            {STATUS_LABELS[status] ?? status}
+            {t(`status.${status}`, STATUS_LABELS[status] ?? status)}
         </span>
     );
 }

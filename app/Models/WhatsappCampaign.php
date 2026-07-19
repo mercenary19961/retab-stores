@@ -11,6 +11,7 @@ class WhatsappCampaign extends Model
     protected $fillable = [
         'whatsapp_template_id',
         'params',
+        'segment',
         'audience_count',
         'status',
         'sent_by',

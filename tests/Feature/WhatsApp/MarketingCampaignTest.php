@@ -5,6 +5,7 @@ namespace Tests\Feature\WhatsApp;
 use App\Models\User;
 use App\Models\WhatsappCampaign;
 use App\Models\WhatsappTemplate;
+use App\Services\WhatsApp\CampaignService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -80,6 +81,81 @@ class MarketingCampaignTest extends TestCase
             'whatsapp_template_id' => $template->id,
             'params' => [],
         ])->assertSessionHas('error');
+
+        $this->assertDatabaseCount('whatsapp_campaigns', 0);
+    }
+
+    private function optedIn(string $email, ?string $phone, int $purchases, bool $optIn = true): User
+    {
+        return User::create([
+            'name' => $email, 'email' => $email, 'password' => bcrypt('x'),
+            'phone' => $phone, 'whatsapp_opt_in' => $optIn, 'confirmed_purchases_count' => $purchases,
+        ]);
+    }
+
+    public function test_segments_narrow_the_opt_in_audience(): void
+    {
+        $svc = app(CampaignService::class);
+
+        $this->optedIn('a@t.com', '966500000001', 3);           // repeat
+        $this->optedIn('b@t.com', '966500000002', 2);           // repeat
+        $this->optedIn('c@t.com', '966500000003', 1);           // neither
+        $this->optedIn('d@t.com', '966500000004', 0);           // dormant
+        $this->optedIn('out@t.com', '966500000005', 9, false);  // opted out → excluded
+        $this->optedIn('nophone@t.com', null, 9);               // no phone → excluded
+
+        $this->assertSame(4, $svc->audience('all')->count());
+        $this->assertSame(2, $svc->audience('repeat')->count());
+        $this->assertSame(1, $svc->audience('dormant')->count());
+    }
+
+    public function test_active_segment_targets_the_more_active_half_and_excludes_opt_outs(): void
+    {
+        $svc = app(CampaignService::class);
+
+        $low = $this->optedIn('low@t.com', '966500000001', 0);
+        $mid = $this->optedIn('mid@t.com', '966500000002', 4);
+        $high = $this->optedIn('high@t.com', '966500000003', 5);
+        $this->optedIn('out@t.com', '966500000004', 9, false); // opted out → excluded despite high activity
+
+        $ids = $svc->audience('active')->pluck('id');
+
+        $this->assertSame(2, $ids->count());
+        $this->assertTrue($ids->contains($mid->id));
+        $this->assertTrue($ids->contains($high->id));
+        $this->assertFalse($ids->contains($low->id));
+    }
+
+    public function test_campaign_sends_only_to_its_segment(): void
+    {
+        $this->optedIn('a@t.com', '966500000001', 3); // repeat
+        $this->optedIn('b@t.com', '966500000002', 2); // repeat
+        $this->optedIn('c@t.com', '966500000003', 0); // excluded from repeat
+        $template = $this->approvedTemplate();
+
+        $this->actingAs($this->admin())->post('/admin/marketing/campaigns', [
+            'whatsapp_template_id' => $template->id,
+            'params' => ['خصم'],
+            'segment' => 'repeat',
+        ])->assertSessionHas('success');
+
+        $campaign = WhatsappCampaign::firstOrFail();
+        $this->assertSame('repeat', $campaign->segment);
+        $this->assertSame(2, $campaign->audience_count);
+        $this->assertDatabaseCount('whatsapp_messages', 2);
+        $this->assertDatabaseMissing('whatsapp_messages', ['recipient' => '966500000003']);
+    }
+
+    public function test_invalid_segment_is_rejected(): void
+    {
+        $this->optedIn('a@t.com', '966500000001', 1);
+        $template = $this->approvedTemplate();
+
+        $this->actingAs($this->admin())->post('/admin/marketing/campaigns', [
+            'whatsapp_template_id' => $template->id,
+            'params' => ['x'],
+            'segment' => 'bogus',
+        ])->assertSessionHasErrors('segment');
 
         $this->assertDatabaseCount('whatsapp_campaigns', 0);
     }

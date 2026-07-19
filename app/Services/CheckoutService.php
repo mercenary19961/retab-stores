@@ -41,6 +41,9 @@ class CheckoutService
             [$coupon, $discount] = $this->resolveCoupon($couponCode, $subtotal, $cart->user_id);
 
             $shippingFee = (float) Setting::get(self::SHIPPING_FEE_KEY, 0);
+            if ($coupon && $coupon->wavesShipping()) {
+                $shippingFee = 0.0;
+            }
             $total = round($subtotal - $discount + $shippingFee, 2);
 
             $order = Order::create([
@@ -131,6 +134,12 @@ class CheckoutService
         // A user-bound coupon (e.g. a loyalty reward) is only valid for its owner.
         if ($coupon->user_id !== null && $coupon->user_id !== $userId) {
             throw new \RuntimeException('This coupon is not available for your account.');
+        }
+
+        // Per-user usage cap (only enforceable for signed-in customers).
+        if ($coupon->per_user_limit !== null && $userId !== null
+            && $coupon->redemptions()->where('user_id', $userId)->count() >= $coupon->per_user_limit) {
+            throw new \RuntimeException('You have already used this coupon the maximum number of times.');
         }
 
         return [$coupon, $coupon->discountFor($subtotal)];

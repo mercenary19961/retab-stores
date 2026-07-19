@@ -7,7 +7,13 @@
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600|tajawal:400,500,700,900" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+
+        {{-- Preload the two most-used brand-font weights (body + bold) so they
+             arrive before first paint. Fonts fetch in CORS mode, so `crossorigin`
+             is required here or the browser downloads each file twice. --}}
+        <link rel="preload" as="font" type="font/woff2" href="{{ Vite::asset('resources/fonts/thmanyahsans-Regular.woff2') }}" crossorigin>
+        <link rel="preload" as="font" type="font/woff2" href="{{ Vite::asset('resources/fonts/thmanyahsans-Bold.woff2') }}" crossorigin>
 
         @routes
         @viteReactRefresh

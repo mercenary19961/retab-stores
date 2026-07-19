@@ -1,6 +1,19 @@
 import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft, Calendar, Gift, Languages, Mail, MapPin, MessageCircle, Phone, ShoppingBag, User, type LucideIcon } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
-import { ORDER_STATUS_LABELS } from '@/components/order-status-badge';
+import PaymentStatusBadge from '@/components/admin/payment-status-badge';
+import { useAdminT } from '@/i18n/use-admin-t';
+
+function DlRow({ icon: Icon, label, value, mono, dir }: { icon: LucideIcon; label: string; value: React.ReactNode; mono?: boolean; dir?: 'auto' }) {
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <dt className="flex items-center gap-2 text-neutral-500">
+                <Icon className="h-3.5 w-3.5 shrink-0" /> {label}
+            </dt>
+            <dd className={mono ? 'font-mono' : ''} dir={dir}>{value}</dd>
+        </div>
+    );
+}
 
 interface Customer {
     id: number;
@@ -39,35 +52,45 @@ export default function CustomerShow({
     loyalty: Loyalty;
     orders: OrderRow[];
 }) {
+    const { t } = useAdminT();
+    const displayName = customer.name ?? t('admin.customers.show.headTitle', { id: customer.id });
+
     return (
-        <AdminLayout title={customer.name ?? `Customer #${customer.id}`}>
-            <Head title={customer.name ?? `Customer #${customer.id}`} />
+        <AdminLayout title={displayName}>
+            <Head title={displayName} />
 
             <div className="mb-4">
-                <Link href="/admin/customers" className="text-sm text-neutral-500 underline">← Customers</Link>
+                <Link href="/admin/customers" className="inline-flex items-center gap-1 text-sm text-neutral-500 underline">
+                    <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('admin.nav.customers')}
+                </Link>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="space-y-6 lg:col-span-1">
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-3 font-bold" dir="auto">{customer.name ?? '—'}</h2>
+                        <h2 className="mb-3 flex items-center gap-2 font-bold" dir="auto">
+                            <User className="h-4 w-4 shrink-0 text-brand-gold" /> {customer.name ?? '—'}
+                        </h2>
                         <dl className="space-y-2">
-                            <div className="flex justify-between"><dt className="text-neutral-500">Phone</dt><dd className="font-mono">{customer.phone ?? '—'}{customer.phone_verified ? ' ✓' : ''}</dd></div>
-                            <div className="flex justify-between"><dt className="text-neutral-500">Email</dt><dd>{customer.email ?? '—'}</dd></div>
-                            <div className="flex justify-between"><dt className="text-neutral-500">City</dt><dd dir="auto">{customer.city ?? '—'}</dd></div>
-                            <div className="flex justify-between"><dt className="text-neutral-500">Locale</dt><dd>{customer.locale ?? '—'}</dd></div>
-                            <div className="flex justify-between"><dt className="text-neutral-500">Joined</dt><dd>{customer.created_at ?? '—'}</dd></div>
-                            <div className="flex justify-between">
-                                <dt className="text-neutral-500">WhatsApp opt-in</dt>
-                                <dd>{customer.whatsapp_opt_in ? `Yes${customer.whatsapp_opt_in_at ? ` (${customer.whatsapp_opt_in_at})` : ''}` : 'No'}</dd>
-                            </div>
+                            <DlRow icon={Phone} label={t('admin.common.phone')} value={`${customer.phone ?? '—'}${customer.phone_verified ? ' ✓' : ''}`} mono />
+                            <DlRow icon={Mail} label={t('admin.common.email')} value={customer.email ?? '—'} />
+                            <DlRow icon={MapPin} label={t('admin.common.city')} value={customer.city ?? '—'} dir="auto" />
+                            <DlRow icon={Languages} label={t('admin.customers.show.locale')} value={customer.locale ?? '—'} />
+                            <DlRow icon={Calendar} label={t('admin.customers.show.joined')} value={customer.created_at ?? '—'} />
+                            <DlRow
+                                icon={MessageCircle}
+                                label={t('admin.customers.show.optIn')}
+                                value={customer.whatsapp_opt_in ? `${t('admin.common.yes')}${customer.whatsapp_opt_in_at ? ` (${customer.whatsapp_opt_in_at})` : ''}` : t('admin.common.no')}
+                            />
                         </dl>
                     </section>
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-1 font-bold">Loyalty</h2>
+                        <h2 className="mb-1 flex items-center gap-2 font-bold">
+                            <Gift className="h-4 w-4 text-brand-gold" /> {t('admin.customers.show.loyalty')}
+                        </h2>
                         <p className="mb-3 text-neutral-500">
-                            {loyalty.confirmed_purchases} confirmed orders — {loyalty.progress}/{loyalty.milestone} toward the next reward
+                            {t('admin.customers.show.loyaltyProgress', { confirmed: loyalty.confirmed_purchases, progress: loyalty.progress, milestone: loyalty.milestone })}
                         </p>
                         <div className="mb-4 flex gap-1.5">
                             {Array.from({ length: loyalty.milestone }).map((_, i) => (
@@ -75,13 +98,13 @@ export default function CustomerShow({
                             ))}
                         </div>
                         {loyalty.rewards.length === 0 ? (
-                            <p className="text-neutral-400">No reward coupons issued.</p>
+                            <p className="text-neutral-400">{t('admin.customers.show.noRewards')}</p>
                         ) : (
                             <ul className="space-y-1">
                                 {loyalty.rewards.map((r) => (
                                     <li key={r.code} className="flex justify-between">
                                         <span className="font-mono">{r.code}</span>
-                                        <span>{r.value}% {r.is_active ? '' : '(used/inactive)'}</span>
+                                        <span>{r.value}% {r.is_active ? '' : t('admin.customers.show.rewardUsed')}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -90,18 +113,20 @@ export default function CustomerShow({
                 </div>
 
                 <section className="rounded-lg border border-neutral-200 bg-white p-5 lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="mb-3 font-bold">Orders</h2>
+                    <h2 className="mb-3 flex items-center gap-2 font-bold">
+                        <ShoppingBag className="h-4 w-4 text-brand-gold" /> {t('admin.customers.show.orders')}
+                    </h2>
                     {orders.length === 0 ? (
-                        <p className="text-sm text-neutral-400">No orders.</p>
+                        <p className="text-sm text-neutral-400">{t('admin.orders.empty')}</p>
                     ) : (
                         <table className="w-full text-sm">
-                            <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
+                            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                                 <tr>
-                                    <th className="py-2 font-medium">Order</th>
-                                    <th className="py-2 font-medium">Status</th>
-                                    <th className="py-2 font-medium">Payment</th>
-                                    <th className="py-2 font-medium">Total</th>
-                                    <th className="py-2 font-medium">Date</th>
+                                    <th className="py-2 font-medium">{t('admin.common.order')}</th>
+                                    <th className="py-2 font-medium">{t('admin.common.status')}</th>
+                                    <th className="py-2 font-medium">{t('admin.common.payment')}</th>
+                                    <th className="py-2 font-medium">{t('admin.common.total')}</th>
+                                    <th className="py-2 font-medium">{t('admin.common.date')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -112,9 +137,9 @@ export default function CustomerShow({
                                                 {o.order_number}
                                             </Link>
                                         </td>
-                                        <td className="py-2">{ORDER_STATUS_LABELS[o.status] ?? o.status}</td>
-                                        <td className="py-2">{o.payment_status}</td>
-                                        <td className="py-2">{o.total.toFixed(2)} SAR</td>
+                                        <td className="py-2">{t(`status.${o.status}`)}</td>
+                                        <td className="py-2"><PaymentStatusBadge status={o.payment_status} /></td>
+                                        <td className="py-2">{o.total.toFixed(2)} {t('admin.common.sar')}</td>
                                         <td className="py-2 text-neutral-500">{o.created_at ?? '—'}</td>
                                     </tr>
                                 ))}

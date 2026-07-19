@@ -98,10 +98,27 @@ class ReturnController extends Controller
 
     public function show(OrderReturn $orderReturn)
     {
+        return Inertia::render('admin/returns/show', $this->detailData($orderReturn));
+    }
+
+    /** JSON detail for the in-list return modal (same payload as the show page). */
+    public function detail(OrderReturn $orderReturn)
+    {
+        return response()->json($this->detailData($orderReturn));
+    }
+
+    /**
+     * Return + order summary + both refund previews, shared by the show page and
+     * the in-list modal.
+     *
+     * @return array<string, mixed>
+     */
+    private function detailData(OrderReturn $orderReturn): array
+    {
         $orderReturn->load('order.items', 'items.orderItem', 'user:id,name', 'resolvedBy:id,name');
         $order = $orderReturn->order;
 
-        return Inertia::render('admin/returns/show', [
+        return [
             'orderReturn' => [
                 'id' => $orderReturn->id,
                 'status' => $orderReturn->status->value,
@@ -134,7 +151,7 @@ class ReturnController extends Controller
                 'items_only' => $this->returns->refundAmount($orderReturn, false),
                 'with_shipping' => $this->returns->refundAmount($orderReturn, true),
             ],
-        ]);
+        ];
     }
 
     public function approve(Request $request, OrderReturn $orderReturn)

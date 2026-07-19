@@ -13,7 +13,23 @@ class ContentPageSeeder extends Seeder
 {
     public function run(): void
     {
-        $pages = [
+        foreach (self::pages() as $page) {
+            ContentPage::firstOrCreate(
+                ['slug' => $page['slug']],
+                [...$page, 'is_published' => true],
+            );
+        }
+    }
+
+    /**
+     * The three baseline CMS pages' handover content. Shared by the seeder and
+     * the admin "reset to handover defaults" safeguard.
+     *
+     * @return list<array<string, string>>
+     */
+    public static function pages(): array
+    {
+        return [
             [
                 'slug' => 'returns-policy',
                 'title_ar' => 'سياسة الاستبدال والاسترجاع',
@@ -36,12 +52,5 @@ class ContentPageSeeder extends Seeder
                 'body_en' => "WhatsApp: +966 50 384 5356\n\n(Edit this content from the admin panel.)",
             ],
         ];
-
-        foreach ($pages as $page) {
-            ContentPage::firstOrCreate(
-                ['slug' => $page['slug']],
-                [...$page, 'is_published' => true],
-            );
-        }
     }
 }

@@ -77,6 +77,11 @@ return [
         'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),      // webhook GET handshake
         'default_language' => env('WHATSAPP_DEFAULT_LANGUAGE', 'ar'),
         'admin_recipients' => env('WHATSAPP_ADMIN_RECIPIENTS'),
+        // Approximate cost per MARKETING template message, for the campaign
+        // send-cost estimate. Meta prices marketing messages per country; set
+        // this to Meta's current Saudi Arabia marketing rate. Default ≈ $0.037.
+        'marketing_rate' => (float) env('WHATSAPP_MARKETING_RATE', 0.14),
+        'rate_currency' => env('WHATSAPP_RATE_CURRENCY', 'SAR'),
     ],
 
 ];

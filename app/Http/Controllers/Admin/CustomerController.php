@@ -88,10 +88,28 @@ class CustomerController extends Controller
     {
         abort_if(in_array($customer->role, ['admin', 'editor'], true), 404);
 
+        return Inertia::render('admin/customers/show', $this->detailData($customer));
+    }
+
+    /** JSON detail for the in-list customer modal (same payload as the show page). */
+    public function detail(User $customer)
+    {
+        abort_if(in_array($customer->role, ['admin', 'editor'], true), 404);
+
+        return response()->json($this->detailData($customer));
+    }
+
+    /**
+     * Profile + loyalty + recent orders for one customer.
+     *
+     * @return array<string, mixed>
+     */
+    private function detailData(User $customer): array
+    {
         $count = (int) $customer->confirmed_purchases_count;
         $milestone = LoyaltyService::PURCHASE_MILESTONE;
 
-        return Inertia::render('admin/customers/show', [
+        return [
             'customer' => [
                 'id' => $customer->id,
                 'name' => $customer->name,
@@ -129,6 +147,6 @@ class CustomerController extends Controller
                     'total' => (float) $o->total,
                     'created_at' => $o->created_at?->toDateString(),
                 ]),
-        ]);
+        ];
     }
 }

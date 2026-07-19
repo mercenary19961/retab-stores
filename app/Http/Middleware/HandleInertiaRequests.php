@@ -45,8 +45,16 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                // Editors: their resolved section→action grants (drives admin nav
+                // visibility + client-side gating). Null for admins = full access.
+                'permissions' => $request->user()?->isEditor() ? $request->user()->resolvedPermissions() : null,
             ],
             'locale' => session('locale', 'ar'),
+            // Global toggle for the admin "How it works" attention beam (staff only;
+            // per-session dismissal is client-side). Default on when unset.
+            'helpPulse' => fn () => $request->user()?->isStaff()
+                ? \App\Models\Setting::get('admin_help_pulse', '1') !== '0'
+                : null,
             // Null while unset → the Turnstile widget renders nothing (dev).
             'turnstileSiteKey' => config('services.turnstile.site_key'),
             // Storefront nav tree (parents + active children) for the navbar.
@@ -76,11 +84,50 @@ class HandleInertiaRequests extends Middleware
             // FOOTER_DEFAULTS when a key is unset). Closure → resolved only for
             // Inertia page responses; one batched query.
             'footer' => fn () => $this->footerSettings(),
+            // Per-user saved table column widths (resizable admin tables).
+            'tablePrefs' => fn () => $request->user()?->isStaff()
+                ? (object) ($request->user()->ui_preferences['tableWidths'] ?? [])
+                : null,
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+                // Structured revert-conflict (fields + the blocking change to
+                // undo first) → rendered as a banner with a "take me to it" link.
+                'revertConflict' => $request->session()->get('revertConflict'),
             ],
+            // Flashed "undo last save" pointer → the immediate toast after a
+            // tracked admin save (staff only; the persistent per-section button
+            // is passed as a page prop instead).
+            'undo' => fn () => $request->user()?->isStaff() ? $request->session()->get('undo') : null,
+            // Admin notification bell (staff only): unread count + latest items.
+            // Structured `data` is rendered client-side so it follows the admin
+            // language toggle. Closure → resolved only for Inertia page responses.
+            'notifications' => fn () => $request->user()?->isStaff()
+                ? $this->adminNotifications($request->user())
+                : null,
         ]);
+    }
+
+    /**
+     * Recent admin-bell notifications for a staff user: unread count + the latest
+     * 10 rows (structured `data` payloads). Two cheap indexed queries.
+     *
+     * @return array{unread:int, items:list<array<string, mixed>>}
+     */
+    private function adminNotifications(\App\Models\User $user): array
+    {
+        $items = $user->notifications()->latest()->limit(10)->get()
+            ->map(fn ($n) => [
+                'id' => $n->id,
+                'read' => $n->read_at !== null,
+                'created_at' => $n->created_at?->toIso8601String(),
+                'data' => $n->data,
+            ])->all();
+
+        return [
+            'unread' => $user->unreadNotifications()->count(),
+            'items' => $items,
+        ];
     }
 
     /**

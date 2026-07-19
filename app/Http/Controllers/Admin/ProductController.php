@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
@@ -63,6 +64,7 @@ class ProductController extends Controller
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
             ],
             'categories' => $this->categoryOptions(),
+            'undoMeta' => session('undo:products'),
         ]);
     }
 
@@ -148,8 +150,25 @@ class ProductController extends Controller
     {
         $data = $this->validateProduct($request);
 
-        DB::transaction(function () use ($data, $changeLog) {
+        // Every product must ship with at least one image — collected in the
+        // create form and sent with it. First image becomes the primary.
+        $request->validate([
+            'images' => ['required', 'array', 'min:1', 'max:8'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+        ], ['images.required' => __('messages.admin.product_needs_image')]);
+        $images = array_values($request->file('images'));
+
+        DB::transaction(function () use ($data, $images, $changeLog) {
             $product = Product::create($data);
+
+            foreach ($images as $i => $file) {
+                $product->images()->create([
+                    'path' => Media::storeImage($file, "products/{$product->id}"),
+                    'sort_order' => $i + 1,
+                    'is_primary' => $i === 0,
+                ]);
+            }
+
             $changeLog->logCreated($product, $product->name_ar);
         });
 
@@ -158,39 +177,62 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load('images');
-
         return Inertia::render('admin/products/form', [
-            'product' => [
-                'id' => $product->id,
-                'category_id' => $product->category_id,
-                'name_ar' => $product->name_ar,
-                'name_en' => $product->name_en,
-                'slug' => $product->slug,
-                'description_ar' => $product->description_ar,
-                'description_en' => $product->description_en,
-                'price' => (float) $product->price,
-                'sale_price' => $product->sale_price !== null ? (float) $product->sale_price : null,
-                'sku' => $product->sku,
-                'smacc_sku' => $product->smacc_sku,
-                'barcode' => $product->barcode,
-                'stock' => $product->stock,
-                'low_stock_threshold' => $product->low_stock_threshold,
-                'is_active' => $product->is_active,
-                'is_featured' => $product->is_featured,
-                'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
-                    'id' => $img->id,
-                    'url' => Media::url($img->path),
-                    'is_primary' => $img->is_primary,
-                ]),
-            ],
+            'product' => $this->productData($product),
             'categories' => $this->categoryOptions(),
         ]);
+    }
+
+    /** JSON product payload for the in-list edit modal (same shape as the edit page). */
+    public function detail(Product $product)
+    {
+        return response()->json(['product' => $this->productData($product)]);
+    }
+
+    /**
+     * Full editable product payload (fields + images), shared by the edit page
+     * and the in-list modal.
+     *
+     * @return array<string, mixed>
+     */
+    private function productData(Product $product): array
+    {
+        $product->load('images');
+
+        return [
+            'id' => $product->id,
+            'category_id' => $product->category_id,
+            'name_ar' => $product->name_ar,
+            'name_en' => $product->name_en,
+            'slug' => $product->slug,
+            'description_ar' => $product->description_ar,
+            'description_en' => $product->description_en,
+            'price' => (float) $product->price,
+            'sale_price' => $product->sale_price !== null ? (float) $product->sale_price : null,
+            'sku' => $product->sku,
+            'smacc_sku' => $product->smacc_sku,
+            'barcode' => $product->barcode,
+            'stock' => $product->stock,
+            'low_stock_threshold' => $product->low_stock_threshold,
+            'is_active' => $product->is_active,
+            'is_featured' => $product->is_featured,
+            'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
+                'id' => $img->id,
+                'url' => Media::url($img->path),
+                'is_primary' => $img->is_primary,
+            ]),
+        ];
     }
 
     public function update(Request $request, Product $product, ChangeLogService $changeLog)
     {
         $data = $this->validateProduct($request, $product);
+
+        // A product can't be saved with no images (they're managed separately, so
+        // check the current state rather than the request).
+        if (! $product->images()->exists()) {
+            throw ValidationException::withMessages(['images' => __('messages.admin.product_needs_image')]);
+        }
 
         DB::transaction(function () use ($product, $data, $changeLog) {
             $before = $product->attributesToArray();

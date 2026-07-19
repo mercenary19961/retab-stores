@@ -1,13 +1,17 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 const EXAMPLE = `Mohammad Ahmad | 5 | Great variety of Saudi dates, very fresh.
 Sarah Al-Otaibi | 5 | Beautiful packaging and fast delivery.
 خالد الزهراني | 4 | تمور فاخرة وخدمة ممتازة، أنصح بها.`;
 
 export default function ClientReviewsImport() {
-    const { data, setData, post, processing, errors } = useForm({ data: '' });
+    const { t } = useAdminT();
+    const { data, setData, post, processing, errors, isDirty } = useForm({ data: '' });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -15,26 +19,28 @@ export default function ClientReviewsImport() {
     };
 
     return (
-        <AdminLayout title="Import reviews">
-            <Head title="Import reviews" />
+        <AdminLayout title={t('admin.reviews.import.title')}>
+            <Head title={t('admin.reviews.import.title')} />
 
             <div className="mb-4">
-                <Link href="/admin/client-reviews" className="text-sm text-neutral-500 underline">← Client reviews</Link>
+                <Link href="/admin/client-reviews" className="inline-flex items-center gap-1 text-sm text-neutral-500 underline">
+                    <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('admin.reviews.title')}
+                </Link>
             </div>
 
             <form onSubmit={submit} className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                 <div className="rounded-md bg-neutral-50 p-4 text-sm text-neutral-600 dark:bg-neutral-950 dark:text-neutral-300">
-                    <p className="font-semibold">Paste one review per line, in the format:</p>
-                    <p className="mt-1 font-mono text-xs">Author | Rating (1–5) | Review text</p>
+                    <p className="font-semibold">{t('admin.reviews.import.formatIntro')}</p>
+                    <p className="mt-1 font-mono text-xs">{t('admin.reviews.import.formatLine')}</p>
                     <ul className="mt-2 list-inside list-disc text-xs text-neutral-500">
-                        <li>Rating defaults to 5 if left blank; language (Arabic / English) is detected automatically.</li>
-                        <li>Imported reviews are added as <strong>active</strong> (in the homepage pool). Blank lines are skipped.</li>
-                        <li>Avoid the <code>|</code> character inside the review text.</li>
+                        <li>{t('admin.reviews.import.note1')}</li>
+                        <li>{t('admin.reviews.import.note2')}</li>
+                        <li>{t('admin.reviews.import.note3')}</li>
                     </ul>
                 </div>
 
                 <label className="block">
-                    <span className="text-sm text-neutral-500">Reviews *</span>
+                    <span className="text-sm text-neutral-500">{t('admin.reviews.import.reviewsLabel')}</span>
                     <textarea
                         dir="auto"
                         rows={14}
@@ -46,13 +52,9 @@ export default function ClientReviewsImport() {
                     {errors.data && <span className="block text-xs text-red-500">{errors.data}</span>}
                 </label>
 
-                <button
-                    type="submit"
-                    disabled={processing}
-                    className="rounded-lg bg-neutral-900 px-5 py-2 text-sm font-semibold text-white hover:bg-neutral-700 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-                >
-                    Import reviews
-                </button>
+                <Button type="submit" variant="primary" icon={Upload} disabled={processing || !isDirty}>
+                    {t('admin.reviews.import.submit')}
+                </Button>
             </form>
         </AdminLayout>
     );

@@ -10,6 +10,8 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -31,7 +33,7 @@ class ChangeLogTest extends TestCase
     {
         $category = Category::firstOrCreate(['slug' => 'dates'], ['name_ar' => 'تمور', 'is_active' => true]);
 
-        return Product::create(array_merge([
+        $product = Product::create(array_merge([
             'category_id' => $category->id,
             'name_ar' => 'منتج',
             'slug' => 'p-' . uniqid(),
@@ -39,6 +41,11 @@ class ChangeLogTest extends TestCase
             'sku' => 'SKU-' . uniqid(),
             'stock' => 10,
         ], $overrides));
+
+        // Products must have an image to be updatable (see ProductController::update).
+        $product->images()->create(['path' => 'products/seed.jpg', 'sort_order' => 1, 'is_primary' => true]);
+
+        return $product;
     }
 
     /** Full valid PUT payload mirroring the product's current state. */
@@ -123,7 +130,7 @@ class ChangeLogTest extends TestCase
 
         $this->actingAs($staff)
             ->post("/admin/change-log/{$firstLog->id}/revert")
-            ->assertSessionHas('error');
+            ->assertSessionHas('revertConflict');
 
         $this->assertSame(7, $p->fresh()->stock);            // nothing written
         $this->assertNull($firstLog->fresh()->reverted_at);  // not stamped as done
@@ -167,6 +174,7 @@ class ChangeLogTest extends TestCase
     {
         $staff = $this->staff();
         $category = Category::firstOrCreate(['slug' => 'dates'], ['name_ar' => 'تمور', 'is_active' => true]);
+        Storage::fake('public');
 
         $this->actingAs($staff)->post('/admin/products', [
             'category_id' => $category->id,
@@ -174,6 +182,7 @@ class ChangeLogTest extends TestCase
             'price' => 30,
             'sku' => 'SKU-NEW',
             'stock' => 5,
+            'images' => [UploadedFile::fake()->image('a.jpg')],
         ])->assertRedirect();
 
         $log = $this->latestLog();
@@ -221,27 +230,34 @@ class ChangeLogTest extends TestCase
         $mirror = $this->latestLog();
         $this->actingAs($staff)->put('/admin/settings', [CheckoutService::SHIPPING_FEE_KEY => 40]);
 
-        $this->actingAs($staff)->post("/admin/change-log/{$mirror->id}/revert")->assertSessionHas('error');
+        $this->actingAs($staff)->post("/admin/change-log/{$mirror->id}/revert")->assertSessionHas('revertConflict');
         $this->assertSame('40', (string) Setting::get(CheckoutService::SHIPPING_FEE_KEY));
     }
 
-    public function test_content_page_creation_is_audit_only(): void
+    public function test_content_page_update_is_logged_and_revertable(): void
     {
         $staff = $this->staff();
-
-        $this->actingAs($staff)->post('/admin/content-pages', [
+        $page = ContentPage::create([
             'slug' => 'about',
             'title_ar' => 'من نحن',
             'body_ar' => 'نص',
             'is_published' => true,
+        ]);
+
+        $this->actingAs($staff)->put("/admin/content-pages/{$page->id}", [
+            'slug' => 'about',
+            'title_ar' => 'من نحن (محدّث)',
+            'body_ar' => 'نص جديد',
+            'is_published' => true,
         ])->assertRedirect();
 
         $log = $this->latestLog();
-        $this->assertSame(ActivityLog::ACTION_CREATED, $log->action);
+        $this->assertSame(ActivityLog::ACTION_UPDATED, $log->action);
         $this->assertSame(ContentPage::class, $log->subject_type);
 
-        $this->actingAs($staff)->post("/admin/change-log/{$log->id}/revert")->assertSessionHas('error');
-        $this->assertDatabaseHas('content_pages', ['slug' => 'about']);
+        // Content-page updates are revertable → restores the previous title.
+        $this->actingAs($staff)->post("/admin/change-log/{$log->id}/revert")->assertSessionHas('success');
+        $this->assertSame('من نحن', $page->fresh()->title_ar);
     }
 
     public function test_customers_cannot_access_the_change_log(): void
@@ -267,5 +283,79 @@ class ChangeLogTest extends TestCase
                 ->has('logs.data', 1)
                 ->where('logs.data.0.action', 'updated')
                 ->where('logs.data.0.revertable', true));
+    }
+
+    public function test_log_row_carries_go_to_item_data(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product();
+
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 99]));
+
+        $this->actingAs($staff)->get('/admin/change-log')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('logs.data.0.edit_url', "/admin/products/{$product->id}/edit")
+                ->where('logs.data.0.fields', fn ($fields) => collect($fields)->contains('price')));
+    }
+
+    public function test_conflict_pins_the_blocking_change(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product(['price' => 50]);
+
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 60]));
+        $firstEdit = $this->latestLog();
+
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product->fresh(), ['price' => 75]));
+        $laterEdit = $this->latestLog();
+
+        // Reverting the older edit conflicts (price was changed again) and pins
+        // the later edit as the blocker to undo first.
+        $this->actingAs($staff)->post("/admin/change-log/{$firstEdit->id}/revert")
+            ->assertSessionHas('revertConflict', fn ($c) => $c['blockerId'] === $laterEdit->id && $c['fields'] !== []);
+
+        $this->assertSame('75.00', $product->fresh()->price); // nothing was clobbered
+    }
+
+    public function test_long_conflict_chain_redirects_to_direct_edit(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product(['price' => 10]);
+
+        // The old edit we'll try to undo, then 6 more edits to price (chain > limit 5).
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 20]));
+        $oldEdit = $this->latestLog();
+
+        foreach (range(3, 8) as $i) {
+            $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product->fresh(), ['price' => $i * 10]));
+        }
+
+        // Too many later edits to guide through — no blocker link, offer direct edit.
+        $this->actingAs($staff)->post("/admin/change-log/{$oldEdit->id}/revert")
+            ->assertSessionHas('revertConflict', fn ($c) => $c['blockerId'] === null
+                && $c['chainDepth'] >= 6
+                && $c['editUrl'] === "/admin/products/{$product->id}/edit");
+    }
+
+    public function test_highlight_jumps_to_the_entry_page(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product();
+
+        // 22 update entries → the oldest lands on page 2 (20 per page).
+        $firstLogId = null;
+        for ($i = 1; $i <= 22; $i++) {
+            $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['name_ar' => "الاسم {$i}"]));
+            if ($i === 1) {
+                $firstLogId = $this->latestLog()->id;
+            }
+        }
+
+        $this->actingAs($staff)->get("/admin/change-log?highlight={$firstLogId}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('highlight', $firstLogId)
+                ->where('logs.current_page', 2)
+                ->where('logs.data', fn ($data) => collect($data)->pluck('id')->contains($firstLogId)));
     }
 }

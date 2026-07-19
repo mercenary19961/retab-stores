@@ -37,7 +37,7 @@ use Throwable;
 class ChangeLogService
 {
     /** Metadata never snapshotted, diffed, or written back. */
-    private const SKIP_KEYS = ['id', 'created_at', 'updated_at', 'deleted_at'];
+    private const SKIP_KEYS = ['id', 'created_at', 'updated_at', 'deleted_at', 'updated_by'];
 
     /** subject_type => actions that may be reverted. Everything else is audit-only. */
     private const REVERTABLE = [
@@ -59,17 +59,28 @@ class ChangeLogService
         ActivityLog::SUBJECT_SETTINGS => 'Settings',
     ];
 
+    /** subject_type => stable section key (session pointer + dismiss route + page prop). */
+    public const SECTION_KEYS = [
+        Product::class => 'products',
+        ContentPage::class => 'content_pages',
+        ActivityLog::SUBJECT_SETTINGS => 'settings',
+    ];
+
     // ── Logging ─────────────────────────────────────────────────────────────
 
     public function logCreated(Model $subject, ?string $label = null): ActivityLog
     {
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_CREATED,
             'subject_type' => $subject::class,
             'subject_id' => $subject->getKey(),
             'new_data' => $this->snapshot($subject->attributesToArray()),
             'label' => $label,
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     /**
@@ -86,7 +97,7 @@ class ChangeLogService
 
         $after = $subject->attributesToArray();
 
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_UPDATED,
             'subject_type' => $subject::class,
             'subject_id' => $subject->getKey(),
@@ -95,29 +106,41 @@ class ChangeLogService
             'label' => $label,
             'reverts_log_id' => $revertsLogId,
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     /** Log a delete (full snapshot in old_data — that's what a restore recreates context from). */
     public function logDeleted(Model $subject, ?string $label = null): ActivityLog
     {
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_DELETED,
             'subject_type' => $subject::class,
             'subject_id' => $subject->getKey(),
             'old_data' => $this->snapshot($subject->attributesToArray()),
             'label' => $label,
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     public function logRestored(Model $subject, ?string $label = null): ActivityLog
     {
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_RESTORED,
             'subject_type' => $subject::class,
             'subject_id' => $subject->getKey(),
             'new_data' => $this->snapshot($subject->attributesToArray()),
             'label' => $label,
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     /**
@@ -130,13 +153,17 @@ class ChangeLogService
             return null;
         }
 
-        return $this->record([
+        $log = $this->record([
             'action' => ActivityLog::ACTION_UPDATED,
             'subject_type' => ActivityLog::SUBJECT_SETTINGS,
             'old_data' => $old,
             'new_data' => $new,
             'label' => 'Settings',
         ]);
+
+        $this->flagUndo($log);
+
+        return $log;
     }
 
     // ── Revert ──────────────────────────────────────────────────────────────
@@ -219,13 +246,15 @@ class ChangeLogService
         $new = $log->new_data ?? [];
 
         $conflicts = [];
+        $conflictKeys = [];
         foreach (array_keys($old) as $key) {
             if ($this->normalize($current[$key] ?? null) !== $this->normalize($new[$key] ?? null)) {
                 $conflicts[] = $this->humanize($key);
+                $conflictKeys[] = $key;
             }
         }
         if ($conflicts !== []) {
-            return RevertResult::conflict($conflicts);
+            return $this->conflict($log, $conflicts, $conflictKeys);
         }
 
         return DB::transaction(function () use ($log, $subject, $old) {
@@ -298,13 +327,15 @@ class ChangeLogService
         }
 
         $conflicts = [];
+        $conflictKeys = [];
         foreach (array_keys($old) as $key) {
             if ($this->normalize(Setting::get($key)) !== $this->normalize($new[$key] ?? null)) {
                 $conflicts[] = $this->humanize($key);
+                $conflictKeys[] = $key;
             }
         }
         if ($conflicts !== []) {
-            return RevertResult::conflict($conflicts);
+            return $this->conflict($log, $conflicts, $conflictKeys);
         }
 
         return DB::transaction(function () use ($log, $old, $new) {
@@ -357,6 +388,111 @@ class ChangeLogService
     {
         return self::SUBJECT_LABELS[$log->subject_type]
             ?? ($log->subject_type ? class_basename($log->subject_type) : 'System');
+    }
+
+    /** Stable machine key for the section, or null if the subject isn't tracked per-section. */
+    public function sectionKey(ActivityLog $log): ?string
+    {
+        return self::SECTION_KEYS[$log->subject_type] ?? null;
+    }
+
+    /**
+     * How many later un-reverted edits to the same field we'll guide the admin
+     * through, newest-first. Beyond this, cascading reverts stops being sensible
+     * and we point them at editing the value directly instead.
+     */
+    private const REVERT_CHAIN_LIMIT = 5;
+
+    /**
+     * Build a conflict result. Measures the chain: every un-reverted change after
+     * this entry that touched a conflicting field. If the chain is short we pin
+     * the immediate blocker (the "take me to it" link, undo newest-first); if it's
+     * long we drop the link and offer a direct-edit URL instead.
+     *
+     * @param  list<string>  $conflicts  humanized labels
+     * @param  list<string>  $keys       raw field keys
+     */
+    private function conflict(ActivityLog $log, array $conflicts, array $keys): RevertResult
+    {
+        $laterMatching = ActivityLog::query()
+            ->where('subject_type', $log->subject_type)
+            ->when(
+                $log->subject_id !== null,
+                fn ($q) => $q->where('subject_id', $log->subject_id),
+                fn ($q) => $q->whereNull('subject_id'),
+            )
+            ->where('id', '>', $log->id)
+            ->whereNull('reverted_at')
+            ->orderByDesc('id')
+            ->get()
+            ->filter(fn (ActivityLog $candidate) => array_intersect(array_keys($candidate->new_data ?? []), $keys) !== [])
+            ->values();
+
+        $chainDepth = $laterMatching->count();
+        $blocker = $chainDepth > 0 && $chainDepth <= self::REVERT_CHAIN_LIMIT ? $laterMatching->first() : null;
+
+        return RevertResult::conflict(
+            $conflicts,
+            $blocker?->id,
+            $blocker ? ($blocker->label ?? $this->sectionLabel($blocker)) : null,
+            $chainDepth,
+            $this->editUrl($log),
+        );
+    }
+
+    /** Where to edit the subject directly (the change-log "Go to item" link + long-chain fallback). */
+    public function editUrl(ActivityLog $log): ?string
+    {
+        return match ($log->subject_type) {
+            Product::class => $log->subject_id ? "/admin/products/{$log->subject_id}/edit" : null,
+            ContentPage::class => $log->subject_id ? "/admin/content-pages/{$log->subject_id}/edit" : null,
+            ActivityLog::SUBJECT_SETTINGS => '/admin/settings',
+            default => null,
+        };
+    }
+
+    /** Raw field keys this entry changed (for the ?highlight= param on the edit page). */
+    public function changedKeys(ActivityLog $log): array
+    {
+        $keys = array_unique([...array_keys($log->old_data ?? []), ...array_keys($log->new_data ?? [])]);
+
+        return array_values(array_diff($keys, self::SKIP_KEYS));
+    }
+
+    /** Clear a section's "undo last save" pointer (after revert, or a manual dismiss). */
+    public function clearUndo(string $section): void
+    {
+        session()->forget("undo:{$section}");
+    }
+
+    /**
+     * Point the "undo last save" affordance at this change: a flashed pointer for
+     * the immediate toast, and a persistent per-section pointer for the button
+     * that survives navigation until the change is reverted or dismissed. Only
+     * fires for original, revertable changes (never for revert mirror entries).
+     */
+    private function flagUndo(?ActivityLog $log): void
+    {
+        if ($log === null || $log->reverts_log_id !== null || ! $this->revertable($log)) {
+            return;
+        }
+
+        $key = $this->sectionKey($log);
+        if ($key === null) {
+            return;
+        }
+
+        $payload = [
+            'id' => $log->id,
+            'section' => $key,
+            'action' => $log->action,
+            'label' => $log->label ?? $this->sectionLabel($log),
+            'changes' => $this->diff($log),
+            'at' => optional($log->created_at)->toIso8601String(),
+        ];
+
+        session()->flash('undo', $payload);       // one request → toast
+        session()->put("undo:{$key}", $payload);   // persists → per-section button
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────

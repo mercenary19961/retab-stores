@@ -1,5 +1,9 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Check, ExternalLink, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
+import Button from '@/components/admin/button';
+import { useAdminT } from '@/i18n/use-admin-t';
 
 interface FieldChange {
     label: string;
@@ -19,6 +23,8 @@ interface LogRow {
     reverted_at: string | null;
     reverted_by: string | null;
     reverts_log_id: number | null;
+    edit_url: string | null;
+    fields: string[];
 }
 
 interface Paginated {
@@ -34,35 +40,54 @@ const ACTION_STYLES: Record<string, string> = {
     restored: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
 };
 
-export default function ChangeLogIndex({ logs }: { logs: Paginated }) {
+export default function ChangeLogIndex({ logs, highlight = null }: { logs: Paginated; highlight?: number | null }) {
+    const { t } = useAdminT();
+    // Scroll to and briefly flag the entry linked from a conflict banner.
+    const [flagged, setFlagged] = useState<number | null>(highlight);
+    useEffect(() => {
+        if (!highlight) return;
+        setFlagged(highlight);
+        document.getElementById(`log-${highlight}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const timer = setTimeout(() => setFlagged(null), 3500);
+        return () => clearTimeout(timer);
+    }, [highlight]);
+
     const revert = (row: LogRow) => {
-        if (!window.confirm(`Revert this ${row.section.toLowerCase()} change? A new entry will record the revert.`)) return;
+        if (!window.confirm(t('admin.changeLog.revertConfirm'))) return;
         router.post(`/admin/change-log/${row.id}/revert`, {}, { preserveScroll: true });
     };
 
     return (
-        <AdminLayout title="Change Log">
-            <Head title="Change Log" />
+        <AdminLayout title={t('admin.changeLog.title')}>
+            <Head title={t('admin.changeLog.title')} />
 
             <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 {logs.data.length === 0 ? (
-                    <p className="p-6 text-sm text-neutral-400">No tracked changes yet.</p>
+                    <p className="p-6 text-sm text-neutral-400">{t('admin.changeLog.empty')}</p>
                 ) : (
                     <table className="w-full text-sm">
-                        <thead className="text-left text-neutral-500">
+                        <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
                             <tr className="border-b border-neutral-100 dark:border-neutral-800">
-                                <th className="px-4 py-3 font-medium">When</th>
-                                <th className="px-4 py-3 font-medium">Section</th>
-                                <th className="px-4 py-3 font-medium">Action</th>
-                                <th className="px-4 py-3 font-medium">Item</th>
-                                <th className="px-4 py-3 font-medium">Changes</th>
-                                <th className="px-4 py-3 font-medium">By</th>
+                                <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.when')}</th>
+                                <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.section')}</th>
+                                <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.action')}</th>
+                                <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.item')}</th>
+                                <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.changes')}</th>
+                                <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.by')}</th>
                                 <th className="px-4 py-3"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {logs.data.map((row) => (
-                                <tr key={row.id} className="border-b border-neutral-100 align-top last:border-b-0 dark:border-neutral-800">
+                                <tr
+                                    key={row.id}
+                                    id={`log-${row.id}`}
+                                    className={`border-b border-neutral-100 align-top transition-colors duration-1000 last:border-b-0 dark:border-neutral-800 ${
+                                        flagged === row.id
+                                            ? 'bg-amber-500/15 ring-2 ring-inset ring-amber-500/60'
+                                            : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30'
+                                    }`}
+                                >
                                     <td className="whitespace-nowrap px-4 py-3 text-neutral-500">{row.created_at}</td>
                                     <td className="whitespace-nowrap px-4 py-3">{row.section}</td>
                                     <td className="whitespace-nowrap px-4 py-3">
@@ -71,12 +96,15 @@ export default function ChangeLogIndex({ logs }: { logs: Paginated }) {
                                                 ACTION_STYLES[row.action] ?? 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
                                             }`}
                                         >
-                                            {row.action.replace(/_/g, ' ')}
+                                            {t(`admin.changeLog.actions.${row.action}`, { defaultValue: row.action.replace(/_/g, ' ') })}
                                         </span>
                                         {row.reverts_log_id !== null && (
-                                            <span className="ms-1 rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                                                revert of #{row.reverts_log_id}
-                                            </span>
+                                            <Link
+                                                href={`/admin/change-log?highlight=${row.reverts_log_id}`}
+                                                className="ms-1 rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
+                                            >
+                                                {t('admin.changeLog.revertOf', { id: row.reverts_log_id })}
+                                            </Link>
                                         )}
                                     </td>
                                     <td className="max-w-40 truncate px-4 py-3">{row.label ?? '—'}</td>
@@ -86,30 +114,42 @@ export default function ChangeLogIndex({ logs }: { logs: Paginated }) {
                                         ) : (
                                             <ul className="space-y-0.5">
                                                 {row.changes.map((c, i) => (
-                                                    <li key={i} className="text-xs">
-                                                        <span className="font-medium">{c.label}:</span>{' '}
-                                                        <span className="text-neutral-400 line-through">{c.old}</span>{' '}
-                                                        <span className="text-neutral-700 dark:text-neutral-200">{c.new}</span>
+                                                    <li key={i} className="text-xs" dir="auto">
+                                                        <span className="text-neutral-500">{c.label}: </span>
+                                                        <span className="text-red-500/70 line-through dark:text-red-400/70">{c.old || '—'}</span>
+                                                        <span className="mx-1 text-neutral-400">→</span>
+                                                        <span className="font-medium text-green-600 dark:text-green-400">{c.new || '—'}</span>
                                                     </li>
                                                 ))}
                                             </ul>
                                         )}
                                     </td>
                                     <td className="whitespace-nowrap px-4 py-3">{row.user ?? '—'}</td>
-                                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                                        {row.reverted_at ? (
-                                            <span className="text-xs text-neutral-400" title={`Reverted by ${row.reverted_by ?? 'unknown'} at ${row.reverted_at}`}>
-                                                reverted
-                                            </span>
-                                        ) : row.revertable ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => revert(row)}
-                                                className="text-red-600 hover:underline dark:text-red-400"
-                                            >
-                                                Revert
-                                            </button>
-                                        ) : null}
+                                    <td className="whitespace-nowrap px-4 py-3">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {row.edit_url && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="secondary"
+                                                    icon={ExternalLink}
+                                                    href={`${row.edit_url}${row.fields.length ? `?highlight=${row.fields.join(',')}` : ''}`}
+                                                >
+                                                    {t('admin.changeLog.open')}
+                                                </Button>
+                                            )}
+                                            {row.reverted_at ? (
+                                                <span
+                                                    className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                                                    title={t('admin.changeLog.revertedTooltip', { user: row.reverted_by ?? '—', at: row.reverted_at })}
+                                                >
+                                                    <Check className="h-3 w-3" /> {t('admin.changeLog.reverted')}
+                                                </span>
+                                            ) : row.revertable ? (
+                                                <Button size="sm" variant="danger" icon={RotateCcw} onClick={() => revert(row)}>
+                                                    {t('admin.changeLog.revert')}
+                                                </Button>
+                                            ) : null}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

@@ -25,6 +25,8 @@ class Product extends Model
         'short_description_en',
         'price',
         'sale_price',
+        'sale_starts_at',
+        'sale_ends_at',
         'sku',
         'smacc_sku',
         'barcode',
@@ -37,6 +39,8 @@ class Product extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'sale_price' => 'decimal:2',
+        'sale_starts_at' => 'datetime',
+        'sale_ends_at' => 'datetime',
         'stock' => 'integer',
         'low_stock_threshold' => 'integer',
         'is_active' => 'boolean',
@@ -82,7 +86,35 @@ class Product extends Model
      */
     public function isOnSale(): bool
     {
-        return $this->sale_price !== null && $this->sale_price < $this->price;
+        if ($this->sale_price === null || $this->sale_price >= $this->price) {
+            return false;
+        }
+
+        // A null window bound means "no bound": active immediately / indefinitely.
+        if ($this->sale_starts_at && $this->sale_starts_at->isFuture()) {
+            return false;
+        }
+        if ($this->sale_ends_at && $this->sale_ends_at->isPast()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Sale lifecycle label for the admin (a sale_price is set, but the window may
+     * be pending or over): scheduled / expired / active. Assumes sale_price set.
+     */
+    public function saleStatus(): string
+    {
+        if ($this->sale_starts_at && $this->sale_starts_at->isFuture()) {
+            return 'scheduled';
+        }
+        if ($this->sale_ends_at && $this->sale_ends_at->isPast()) {
+            return 'expired';
+        }
+
+        return 'active';
     }
 
     /**

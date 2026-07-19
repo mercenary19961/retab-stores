@@ -7,14 +7,51 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Arabic-first typography: under RTL, Tajawal leads the sans stack. Tailwind
+ * Thmanyah Sans — the brand typeface (self-hosted, licensed WOFF2). Only the
+ * weights the UI actually uses are declared; each is fingerprinted by Vite
+ * (hashed filename) on build. `font-display: swap` keeps text visible in the
+ * fallback while the file loads, so the font never blocks first paint.
+ * NB: the licence forbids modifying/subsetting the font, so the files ship
+ * as-is (~78 KB each) — do not run them through a subsetter.
+ */
+@font-face {
+    font-family: 'Thmanyah Sans';
+    src: url('../fonts/thmanyahsans-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Thmanyah Sans';
+    src: url('../fonts/thmanyahsans-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Thmanyah Sans';
+    src: url('../fonts/thmanyahsans-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Thmanyah Sans';
+    src: url('../fonts/thmanyahsans-Black.woff2') format('woff2');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/*
+ * Arabic-first typography: under RTL, Thmanyah Sans leads the sans stack. Tailwind
  * v4's `font-sans` utility resolves var(--font-sans), so overriding the token
  * here cascades into every font-sans element ([dir] attr set from the session
  * locale in app.blade.php). Latin text inside RTL pages falls back cleanly.
  */
 html[dir='rtl'] {
     --font-sans:
-        'Tajawal', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Thmanyah Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 @theme {
@@ -26,8 +63,8 @@ html[dir='rtl'] {
     --color-brand-teal: #1b4e53;
     --color-brand-cream: #f5f1ea;
 
-    /* Brand heading font — Tajawal (heavy Arabic sans). Utility: font-heading. */
-    --font-heading: 'Tajawal', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    /* Brand heading font — Thmanyah Sans (Bold/Black). Utility: font-heading. */
+    --font-heading: 'Thmanyah Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -106,6 +143,77 @@ html[dir='rtl'] .cta-shimmer {
         background: none;
         color: #fff;
         -webkit-text-fill-color: #fff;
+    }
+}
+
+/*
+ * Admin scrollbars — brand-gold thumb across the panel (table x-scroll, the
+ * main content area, the sidebar nav). Firefox uses scrollbar-color (inherits
+ * to descendants); WebKit needs the ::-webkit-scrollbar pseudo per element.
+ */
+.admin-shell {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(175 144 86 / 0.55) transparent;
+}
+.admin-shell ::-webkit-scrollbar,
+.admin-shell::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+.admin-shell ::-webkit-scrollbar-track,
+.admin-shell::-webkit-scrollbar-track {
+    background: transparent;
+}
+.admin-shell ::-webkit-scrollbar-thumb,
+.admin-shell::-webkit-scrollbar-thumb {
+    background-color: rgb(175 144 86 / 0.55);
+    border-radius: 9999px;
+}
+.admin-shell ::-webkit-scrollbar-thumb:hover,
+.admin-shell::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(175 144 86 / 0.85);
+}
+
+/*
+ * Admin field highlight — a fading amber ring pulsed on a form field when the
+ * admin arrives from a change-log "Go to item" link (see use-highlight-fields).
+ */
+.field-highlight {
+    border-radius: 0.5rem;
+    animation: field-highlight-pulse 3.5s ease-out;
+}
+@keyframes field-highlight-pulse {
+    0%,
+    55% {
+        box-shadow: 0 0 0 3px rgb(245 158 11 / 0.6);
+    }
+    100% {
+        box-shadow: 0 0 0 3px rgb(245 158 11 / 0);
+    }
+}
+
+/*
+ * "How it works" attention beam — a slow gold glow on the help button until the
+ * user opens the drawer (stops for the session) or disables it in Settings.
+ * brand-gold = rgb(175 144 86); the resting border is neutral-700.
+ */
+.help-beam {
+    animation: help-beam-pulse 2.6s ease-in-out infinite;
+}
+@keyframes help-beam-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgb(175 144 86 / 0);
+        border-color: rgb(64 64 64);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgb(175 144 86 / 0.35);
+        border-color: rgb(175 144 86 / 0.9);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .help-beam {
+        animation: none;
     }
 }
 

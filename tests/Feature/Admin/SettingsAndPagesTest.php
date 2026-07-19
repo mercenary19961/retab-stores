@@ -76,22 +76,20 @@ class SettingsAndPagesTest extends TestCase
         $this->get('/pages/draft')->assertNotFound();
     }
 
-    public function test_admin_creates_and_updates_a_page(): void
+    public function test_admin_updates_a_page(): void
     {
-        $admin = $this->admin();
-
-        $this->actingAs($admin)->post('/admin/content-pages', [
+        // Pages are edit-only (the three baseline pages ship seeded; no create route).
+        $page = ContentPage::create([
             'slug' => 'about', 'title_ar' => 'من نحن', 'title_en' => 'About',
             'body_ar' => 'نص', 'body_en' => 'Body', 'is_published' => true,
-        ])->assertRedirect('/admin/content-pages');
+        ]);
 
-        $page = ContentPage::where('slug', 'about')->firstOrFail();
-
-        $this->actingAs($admin)->put("/admin/content-pages/{$page->id}", [
+        $this->actingAs($this->admin())->put("/admin/content-pages/{$page->id}", [
             'slug' => 'about', 'title_ar' => 'من نحن نحن', 'title_en' => 'About',
             'body_ar' => 'نص جديد', 'body_en' => 'Body', 'is_published' => false,
         ])->assertRedirect('/admin/content-pages');
 
         $this->assertFalse($page->fresh()->is_published);
+        $this->assertSame('من نحن نحن', $page->fresh()->title_ar);
     }
 }

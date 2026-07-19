@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ContentPage;
 use App\Services\ChangeLog\ChangeLogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -19,15 +20,23 @@ class ContentPageController extends Controller
     public function index()
     {
         return Inertia::render('admin/content-pages/index', [
-            'pages' => ContentPage::orderBy('slug')->get(['id', 'slug', 'title_ar', 'title_en', 'is_published', 'updated_at'])
+            // Full page data so the master/detail editor works client-side, plus
+            // who last saved each page (shown in the editor header).
+            'pages' => ContentPage::with('updatedBy:id,name,email')
+                ->orderBy('slug')
+                ->get(['id', 'slug', 'title_ar', 'title_en', 'body_ar', 'body_en', 'is_published', 'updated_at', 'updated_by'])
                 ->map(fn (ContentPage $p) => [
                     'id' => $p->id,
                     'slug' => $p->slug,
                     'title_ar' => $p->title_ar,
                     'title_en' => $p->title_en,
+                    'body_ar' => $p->body_ar ?? '',
+                    'body_en' => $p->body_en,
                     'is_published' => $p->is_published,
                     'updated_at' => $p->updated_at?->toDateTimeString(),
+                    'updated_by_name' => $p->updatedBy?->name ?? $p->updatedBy?->email,
                 ]),
+            'undoMeta' => session('undo:content_pages'),
         ]);
     }
 
@@ -61,7 +70,9 @@ class ContentPageController extends Controller
 
         DB::transaction(function () use ($contentPage, $data, $changeLog) {
             $before = $contentPage->attributesToArray();
-            $contentPage->update($data);
+            $contentPage->fill($data);
+            $contentPage->updated_by = Auth::id(); // stamp the editor (skipped by the change-log diff)
+            $contentPage->save();
             $changeLog->logUpdated($contentPage, $before, $contentPage->title_ar);
         });
 
