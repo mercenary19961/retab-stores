@@ -15,6 +15,7 @@ import {
     ShieldCheck,
     ShoppingBag,
     Star,
+    TicketPercent,
     Users,
     X,
     type LucideIcon,
@@ -50,6 +51,7 @@ const NAV: NavItem[] = [
     { key: 'returns', href: '/admin/returns', icon: RotateCcw, perm: 'returns' },
     { key: 'customers', href: '/admin/customers', icon: Users, perm: 'customers' },
     { key: 'marketing', href: '/admin/marketing', icon: Megaphone, perm: 'marketing' },
+    { key: 'coupons', href: '/admin/coupons', icon: TicketPercent, perm: 'coupons' },
     { key: 'reviews', href: '/admin/client-reviews', icon: Star, perm: 'reviews' },
     { key: 'contentPages', href: '/admin/content-pages', icon: FileText, perm: 'content_pages' },
 ];

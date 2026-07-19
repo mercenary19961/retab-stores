@@ -55,6 +55,12 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
         Route::post('marketing/campaigns', [\App\Http\Controllers\Admin\MarketingController::class, 'storeCampaign'])->name('marketing.campaigns.store');
     });
 
+    // Coupons — percentage / fixed / free-delivery, with date window + usage caps.
+    Route::get('coupons', [\App\Http\Controllers\Admin\CouponController::class, 'index'])->middleware('permission:coupons.view')->name('coupons.index');
+    Route::post('coupons', [\App\Http\Controllers\Admin\CouponController::class, 'store'])->middleware('permission:coupons.create')->name('coupons.store');
+    Route::put('coupons/{coupon}', [\App\Http\Controllers\Admin\CouponController::class, 'update'])->middleware('permission:coupons.edit')->name('coupons.update');
+    Route::delete('coupons/{coupon}', [\App\Http\Controllers\Admin\CouponController::class, 'destroy'])->middleware('permission:coupons.delete')->name('coupons.destroy');
+
     // Customer directory (read-only).
     Route::middleware('permission:customers.view')->group(function () {
         Route::get('customers', [\App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('customers.index');

@@ -88,10 +88,15 @@ class Coupon extends Model
 
     /**
      * Discount this coupon yields on a given subtotal (capped at max_discount and
-     * never more than the subtotal itself).
+     * never more than the subtotal itself). Free-shipping coupons discount the
+     * shipping fee, not the subtotal, so they yield 0 here.
      */
     public function discountFor(float $subtotal): float
     {
+        if ($this->type === CouponType::FreeShipping) {
+            return 0.0;
+        }
+
         $discount = $this->type === CouponType::Percentage
             ? $subtotal * ((float) $this->value / 100)
             : (float) $this->value;
@@ -101,5 +106,33 @@ class Coupon extends Model
         }
 
         return round(min($discount, $subtotal), 2);
+    }
+
+    /** Whether this coupon waives the flat shipping fee. */
+    public function wavesShipping(): bool
+    {
+        return $this->type === CouponType::FreeShipping;
+    }
+
+    /**
+     * Lifecycle label for the admin list: inactive / scheduled / expired /
+     * used_up / active. Mirrors the checks in isValid().
+     */
+    public function status(): string
+    {
+        if (! $this->is_active) {
+            return 'inactive';
+        }
+        if ($this->starts_at && $this->starts_at->isFuture()) {
+            return 'scheduled';
+        }
+        if ($this->expires_at && $this->expires_at->isPast()) {
+            return 'expired';
+        }
+        if ($this->usage_limit !== null && $this->used_count >= $this->usage_limit) {
+            return 'used_up';
+        }
+
+        return 'active';
     }
 }
