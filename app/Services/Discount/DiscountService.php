@@ -31,7 +31,7 @@ class DiscountService
      * Apply one percentage off to every active product in scope (all, or a
      * category), over an optional schedule window.
      */
-    public function bulkApply(float $percent, ?int $categoryId, ?Carbon $startsAt, ?Carbon $endsAt, ?int $userId = null): ActivityLog
+    public function bulkApply(string $discountMode, float $value, ?float $maxCap, ?int $categoryId, ?Carbon $startsAt, ?Carbon $endsAt, ?int $userId = null): ActivityLog
     {
         $products = Product::where('is_active', true)
             ->where('price', '>', 0)
@@ -40,12 +40,23 @@ class DiscountService
 
         return $this->applyToProducts(
             $products,
-            fn (Product $p) => $this->priceAfter((float) $p->price, $percent),
+            fn (Product $p) => $this->saleFor((float) $p->price, $discountMode, $value, $maxCap),
             $startsAt,
             $endsAt,
             $userId,
-            ['mode' => 'bulk', 'percent' => $percent, 'category_id' => $categoryId],
+            ['mode' => 'bulk', 'discount_mode' => $discountMode, 'value' => $value, 'category_id' => $categoryId],
         );
+    }
+
+    /** New sale price for a percentage or fixed-amount discount (cap applies to %). */
+    private function saleFor(float $price, string $mode, float $value, ?float $maxCap): float
+    {
+        $discount = $mode === 'fixed' ? $value : $price * $value / 100;
+        if ($mode === 'percentage' && $maxCap !== null) {
+            $discount = min($discount, $maxCap);
+        }
+
+        return round(max(0, $price - $discount), 2);
     }
 
     /**

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Setting;
+use App\Services\CheckoutService;
 use App\Services\Discount\DiscountService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -48,21 +50,38 @@ class DiscountController extends Controller
                 ->get()
                 ->map(fn (Category $c) => ['id' => $c->id, 'name_ar' => $c->name_ar, 'name_en' => $c->name_en, 'count' => $c->products_count]),
             'activeCount' => Product::where('is_active', true)->where('price', '>', 0)->count(),
+            'activeNow' => Product::whereNotNull('sale_price')
+                ->whereColumn('sale_price', '<', 'price')
+                ->where(fn ($q) => $q->whereNull('sale_starts_at')->orWhere('sale_starts_at', '<=', now()))
+                ->where(fn ($q) => $q->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>=', now()))
+                ->count(),
+            'freeShipping' => [
+                'active' => Setting::get(CheckoutService::FREE_SHIPPING_ACTIVE_KEY) === '1',
+                'starts_at' => Setting::get(CheckoutService::FREE_SHIPPING_STARTS_KEY) ?: null,
+                'ends_at' => Setting::get(CheckoutService::FREE_SHIPPING_ENDS_KEY) ?: null,
+                'live' => app(CheckoutService::class)->freeShippingActive(),
+            ],
             'history' => $this->recentApplies(),
         ]);
     }
 
     public function apply(Request $request)
     {
+        $isPercentage = $request->input('mode') === 'percentage';
+
         $data = $request->validate([
-            'percent' => ['required', 'numeric', 'min:1', 'max:99'],
+            'mode' => ['required', 'in:percentage,fixed'],
+            'value' => ['required', 'numeric', 'min:0.01', ...($isPercentage ? ['max:99'] : [])],
+            'max_discount' => ['nullable', 'numeric', 'min:0'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
         ]);
 
         $log = $this->service->bulkApply(
-            (float) $data['percent'],
+            $data['mode'],
+            (float) $data['value'],
+            $isPercentage && filled($data['max_discount'] ?? null) ? (float) $data['max_discount'] : null,
             $data['category_id'] ?? null,
             filled($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at']) : null,
             filled($data['ends_at'] ?? null) ? Carbon::parse($data['ends_at']) : null,
@@ -70,6 +89,22 @@ class DiscountController extends Controller
         );
 
         return back()->with('success', __('messages.admin.discount_applied', ['count' => $log->changes['summary']['applied'] ?? 0]));
+    }
+
+    /** Save the store-wide automatic free-shipping promotion (+ optional window). */
+    public function freeShipping(Request $request)
+    {
+        $data = $request->validate([
+            'active' => ['required', 'boolean'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+        ]);
+
+        Setting::set(CheckoutService::FREE_SHIPPING_ACTIVE_KEY, $data['active'] ? '1' : '0');
+        Setting::set(CheckoutService::FREE_SHIPPING_STARTS_KEY, filled($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at'])->toDateTimeString() : '');
+        Setting::set(CheckoutService::FREE_SHIPPING_ENDS_KEY, filled($data['ends_at'] ?? null) ? Carbon::parse($data['ends_at'])->toDateTimeString() : '');
+
+        return back()->with('success', __('messages.admin.free_shipping_saved'));
     }
 
     public function previewImport(Request $request)
@@ -168,7 +203,8 @@ class DiscountController extends Controller
                 'id' => $log->id,
                 'mode' => $log->changes['summary']['mode'] ?? 'bulk',
                 'applied' => $log->changes['summary']['applied'] ?? 0,
-                'percent' => $log->changes['summary']['percent'] ?? null,
+                'discount_mode' => $log->changes['summary']['discount_mode'] ?? 'percentage',
+                'value' => $log->changes['summary']['value'] ?? $log->changes['summary']['percent'] ?? null,
                 'user' => $log->user?->name,
                 'created_at' => $log->created_at?->toDateTimeString(),
                 'reverted_at' => $log->reverted_at?->toDateTimeString(),

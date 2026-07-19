@@ -38,7 +38,9 @@ class CheckoutController
         return Inertia::render('shop/checkout', [
             'items' => $summary['items'],
             'subtotal' => $summary['subtotal'],
-            'shippingFee' => (float) Setting::get(CheckoutService::SHIPPING_FEE_KEY, 0),
+            // Effective fee: 0 during an automatic free-shipping window.
+            'shippingFee' => $this->checkout->shippingFee(),
+            'freeShipping' => $this->checkout->freeShippingActive(),
             'countries' => self::GCC,
         ]);
     }
