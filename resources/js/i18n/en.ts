@@ -936,6 +936,9 @@ const en = {
             pickTemplate: '— pick an approved template —',
             segment: 'Audience segment',
             segmentHint: 'Narrows who receives it. The opt-in rule (consented, has a phone) always applies.',
+            people: '{{count}} people',
+            estCost: 'Estimated cost ≈ {{cost}} {{currency}}',
+            estCostHint: '{{count}} messages × {{rate}} {{currency}} each (approximate marketing rate).',
             segments: {
                 all: 'All opted-in customers',
                 active: 'Most active (top half)',

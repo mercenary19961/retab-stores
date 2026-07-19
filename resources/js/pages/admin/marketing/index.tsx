@@ -78,11 +78,15 @@ export default function MarketingIndex({
     campaigns,
     segmentCounts,
     segments,
+    messageRate,
+    rateCurrency,
 }: {
     templates: Template[];
     campaigns: Campaign[];
     segmentCounts: Record<string, number>;
     segments: string[];
+    messageRate: number;
+    rateCurrency: string;
 }) {
     const { t: tr, i18n } = useAdminT();
     const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
@@ -122,6 +126,8 @@ export default function MarketingIndex({
     const selected = templates.find((t) => t.id === templateId);
     // Live recipient count for the chosen segment (drives the "Send to N" button).
     const audienceCount = segmentCounts[segment] ?? 0;
+    // Rough send cost: recipients × per-message marketing rate.
+    const estCost = (audienceCount * messageRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     // Template body helpers (live preview + auto variable detection).
     const body = String(tpl.body);
@@ -292,7 +298,7 @@ export default function MarketingIndex({
                                 <Select
                                     value={segment}
                                     onChange={(v) => setSegment(v)}
-                                    options={segments.map((s) => ({ value: s, label: `${label('segments', s)} (${segmentCounts[s] ?? 0})` }))}
+                                    options={segments.map((s) => ({ value: s, label: `${label('segments', s)} (${tr('admin.marketing.people', { count: segmentCounts[s] ?? 0 })})` }))}
                                     className="mt-1 w-full"
                                 />
                                 <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.segmentHint')}</span>
@@ -318,6 +324,13 @@ export default function MarketingIndex({
                                         misplacing Arabic punctuation. On the message it mirrors WhatsApp's own
                                         first-strong-character direction detection. */}
                                     <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{renderTemplate(selected.body, params)}</p>
+                                </div>
+                            )}
+
+                            {audienceCount > 0 && (
+                                <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm dark:border-neutral-800 dark:bg-neutral-950">
+                                    <span className="text-neutral-600 dark:text-neutral-300">{tr('admin.marketing.estCost', { cost: estCost, currency: rateCurrency })}</span>
+                                    <span className="mt-0.5 block text-xs text-neutral-400">{tr('admin.marketing.estCostHint', { count: audienceCount, rate: messageRate, currency: rateCurrency })}</span>
                                 </div>
                             )}
 

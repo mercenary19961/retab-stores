@@ -44,6 +44,10 @@ class MarketingController extends Controller
             // "Send to N" as the owner switches segment.
             'segmentCounts' => $this->campaigns->segmentCounts(),
             'segments' => CampaignService::SEGMENTS,
+            // Per-message marketing rate → the composer estimates the send cost
+            // (recipients × rate). Approximate; configured in config/services.php.
+            'messageRate' => (float) config('services.whatsapp.marketing_rate'),
+            'rateCurrency' => (string) config('services.whatsapp.rate_currency'),
         ]);
     }
 
