@@ -170,7 +170,7 @@ export default function AdminDashboard({
                             <div
                                 key={p.date}
                                 title={`${p.date} · ${money(p.revenue)} · ${p.orders}`}
-                                className="group flex-1"
+                                className="group flex h-full flex-1 flex-col justify-end"
                             >
                                 <div
                                     className="w-full rounded-t bg-brand-gold/50 transition-colors group-hover:bg-brand-gold"
