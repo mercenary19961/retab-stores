@@ -3,6 +3,7 @@ import { FileText, History, Megaphone, Pencil, Send } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import Pagination, { type Paginator } from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -82,7 +83,7 @@ export default function MarketingIndex({
     rateCurrency,
 }: {
     templates: Template[];
-    campaigns: Campaign[];
+    campaigns: Paginator<Campaign>;
     segmentCounts: Record<string, number>;
     segments: string[];
     messageRate: number;
@@ -342,9 +343,9 @@ export default function MarketingIndex({
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                         <h2 className="mb-3 flex items-center gap-2 font-bold"><History className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.campaignHistory')}</h2>
-                        <ul className="space-y-2 text-sm">
-                            {campaigns.length === 0 && <li className="text-neutral-400">{tr('admin.marketing.noCampaigns')}</li>}
-                            {campaigns.map((c) => (
+                        <ul className="max-h-96 space-y-2 overflow-y-auto text-sm">
+                            {campaigns.data.length === 0 && <li className="text-neutral-400">{tr('admin.marketing.noCampaigns')}</li>}
+                            {campaigns.data.map((c) => (
                                 <li key={c.id} className="rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
                                     <div className="flex items-center justify-between">
                                         <span className="font-mono">#{c.id} {c.template}</span>
@@ -357,6 +358,7 @@ export default function MarketingIndex({
                                 </li>
                             ))}
                         </ul>
+                        <Pagination paginator={campaigns} only={['campaigns']} />
                     </section>
                 </div>
             </div>

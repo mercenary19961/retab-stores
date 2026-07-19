@@ -96,6 +96,7 @@ return [
         'discount_cannot_undo' => 'لم يعد بالإمكان التراجع عن هذا التغيير.',
         'discount_none_to_clear' => 'لا توجد منتجات مخفَّضة مطابقة لإلغائها.',
         'discount_import_columns' => 'يحتاج الملف إلى عمود sku وعمود discount_percent.',
+        'free_shipping_saved' => 'تم حفظ إعدادات الشحن المجاني.',
         'change_reverted' => 'تم التراجع عن التغيير.',
         'change_revert_conflict' => 'تعذر التراجع: :fields تغيّرت مرة أخرى بعد هذا السجل. يُرجى مراجعة القيم الحالية.',
         'change_revert_blocked' => 'لم يعد بالإمكان التراجع عن هذا التغيير.',

@@ -9,6 +9,7 @@ use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\Order;
 use App\Models\Setting;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -22,6 +23,38 @@ class CheckoutService
 {
     /** Settings key for the single flat GCC shipping fee. */
     public const SHIPPING_FEE_KEY = 'shipping_flat_fee';
+
+    /** Store-wide automatic free-shipping promotion (set from the Discounts page). */
+    public const FREE_SHIPPING_ACTIVE_KEY = 'free_shipping_active';
+
+    public const FREE_SHIPPING_STARTS_KEY = 'free_shipping_starts_at';
+
+    public const FREE_SHIPPING_ENDS_KEY = 'free_shipping_ends_at';
+
+    /** Whether the automatic free-shipping promotion is on AND inside its window. */
+    public function freeShippingActive(): bool
+    {
+        if (Setting::get(self::FREE_SHIPPING_ACTIVE_KEY) !== '1') {
+            return false;
+        }
+
+        $starts = Setting::get(self::FREE_SHIPPING_STARTS_KEY);
+        $ends = Setting::get(self::FREE_SHIPPING_ENDS_KEY);
+        if (filled($starts) && Carbon::parse($starts)->isFuture()) {
+            return false;
+        }
+        if (filled($ends) && Carbon::parse($ends)->isPast()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /** The flat shipping fee the customer actually pays (0 during a free-shipping window). */
+    public function shippingFee(): float
+    {
+        return $this->freeShippingActive() ? 0.0 : (float) Setting::get(self::SHIPPING_FEE_KEY, 0);
+    }
 
     /**
      * @param  array{name?:string,email?:string,phone?:string}  $customer
@@ -40,7 +73,9 @@ class CheckoutService
 
             [$coupon, $discount] = $this->resolveCoupon($couponCode, $subtotal, $cart->user_id);
 
-            $shippingFee = (float) Setting::get(self::SHIPPING_FEE_KEY, 0);
+            // Effective fee already accounts for an automatic free-shipping window;
+            // a free-shipping coupon waives it too.
+            $shippingFee = $this->shippingFee();
             if ($coupon && $coupon->wavesShipping()) {
                 $shippingFee = 0.0;
             }

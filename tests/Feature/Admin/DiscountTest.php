@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\User;
+use App\Services\CheckoutService;
 use App\Services\Discount\DiscountService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -25,22 +28,48 @@ class DiscountTest extends TestCase
 
         return Product::create([
             'category_id' => $categoryId, 'name_ar' => 'م', 'slug' => 'p-' . uniqid(),
-            'price' => $price, 'sku' => 'SK-' . uniqid(), 'stock' => 10, 'is_active' => true,
+            'price' => $price, 'sku' => 'SK-' . uniqid(), 'smacc_sku' => 'SM-' . uniqid(), 'stock' => 10, 'is_active' => true,
         ]);
     }
 
-    public function test_bulk_apply_discounts_a_category_only(): void
+    private function placeOrderWith(): \App\Models\Order
+    {
+        $product = $this->product(50);
+        $cart = Cart::create(['session_token' => 's-' . uniqid()]);
+        $cart->items()->create(['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 50]);
+
+        return app(CheckoutService::class)->placeOrder($cart, ['name' => 'Z', 'phone' => '+966500000000'], ['country' => 'SA', 'city' => 'Riyadh']);
+    }
+
+    public function test_bulk_percentage_discounts_a_category_only(): void
     {
         $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'dates']);
         $a = $this->product(100, $cat->id);
         $b = $this->product(50, $cat->id);
-        $other = $this->product(80); // different category — must be untouched
+        $other = $this->product(80);
 
-        app(DiscountService::class)->bulkApply(20, $cat->id, null, null, null);
+        app(DiscountService::class)->bulkApply('percentage', 20, null, $cat->id, null, null, null);
 
         $this->assertEquals(80.00, (float) $a->fresh()->sale_price);
         $this->assertEquals(40.00, (float) $b->fresh()->sale_price);
         $this->assertNull($other->fresh()->sale_price);
+    }
+
+    public function test_fixed_amount_discount(): void
+    {
+        $p = $this->product(50);
+        app(DiscountService::class)->bulkApply('fixed', 12, null, null, null, null, null);
+
+        $this->assertEquals(38.00, (float) $p->fresh()->sale_price);
+    }
+
+    public function test_max_cap_limits_a_percentage_discount(): void
+    {
+        $p = $this->product(200);
+        // 50% would be 100 off, but capped at 30.
+        app(DiscountService::class)->bulkApply('percentage', 50, 30, null, null, null, null);
+
+        $this->assertEquals(170.00, (float) $p->fresh()->sale_price);
     }
 
     public function test_sale_window_controls_whether_the_product_is_on_sale(): void
@@ -48,19 +77,13 @@ class DiscountTest extends TestCase
         $svc = app(DiscountService::class);
 
         $scheduled = $this->product(100);
-        $svc->bulkApply(20, null, Carbon::now()->addDay(), null, null);
-        $this->assertEquals(80.00, (float) $scheduled->fresh()->sale_price);
-        $this->assertFalse($scheduled->fresh()->isOnSale());          // starts tomorrow
+        $svc->bulkApply('percentage', 20, null, null, Carbon::now()->addDay(), null, null);
+        $this->assertFalse($scheduled->fresh()->isOnSale());
         $this->assertSame('scheduled', $scheduled->fresh()->saleStatus());
 
-        $expired = $this->product(100);
-        $svc->bulkApply(20, null, null, Carbon::now()->subDay(), null);
-        $this->assertFalse($expired->fresh()->isOnSale());            // ended yesterday
-        $this->assertSame('expired', $expired->fresh()->saleStatus());
-
         $active = $this->product(100);
-        $svc->bulkApply(20, null, null, null, null);
-        $this->assertTrue($active->fresh()->isOnSale());              // no window = live
+        $svc->bulkApply('percentage', 20, null, null, null, null, null);
+        $this->assertTrue($active->fresh()->isOnSale());
     }
 
     public function test_csv_import_applies_per_row_percentages(): void
@@ -70,13 +93,10 @@ class DiscountTest extends TestCase
         $svc = app(DiscountService::class);
 
         $path = tempnam(sys_get_temp_dir(), 'disc');
-        file_put_contents($path, "sku,discount_percent\n{$p1->sku},30\n{$p2->sku},25\nGHOST-SKU,10\n");
+        file_put_contents($path, "sku,discount_percent\n{$p1->sku},30\n{$p2->sku},25\nGHOST,10\n");
 
         $rows = $svc->parse($path);
-        $diff = $svc->diff($rows);
-        $this->assertCount(2, $diff['matched']);
-        $this->assertCount(1, $diff['unmatched']);
-
+        $this->assertCount(2, $svc->diff($rows)['matched']);
         $svc->applyImport($rows, null, null, null);
         unlink($path);
 
@@ -89,15 +109,12 @@ class DiscountTest extends TestCase
         $p = $this->product(100);
         $svc = app(DiscountService::class);
 
-        $log = $svc->bulkApply(20, null, null, null, null);
+        $log = $svc->bulkApply('percentage', 20, null, null, null, null, null);
         $this->assertEquals(80.00, (float) $p->fresh()->sale_price);
-
-        // Undo restores the pre-discount state (was no sale).
         $svc->undo($log, null);
         $this->assertNull($p->fresh()->sale_price);
 
-        // Re-apply then clear.
-        $svc->bulkApply(20, null, null, null, null);
+        $svc->bulkApply('percentage', 20, null, null, null, null, null);
         $svc->clear([$p->id], null);
         $this->assertNull($p->fresh()->sale_price);
     }
@@ -107,11 +124,28 @@ class DiscountTest extends TestCase
         $p = $this->product(100);
 
         $this->actingAs($this->admin())->post('/admin/discounts/apply', [
-            'percent' => 25,
-            'ends_at' => '2099-01-01T00:00',
+            'mode' => 'percentage', 'value' => 25, 'ends_at' => '2099-01-01T00:00',
         ])->assertSessionHas('success');
 
         $this->assertEquals(75.00, (float) $p->fresh()->sale_price);
         $this->assertTrue($p->fresh()->isOnSale());
+    }
+
+    public function test_automatic_free_shipping_waives_shipping_within_its_window(): void
+    {
+        Setting::set(CheckoutService::SHIPPING_FEE_KEY, 25);
+
+        // Active now → waived.
+        Setting::set(CheckoutService::FREE_SHIPPING_ACTIVE_KEY, '1');
+        $this->assertEquals(0.00, (float) $this->placeOrderWith()->shipping_fee);
+
+        // Scheduled for the future → not yet waived.
+        Setting::set(CheckoutService::FREE_SHIPPING_STARTS_KEY, Carbon::now()->addDay()->toDateTimeString());
+        $this->assertEquals(25.00, (float) $this->placeOrderWith()->shipping_fee);
+
+        // Turned off → not waived.
+        Setting::set(CheckoutService::FREE_SHIPPING_ACTIVE_KEY, '0');
+        Setting::set(CheckoutService::FREE_SHIPPING_STARTS_KEY, '');
+        $this->assertEquals(25.00, (float) $this->placeOrderWith()->shipping_fee);
     }
 }

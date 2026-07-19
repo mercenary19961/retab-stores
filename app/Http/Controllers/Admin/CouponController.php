@@ -19,8 +19,8 @@ class CouponController extends Controller
     public function index()
     {
         return Inertia::render('admin/coupons/index', [
-            'coupons' => Coupon::where('source', 'manual')->latest()->get()
-                ->map(fn (Coupon $c) => [
+            'coupons' => Coupon::where('source', 'manual')->latest()->paginate(20)
+                ->through(fn (Coupon $c) => [
                     'id' => $c->id,
                     'code' => $c->code,
                     'type' => $c->type->value,
@@ -37,6 +37,13 @@ class CouponController extends Controller
                     'description_ar' => $c->description_ar,
                     'description_en' => $c->description_en,
                 ]),
+            // Active = usable right now (in window + under its usage cap). Counted
+            // across all pages, so the summary is not just the current page.
+            'activeCount' => Coupon::where('source', 'manual')->where('is_active', true)
+                ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
+                ->where(fn ($q) => $q->whereNull('usage_limit')->orWhereColumn('used_count', '<', 'usage_limit'))
+                ->count(),
         ]);
     }
 

@@ -5,6 +5,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Modal from '@/components/admin/modal';
+import Pagination, { type Paginator } from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
@@ -109,10 +110,9 @@ function ReviewForm({ review, onClose }: { review: ReviewRow | null; onClose: ()
     );
 }
 
-export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }) {
+export default function ClientReviewsIndex({ reviews, activeCount }: { reviews: Paginator<ReviewRow>; activeCount: number }) {
     const { t } = useAdminT();
     const rc = useResizableColumns({ tableKey: 'client_reviews', columns: COLUMNS });
-    const activeCount = reviews.filter((r) => r.is_active).length;
 
     // null = closed, 'new' = create, ReviewRow = edit that review — all in a modal.
     const [editing, setEditing] = useState<ReviewRow | 'new' | null>(null);
@@ -123,7 +123,7 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
 
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm text-neutral-400">{t('admin.reviews.summary', { active: activeCount, total: reviews.length })}</span>
+                    <span className="text-sm text-neutral-400">{t('admin.reviews.summary', { active: activeCount, total: reviews.total })}</span>
                     {rc.isDefault ? (
                         <span className="hidden items-center gap-1.5 text-xs text-neutral-500 lg:inline-flex">
                             <MoveHorizontal className="h-3.5 w-3.5" /> {t('admin.common.dragToResize')}
@@ -152,10 +152,10 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                         </tr>
                     </thead>
                     <tbody>
-                        {reviews.length === 0 && (
+                        {reviews.data.length === 0 && (
                             <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-400">{t('admin.reviews.empty')}</td></tr>
                         )}
-                        {reviews.map((r) => (
+                        {reviews.data.map((r) => (
                             <tr key={r.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
                                 <td className="px-4 py-3 align-top">
                                     <div className="flex min-w-0 items-center gap-2">
@@ -193,6 +193,8 @@ export default function ClientReviewsIndex({ reviews }: { reviews: ReviewRow[] }
                     </tbody>
                 </table>
             </StickyScrollWrapper>
+
+            <Pagination paginator={reviews} />
 
             <Modal
                 open={editing !== null}

@@ -16,8 +16,8 @@ class ClientReviewController extends Controller
     public function index()
     {
         return Inertia::render('admin/client-reviews/index', [
-            'reviews' => ClientReview::orderByDesc('is_active')->orderBy('sort_order')->latest()->get()
-                ->map(fn (ClientReview $r) => [
+            'reviews' => ClientReview::orderByDesc('is_active')->orderBy('sort_order')->latest()->paginate(20)
+                ->through(fn (ClientReview $r) => [
                     'id' => $r->id,
                     'author_name' => $r->author_name,
                     'body' => $r->body,
@@ -27,6 +27,7 @@ class ClientReviewController extends Controller
                     'is_active' => $r->is_active,
                     'updated_at' => $r->updated_at?->toDateTimeString(),
                 ]),
+            'activeCount' => ClientReview::where('is_active', true)->count(),
         ]);
     }
 

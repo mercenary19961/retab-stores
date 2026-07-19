@@ -65,6 +65,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('discounts', [\App\Http\Controllers\Admin\DiscountController::class, 'index'])->middleware('permission:discounts.view')->name('discounts.index');
     Route::middleware('permission:discounts.manage')->group(function () {
         Route::post('discounts/apply', [\App\Http\Controllers\Admin\DiscountController::class, 'apply'])->name('discounts.apply');
+        Route::post('discounts/free-shipping', [\App\Http\Controllers\Admin\DiscountController::class, 'freeShipping'])->name('discounts.free-shipping');
         Route::post('discounts/import/preview', [\App\Http\Controllers\Admin\DiscountController::class, 'previewImport'])->name('discounts.import.preview');
         Route::post('discounts/import/apply', [\App\Http\Controllers\Admin\DiscountController::class, 'applyImport'])->name('discounts.import.apply');
         Route::post('discounts/clear', [\App\Http\Controllers\Admin\DiscountController::class, 'clear'])->name('discounts.clear');
