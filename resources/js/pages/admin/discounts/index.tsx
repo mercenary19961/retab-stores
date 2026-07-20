@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { BadgePercent, Percent, RotateCcw, Trash2, Truck, Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
@@ -52,14 +52,13 @@ export default function DiscountsIndex({
     history: HistoryRow[];
 }) {
     const { t, i18n } = useAdminT();
-    const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
     const loc = (ar: string, en: string | null) => (i18n.language === 'en' && en ? en : ar);
     const sar = t('admin.common.sar');
     const money = (n: number) => `${Math.round(n).toLocaleString()} ${sar}`;
     const dateOnly = (dt: string | null) => (dt ? dt.slice(0, 10) : null);
 
     // Bulk apply form.
-    const bulk = useForm({ mode: 'percentage', value: '', max_discount: '', category_id: '', starts_at: '', ends_at: '' });
+    const bulk = useForm({ mode: 'percentage', value: '', max_discount: '', category_id: '', starts_at: '', ends_at: '', free_shipping: false });
     const isPct = bulk.data.mode === 'percentage';
     const scopeCount = bulk.data.category_id
         ? (categories.find((c) => String(c.id) === bulk.data.category_id)?.count ?? 0)
@@ -237,6 +236,11 @@ export default function DiscountsIndex({
                         {bulk.errors.ends_at && <span className="mt-1 block text-xs text-red-500">{bulk.errors.ends_at}</span>}
                     </label>
                 </div>
+                <label className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300">
+                    <input type="checkbox" checked={bulk.data.free_shipping} onChange={(e) => bulk.setData('free_shipping', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+                    <Truck className="h-4 w-4 shrink-0 text-brand-gold" />
+                    {t('admin.discounts.bulk.alsoFreeShipping')}
+                </label>
                 <div className="flex items-center justify-between gap-3">
                     <span className="text-xs text-neutral-400">{t('admin.discounts.bulk.appliesTo', { n: scopeCount })}</span>
                     <Button type="submit" variant="primary" icon={BadgePercent} disabled={bulk.processing || !bulk.data.value}>{t('admin.discounts.bulk.apply')}</Button>
@@ -298,9 +302,6 @@ export default function DiscountsIndex({
     return (
         <AdminLayout title={t('admin.discounts.title')}>
             <Head title={t('admin.discounts.title')} />
-
-            {flash?.success && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>}
-            {flash?.error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{flash.error}</div>}
 
             <p className="mb-4 text-sm text-neutral-400">{t('admin.discounts.subtitle')}</p>
 

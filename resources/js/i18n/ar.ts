@@ -821,6 +821,7 @@ const ar = {
                 endsAt: 'ينتهي في (اختياري)',
                 apply: 'تطبيق الخصم',
                 appliesTo: 'يُطبَّق على {{n}} منتج',
+                alsoFreeShipping: 'فعِّل الشحن المجاني لهذه الفترة أيضاً',
             },
             import: {
                 title: 'استيراد من CSV',

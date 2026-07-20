@@ -76,17 +76,26 @@ class DiscountController extends Controller
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'free_shipping' => ['boolean'],
         ]);
+
+        $startsAt = filled($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at']) : null;
+        $endsAt = filled($data['ends_at'] ?? null) ? Carbon::parse($data['ends_at']) : null;
 
         $log = $this->service->bulkApply(
             $data['mode'],
             (float) $data['value'],
             $isPercentage && filled($data['max_discount'] ?? null) ? (float) $data['max_discount'] : null,
             $data['category_id'] ?? null,
-            filled($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at']) : null,
-            filled($data['ends_at'] ?? null) ? Carbon::parse($data['ends_at']) : null,
+            $startsAt,
+            $endsAt,
             Auth::id(),
         );
+
+        // Bundle free shipping over the same window when the discount opts in.
+        if ($request->boolean('free_shipping')) {
+            $this->saveFreeShipping(true, $startsAt, $endsAt);
+        }
 
         return back()->with('success', __('messages.admin.discount_applied', ['count' => $log->changes['summary']['applied'] ?? 0]));
     }
@@ -100,11 +109,21 @@ class DiscountController extends Controller
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
         ]);
 
-        Setting::set(CheckoutService::FREE_SHIPPING_ACTIVE_KEY, $data['active'] ? '1' : '0');
-        Setting::set(CheckoutService::FREE_SHIPPING_STARTS_KEY, filled($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at'])->toDateTimeString() : '');
-        Setting::set(CheckoutService::FREE_SHIPPING_ENDS_KEY, filled($data['ends_at'] ?? null) ? Carbon::parse($data['ends_at'])->toDateTimeString() : '');
+        $this->saveFreeShipping(
+            $data['active'],
+            filled($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at']) : null,
+            filled($data['ends_at'] ?? null) ? Carbon::parse($data['ends_at']) : null,
+        );
 
         return back()->with('success', __('messages.admin.free_shipping_saved'));
+    }
+
+    /** Write the automatic free-shipping promotion state (shared by apply + freeShipping). */
+    private function saveFreeShipping(bool $active, ?Carbon $startsAt, ?Carbon $endsAt): void
+    {
+        Setting::set(CheckoutService::FREE_SHIPPING_ACTIVE_KEY, $active ? '1' : '0');
+        Setting::set(CheckoutService::FREE_SHIPPING_STARTS_KEY, $startsAt?->toDateTimeString() ?? '');
+        Setting::set(CheckoutService::FREE_SHIPPING_ENDS_KEY, $endsAt?->toDateTimeString() ?? '');
     }
 
     public function previewImport(Request $request)

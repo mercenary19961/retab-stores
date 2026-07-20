@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { FileText, History, Megaphone, Pencil, Send } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
@@ -90,7 +90,6 @@ export default function MarketingIndex({
     rateCurrency: string;
 }) {
     const { t: tr, i18n } = useAdminT();
-    const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
 
     // Localized display labels for enum-like values (category / status / language / delivery funnel).
     // The stored value stays English — it's what our API and Meta expect — only the label localizes;
@@ -164,9 +163,6 @@ export default function MarketingIndex({
     return (
         <AdminLayout title={marketingTitle}>
             <Head title={tr('admin.marketing.title')} />
-
-            {flash?.success && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>}
-            {flash?.error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{flash.error}</div>}
 
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Templates registry */}

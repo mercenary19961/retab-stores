@@ -817,6 +817,7 @@ const en = {
                 endsAt: 'Ends at (optional)',
                 apply: 'Apply discount',
                 appliesTo: 'Applies to {{n}} products',
+                alsoFreeShipping: 'Also turn on free shipping for this window',
             },
             import: {
                 title: 'Import from CSV',

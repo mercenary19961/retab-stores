@@ -155,6 +155,12 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
 
     useEffect(() => {
         i18n.changeLanguage(locale);
+        // Mirror the admin's language to a cookie so the server localizes admin
+        // flash + validation messages in it (SetAdminLocale middleware), instead
+        // of the storefront session locale (which defaults to Arabic).
+        if (typeof document !== 'undefined') {
+            document.cookie = `admin_locale=${locale}; path=/; max-age=31536000; samesite=lax`;
+        }
     }, [locale, i18n]);
 
     const toggleLocale = () => {
