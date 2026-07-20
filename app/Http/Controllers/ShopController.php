@@ -54,10 +54,6 @@ class ShopController
      */
     public function catalogue(Request $request): Response
     {
-        $categories = Category::where('is_active', true)
-            ->orderBy('sort_order')
-            ->get(['id', 'name_ar', 'name_en', 'slug']);
-
         $activeCategory = $request->query('category');
         $search = trim((string) $request->query('q', ''));
         $sort = in_array($request->query('sort'), ['price_asc', 'price_desc', 'name'], true)
@@ -65,11 +61,17 @@ class ShopController
             : 'newest';
         $onSaleOnly = $request->boolean('on_sale');
 
+        // Resolve only the filtered category's id — cheap, and it runs on the
+        // partial (filter) reloads too, unlike the full chip list below.
+        $categoryId = $activeCategory
+            ? Category::where('is_active', true)->where('slug', $activeCategory)->value('id')
+            : null;
+
         $query = Product::where('is_active', true)
             ->with(['category:id,name_ar,name_en,slug', 'images']);
 
-        if ($activeCategory && ($category = $categories->firstWhere('slug', $activeCategory))) {
-            $query->where('category_id', $category->id);
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
         }
 
         if ($search !== '') {
@@ -94,7 +96,12 @@ class ShopController
             ->through(fn (Product $p) => $this->card($p));
 
         return Inertia::render('shop/catalogue', [
-            'categories' => $categories,
+            // Deferred (closure): the chip list never changes while filtering, so
+            // it's skipped on the partial reloads (which request only products /
+            // filters / activeCategory) and sent only on the full first load.
+            'categories' => fn () => Category::where('is_active', true)
+                ->orderBy('sort_order')
+                ->get(['id', 'name_ar', 'name_en', 'slug']),
             'products' => $products,
             'activeCategory' => $activeCategory,
             'filters' => [

@@ -36,6 +36,8 @@ export default function ProductCard({ product: p }: { product: StoreProduct }) {
                     <img
                         src={p.image}
                         alt={localized(p, 'name')}
+                        loading="lazy"
+                        decoding="async"
                         className="aspect-square w-full rounded-[23%] object-cover shadow-sm transition group-hover:shadow-md"
                     />
                 ) : (

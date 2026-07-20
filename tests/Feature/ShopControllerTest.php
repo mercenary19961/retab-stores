@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Category;
 use App\Models\ClientReview;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -112,6 +114,30 @@ class ShopControllerTest extends TestCase
             fn (Assert $page) => $page->where('products.data.0.slug', 'cheap')
                 ->where('products.data.2.slug', 'dear'),
         );
+    }
+
+    public function test_filtering_is_a_partial_reload_that_skips_the_category_list(): void
+    {
+        $this->makeProduct();
+
+        // Match the asset version so Inertia serves the partial (not a 409 reload).
+        $version = app(HandleInertiaRequests::class)->version(Request::create('/shop'));
+
+        // A filter interaction asks only for products/filters/activeCategory; the
+        // deferred `categories` closure must NOT be evaluated or sent. A partial
+        // response is raw JSON (not the HTML page), so assert on it directly.
+        $response = $this->get('/shop', [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => (string) $version,
+            'X-Inertia-Partial-Component' => 'shop/catalogue',
+            'X-Inertia-Partial-Data' => 'products,filters,activeCategory',
+        ])->assertOk();
+
+        $props = $response->json('props');
+        $this->assertArrayHasKey('products', $props);
+        $this->assertArrayHasKey('filters', $props);
+        $this->assertArrayNotHasKey('categories', $props); // deferred → skipped
+        $this->assertCount(1, $props['products']['data']);
     }
 
     public function test_catalogue_paginates_twelve_per_page(): void

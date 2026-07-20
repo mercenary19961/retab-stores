@@ -21,6 +21,12 @@ interface Filters {
     on_sale: boolean;
 }
 
+// Filtering only ever changes these props — a partial reload leaves the navbar,
+// category list, auth and every other shared prop untouched (no re-query, smaller
+// payload, no remount), which is what makes it feel like an SPA instead of a
+// page load. `categories` is deferred server-side, so it isn't in this list.
+const FILTER_ONLY = ['products', 'filters', 'activeCategory'];
+
 export default function ShopCatalogue({
     categories,
     products,
@@ -58,9 +64,10 @@ export default function ShopCatalogue({
         return qs ? `/shop?${qs}` : '/shop';
     };
 
-    // Toolbar interactions stay put (preserveScroll) so the grid doesn't jump.
+    // Toolbar interactions stay put (preserveScroll) so the grid doesn't jump,
+    // and only re-fetch the products list (partial reload).
     const go = (patch: Record<string, string | undefined>) =>
-        router.get('/shop', params(patch), { preserveState: true, preserveScroll: true });
+        router.get('/shop', params(patch), { preserveState: true, preserveScroll: true, only: FILTER_ONLY });
 
     const submitSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -84,13 +91,29 @@ export default function ShopCatalogue({
                 {t('catalogue.heading')}
             </h1>
 
-            {/* Category chips */}
+            {/* Category chips — real <a> links (crawlable) that visit as partial
+                reloads, prefetched on hover so the click feels instant. */}
             <div className="mb-6 flex flex-wrap justify-center gap-2">
-                <Link href={hrefWith({ category: undefined })} className={chip(!activeCategory)}>
+                <Link
+                    href={hrefWith({ category: undefined })}
+                    only={FILTER_ONLY}
+                    preserveState
+                    preserveScroll
+                    prefetch
+                    className={chip(!activeCategory)}
+                >
                     {t('catalogue.all')}
                 </Link>
                 {categories.map((c) => (
-                    <Link key={c.id} href={hrefWith({ category: c.slug })} className={chip(activeCategory === c.slug)}>
+                    <Link
+                        key={c.id}
+                        href={hrefWith({ category: c.slug })}
+                        only={FILTER_ONLY}
+                        preserveState
+                        preserveScroll
+                        prefetch
+                        className={chip(activeCategory === c.slug)}
+                    >
                         {localized(c, 'name')}
                     </Link>
                 ))}
@@ -143,7 +166,13 @@ export default function ShopCatalogue({
             <div className="mb-6 flex items-center justify-between gap-3 text-sm text-brand-teal/70">
                 <span>{t('catalogue.resultCount', { n: products.total })}</span>
                 {hasFilters && (
-                    <Link href="/shop" className="inline-flex items-center gap-1 text-brand-gold hover:text-brand-teal">
+                    <Link
+                        href="/shop"
+                        only={FILTER_ONLY}
+                        preserveState
+                        preserveScroll
+                        className="inline-flex items-center gap-1 text-brand-gold hover:text-brand-teal"
+                    >
                         <X className="size-3.5" />
                         {t('catalogue.clearFilters')}
                     </Link>
@@ -162,7 +191,7 @@ export default function ShopCatalogue({
                 </div>
             )}
 
-            <StorePagination paginator={products} />
+            <StorePagination paginator={products} only={['products']} />
         </StoreLayout>
     );
 }
