@@ -41,8 +41,8 @@ class ContentPageSeeder extends Seeder
                 'slug' => 'about',
                 'title_ar' => 'من نحن',
                 'title_en' => 'About Us',
-                'body_ar' => "شركة مصنع رطاب الوطن للتمور — تمور فاخرة من قلب المملكة العربية السعودية.\n\n(يُحرَّر هذا المحتوى من لوحة التحكم.)",
-                'body_en' => "Retab Alwatan Dates Factory — premium dates from the heart of Saudi Arabia.\n\n(Edit this content from the admin panel.)",
+                'body_ar' => "شركة مصنع رطاب الوطن للتمور: تمور فاخرة من قلب المملكة العربية السعودية.\n\n(يُحرَّر هذا المحتوى من لوحة التحكم.)",
+                'body_en' => "Retab Alwatan Dates Factory: premium dates from the heart of Saudi Arabia.\n\n(Edit this content from the admin panel.)",
             ],
             [
                 'slug' => 'contact',
