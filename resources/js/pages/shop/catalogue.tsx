@@ -6,6 +6,7 @@ import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
 import ProductCard, { type StoreProduct } from '@/components/store/product-card';
 import StorePagination, { type Paginator } from '@/components/store/pagination';
+import StoreSelect from '@/components/store/select';
 
 interface Category {
     id: number;
@@ -124,20 +125,17 @@ export default function ShopCatalogue({
                         {t('catalogue.offersOnly')}
                     </button>
 
-                    <label className="sr-only" htmlFor="catalogue-sort">
-                        {t('catalogue.sortLabel')}
-                    </label>
-                    <select
-                        id="catalogue-sort"
+                    <StoreSelect
                         value={filters.sort}
-                        onChange={(e) => go({ sort: e.target.value === 'newest' ? undefined : e.target.value })}
-                        className="rounded-full border border-brand-gold/30 bg-white px-4 py-2 text-sm text-brand-teal focus:border-brand-teal focus:outline-none"
-                    >
-                        <option value="newest">{t('catalogue.sortNewest')}</option>
-                        <option value="price_asc">{t('catalogue.sortPriceAsc')}</option>
-                        <option value="price_desc">{t('catalogue.sortPriceDesc')}</option>
-                        <option value="name">{t('catalogue.sortName')}</option>
-                    </select>
+                        onValueChange={(v) => go({ sort: v === 'newest' ? undefined : v })}
+                        ariaLabel={t('catalogue.sortLabel')}
+                        options={[
+                            { value: 'newest', label: t('catalogue.sortNewest') },
+                            { value: 'price_asc', label: t('catalogue.sortPriceAsc') },
+                            { value: 'price_desc', label: t('catalogue.sortPriceDesc') },
+                            { value: 'name', label: t('catalogue.sortName') },
+                        ]}
+                    />
                 </div>
             </div>
 
