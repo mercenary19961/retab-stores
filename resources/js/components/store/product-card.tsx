@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
+import ProductImage from '@/components/store/product-image';
 
 export interface StoreProduct {
     id: number;
@@ -32,19 +33,7 @@ export default function ProductCard({ product: p }: { product: StoreProduct }) {
     return (
         <Link href={`/products/${p.slug}`} className="group block">
             <div className="relative">
-                {p.image ? (
-                    <img
-                        src={p.image}
-                        alt={localized(p, 'name')}
-                        loading="lazy"
-                        decoding="async"
-                        className="aspect-square w-full rounded-[23%] object-cover shadow-sm transition group-hover:shadow-md"
-                    />
-                ) : (
-                    <div className="flex aspect-square w-full items-center justify-center rounded-[23%] bg-brand-cream text-5xl shadow-sm">
-                        🌴
-                    </div>
-                )}
+                <ProductImage src={p.image} alt={localized(p, 'name')} />
 
                 {salePercent > 0 && (
                     <span className="absolute end-3 top-3 z-10 rounded-full bg-brand-gold px-2.5 py-1 font-heading text-xs font-bold text-white shadow-sm">
