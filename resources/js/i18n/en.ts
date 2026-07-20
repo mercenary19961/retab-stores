@@ -339,6 +339,10 @@ const en = {
             close: 'Close',
             loading: 'Loading…',
             view: 'View',
+            toggleSidebar: 'Toggle sidebar',
+            closeMenu: 'Close menu',
+            dismiss: 'Dismiss',
+            clear: 'Clear',
         },
         contextMenu: {
             back: 'Back',

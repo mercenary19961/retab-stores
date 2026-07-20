@@ -133,7 +133,7 @@ export default function GlobalSearch() {
                             setOpen(false);
                         }}
                         className="shrink-0 text-neutral-500 hover:text-neutral-300"
-                        aria-label="Clear"
+                        aria-label={t('admin.common.clear')}
                     >
                         <X className="h-4 w-4" />
                     </button>

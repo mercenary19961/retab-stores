@@ -343,6 +343,10 @@ const ar = {
             close: 'إغلاق',
             loading: 'جارٍ التحميل…',
             view: 'عرض',
+            toggleSidebar: 'إظهار/إخفاء القائمة',
+            closeMenu: 'إغلاق القائمة',
+            dismiss: 'إخفاء',
+            clear: 'مسح',
         },
         contextMenu: {
             back: 'رجوع',
