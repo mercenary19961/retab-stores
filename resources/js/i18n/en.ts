@@ -73,13 +73,13 @@ const en = {
         intro: "At Retab Dates, we take pride in the trust our customers place in us, earned by offering the finest Saudi dates with care and quality worthy of every occasion. Discover our customers' experiences and their thoughts on our product quality, fast delivery, and the service we're committed to with every order.",
     },
     shop: {
-        headTitle: 'Retab Dates — Premium Dates',
+        headTitle: 'Retab Dates | Premium Dates',
         heading: 'Our Products',
         empty: 'No products in this category.',
-        metaDescription: 'Premium dates from Retab Alwatan factory — Sukkari, Khalas, Ajwa and more. GCC-wide delivery.',
+        metaDescription: 'Premium dates from Retab Alwatan factory: Sukkari, Khalas, Ajwa and more. GCC-wide delivery.',
     },
     catalogue: {
-        headTitle: 'Shop — Retab Dates',
+        headTitle: 'Shop | Retab Dates',
         heading: 'Our Products',
         all: 'All',
         searchPlaceholder: 'Search products',
@@ -95,10 +95,10 @@ const en = {
         clearFilters: 'Clear filters',
     },
     branches: {
-        headTitle: 'Our Branches — Retab Dates',
-        metaDescription: 'Visit Retab Dates in Riyadh — Al Malqa and Al Aziziyah. Get directions and store hours.',
+        headTitle: 'Our Branches | Retab Dates',
+        metaDescription: 'Visit Retab Dates in Riyadh: Al Malqa and Al Aziziyah. Get directions and store hours.',
         heading: 'Our Branches',
-        subtitle: 'Visit us in Riyadh — tap Directions to navigate straight to the shop.',
+        subtitle: 'Visit us in Riyadh. Tap Directions to navigate straight to the shop.',
         directions: 'Directions',
         call: 'Call',
     },
@@ -166,7 +166,7 @@ const en = {
         loyaltyHeading: 'Loyalty program',
         loyaltyRule: 'Every {{milestone}} confirmed orders = {{percent}}% off',
         confirmedOrders: '{{n}} confirmed orders',
-        remainingForReward: ' — {{n}} left for the next reward',
+        remainingForReward: ', {{n}} left for the next reward',
         rewardsHeading: 'Available reward coupons',
         editProfile: 'Edit details',
         wishlist: 'Wishlist',
@@ -1196,7 +1196,7 @@ const en = {
     payment: {
         bank_transfer: 'Bank transfer',
         card: 'Card (mada / Visa / Mastercard / Apple Pay)',
-        tamara: 'Tamara — split into installments',
+        tamara: 'Tamara (split into installments)',
     },
 };
 

@@ -17,8 +17,8 @@ class BranchController
     private const BRANCHES = [
         [
             'key' => 'malqa',
-            'name_ar' => 'الفرع الرئيسي — الملقا',
-            'name_en' => 'Main Branch — Al Malqa',
+            'name_ar' => 'الفرع الرئيسي، الملقا',
+            'name_en' => 'Main Branch, Al Malqa',
             'address_ar' => 'مقابل نادي الشباب، طريق الملك فهد الفرعي، الملقا، الرياض 11564',
             'address_en' => 'Opposite Al Shabab Club, King Fahd Branch Rd, Al Malqa, Riyadh 11564',
             'phone' => '+966503326600',
