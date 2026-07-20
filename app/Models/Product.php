@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @mixin IdeHelperProduct
@@ -79,6 +81,22 @@ class Product extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Products currently on sale — the SQL mirror of isOnSale(): a sale_price set
+     * below the regular price, within its (optional) date window. Used for the
+     * catalogue "Offers" filter so on-sale filtering happens in the query, not
+     * post-hydration.
+     */
+    public function scopeOnSale(Builder $query): Builder
+    {
+        $now = Carbon::now();
+
+        return $query->whereNotNull('sale_price')
+            ->whereColumn('sale_price', '<', 'price')
+            ->where(fn (Builder $q) => $q->whereNull('sale_starts_at')->orWhere('sale_starts_at', '<=', $now))
+            ->where(fn (Builder $q) => $q->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>=', $now));
     }
 
     /**

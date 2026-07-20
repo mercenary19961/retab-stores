@@ -39,7 +39,7 @@ class ShopControllerTest extends TestCase
         $this->makeProduct();
 
         $this->get('/shop')->assertOk()->assertInertia(
-            fn (Assert $page) => $page->component('shop/catalogue')->has('products', 1)->has('categories', 1),
+            fn (Assert $page) => $page->component('shop/catalogue')->has('products.data', 1)->has('categories', 1),
         );
     }
 
@@ -74,7 +74,58 @@ class ShopControllerTest extends TestCase
         $this->makeProduct(); // seeded into the 'dates' category
 
         $this->get('/shop?category=dates')->assertOk()->assertInertia(
-            fn (Assert $page) => $page->component('shop/catalogue')->has('products', 1)->where('activeCategory', 'dates'),
+            fn (Assert $page) => $page->component('shop/catalogue')->has('products.data', 1)->where('activeCategory', 'dates'),
+        );
+    }
+
+    public function test_catalogue_search_matches_the_product_name(): void
+    {
+        $this->makeProduct(['slug' => 'sukkari', 'name_ar' => 'سكري']);
+        $this->makeProduct(['slug' => 'khalas', 'name_ar' => 'خلاص', 'name_en' => 'Khalas']);
+
+        $this->get('/shop?q=Khalas')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('products.data', 1)
+                ->where('products.data.0.slug', 'khalas')
+                ->where('filters.q', 'Khalas'),
+        );
+    }
+
+    public function test_catalogue_offers_filter_returns_only_on_sale_products(): void
+    {
+        $this->makeProduct(['slug' => 'regular', 'price' => 50]);
+        $this->makeProduct(['slug' => 'discounted', 'price' => 50, 'sale_price' => 40]);
+
+        $this->get('/shop?on_sale=1')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('products.data', 1)
+                ->where('products.data.0.slug', 'discounted')
+                ->where('filters.on_sale', true),
+        );
+    }
+
+    public function test_catalogue_sorts_by_price_ascending(): void
+    {
+        $this->makeProduct(['slug' => 'mid', 'price' => 20]);
+        $this->makeProduct(['slug' => 'cheap', 'price' => 10]);
+        $this->makeProduct(['slug' => 'dear', 'price' => 30]);
+
+        $this->get('/shop?sort=price_asc')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->where('products.data.0.slug', 'cheap')
+                ->where('products.data.2.slug', 'dear'),
+        );
+    }
+
+    public function test_catalogue_paginates_twelve_per_page(): void
+    {
+        foreach (range(1, 13) as $i) {
+            $this->makeProduct(['slug' => "p-{$i}", 'sku' => "SKU-{$i}"]);
+        }
+
+        $this->get('/shop')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('products.data', 12)->where('products.total', 13),
+        );
+
+        $this->get('/shop?page=2')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('products.data', 1),
         );
     }
 

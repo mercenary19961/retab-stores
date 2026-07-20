@@ -117,9 +117,9 @@ export default function StoreNavbar() {
                         >
                             <Menu className="size-6" />
                         </button>
-                        {/* TODO: wire to real product search once search exists. */}
+                        {/* Catalogue hosts the product search box. */}
                         <Link
-                            href="/"
+                            href="/shop"
                             aria-label={t('nav.search')}
                             className="hidden text-brand-gold transition-colors hover:text-brand-teal md:inline-flex"
                         >
@@ -218,8 +218,10 @@ export default function StoreNavbar() {
                         ),
                     )}
 
-                    {/* TODO: point to the on-sale filter once /shop offers exists. */}
-                    <Link href="/" className={`${linkBase} ${linkIdle}`}>
+                    <Link
+                        href="/shop?on_sale=1"
+                        className={`${linkBase} ${url.includes('on_sale=1') ? linkActive : linkIdle}`}
+                    >
                         {t('nav.offers')}
                     </Link>
                     <Link href="/pages/about" className={`${linkBase} ${isActive('/pages/about') ? linkActive : linkIdle}`}>
@@ -283,7 +285,7 @@ export default function StoreNavbar() {
                             </div>
                         ))}
 
-                        <Link href="/" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
+                        <Link href="/shop?on_sale=1" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
                             {t('nav.offers')}
                         </Link>
                         <Link href="/pages/about" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>

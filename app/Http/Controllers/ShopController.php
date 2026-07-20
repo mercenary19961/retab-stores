@@ -47,7 +47,11 @@ class ShopController
         ]);
     }
 
-    /** Full catalogue (`/shop`) — all active products, optionally category-filtered. */
+    /**
+     * Full catalogue (`/shop`) — active products with optional category filter,
+     * text search, on-sale ("Offers") filter, and sorting, paginated 12 per page.
+     * Filters compose and are preserved across pagination (withQueryString).
+     */
     public function catalogue(Request $request): Response
     {
         $categories = Category::where('is_active', true)
@@ -55,20 +59,49 @@ class ShopController
             ->get(['id', 'name_ar', 'name_en', 'slug']);
 
         $activeCategory = $request->query('category');
+        $search = trim((string) $request->query('q', ''));
+        $sort = in_array($request->query('sort'), ['price_asc', 'price_desc', 'name'], true)
+            ? $request->query('sort')
+            : 'newest';
+        $onSaleOnly = $request->boolean('on_sale');
 
         $query = Product::where('is_active', true)
-            ->with(['category:id,name_ar,name_en,slug', 'images'])
-            ->orderByDesc('is_featured')
-            ->latest();
+            ->with(['category:id,name_ar,name_en,slug', 'images']);
 
         if ($activeCategory && ($category = $categories->firstWhere('slug', $activeCategory))) {
             $query->where('category_id', $category->id);
         }
 
+        if ($search !== '') {
+            // Bound as a parameter (safe); % / _ act as wildcards, which is fine for search.
+            $query->where(fn ($q) => $q
+                ->where('name_ar', 'like', "%{$search}%")
+                ->orWhere('name_en', 'like', "%{$search}%"));
+        }
+
+        if ($onSaleOnly) {
+            $query->onSale();
+        }
+
+        match ($sort) {
+            'price_asc' => $query->orderBy('price'),
+            'price_desc' => $query->orderByDesc('price'),
+            'name' => $query->orderBy('name_ar'),
+            default => $query->orderByDesc('is_featured')->latest(),
+        };
+
+        $products = $query->paginate(12)->withQueryString()
+            ->through(fn (Product $p) => $this->card($p));
+
         return Inertia::render('shop/catalogue', [
             'categories' => $categories,
-            'products' => $query->get()->map(fn (Product $p) => $this->card($p))->values(),
+            'products' => $products,
             'activeCategory' => $activeCategory,
+            'filters' => [
+                'q' => $search,
+                'sort' => $sort,
+                'on_sale' => $onSaleOnly,
+            ],
         ]);
     }
 
