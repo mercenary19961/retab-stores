@@ -45,6 +45,16 @@ class ShopControllerTest extends TestCase
         );
     }
 
+    public function test_branches_page_renders_the_two_locations(): void
+    {
+        $this->get('/pages/branches')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->component('shop/branches')
+                ->has('branches', 2)
+                ->where('branches.0.key', 'malqa')
+                ->where('branches.1.key', 'aziziyah'),
+        );
+    }
+
     public function test_product_page_renders(): void
     {
         $this->makeProduct(['slug' => 'sukkari-1kg']);

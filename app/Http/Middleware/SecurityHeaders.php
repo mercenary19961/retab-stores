@@ -41,7 +41,8 @@ class SecurityHeaders
             // R2/CDN product images are https; data:/blob: for previews.
             "img-src 'self' data: blob: https:",
             "font-src 'self' data: https://fonts.bunny.net",
-            "frame-src 'self' https://challenges.cloudflare.com",
+            // Google Maps embed on the branches (locations) page.
+            "frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://maps.google.com",
             "connect-src 'self' https://cloudflareinsights.com",
             "media-src 'self'",
             "object-src 'none'",

@@ -94,6 +94,14 @@ const en = {
         noResults: 'No products match your search.',
         clearFilters: 'Clear filters',
     },
+    branches: {
+        headTitle: 'Our Branches — Retab Dates',
+        metaDescription: 'Visit Retab Dates in Riyadh — Al Malqa and Al Aziziyah. Get directions and store hours.',
+        heading: 'Our Branches',
+        subtitle: 'Visit us in Riyadh — tap Directions to navigate straight to the shop.',
+        directions: 'Directions',
+        call: 'Call',
+    },
     product: {
         addToCart: 'Add to cart',
         outOfStock: 'Currently unavailable',
