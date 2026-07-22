@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * @mixin IdeHelperProduct
@@ -15,6 +16,17 @@ use Illuminate\Support\Carbon;
 class Product extends Model
 {
     use SoftDeletes;
+
+    /** Cache key for the storefront typeahead index (see ShopController::searchIndex). */
+    public const SEARCH_INDEX_CACHE = 'shop.search_index';
+
+    protected static function booted(): void
+    {
+        // Any product change invalidates the cached search index (ProductImage
+        // busts it too, since a primary-image change alters an index thumbnail).
+        static::saved(fn () => Cache::forget(self::SEARCH_INDEX_CACHE));
+        static::deleted(fn () => Cache::forget(self::SEARCH_INDEX_CACHE));
+    }
 
     protected $fillable = [
         'category_id',

@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Search } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
 
@@ -16,10 +16,11 @@ interface Suggestion {
 }
 
 /**
- * Catalogue search with a live typeahead: as the customer types (debounced), a
- * dropdown of matching products (thumbnail + name + price) appears instantly.
- * Clicking a suggestion opens that product; pressing Enter runs the full grid
- * filter via `onSubmit`. Closes on outside-click / Escape.
+ * Catalogue search with a live typeahead. The whole (small, server-cached)
+ * catalogue index is fetched ONCE on first interaction, then every keystroke
+ * filters it in-memory — so results are truly instant, with zero DB hits or
+ * network round-trips per key. Fetching lazily (not as an SSR prop) keeps the
+ * server-rendered page identical for crawlers. Enter runs the full grid filter.
  */
 export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQuery: string; onSubmit: (q: string) => void }) {
     const { t } = useTranslation();
@@ -27,46 +28,30 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
     const currency = t('common.currency');
 
     const [q, setQ] = useState(initialQuery);
-    const [results, setResults] = useState<Suggestion[]>([]);
+    const [index, setIndex] = useState<Suggestion[] | null>(null);
     const [open, setOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
     const boxRef = useRef<HTMLDivElement>(null);
+    const startedRef = useRef(false);
 
-    // Debounced live fetch. <2 chars clears the dropdown; each keystroke aborts
-    // the in-flight request so only the latest result set ever lands.
-    useEffect(() => {
-        const term = q.trim();
-        if (term.length < 2) {
-            setResults([]);
-            setOpen(false);
-            setLoading(false);
-            return;
-        }
+    // One-shot fetch of the full index, triggered on first focus/type.
+    const loadIndex = useCallback(() => {
+        if (startedRef.current) return;
+        startedRef.current = true;
+        fetch('/shop/search-index', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then((r) => r.json())
+            .then((d: { products: Suggestion[] }) => setIndex(d.products ?? []))
+            .catch(() => {
+                startedRef.current = false; // allow a retry on the next interaction
+            });
+    }, []);
 
-        setLoading(true);
-        const controller = new AbortController();
-        const timer = window.setTimeout(() => {
-            fetch(`/shop/search?q=${encodeURIComponent(term)}`, {
-                headers: { Accept: 'application/json' },
-                credentials: 'same-origin',
-                signal: controller.signal,
-            })
-                .then((r) => r.json())
-                .then((d: { results: Suggestion[] }) => {
-                    setResults(d.results);
-                    setOpen(true);
-                    setLoading(false);
-                })
-                .catch(() => {
-                    /* aborted or network error — keep the last results */
-                });
-        }, 250);
-
-        return () => {
-            window.clearTimeout(timer);
-            controller.abort();
-        };
-    }, [q]);
+    const term = q.trim().toLowerCase();
+    const results = useMemo(() => {
+        if (!index || term.length < 2) return [];
+        return index
+            .filter((p) => p.name_ar.toLowerCase().includes(term) || (p.name_en ?? '').toLowerCase().includes(term))
+            .slice(0, 8);
+    }, [index, term]);
 
     // Close on outside click / Escape.
     useEffect(() => {
@@ -80,11 +65,19 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
         };
     }, []);
 
+    const onChange = (value: string) => {
+        setQ(value);
+        loadIndex();
+        setOpen(value.trim().length >= 2);
+    };
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         setOpen(false);
         onSubmit(q.trim());
     };
+
+    const showDropdown = open && term.length >= 2;
 
     return (
         <div ref={boxRef} className="relative min-w-0 flex-1 sm:max-w-xs">
@@ -93,8 +86,11 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                 <input
                     type="search"
                     value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    onFocus={() => results.length > 0 && setOpen(true)}
+                    onChange={(e) => onChange(e.target.value)}
+                    onFocus={() => {
+                        loadIndex();
+                        if (term.length >= 2) setOpen(true);
+                    }}
                     placeholder={t('catalogue.searchPlaceholder')}
                     aria-label={t('nav.search')}
                     autoComplete="off"
@@ -102,11 +98,11 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                 />
             </form>
 
-            {open && (
+            {showDropdown && (
                 <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-brand-gold/20 bg-white shadow-lg sm:min-w-[22rem]">
                     {results.length === 0 ? (
                         <p className="px-4 py-3 text-sm text-brand-teal/60">
-                            {loading ? t('catalogue.searching') : t('catalogue.noResults')}
+                            {index === null ? t('catalogue.searching') : t('catalogue.noResults')}
                         </p>
                     ) : (
                         <ul className="brand-scrollbar max-h-96 overflow-y-auto py-1">

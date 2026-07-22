@@ -12,6 +12,7 @@ use App\Models\ReviewHelpfulVote;
 use App\Models\Wishlist;
 use App\Services\ReviewService;
 use App\Support\Media;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -121,35 +122,34 @@ class ShopController
     }
 
     /**
-     * Live search suggestions (typeahead): up to 8 storefront-visible products
-     * matching the term by name, each with a thumbnail. JSON, fetched as the
-     * customer types on the catalogue; buyable products rank above Coming-Soon.
+     * The full storefront search index (all visible products with thumbnails),
+     * fetched ONCE by the catalogue typeahead which then filters in-memory — so
+     * search costs zero DB hits / round-trips per keystroke. The catalogue is
+     * small (dozens of SKUs), so the whole index is a few KB. Cached (memory read,
+     * not a query) and busted whenever a product or its images change; the 1h TTL
+     * is a safety net for time-based sale windows. Buyable products rank first.
      */
-    public function search(Request $request)
+    public function searchIndex()
     {
-        $term = trim((string) $request->query('q', ''));
-        if (mb_strlen($term) < 2) {
-            return response()->json(['results' => []]);
-        }
+        $products = Cache::remember(Product::SEARCH_INDEX_CACHE, now()->addHour(), function () {
+            return Product::visibleOnStore()
+                ->with('images')
+                ->orderByDesc('is_active')
+                ->get()
+                ->map(fn (Product $p) => [
+                    'slug' => $p->slug,
+                    'name_ar' => $p->name_ar,
+                    'name_en' => $p->name_en,
+                    'image' => Media::url($p->primaryImage()?->path),
+                    'price' => (float) $p->price,
+                    'effective_price' => $p->effectivePrice(),
+                    'on_sale' => $p->isOnSale(),
+                    'coming_soon' => $p->isComingSoon(),
+                ])
+                ->values();
+        });
 
-        $results = Product::visibleOnStore()
-            ->where(fn ($q) => $q->where('name_ar', 'like', "%{$term}%")->orWhere('name_en', 'like', "%{$term}%"))
-            ->with('images')
-            ->orderByDesc('is_active')
-            ->limit(8)
-            ->get()
-            ->map(fn (Product $p) => [
-                'slug' => $p->slug,
-                'name_ar' => $p->name_ar,
-                'name_en' => $p->name_en,
-                'image' => Media::url($p->primaryImage()?->path),
-                'price' => (float) $p->price,
-                'effective_price' => $p->effectivePrice(),
-                'on_sale' => $p->isOnSale(),
-                'coming_soon' => $p->isComingSoon(),
-            ]);
-
-        return response()->json(['results' => $results]);
+        return response()->json(['products' => $products]);
     }
 
     /**

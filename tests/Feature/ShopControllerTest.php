@@ -140,33 +140,36 @@ class ShopControllerTest extends TestCase
         );
     }
 
-    public function test_live_search_returns_matching_products_with_a_thumbnail_field(): void
+    public function test_search_index_returns_visible_products_with_a_thumbnail_field(): void
     {
         $this->makeProduct(['slug' => 'sukkari-live', 'name_ar' => 'سكري فاخر', 'name_en' => 'Sukkari Deluxe']);
         $this->makeProduct(['slug' => 'khalas-live', 'name_ar' => 'خلاص']);
 
-        $this->getJson('/shop/search?q=Sukkari')->assertOk()
-            ->assertJsonCount(1, 'results')
-            ->assertJsonPath('results.0.slug', 'sukkari-live')
-            ->assertJsonStructure(['results' => [['slug', 'name_ar', 'name_en', 'image', 'effective_price', 'coming_soon']]]);
+        $this->getJson('/shop/search-index')->assertOk()
+            ->assertJsonCount(2, 'products')
+            ->assertJsonStructure(['products' => [['slug', 'name_ar', 'name_en', 'image', 'effective_price', 'coming_soon']]]);
     }
 
-    public function test_live_search_ignores_terms_shorter_than_two_characters(): void
+    public function test_search_index_includes_coming_soon_but_not_plain_hidden(): void
     {
-        $this->makeProduct();
-
-        $this->getJson('/shop/search?q=a')->assertOk()->assertJsonCount(0, 'results');
-    }
-
-    public function test_live_search_includes_coming_soon_but_not_plain_hidden(): void
-    {
+        $this->makeProduct(['slug' => 'buyable-x', 'name_ar' => 'خلاص']);
         $this->makeProduct(['slug' => 'soon-x', 'name_ar' => 'تمر قريباً', 'is_active' => false, 'is_coming_soon' => true]);
         $this->makeProduct(['slug' => 'hidden-x', 'name_ar' => 'تمر مخفي', 'is_active' => false, 'is_coming_soon' => false]);
 
-        $this->getJson('/shop/search?q=' . urlencode('تمر'))->assertOk()
-            ->assertJsonCount(1, 'results')
-            ->assertJsonPath('results.0.slug', 'soon-x')
-            ->assertJsonPath('results.0.coming_soon', true);
+        $slugs = collect($this->getJson('/shop/search-index')->assertOk()->json('products'))->pluck('slug');
+        $this->assertTrue($slugs->contains('buyable-x'));
+        $this->assertTrue($slugs->contains('soon-x'));
+        $this->assertFalse($slugs->contains('hidden-x'));
+    }
+
+    public function test_search_index_cache_busts_when_a_product_is_added(): void
+    {
+        $this->makeProduct(['slug' => 'one']);
+        $this->getJson('/shop/search-index')->assertOk()->assertJsonCount(1, 'products');
+
+        // Saving another product invalidates the cached index (model event).
+        $this->makeProduct(['slug' => 'two']);
+        $this->getJson('/shop/search-index')->assertOk()->assertJsonCount(2, 'products');
     }
 
     public function test_catalogue_offers_filter_returns_only_on_sale_products(): void
