@@ -47,7 +47,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
 
     const term = q.trim().toLowerCase();
     const results = useMemo(() => {
-        if (!index || term.length < 2) return [];
+        if (!index || term.length < 1) return [];
         return index
             .filter((p) => p.name_ar.toLowerCase().includes(term) || (p.name_en ?? '').toLowerCase().includes(term))
             .slice(0, 8);
@@ -68,7 +68,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
     const onChange = (value: string) => {
         setQ(value);
         loadIndex();
-        setOpen(value.trim().length >= 2);
+        setOpen(value.trim().length >= 1);
     };
 
     const submit = (e: React.FormEvent) => {
@@ -77,7 +77,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
         onSubmit(q.trim());
     };
 
-    const showDropdown = open && term.length >= 2;
+    const showDropdown = open && term.length >= 1;
 
     return (
         <div ref={boxRef} className="relative min-w-0 flex-1 sm:max-w-xs">
@@ -89,7 +89,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                     onChange={(e) => onChange(e.target.value)}
                     onFocus={() => {
                         loadIndex();
-                        if (term.length >= 2) setOpen(true);
+                        if (term.length >= 1) setOpen(true);
                     }}
                     placeholder={t('catalogue.searchPlaceholder')}
                     aria-label={t('nav.search')}
