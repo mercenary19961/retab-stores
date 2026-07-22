@@ -106,4 +106,22 @@ class ZidCatalogImporterTest extends TestCase
         // Matched by slug → updated, not duplicated.
         $this->assertSame(4, Product::count());
     }
+
+    public function test_re_run_keeps_a_hand_added_english_name_but_honours_the_sheet(): void
+    {
+        $path = $this->fixtureCsv();
+        $importer = app(ZidCatalogImporter::class);
+        $importer->import($path, withImages: false);
+
+        // A row the sheet leaves blank gets an English name added by hand in admin.
+        Product::where('slug', 'khalas-test')->update(['name_en' => 'Ground Khalas Dates 500g']);
+
+        // Re-importing must NOT wipe that hand-added copy (the sheet is still blank).
+        $importer->import($path, withImages: false);
+        unlink($path);
+
+        $this->assertSame('Ground Khalas Dates 500g', Product::where('slug', 'khalas-test')->first()->name_en);
+        // A row that DOES carry an English name in the sheet still applies it.
+        $this->assertSame('Stuffed', Product::where('slug', 'stuffed-test')->first()->name_en);
+    }
 }
