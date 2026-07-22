@@ -28,6 +28,7 @@ const COLUMNS: ColumnDef[] = [
 interface ProductRow {
     id: number;
     name_ar: string;
+    name_en: string | null;
     image: string | null;
     sku: string;
     smacc_sku: string | null;
@@ -114,8 +115,8 @@ export default function ProductsIndex({
 }) {
     const { t, i18n } = useAdminT();
     const [search, setSearch] = useState(filters.search ?? '');
-    // EN-first admin: show a category's English name when set, else the Arabic.
-    const catLabel = (c: { name_ar: string; name_en: string | null }) => (i18n.language === 'en' && c.name_en ? c.name_en : c.name_ar);
+    // EN-first admin: show the English name/label when set, else the Arabic.
+    const loc = (ar: string, en: string | null) => (i18n.language === 'en' && en ? en : ar);
     const rc = useResizableColumns({ tableKey: 'products', columns: COLUMNS });
     const [editing, setEditing] = useState<ProductRow | 'new' | null>(null);
 
@@ -175,7 +176,7 @@ export default function ProductsIndex({
                     onChange={(v) => query({ category: v || undefined, page: undefined })}
                     options={[
                         { value: '', label: t('admin.products.allCategories') },
-                        ...categories.map((c) => ({ value: String(c.id), label: catLabel(c) })),
+                        ...categories.map((c) => ({ value: String(c.id), label: loc(c.name_ar, c.name_en) })),
                     ]}
                     className="w-full sm:w-auto"
                 />
@@ -241,13 +242,13 @@ export default function ProductsIndex({
                                         ) : (
                                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-neutral-100 text-sm dark:bg-neutral-800">🌴</div>
                                         )}
-                                        <span dir="auto" className="truncate">{p.name_ar}</span>
+                                        <span dir="auto" className="truncate">{loc(p.name_ar, p.name_en)}</span>
                                         {p.is_featured && <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">{t('admin.products.featured')}</span>}
                                     </div>
                                 </td>
                                 <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.sku}</td>
                                 <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.smacc_sku ?? '—'}</td>
-                                <td className="truncate px-4 py-3" dir="auto">{p.category ? catLabel(p.category) : '—'}</td>
+                                <td className="truncate px-4 py-3" dir="auto">{p.category ? loc(p.category.name_ar, p.category.name_en) : '—'}</td>
                                 <td className="px-4 py-3">
                                     {p.sale_price !== null ? (
                                         <span>
@@ -284,7 +285,7 @@ export default function ProductsIndex({
                                     <div className="flex items-center justify-end gap-2">
                                         <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(p)}>{t('admin.common.edit')}</Button>
                                         <ConfirmDeleteButton
-                                            itemName={p.name_ar}
+                                            itemName={loc(p.name_ar, p.name_en)}
                                             reversible
                                             onConfirm={() => router.delete(`/admin/products/${p.id}`, { preserveScroll: true })}
                                         />
@@ -315,7 +316,7 @@ export default function ProductsIndex({
                 open={editing !== null}
                 onClose={() => setEditing(null)}
                 size="lg"
-                title={editing && editing !== 'new' ? t('admin.products.form.editHead', { name: editing.name_ar }) : t('admin.products.form.newTitle')}
+                title={editing && editing !== 'new' ? t('admin.products.form.editHead', { name: loc(editing.name_ar, editing.name_en) }) : t('admin.products.form.newTitle')}
             >
                 {editing === 'new' && <ProductFormBody modal product={null} categories={categories} onSaved={() => setEditing(null)} />}
                 {editing && editing !== 'new' && <ProductEditor key={editing.id} productId={editing.id} categories={categories} onSaved={() => setEditing(null)} />}

@@ -43,6 +43,7 @@ class ProductController extends Controller
             ->through(fn (Product $p) => [
                 'id' => $p->id,
                 'name_ar' => $p->name_ar,
+                'name_en' => $p->name_en,
                 'image' => Media::url($p->primaryImage()?->path, 'thumb'),
                 'sku' => $p->sku,
                 'smacc_sku' => $p->smacc_sku,
