@@ -82,6 +82,19 @@ class ZidCatalogImporterTest extends TestCase
         $this->assertNull($assorted->smacc_sku);
     }
 
+    public function test_it_assigns_our_own_rtb_sku_and_never_stores_the_zid_sku(): void
+    {
+        $path = $this->fixtureCsv();
+        app(ZidCatalogImporter::class)->import($path, withImages: false);
+        unlink($path);
+
+        foreach (Product::all() as $product) {
+            $this->assertMatchesRegularExpression('/^RTB-\d{4}$/', $product->sku);
+        }
+        // The Zid SKU (e.g. ZID999) is junk and must not be stored anywhere.
+        $this->assertDatabaseMissing('products', ['sku' => 'ZID999']);
+    }
+
     public function test_it_is_idempotent_on_re_run(): void
     {
         $path = $this->fixtureCsv();

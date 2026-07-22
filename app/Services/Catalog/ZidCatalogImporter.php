@@ -66,10 +66,10 @@ class ZidCatalogImporter
         $categories = $this->ensureCategories();
 
         // Track values chosen this run so a stray duplicate can't break the unique
-        // constraints (slug / sku / smacc_sku).
+        // constraints (slug / smacc_sku).
         $usedSlug = [];
-        $usedSku = [];
         $usedSmacc = [];
+        $skuSeq = 0;
 
         foreach ($rows as $row) {
             $catName = trim($row['category']) !== '' ? trim($row['category']) : self::DEFAULT_CATEGORY;
@@ -77,7 +77,9 @@ class ZidCatalogImporter
             $categoryId = $categories[$map[0]]->id;
 
             $slug = $this->dedupe(trim($row['old_zid_slug']) ?: 'product-' . $row['row_ref'], $usedSlug);
-            $sku = $this->dedupe(trim($row['zid_sku']) ?: 'ZID-' . $row['row_ref'], $usedSku);
+            // Our own product code (RTB-0001…), assigned in sheet order. The Zid SKU
+            // (Z.30547.*) is junk, unrelated to SMACC, so it is NOT stored at all.
+            $sku = 'RTB-' . str_pad((string) ++$skuSeq, 4, '0', STR_PAD_LEFT);
 
             // smacc_sku is a nullable UNIQUE key: keep only the first occurrence.
             $smacc = trim($row['smacc_sku']);
