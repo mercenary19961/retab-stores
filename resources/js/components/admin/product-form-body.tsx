@@ -9,6 +9,7 @@ import { useAdminT } from '@/i18n/use-admin-t';
 export interface Category {
     id: number;
     name_ar: string;
+    name_en: string | null;
 }
 
 export interface ProductImage {
@@ -61,9 +62,12 @@ export default function ProductFormBody({
     onSaved?: () => void;
     onImageChanged?: () => void;
 }) {
-    const { t } = useAdminT();
+    const { t, i18n } = useAdminT();
     const editing = product !== null;
     useHighlightFields();
+
+    // EN-first admin: show a category's English name when set, else the Arabic.
+    const catLabel = (c: Category) => (i18n.language === 'en' && c.name_en ? c.name_en : c.name_ar);
 
     const { data, setData, post, put, processing, errors, isDirty, transform } = useForm({
         category_id: product?.category_id ?? categories[0]?.id ?? '',
@@ -156,7 +160,7 @@ export default function ProductFormBody({
                         <Select
                             value={String(data.category_id)}
                             onChange={(v) => setData('category_id', Number(v))}
-                            options={categories.map((c) => ({ value: String(c.id), label: c.name_ar }))}
+                            options={categories.map((c) => ({ value: String(c.id), label: catLabel(c) }))}
                             className="mt-1 w-full"
                         />
                         {errors.category_id && <span className="text-xs text-red-500">{errors.category_id}</span>}

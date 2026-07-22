@@ -37,7 +37,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = $this->filteredQuery($request)
-            ->with(['category:id,name_ar', 'images'])
+            ->with(['category:id,name_ar,name_en', 'images'])
             ->paginate(20)
             ->withQueryString()
             ->through(fn (Product $p) => [
@@ -46,7 +46,7 @@ class ProductController extends Controller
                 'image' => Media::url($p->primaryImage()?->path, 'thumb'),
                 'sku' => $p->sku,
                 'smacc_sku' => $p->smacc_sku,
-                'category' => $p->category?->name_ar,
+                'category' => $p->category?->only('name_ar', 'name_en'),
                 'price' => (float) $p->price,
                 'sale_price' => $p->sale_price !== null ? (float) $p->sale_price : null,
                 'stock' => $p->stock,
@@ -319,13 +319,18 @@ class ProductController extends Controller
     }
 
     /**
-     * @return array<int, array{id: int, name_ar: string}>
+     * @return array<int, array{id: int, name_ar: string, name_en: string|null}>
      */
     private function categoryOptions(): array
     {
-        return Category::orderBy('sort_order')
-            ->get(['id', 'name_ar'])
-            ->map(fn (Category $c) => ['id' => $c->id, 'name_ar' => $c->name_ar])
+        // Only LEAF categories are assignable to a product. The top-level nav groups
+        // (التمور / الهدايا) exist purely to drive the storefront navbar, so excluding
+        // them also drops the duplicate "Dates" (parent group vs leaf) from the list.
+        // name_en ships too so the EN-first admin can localize the labels.
+        return Category::whereNotNull('parent_id')
+            ->orderBy('sort_order')
+            ->get(['id', 'name_ar', 'name_en'])
+            ->map(fn (Category $c) => ['id' => $c->id, 'name_ar' => $c->name_ar, 'name_en' => $c->name_en])
             ->all();
     }
 }

@@ -31,7 +31,7 @@ interface ProductRow {
     image: string | null;
     sku: string;
     smacc_sku: string | null;
-    category: string | null;
+    category: { name_ar: string; name_en: string | null } | null;
     price: number;
     sale_price: number | null;
     stock: number;
@@ -47,6 +47,7 @@ interface ProductRow {
 interface Category {
     id: number;
     name_ar: string;
+    name_en: string | null;
 }
 
 interface Filters {
@@ -111,8 +112,10 @@ export default function ProductsIndex({
     draftCount?: number;
     undoMeta?: UndoMeta | null;
 }) {
-    const { t } = useAdminT();
+    const { t, i18n } = useAdminT();
     const [search, setSearch] = useState(filters.search ?? '');
+    // EN-first admin: show a category's English name when set, else the Arabic.
+    const catLabel = (c: { name_ar: string; name_en: string | null }) => (i18n.language === 'en' && c.name_en ? c.name_en : c.name_ar);
     const rc = useResizableColumns({ tableKey: 'products', columns: COLUMNS });
     const [editing, setEditing] = useState<ProductRow | 'new' | null>(null);
 
@@ -172,7 +175,7 @@ export default function ProductsIndex({
                     onChange={(v) => query({ category: v || undefined, page: undefined })}
                     options={[
                         { value: '', label: t('admin.products.allCategories') },
-                        ...categories.map((c) => ({ value: String(c.id), label: c.name_ar })),
+                        ...categories.map((c) => ({ value: String(c.id), label: catLabel(c) })),
                     ]}
                     className="w-full sm:w-auto"
                 />
@@ -244,7 +247,7 @@ export default function ProductsIndex({
                                 </td>
                                 <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.sku}</td>
                                 <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.smacc_sku ?? '—'}</td>
-                                <td className="truncate px-4 py-3" dir="auto">{p.category ?? '—'}</td>
+                                <td className="truncate px-4 py-3" dir="auto">{p.category ? catLabel(p.category) : '—'}</td>
                                 <td className="px-4 py-3">
                                     {p.sale_price !== null ? (
                                         <span>
