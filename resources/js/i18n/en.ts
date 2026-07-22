@@ -508,6 +508,19 @@ const en = {
                         'Stock here is a mirror of SMACC, refreshed by the daily import.',
                     ],
                 },
+                productRequests: {
+                    intro: 'When a hidden product is flagged “Coming Soon”, customers can tap “I want this” instead of buying it. Those requests collect here.',
+                    steps: [
+                        'On a hidden product, turn on “Show on store as Coming Soon” so it appears without a buy button.',
+                        'Customers register interest: signed-in customers in one click, guests by leaving a phone number.',
+                        'Follow up with them on WhatsApp, then mark the request handled.',
+                    ],
+                    rules: [
+                        'Coming-Soon products are never buyable, they only collect interest.',
+                        'Each customer counts once per product, so repeat taps don’t inflate the numbers.',
+                        'Filter by Open to see only the requests you still need to act on.',
+                    ],
+                },
                 inventory: {
                     steps: [
                         'In SMACC, record today’s online sales, then export the inventory to an Excel file.',
