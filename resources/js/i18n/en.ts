@@ -266,6 +266,13 @@ const en = {
             changeLog: 'Change Log',
             users: 'Staff',
         },
+        navGroups: {
+            sales: 'Sales',
+            catalog: 'Catalog',
+            promotions: 'Promotions',
+            content: 'Content',
+            system: 'System',
+        },
         productRequests: {
             title: 'Product Requests',
             intro: 'Customers who tapped “I want this” on a Coming-Soon product. Follow up on WhatsApp, then mark it handled.',

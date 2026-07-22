@@ -45,19 +45,45 @@ type NavItem = { key: string; href: string; icon: LucideIcon; perm?: string; adm
 // Per-page "How it works" help, authored in i18n under `admin.help.pages.<navKey>`.
 type HelpContent = { intro?: string; steps?: string[]; rules?: string[] };
 
-const NAV: NavItem[] = [
+// The dashboard sits alone above the grouped sections.
+const NAV_TOP: NavItem[] = [
     { key: 'dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { key: 'orders', href: '/admin/orders', icon: ShoppingBag, perm: 'orders' },
-    { key: 'products', href: '/admin/products', icon: Package, perm: 'products' },
-    { key: 'productRequests', href: '/admin/product-requests', icon: Sparkles, perm: 'product_requests' },
-    { key: 'inventory', href: '/admin/stock-import', icon: Boxes, perm: 'inventory' },
-    { key: 'returns', href: '/admin/returns', icon: RotateCcw, perm: 'returns' },
-    { key: 'customers', href: '/admin/customers', icon: Users, perm: 'customers' },
-    { key: 'marketing', href: '/admin/marketing', icon: Megaphone, perm: 'marketing' },
-    { key: 'coupons', href: '/admin/coupons', icon: TicketPercent, perm: 'coupons' },
-    { key: 'discounts', href: '/admin/discounts', icon: BadgePercent, perm: 'discounts' },
-    { key: 'reviews', href: '/admin/client-reviews', icon: Star, perm: 'reviews' },
-    { key: 'contentPages', href: '/admin/content-pages', icon: FileText, perm: 'content_pages' },
+];
+
+// Related sections grouped under a header (label = `admin.navGroups.<key>`) so
+// the sidebar scans at a glance. A group with no visible items is hidden whole.
+const NAV_GROUPS: { key: string; items: NavItem[] }[] = [
+    {
+        key: 'sales',
+        items: [
+            { key: 'orders', href: '/admin/orders', icon: ShoppingBag, perm: 'orders' },
+            { key: 'returns', href: '/admin/returns', icon: RotateCcw, perm: 'returns' },
+            { key: 'customers', href: '/admin/customers', icon: Users, perm: 'customers' },
+        ],
+    },
+    {
+        key: 'catalog',
+        items: [
+            { key: 'products', href: '/admin/products', icon: Package, perm: 'products' },
+            { key: 'productRequests', href: '/admin/product-requests', icon: Sparkles, perm: 'product_requests' },
+            { key: 'inventory', href: '/admin/stock-import', icon: Boxes, perm: 'inventory' },
+        ],
+    },
+    {
+        key: 'promotions',
+        items: [
+            { key: 'marketing', href: '/admin/marketing', icon: Megaphone, perm: 'marketing' },
+            { key: 'coupons', href: '/admin/coupons', icon: TicketPercent, perm: 'coupons' },
+            { key: 'discounts', href: '/admin/discounts', icon: BadgePercent, perm: 'discounts' },
+        ],
+    },
+    {
+        key: 'content',
+        items: [
+            { key: 'reviews', href: '/admin/client-reviews', icon: Star, perm: 'reviews' },
+            { key: 'contentPages', href: '/admin/content-pages', icon: FileText, perm: 'content_pages' },
+        ],
+    },
 ];
 
 // Pinned to the bottom of the sidebar, in this order (top → bottom).
@@ -66,6 +92,12 @@ const NAV_BOTTOM: NavItem[] = [
     { key: 'users', href: '/admin/users', icon: ShieldCheck, adminOnly: true },
     { key: 'settings', href: '/admin/settings', icon: Settings, perm: 'settings' },
 ];
+
+// Flat list for the active-section + per-page-help lookups.
+const ALL_NAV: NavItem[] = [...NAV_TOP, ...NAV_GROUPS.flatMap((g) => g.items), ...NAV_BOTTOM];
+
+// Muted section header above each nav group.
+const GROUP_LABEL = 'px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-500';
 
 function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }>) {
     const { t, i18n } = useTranslation();
@@ -94,12 +126,15 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
         if (isAdmin || !item.perm) return true;
         return Boolean(permissions?.[item.perm]?.view);
     };
-    const navTop = NAV.filter(canSee);
+    const navTop = NAV_TOP.filter(canSee);
+    const navGroups = NAV_GROUPS
+        .map((group) => ({ key: group.key, items: group.items.filter(canSee) }))
+        .filter((group) => group.items.length > 0);
     const navBottom = NAV_BOTTOM.filter(canSee);
 
     // The current section's sidebar icon, to prefix the header title (string
     // titles only — pages that pass a styled node, e.g. Marketing, keep their own).
-    const activeNavItem = [...NAV, ...NAV_BOTTOM].find(
+    const activeNavItem = ALL_NAV.find(
         (item) => currentPath === item.href || (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href)),
     );
     const TitleIcon = activeNavItem?.icon;
@@ -240,8 +275,17 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                     </div>
                     <nav className="flex flex-1 flex-col overflow-y-auto p-3">
                         <div className="space-y-1">{navTop.map(renderNavItem)}</div>
+                        {navGroups.map((group) => (
+                            <div key={group.key} className="mt-4">
+                                <p className={GROUP_LABEL}>{t(`admin.navGroups.${group.key}`)}</p>
+                                <div className="space-y-1">{group.items.map(renderNavItem)}</div>
+                            </div>
+                        ))}
                         {navBottom.length > 0 && (
-                            <div className="mt-auto space-y-1 border-t border-neutral-800 pt-3">{navBottom.map(renderNavItem)}</div>
+                            <div className="mt-auto border-t border-neutral-800 pt-3">
+                                <p className={GROUP_LABEL}>{t('admin.navGroups.system')}</p>
+                                <div className="space-y-1">{navBottom.map(renderNavItem)}</div>
+                            </div>
                         )}
                     </nav>
                 </div>
