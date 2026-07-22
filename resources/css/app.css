@@ -235,6 +235,14 @@ html[dir='rtl'] .cta-shimmer {
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
     }
+
+    /* Buttons should read as clickable, like links do. Tailwind's reset leaves
+       them with the default arrow cursor. Base layer, so a `cursor-*` utility
+       (e.g. cursor-not-allowed) still wins; disabled buttons are excluded. */
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
 }
 
 :root {
