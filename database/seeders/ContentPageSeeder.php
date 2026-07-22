@@ -51,6 +51,13 @@ class ContentPageSeeder extends Seeder
                 'body_ar' => "واتساب: ‎+966 50 384 5356\n\n(يُحرَّر هذا المحتوى من لوحة التحكم.)",
                 'body_en' => "WhatsApp: +966 50 384 5356\n\n(Edit this content from the admin panel.)",
             ],
+            [
+                'slug' => 'privacy-policy',
+                'title_ar' => 'سياسة الخصوصية',
+                'title_en' => 'Privacy Policy',
+                'body_ar' => "نحرص في رطاب للتمور على حماية خصوصيتك.\n\n• نجمع البيانات اللازمة لإتمام طلبك (الاسم، رقم الجوال، عنوان التوصيل) ولتحسين تجربتك.\n• نستخدم ملفات تعريف الارتباط (الكوكيز) الضرورية لتشغيل السلة والدفع والأمان، وملفات اختيارية للتحليلات والتسويق لا تُفعَّل إلا بموافقتك.\n• يمكنك تعديل موافقتك في أي وقت عبر \"إعدادات الكوكيز\" أسفل الصفحة.\n• لا نبيع بياناتك لأي طرف ثالث.\n\nللاستفسارات المتعلقة بالخصوصية تواصل معنا عبر واتساب: ‎+966 50 384 5356.\n\n(يُحرَّر هذا المحتوى من لوحة التحكم.)",
+                'body_en' => "At Retab Dates we take your privacy seriously.\n\n• We collect the data needed to fulfil your order (name, mobile number, delivery address) and to improve your experience.\n• We use necessary cookies to run the cart, checkout, and security, plus optional analytics and marketing cookies that load only with your consent.\n• You can change your consent at any time from \"Cookie settings\" in the page footer.\n• We do not sell your data to any third party.\n\nFor privacy questions, contact us on WhatsApp: +966 50 384 5356.\n\n(Edit this content from the admin panel.)",
+            ],
         ];
     }
 }

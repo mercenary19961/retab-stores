@@ -1,5 +1,6 @@
 import StoreNavbar from '@/components/store/navbar';
 import StoreFooter from '@/components/store/footer';
+import CookieConsent from '@/components/store/cookie-consent';
 import { type PropsWithChildren } from 'react';
 
 interface Category {
@@ -28,6 +29,7 @@ export default function StoreLayout({
             )}
 
             <StoreFooter />
+            <CookieConsent />
         </div>
     );
 }

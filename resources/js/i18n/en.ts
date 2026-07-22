@@ -102,6 +102,32 @@ const en = {
         directions: 'Directions',
         call: 'Call',
     },
+    consent: {
+        title: 'We value your privacy',
+        body: 'We use cookies to run the store, understand traffic, and show relevant offers. You choose what to allow.',
+        privacyLink: 'Read our privacy policy',
+        customise: 'Customise',
+        back: 'Back',
+        rejectAll: 'Reject all',
+        acceptAll: 'Accept all',
+        save: 'Save choices',
+        settings: 'Cookie settings',
+        categories: {
+            necessary: {
+                label: 'Necessary',
+                description: 'Required for the cart, checkout, and security. Always on.',
+                always: 'Always on',
+            },
+            analytics: {
+                label: 'Analytics',
+                description: 'Helps us see how the store is used so we can improve it.',
+            },
+            marketing: {
+                label: 'Marketing',
+                description: 'Lets us show you relevant offers and measure our ads.',
+            },
+        },
+    },
     product: {
         addToCart: 'Add to cart',
         outOfStock: 'Currently unavailable',

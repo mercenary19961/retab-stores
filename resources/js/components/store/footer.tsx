@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { OPEN_CONSENT_EVENT } from '@/components/store/cookie-consent';
 
 /**
  * Store footer (from the Figma design). The background artwork is effectively a
@@ -117,6 +118,16 @@ export default function StoreFooter() {
                                 </Link>
                             </li>
                         ))}
+                        <li>
+                            {/* Lets visitors change their cookie choice at any time (re-opens the banner). */}
+                            <button
+                                type="button"
+                                onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
+                                className="font-heading text-brand-gold transition-colors hover:text-brand-teal"
+                            >
+                                {t('consent.settings')}
+                            </button>
+                        </li>
                     </ul>
                     <button
                         type="button"
