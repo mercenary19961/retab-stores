@@ -38,6 +38,10 @@ interface ProductRow {
     is_low_stock: boolean;
     is_active: boolean;
     is_featured: boolean;
+    is_coming_soon: boolean;
+    needs_price: boolean;
+    needs_image: boolean;
+    needs_description: boolean;
 }
 
 interface Category {
@@ -48,6 +52,7 @@ interface Category {
 interface Filters {
     search: string | null;
     category: number | null;
+    status: string | null;
     sort: string | null;
     direction: 'asc' | 'desc';
 }
@@ -97,11 +102,13 @@ export default function ProductsIndex({
     products,
     filters,
     categories,
+    draftCount = 0,
     undoMeta = null,
 }: {
     products: Paginator<ProductRow>;
     filters: Filters;
     categories: Category[];
+    draftCount?: number;
     undoMeta?: UndoMeta | null;
 }) {
     const { t } = useAdminT();
@@ -115,6 +122,7 @@ export default function ProductsIndex({
             {
                 search: search || undefined,
                 category: filters.category || undefined,
+                status: filters.status || undefined,
                 sort: filters.sort || undefined,
                 direction: filters.sort ? filters.direction : undefined,
                 ...next,
@@ -131,6 +139,7 @@ export default function ProductsIndex({
     const exportParams = {
         search: filters.search,
         category: filters.category,
+        status: filters.status,
         sort: filters.sort,
         direction: filters.sort ? filters.direction : undefined,
     };
@@ -164,6 +173,17 @@ export default function ProductsIndex({
                     options={[
                         { value: '', label: t('admin.products.allCategories') },
                         ...categories.map((c) => ({ value: String(c.id), label: c.name_ar })),
+                    ]}
+                    className="w-full sm:w-auto"
+                />
+
+                <Select
+                    value={filters.status ?? ''}
+                    onChange={(v) => query({ status: v || undefined, page: undefined })}
+                    options={[
+                        { value: '', label: t('admin.products.statusAll') },
+                        { value: 'active', label: t('admin.products.statusActive') },
+                        { value: 'draft', label: draftCount > 0 ? `${t('admin.products.statusDrafts')} (${draftCount})` : t('admin.products.statusDrafts') },
                     ]}
                     className="w-full sm:w-auto"
                 />
@@ -239,11 +259,23 @@ export default function ProductsIndex({
                                     <span className={p.is_low_stock ? 'font-semibold text-red-600 dark:text-red-400' : ''}>{p.stock}</span>
                                 </td>
                                 <td className="px-4 py-3">
-                                    {p.is_active ? (
-                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">{t('admin.products.active')}</span>
-                                    ) : (
-                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t('admin.products.hidden')}</span>
-                                    )}
+                                    <div className="flex flex-col items-start gap-1">
+                                        {p.is_active ? (
+                                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">{t('admin.products.active')}</span>
+                                        ) : (
+                                            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t('admin.products.hidden')}</span>
+                                        )}
+                                        {!p.is_active && p.is_coming_soon && (
+                                            <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs text-teal-800 dark:bg-teal-950 dark:text-teal-200">{t('admin.products.comingSoon')}</span>
+                                        )}
+                                        {!p.is_active && (p.needs_price || p.needs_image || p.needs_description) && (
+                                            <span className="flex flex-wrap gap-1">
+                                                {p.needs_price && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">{t('admin.products.needsPrice')}</span>}
+                                                {p.needs_image && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">{t('admin.products.needsImage')}</span>}
+                                                {p.needs_description && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">{t('admin.products.needsDescription')}</span>}
+                                            </span>
+                                        )}
+                                    </div>
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end gap-2">

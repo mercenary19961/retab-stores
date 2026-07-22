@@ -127,6 +127,13 @@ class DashboardController extends Controller
                 'urgent' => false,
             ],
             [
+                // Hidden draft products (imported incomplete) waiting to be finished.
+                'key' => 'draftsToComplete',
+                'count' => Product::where('is_active', false)->count(),
+                'href' => '/admin/products?status=draft',
+                'urgent' => false,
+            ],
+            [
                 // Tamara authorisations expire (~48h); flag any held over 24h.
                 'key' => 'tamaraExpiring',
                 'count' => Order::where('payment_method', PaymentMethod::Tamara)

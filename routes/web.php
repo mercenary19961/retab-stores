@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ProductRequestController;
 use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ShopController;
@@ -33,6 +34,11 @@ Route::get('/shop', [ShopController::class, 'catalogue'])->name('shop.catalogue'
 Route::get('/pages/branches', [\App\Http\Controllers\BranchController::class, 'index'])->name('branches');
 Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show'])->name('pages.show');
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
+// "I want this" demand signal for Coming-Soon products (guests allowed → guests
+// supply a phone + pass the Turnstile bot gate; signed-in users are one click).
+Route::post('/products/{product:slug}/request', [ProductRequestController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('shop.product.request');
 
 // Cart (public POSTs — rate-limited against scripted abuse).
 Route::get('/cart', [CartController::class, 'show'])->name('cart.show');

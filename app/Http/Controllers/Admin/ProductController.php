@@ -53,6 +53,11 @@ class ProductController extends Controller
                 'is_low_stock' => $p->isLowStock(),
                 'is_active' => $p->is_active,
                 'is_featured' => $p->is_featured,
+                'is_coming_soon' => $p->is_coming_soon,
+                // Completeness flags — what a draft still needs before it can go live.
+                'needs_price' => (float) $p->price <= 0,
+                'needs_image' => $p->images->isEmpty(),
+                'needs_description' => trim((string) $p->description_ar) === '' && trim((string) $p->short_description_ar) === '',
             ]);
 
         return Inertia::render('admin/products/index', [
@@ -60,9 +65,11 @@ class ProductController extends Controller
             'filters' => [
                 'search' => $request->query('search'),
                 'category' => $request->query('category') ? (int) $request->query('category') : null,
+                'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon'], true) ? $request->query('status') : null,
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
             ],
+            'draftCount' => Product::where('is_active', false)->count(),
             'categories' => $this->categoryOptions(),
             'undoMeta' => session('undo:products'),
         ]);
@@ -76,6 +83,7 @@ class ProductController extends Controller
     {
         $search = $request->query('search');
         $categoryId = $request->query('category');
+        $status = $request->query('status');
         $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
 
@@ -87,7 +95,11 @@ class ProductController extends Controller
                 ->orWhere('products.name_en', 'like', "%{$search}%")
                 ->orWhere('products.sku', 'like', "%{$search}%")
                 ->orWhere('products.smacc_sku', 'like', "%{$search}%")))
-            ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId));
+            ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId))
+            // Drafts = hidden products (the workspace to finish + optionally flag Coming Soon).
+            ->when($status === 'active', fn ($q) => $q->where('products.is_active', true))
+            ->when($status === 'draft', fn ($q) => $q->where('products.is_active', false))
+            ->when($status === 'coming_soon', fn ($q) => $q->where('products.is_coming_soon', true));
 
         if ($sort === 'category') {
             $query->leftJoin('categories', 'categories.id', '=', 'products.category_id')
@@ -216,6 +228,7 @@ class ProductController extends Controller
             'low_stock_threshold' => $product->low_stock_threshold,
             'is_active' => $product->is_active,
             'is_featured' => $product->is_featured,
+            'is_coming_soon' => $product->is_coming_soon,
             'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
                 'id' => $img->id,
                 'url' => Media::url($img->path),
@@ -279,6 +292,7 @@ class ProductController extends Controller
             'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
+            'is_coming_soon' => ['boolean'],
         ]);
 
         if (empty($data['slug'])) {

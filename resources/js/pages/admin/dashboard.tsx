@@ -5,6 +5,7 @@ import {
     BellRing,
     Boxes,
     Clock,
+    FilePen,
     Gift,
     MessageCircle,
     PackageX,
@@ -88,6 +89,7 @@ const TASK_ICON: Record<string, LucideIcon> = {
     bankTransfers: Banknote,
     returnsToReview: RotateCcw,
     readyToShip: Truck,
+    draftsToComplete: FilePen,
     tamaraExpiring: Clock,
 };
 

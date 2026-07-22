@@ -36,6 +36,7 @@ class Product extends Model
         'low_stock_threshold',
         'is_active',
         'is_featured',
+        'is_coming_soon',
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Product extends Model
         'low_stock_threshold' => 'integer',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'is_coming_soon' => 'boolean',
     ];
 
     public function category(): BelongsTo
@@ -81,6 +83,31 @@ class Product extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function requests(): HasMany
+    {
+        return $this->hasMany(ProductRequest::class);
+    }
+
+    /**
+     * Everything a customer may see on the storefront: live (buyable) products PLUS
+     * hidden ones flagged Coming Soon (visible, request-only). Buyability is still
+     * gated purely by is_active everywhere else (cart, checkout), so this scope only
+     * widens what LISTS, never what can be purchased.
+     */
+    public function scopeVisibleOnStore(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->where('is_active', true)->orWhere('is_coming_soon', true));
+    }
+
+    /**
+     * A hidden product being shown on the store in request-only mode. When it's
+     * live (is_active) it's a normal buyable product, never "coming soon".
+     */
+    public function isComingSoon(): bool
+    {
+        return ! $this->is_active && $this->is_coming_soon;
     }
 
     /**

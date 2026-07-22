@@ -17,6 +17,7 @@ class Permission
     public const SCHEMA = [
         'orders' => ['view', 'manage', 'export'],
         'products' => ['view', 'create', 'edit', 'delete'],
+        'product_requests' => ['view', 'manage'],
         'inventory' => ['view', 'import'],
         'returns' => ['view', 'resolve'],
         'customers' => ['view'],
@@ -37,6 +38,7 @@ class Permission
     public const DEFAULTS = [
         'orders' => ['view' => true, 'manage' => true, 'export' => false],
         'products' => ['view' => true, 'create' => true, 'edit' => true, 'delete' => false],
+        'product_requests' => ['view' => true, 'manage' => true],
         'inventory' => ['view' => true, 'import' => true],
         'returns' => ['view' => true, 'resolve' => true],
         'customers' => ['view' => true],

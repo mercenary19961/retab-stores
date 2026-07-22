@@ -68,7 +68,9 @@ class ShopController
             ? Category::where('is_active', true)->where('slug', $activeCategory)->value('id')
             : null;
 
-        $query = Product::where('is_active', true)
+        // Include Coming-Soon (hidden-but-surfaced) products alongside live ones;
+        // they render as request-only cards. Buyability is still is_active-gated.
+        $query = Product::visibleOnStore()
             ->with(['category:id,name_ar,name_en,slug', 'images']);
 
         if ($categoryId) {
@@ -105,7 +107,7 @@ class ShopController
             // the navbar dropdowns) and any empty leaf out of the filter, so a chip
             // never lands on an empty result.
             'categories' => fn () => Category::where('is_active', true)
-                ->whereHas('products', fn ($q) => $q->where('is_active', true))
+                ->whereHas('products', fn ($q) => $q->visibleOnStore())
                 ->orderBy('sort_order')
                 ->get(['id', 'name_ar', 'name_en', 'slug']),
             'products' => $products,
@@ -153,7 +155,8 @@ class ShopController
 
     public function show(Request $request, Product $product, ReviewService $reviewService): Response
     {
-        abort_unless($product->is_active, 404);
+        // Coming-Soon products are viewable (request-only); everything else hidden 404s.
+        abort_unless($product->is_active || $product->is_coming_soon, 404);
 
         $product->load('category:id,name_ar,name_en,slug', 'images');
         $user = $request->user();
@@ -197,6 +200,7 @@ class ShopController
                 'effective_price' => $product->effectivePrice(),
                 'on_sale' => $product->isOnSale(),
                 'in_stock' => $product->stock > 0,
+                'coming_soon' => $product->isComingSoon(),
                 'purchase_count' => $purchaseCount,
                 'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
                 'images' => $images,
@@ -242,6 +246,7 @@ class ShopController
             'effective_price' => $product->effectivePrice(),
             'on_sale' => $product->isOnSale(),
             'is_featured' => (bool) $product->is_featured,
+            'coming_soon' => $product->isComingSoon(),
             'image' => Media::url($product->primaryImage()?->path),
             'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
         ];

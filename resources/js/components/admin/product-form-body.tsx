@@ -34,6 +34,7 @@ export interface Product {
     low_stock_threshold: number | null;
     is_active: boolean;
     is_featured: boolean;
+    is_coming_soon: boolean;
     images?: ProductImage[];
 }
 
@@ -80,6 +81,7 @@ export default function ProductFormBody({
         low_stock_threshold: product?.low_stock_threshold ?? '',
         is_active: product?.is_active ?? true,
         is_featured: product?.is_featured ?? false,
+        is_coming_soon: product?.is_coming_soon ?? false,
         images: [] as File[], // create only — the new product's images, sent with the form
     });
 
@@ -97,7 +99,7 @@ export default function ProductFormBody({
             put(`/admin/products/${product.id}`, modal ? { preserveScroll: true, preserveState: true, onSuccess: onSaved } : {});
         } else {
             // Booleans as '1'/'0' so they survive the multipart (FormData) encoding.
-            transform((d) => ({ ...d, is_active: d.is_active ? '1' : '0', is_featured: d.is_featured ? '1' : '0' }));
+            transform((d) => ({ ...d, is_active: d.is_active ? '1' : '0', is_featured: d.is_featured ? '1' : '0', is_coming_soon: d.is_coming_soon ? '1' : '0' }));
             post('/admin/products', {
                 forceFormData: true,
                 preserveScroll: true,
@@ -196,6 +198,13 @@ export default function ProductFormBody({
                     <label className="flex items-center gap-2 text-sm" id="field-is_featured">
                         <input type="checkbox" checked={data.is_featured} onChange={(e) => setData('is_featured', e.target.checked)} className="accent-brand-gold" />
                         {t('admin.products.form.featuredLabel')}
+                    </label>
+                    <label className="flex items-start gap-2 text-sm" id="field-is_coming_soon">
+                        <input type="checkbox" checked={data.is_coming_soon} onChange={(e) => setData('is_coming_soon', e.target.checked)} className="mt-0.5 accent-brand-gold" />
+                        <span>
+                            {t('admin.products.form.comingSoonLabel')}
+                            <span className="block text-xs text-neutral-400">{t('admin.products.form.comingSoonHint')}</span>
+                        </span>
                     </label>
                 </section>
 
