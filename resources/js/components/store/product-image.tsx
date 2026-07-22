@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Square product image with a branded placeholder (white + faint Retab logo) that
- * shows while the photo buffers, then the photo fades in over it. The same
- * placeholder covers the genuine no-image case, so every card looks uniform and
- * nothing ever "pops" into empty space.
+ * Square product image with a branded placeholder (white + faint Retab logo).
+ * The placeholder sits PERMANENTLY behind the photo, so while the photo is still
+ * downloading — including after a filter/sort swaps this node's src, when `loaded`
+ * can briefly lag the real pixels — the card shows the logo instead of a blank
+ * white square. The photo simply fades in over the placeholder once its pixels
+ * arrive, covering it. The same placeholder covers the genuine no-image case, so
+ * every card looks uniform and nothing ever "pops" into empty space.
  *
  * The logo is already loaded by the navbar, so the placeholder paints instantly.
  * `loading="lazy"` keeps offscreen photos off the initial load.
@@ -25,9 +28,7 @@ export default function ProductImage({ src, alt }: { src: string | null; alt: st
         <div className="relative aspect-square w-full overflow-hidden rounded-[23%] bg-white shadow-sm transition-shadow group-hover:shadow-md">
             <div
                 aria-hidden
-                className={`absolute inset-0 flex items-center justify-center bg-white transition-opacity duration-500 ${
-                    loaded ? 'opacity-0' : 'opacity-100'
-                }`}
+                className="absolute inset-0 flex items-center justify-center bg-white"
             >
                 <img src="/images/brand/logo.png" alt="" className="w-1/2 max-w-[7rem] opacity-20" />
             </div>
