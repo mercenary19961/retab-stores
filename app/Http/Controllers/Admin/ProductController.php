@@ -43,7 +43,7 @@ class ProductController extends Controller
             ->through(fn (Product $p) => [
                 'id' => $p->id,
                 'name_ar' => $p->name_ar,
-                'image' => Media::url($p->primaryImage()?->path),
+                'image' => Media::url($p->primaryImage()?->path, 'thumb'),
                 'sku' => $p->sku,
                 'smacc_sku' => $p->smacc_sku,
                 'category' => $p->category?->name_ar,
@@ -231,7 +231,7 @@ class ProductController extends Controller
             'is_coming_soon' => $product->is_coming_soon,
             'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
                 'id' => $img->id,
-                'url' => Media::url($img->path),
+                'url' => Media::url($img->path, 'card'),
                 'is_primary' => $img->is_primary,
             ]),
         ];
