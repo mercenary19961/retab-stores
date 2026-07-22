@@ -31,6 +31,19 @@ class CookieConsentTest extends TestCase
             ->assertDontSee("gtag('consent', 'default'", false);
     }
 
+    public function test_gtm_loads_only_when_a_container_id_is_configured(): void
+    {
+        // Unset by default → the tag manager never loads (Consent Mode still ships).
+        $this->get('/')->assertOk()->assertDontSee('googletagmanager.com/gtm.js', false);
+
+        // Configured → the loader appears with the container id.
+        config(['services.gtm.container_id' => 'GTM-TEST123']);
+
+        $this->get('/')->assertOk()
+            ->assertSee('googletagmanager.com/gtm.js', false)
+            ->assertSee('GTM-TEST123', false);
+    }
+
     public function test_privacy_policy_page_renders(): void
     {
         ContentPage::create([
