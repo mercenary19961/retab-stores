@@ -140,7 +140,7 @@ class ShopController
                     'slug' => $p->slug,
                     'name_ar' => $p->name_ar,
                     'name_en' => $p->name_en,
-                    'image' => Media::url($p->primaryImage()?->path),
+                    'image' => Media::url($p->primaryImage()?->path, 'thumb'),
                     'price' => (float) $p->price,
                     'effective_price' => $p->effectivePrice(),
                     'on_sale' => $p->isOnSale(),
@@ -193,8 +193,9 @@ class ShopController
         $product->load('category:id,name_ar,name_en,slug', 'images');
         $user = $request->user();
 
+        // Detail-size WebP for the gallery; the full original stays for a future zoom.
         $images = $product->images->sortBy('sort_order')
-            ->map(fn ($img) => Media::url($img->path))
+            ->map(fn ($img) => Media::url($img->path, 'detail'))
             ->filter()
             ->values();
 
@@ -279,7 +280,7 @@ class ShopController
             'on_sale' => $product->isOnSale(),
             'is_featured' => (bool) $product->is_featured,
             'coming_soon' => $product->isComingSoon(),
-            'image' => Media::url($product->primaryImage()?->path),
+            'image' => Media::url($product->primaryImage()?->path, 'card'),
             'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
         ];
     }
