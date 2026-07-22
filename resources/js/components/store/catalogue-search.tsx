@@ -109,7 +109,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                             {loading ? t('catalogue.searching') : t('catalogue.noResults')}
                         </p>
                     ) : (
-                        <ul className="max-h-96 overflow-y-auto py-1">
+                        <ul className="brand-scrollbar max-h-96 overflow-y-auto py-1">
                             {results.map((r) => (
                                 <li key={r.slug}>
                                     <Link
