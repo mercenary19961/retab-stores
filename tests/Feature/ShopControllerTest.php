@@ -45,6 +45,24 @@ class ShopControllerTest extends TestCase
         );
     }
 
+    public function test_catalogue_filter_hides_categories_without_a_visible_product(): void
+    {
+        // An empty nav-group parent (like التمور / cat-dates, which only drives the
+        // navbar) must NOT show up as a filter chip that lands on an empty page.
+        Category::create(['name_ar' => 'التمور', 'name_en' => 'Dates', 'slug' => 'cat-dates', 'is_active' => true]);
+        // A leaf with a hidden-only product must be excluded too.
+        $empty = Category::create(['name_ar' => 'مخفي', 'slug' => 'hidden-cat', 'is_active' => true]);
+        $this->makeProduct(['category_id' => $empty->id, 'slug' => 'hidden-only', 'is_active' => false]);
+
+        // Only the 'dates' leaf has a visible product (from makeProduct).
+        $this->makeProduct();
+
+        $this->get('/shop')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('categories', 1)
+                ->where('categories.0.slug', 'dates'),
+        );
+    }
+
     public function test_branches_page_renders_the_two_locations(): void
     {
         $this->get('/pages/branches')->assertOk()->assertInertia(

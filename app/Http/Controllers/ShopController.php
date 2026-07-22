@@ -100,7 +100,12 @@ class ShopController
             // Deferred (closure): the chip list never changes while filtering, so
             // it's skipped on the partial reloads (which request only products /
             // filters / activeCategory) and sent only on the full first load.
+            // Only categories that hold a visible product become chips — this keeps
+            // the empty parent nav groups (التمور / الهدايا, which exist just to drive
+            // the navbar dropdowns) and any empty leaf out of the filter, so a chip
+            // never lands on an empty result.
             'categories' => fn () => Category::where('is_active', true)
+                ->whereHas('products', fn ($q) => $q->where('is_active', true))
                 ->orderBy('sort_order')
                 ->get(['id', 'name_ar', 'name_en', 'slug']),
             'products' => $products,
