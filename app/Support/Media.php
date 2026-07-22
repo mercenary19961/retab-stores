@@ -42,6 +42,22 @@ class Media
         return $file->storeAs(trim($dir, '/'), $name, ['disk' => self::disk(), 'visibility' => 'public']);
     }
 
+    /**
+     * Store an image already downloaded to a local temp path (e.g. a product photo
+     * migrated from an external CDN). Wraps it as a test-mode UploadedFile so it
+     * runs through the SAME extension/MIME validation and filename randomization as
+     * a real upload. The caller owns the temp file's lifecycle.
+     *
+     * @throws RuntimeException on a disallowed file
+     */
+    public static function storeImageFromFile(string $tmpPath, string $originalName, string $dir): string
+    {
+        // $test = true → bypasses is_uploaded_file() so a non-HTTP file is accepted.
+        $file = new UploadedFile($tmpPath, $originalName, null, null, true);
+
+        return self::storeImage($file, $dir);
+    }
+
     /** Public URL for a stored path (null-safe). */
     public static function url(?string $path): ?string
     {

@@ -148,4 +148,42 @@ class DiscountTest extends TestCase
         Setting::set(CheckoutService::FREE_SHIPPING_STARTS_KEY, '');
         $this->assertEquals(25.00, (float) $this->placeOrderWith()->shipping_fee);
     }
+
+    public function test_a_discount_can_bundle_free_shipping_over_its_window(): void
+    {
+        $this->product(100);
+        $admin = $this->admin();
+
+        // Opting in switches free shipping on for the discount's window.
+        $this->actingAs($admin)->post('/admin/discounts/apply', [
+            'mode' => 'percentage', 'value' => 20,
+            'starts_at' => '2026-08-01T00:00', 'ends_at' => '2026-08-10T00:00',
+            'free_shipping' => true,
+        ])->assertSessionHas('success');
+
+        $this->assertSame('1', Setting::get(CheckoutService::FREE_SHIPPING_ACTIVE_KEY));
+        $this->assertNotEmpty(Setting::get(CheckoutService::FREE_SHIPPING_STARTS_KEY));
+
+        // Not opting in leaves free shipping exactly as it was.
+        Setting::set(CheckoutService::FREE_SHIPPING_ACTIVE_KEY, '0');
+        $this->actingAs($admin)->post('/admin/discounts/apply', ['mode' => 'percentage', 'value' => 10])
+            ->assertSessionHas('success');
+
+        $this->assertSame('0', Setting::get(CheckoutService::FREE_SHIPPING_ACTIVE_KEY));
+    }
+
+    public function test_admin_flash_follows_the_admin_locale_cookie_not_the_session(): void
+    {
+        $admin = $this->admin();
+
+        // English admin → English flash (even though the session default is Arabic).
+        $this->actingAs($admin)->withUnencryptedCookie('admin_locale', 'en')
+            ->post('/admin/discounts/free-shipping', ['active' => false])
+            ->assertSessionHas('success', 'Free shipping settings saved.');
+
+        // Arabic admin → Arabic flash.
+        $this->actingAs($admin)->withUnencryptedCookie('admin_locale', 'ar')
+            ->post('/admin/discounts/free-shipping', ['active' => false])
+            ->assertSessionHas('success', 'تم حفظ إعدادات الشحن المجاني.');
+    }
 }

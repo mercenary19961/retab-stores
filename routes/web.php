@@ -28,6 +28,9 @@ Route::get('/robots.txt', [\App\Http\Controllers\SeoController::class, 'robots']
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'catalogue'])->name('shop.catalogue');
+// Physical shops (map + directions). Registered before the CMS catch-all so the
+// footer's /pages/branches link resolves here, not to a content page.
+Route::get('/pages/branches', [\App\Http\Controllers\BranchController::class, 'index'])->name('branches');
 Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show'])->name('pages.show');
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
 

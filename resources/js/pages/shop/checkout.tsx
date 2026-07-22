@@ -3,6 +3,7 @@ import { type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
+import StoreSelect from '@/components/store/select';
 
 interface Item {
     id: number;
@@ -86,15 +87,13 @@ export default function Checkout({
                         <div className="grid gap-4 sm:grid-cols-2">
                             <label className="block">
                                 <span className="text-sm text-gray-600">{t('checkout.country')} *</span>
-                                <select
+                                <StoreSelect
                                     value={data.country}
-                                    onChange={(e) => setData('country', e.target.value)}
-                                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
-                                >
-                                    {countries.map((c) => (
-                                        <option key={c} value={c}>{t(`countries.${c}`)}</option>
-                                    ))}
-                                </select>
+                                    onValueChange={(v) => setData('country', v)}
+                                    ariaLabel={t('checkout.country')}
+                                    options={countries.map((c) => ({ value: c, label: t(`countries.${c}`) }))}
+                                    triggerClassName="mt-1 w-full justify-between rounded border-gray-300 px-3 font-normal text-gray-900 hover:bg-white"
+                                />
                             </label>
                             {field('city', t('checkout.city'), true)}
                             {field('district', t('checkout.district'))}

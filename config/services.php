@@ -58,6 +58,13 @@ return [
         'currency' => env('TAMARA_CURRENCY', 'SAR'),
     ],
 
+    // Google Tag Manager (analytics + ad tags). Unset by default → GTM never
+    // loads; the Consent Mode defaults still ship so the banner is ready. Set
+    // GTM_CONTAINER_ID (GTM-XXXXXXX) once the container exists to go live.
+    'gtm' => [
+        'container_id' => env('GTM_CONTAINER_ID'),
+    ],
+
     // Cloudflare Turnstile (bot gate on public forms). Both keys unset in dev →
     // the widget renders nothing and TurnstileVerifier no-ops.
     'turnstile' => [

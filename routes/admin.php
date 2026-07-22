@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\StockImportController;
 use Illuminate\Support\Facades\Route;
 
 // Back-office (EN-first). Staff only — admin or editor.
-Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('search', [\App\Http\Controllers\Admin\GlobalSearchController::class, 'search'])->name('search');
     Route::put('preferences/table-widths', [\App\Http\Controllers\Admin\PreferenceController::class, 'tableWidths'])->name('preferences.table-widths');

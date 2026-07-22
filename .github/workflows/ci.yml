@@ -47,6 +47,10 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      # Pure front-end helpers (e.g. cookie-consent logic) run under Vitest.
+      - name: JS unit tests
+        run: npm run test:js
+
       - name: Client build
         run: npm run build
 

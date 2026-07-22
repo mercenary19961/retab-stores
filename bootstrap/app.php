@@ -44,7 +44,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff' => \App\Http\Middleware\EnsureUserIsStaff::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'permission' => \App\Http\Middleware\RequirePermission::class,
+            'admin.locale' => \App\Http\Middleware\SetAdminLocale::class,
         ]);
+
+        // Set client-side (plaintext) by the admin language toggle, so it must be
+        // excluded from Laravel's cookie encryption or it gets dropped on read.
+        $middleware->encryptCookies(except: ['admin_locale']);
 
         // Server-to-server webhooks (OTO, payment gateways) can't carry a CSRF token.
         $middleware->validateCsrfTokens(except: [

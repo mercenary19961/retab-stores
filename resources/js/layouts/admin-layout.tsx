@@ -155,6 +155,12 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
 
     useEffect(() => {
         i18n.changeLanguage(locale);
+        // Mirror the admin's language to a cookie so the server localizes admin
+        // flash + validation messages in it (SetAdminLocale middleware), instead
+        // of the storefront session locale (which defaults to Arabic).
+        if (typeof document !== 'undefined') {
+            document.cookie = `admin_locale=${locale}; path=/; max-age=31536000; samesite=lax`;
+        }
     }, [locale, i18n]);
 
     const toggleLocale = () => {
@@ -225,7 +231,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                         </Link>
                         <div className="flex shrink-0 items-center gap-2">
                             <img src="/images/brand/logo.png" alt="Retab" className="h-9 w-auto" />
-                            <button type="button" onClick={() => setSidebarOpen(false)} aria-label="Close menu" className="text-neutral-400 hover:text-white lg:hidden">
+                            <button type="button" onClick={() => setSidebarOpen(false)} aria-label={t('admin.common.closeMenu')} className="text-neutral-400 hover:text-white lg:hidden">
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
@@ -245,7 +251,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                     <button
                         type="button"
                         onClick={toggleSidebar}
-                        aria-label="Toggle sidebar"
+                        aria-label={t('admin.common.toggleSidebar')}
                         className="shrink-0 rounded-lg p-1.5 text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-white"
                     >
                         <Menu className="h-5 w-5" />
@@ -301,7 +307,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                     {flashOpen && flash?.success && (
                         <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
                             <span dir="auto">{flash.success}</span>
-                            <button type="button" onClick={() => setFlashOpen(false)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-green-300/70 transition-colors hover:text-green-100">
+                            <button type="button" onClick={() => setFlashOpen(false)} aria-label={t('admin.common.dismiss')} className="shrink-0 rounded p-0.5 text-green-300/70 transition-colors hover:text-green-100">
                                 <X className="h-4 w-4" />
                             </button>
                         </div>
@@ -309,7 +315,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                     {flashOpen && flash?.error && (
                         <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-200">
                             <span dir="auto">{flash.error}</span>
-                            <button type="button" onClick={() => setFlashOpen(false)} aria-label="Dismiss" className="shrink-0 rounded p-0.5 text-red-300/70 transition-colors hover:text-red-100">
+                            <button type="button" onClick={() => setFlashOpen(false)} aria-label={t('admin.common.dismiss')} className="shrink-0 rounded p-0.5 text-red-300/70 transition-colors hover:text-red-100">
                                 <X className="h-4 w-4" />
                             </button>
                         </div>

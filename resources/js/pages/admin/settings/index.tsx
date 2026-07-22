@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
@@ -82,7 +82,6 @@ export default function SettingsIndex({
     const { t, i18n } = useAdminT();
     const rtl = i18n.language === 'ar';
     useHighlightFields();
-    const flash = (usePage().props as { flash?: { success?: string | null } }).flash;
     const { data, setData, put, processing, errors, isDirty } = useForm(
         Object.fromEntries([
             ...ALL_KEYS.map((k) => [k, settings[k] ?? '']),
@@ -160,12 +159,6 @@ export default function SettingsIndex({
     return (
         <AdminLayout title={t('admin.settings.title')}>
             <Head title={t('admin.settings.title')} />
-
-            {flash?.success && (
-                <div className="mb-4 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
-                    {flash.success}
-                </div>
-            )}
 
             {undoMeta && (
                 <div className="mb-4">
