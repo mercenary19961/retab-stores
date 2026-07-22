@@ -64,6 +64,26 @@ class ShopControllerTest extends TestCase
         );
     }
 
+    public function test_product_page_ships_sku_and_purchase_count(): void
+    {
+        $product = $this->makeProduct(['slug' => 'sukkari-x', 'sku' => 'SKU-X']);
+
+        // A delivered order with 3 units → purchase_count = 3.
+        $order = Order::create([
+            'order_number' => 'R-2001', 'customer_name' => 'T', 'customer_phone' => '0500000000',
+            'shipping_address' => ['city' => 'Riyadh'], 'status' => OrderStatus::Delivered,
+            'subtotal' => 150, 'total' => 150,
+        ]);
+        OrderItem::create([
+            'order_id' => $order->id, 'product_id' => $product->id, 'product_name_ar' => 'x',
+            'unit_price' => 50, 'quantity' => 3, 'line_total' => 150,
+        ]);
+
+        $this->get('/products/sukkari-x')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->where('product.sku', 'SKU-X')->where('product.purchase_count', 3),
+        );
+    }
+
     public function test_inactive_product_is_not_found(): void
     {
         $this->makeProduct(['slug' => 'hidden', 'is_active' => false]);

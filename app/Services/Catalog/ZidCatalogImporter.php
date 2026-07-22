@@ -94,23 +94,28 @@ class ZidCatalogImporter
             $desc = trim($row['short_description_ar']);
             $sale = trim($row['sale_price']) !== '' ? (float) $row['sale_price'] : null;
 
-            $product = Product::updateOrCreate(
-                ['slug' => $slug],
-                [
-                    'category_id' => $categoryId,
-                    'name_ar' => trim($row['name_ar']),
-                    'name_en' => trim($row['name_en']) ?: null,
-                    'description_ar' => $desc !== '' ? $desc : null,
-                    'short_description_ar' => $desc !== '' ? mb_substr($desc, 0, 500) : null,
-                    'price' => (float) $row['price'],
-                    'sale_price' => $sale,
-                    'sku' => $sku,
-                    'smacc_sku' => $smacc,
-                    'stock' => $stock,
-                    'is_active' => $active,
-                    'is_featured' => false,
-                ],
-            );
+            $attributes = [
+                'category_id' => $categoryId,
+                'name_ar' => trim($row['name_ar']),
+                'name_en' => trim($row['name_en']) ?: null,
+                'price' => (float) $row['price'],
+                'sale_price' => $sale,
+                'sku' => $sku,
+                'smacc_sku' => $smacc,
+                'stock' => $stock,
+                'is_active' => $active,
+                'is_featured' => false,
+            ];
+
+            // Only touch descriptions when the sheet actually has one, so a re-run
+            // never wipes copy added by hand in admin (the Zid export has none for
+            // most rows). Omitting the keys leaves the existing value on update.
+            if ($desc !== '') {
+                $attributes['description_ar'] = $desc;
+                $attributes['short_description_ar'] = mb_substr($desc, 0, 500);
+            }
+
+            $product = Product::updateOrCreate(['slug' => $slug], $attributes);
 
             $result->productsSaved++;
             if (! $active) {

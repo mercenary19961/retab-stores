@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\OrderStatus;
 use App\Models\Category;
 use App\Models\ClientReview;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\ReviewHelpfulVote;
@@ -168,12 +169,22 @@ class ShopController
             ? ReviewHelpfulVote::where('user_id', $user->id)->whereIn('review_id', $reviews->pluck('id'))->pluck('review_id')->all()
             : [];
 
+        // Units sold across fulfilled orders — social proof ("purchased N times").
+        $purchaseCount = (int) OrderItem::where('product_id', $product->id)
+            ->whereHas('order', fn ($q) => $q->whereIn('status', [
+                OrderStatus::Confirmed->value,
+                OrderStatus::Shipped->value,
+                OrderStatus::Delivered->value,
+            ]))
+            ->sum('quantity');
+
         return Inertia::render('shop/product', [
             'product' => [
                 'id' => $product->id,
                 'name_ar' => $product->name_ar,
                 'name_en' => $product->name_en,
                 'slug' => $product->slug,
+                'sku' => $product->sku,
                 'description_ar' => $product->description_ar,
                 'description_en' => $product->description_en,
                 'price' => (float) $product->price,
@@ -181,6 +192,7 @@ class ShopController
                 'effective_price' => $product->effectivePrice(),
                 'on_sale' => $product->isOnSale(),
                 'in_stock' => $product->stock > 0,
+                'purchase_count' => $purchaseCount,
                 'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
                 'images' => $images,
                 'url' => route('shop.product', $product->slug), // absolute, for JSON-LD/OG
