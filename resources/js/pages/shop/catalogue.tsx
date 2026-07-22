@@ -1,9 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, Tag, X } from 'lucide-react';
-import { useState } from 'react';
+import { Tag, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
+import CatalogueSearch from '@/components/store/catalogue-search';
 import ProductCard, { type StoreProduct } from '@/components/store/product-card';
 import StorePagination, { type Paginator } from '@/components/store/pagination';
 import StoreSelect from '@/components/store/select';
@@ -41,8 +41,6 @@ export default function ShopCatalogue({
     const { t } = useTranslation();
     const localized = useLocalized();
 
-    const [q, setQ] = useState(filters.q);
-
     // Merge the current filters with a patch, dropping empties, and produce the
     // query object. Category filters are real links (crawlable); the search / sort
     // / offers controls navigate via router.get with the same merge.
@@ -68,11 +66,6 @@ export default function ShopCatalogue({
     // and only re-fetch the products list (partial reload).
     const go = (patch: Record<string, string | undefined>) =>
         router.get('/shop', params(patch), { preserveState: true, preserveScroll: true, only: FILTER_ONLY });
-
-    const submitSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        go({ q: q.trim() || undefined });
-    };
 
     const hasFilters = Boolean(filters.q || filters.on_sale || activeCategory || filters.sort !== 'newest');
 
@@ -121,17 +114,7 @@ export default function ShopCatalogue({
 
             {/* Toolbar: search · offers toggle · sort */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <form onSubmit={submitSearch} className="relative min-w-0 flex-1 sm:max-w-xs">
-                    <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-brand-gold" />
-                    <input
-                        type="search"
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                        placeholder={t('catalogue.searchPlaceholder')}
-                        aria-label={t('nav.search')}
-                        className="w-full rounded-full border border-brand-gold/30 bg-white py-2 ps-9 pe-4 text-sm text-brand-teal placeholder:text-brand-teal/40 focus:border-brand-teal focus:outline-none"
-                    />
-                </form>
+                <CatalogueSearch initialQuery={filters.q} onSubmit={(term) => go({ q: term || undefined })} />
 
                 <div className="flex items-center gap-3">
                     <button

@@ -94,6 +94,8 @@ const en = {
         requestCta: 'I want this →',
         resultCount: '{{n}} products',
         noResults: 'No products match your search.',
+        searching: 'Searching…',
+        searchViewAll: 'See all results',
         clearFilters: 'Clear filters',
     },
     branches: {

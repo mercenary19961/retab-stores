@@ -98,6 +98,8 @@ const ar = {
         requestCta: 'أريد هذا المنتج ←',
         resultCount: '{{n}} منتج',
         noResults: 'لا توجد منتجات مطابقة لبحثك.',
+        searching: 'جارٍ البحث…',
+        searchViewAll: 'عرض كل النتائج',
         clearFilters: 'إعادة الضبط',
     },
     branches: {

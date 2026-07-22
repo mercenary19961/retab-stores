@@ -29,6 +29,8 @@ Route::get('/robots.txt', [\App\Http\Controllers\SeoController::class, 'robots']
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'catalogue'])->name('shop.catalogue');
+// Live typeahead suggestions for the catalogue search (JSON, rate-limited).
+Route::get('/shop/search', [ShopController::class, 'search'])->middleware('throttle:60,1')->name('shop.search');
 // Physical shops (map + directions). Registered before the CMS catch-all so the
 // footer's /pages/branches link resolves here, not to a content page.
 Route::get('/pages/branches', [\App\Http\Controllers\BranchController::class, 'index'])->name('branches');
