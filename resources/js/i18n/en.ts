@@ -21,6 +21,21 @@ const en = {
         outOfStock: 'Out of stock',
         addToCart: 'Add to cart',
     },
+    auth: {
+        email: 'Email address',
+        emailPlaceholder: 'email@example.com',
+        password: 'Password',
+        passwordPlaceholder: 'Password',
+        forgotPassword: 'Forgot password?',
+        remember: 'Remember me',
+        login: {
+            title: 'Log in to your account',
+            subtitle: 'Enter your email and password to log in',
+            submit: 'Log in',
+            noAccount: "Don't have an account?",
+            signUp: 'Sign up',
+        },
+    },
     nav: {
         home: 'Home',
         offers: 'Offers',

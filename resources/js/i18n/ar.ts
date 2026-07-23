@@ -22,6 +22,21 @@ const ar = {
         outOfStock: 'غير متوفر',
         addToCart: 'أضف إلى السلة',
     },
+    auth: {
+        email: 'البريد الإلكتروني',
+        emailPlaceholder: 'email@example.com',
+        password: 'كلمة المرور',
+        passwordPlaceholder: 'كلمة المرور',
+        forgotPassword: 'نسيت كلمة المرور؟',
+        remember: 'تذكّرني',
+        login: {
+            title: 'تسجيل الدخول إلى حسابك',
+            subtitle: 'أدخل بريدك الإلكتروني وكلمة المرور لتسجيل الدخول',
+            submit: 'تسجيل الدخول',
+            noAccount: 'ليس لديك حساب؟',
+            signUp: 'إنشاء حساب',
+        },
+    },
     nav: {
         home: 'الرئيسية',
         offers: 'العروض',
