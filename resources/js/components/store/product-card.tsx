@@ -13,6 +13,7 @@ export interface StoreProduct {
     effective_price: number;
     on_sale: boolean;
     is_featured: boolean;
+    coming_soon: boolean;
     image: string | null;
     category: { name_ar: string; name_en: string | null; slug: string } | null;
 }
@@ -35,10 +36,16 @@ export default function ProductCard({ product: p }: { product: StoreProduct }) {
             <div className="relative">
                 <ProductImage src={p.image} alt={localized(p, 'name')} />
 
-                {salePercent > 0 && (
-                    <span className="absolute end-3 top-3 z-10 rounded-full bg-brand-gold px-2.5 py-1 font-heading text-xs font-bold text-white shadow-sm">
-                        {t('catalogue.saleBadge', { percent: salePercent })}
+                {p.coming_soon ? (
+                    <span className="absolute start-3 top-3 z-10 rounded-full bg-brand-teal px-2.5 py-1 font-heading text-xs font-bold text-white shadow-sm">
+                        {t('catalogue.comingSoon')}
                     </span>
+                ) : (
+                    salePercent > 0 && (
+                        <span className="absolute end-3 top-3 z-10 rounded-full bg-brand-gold px-2.5 py-1 font-heading text-xs font-bold text-white shadow-sm">
+                            {t('catalogue.saleBadge', { percent: salePercent })}
+                        </span>
+                    )
                 )}
             </div>
 
@@ -46,7 +53,9 @@ export default function ProductCard({ product: p }: { product: StoreProduct }) {
                 {localized(p, 'name')}
             </h3>
             <div className="mt-1 text-center font-heading text-brand-teal">
-                {p.on_sale ? (
+                {p.coming_soon ? (
+                    <span className="text-sm font-semibold text-brand-teal/70">{t('catalogue.requestCta')}</span>
+                ) : p.on_sale ? (
                     <span className="inline-flex items-center gap-2">
                         <span className="font-bold">
                             {p.effective_price.toFixed(2)} {currency}

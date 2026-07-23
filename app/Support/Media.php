@@ -39,7 +39,12 @@ class Media
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
         $name = Str::uuid() . '.' . $extension;
 
-        return $file->storeAs(trim($dir, '/'), $name, ['disk' => self::disk(), 'visibility' => 'public']);
+        $path = $file->storeAs(trim($dir, '/'), $name, ['disk' => self::disk(), 'visibility' => 'public']);
+
+        // Produce the responsive WebP variants (best-effort; never breaks the upload).
+        ImageVariants::generate($path);
+
+        return $path;
     }
 
     /**
@@ -58,17 +63,25 @@ class Media
         return self::storeImage($file, $dir);
     }
 
-    /** Public URL for a stored path (null-safe). */
-    public static function url(?string $path): ?string
+    /**
+     * Public URL for a stored path (null-safe). Pass a $variant (thumb/card/detail)
+     * to get the smaller WebP version; falls back to the original when variants are
+     * disabled or the name is unknown, so callers can always request a variant.
+     */
+    public static function url(?string $path, ?string $variant = null): ?string
     {
         if (! $path) {
             return null;
         }
 
+        if ($variant && ImageVariants::enabled() && in_array($variant, ImageVariants::names(), true)) {
+            $path = ImageVariants::variantPath($path, $variant);
+        }
+
         return Storage::disk(self::disk())->url($path);
     }
 
-    /** Delete a stored file if it exists (null-safe, idempotent). */
+    /** Delete a stored file and its variants if they exist (null-safe, idempotent). */
     public static function delete(?string $path): void
     {
         if (! $path) {
@@ -79,6 +92,8 @@ class Media
         if ($disk->exists($path)) {
             $disk->delete($path);
         }
+
+        ImageVariants::delete($path);
     }
 
     /**

@@ -36,6 +36,10 @@ return [
         'invalid' => 'The code is incorrect or has expired.',
     ],
 
+    'requests' => [
+        'received' => 'Thanks! We’ve noted your interest and will let you know as soon as it’s available.',
+    ],
+
     'returns' => [
         'filed' => 'Your return request was received. We will review it and get back to you soon.',
         'not_yours' => 'This order does not belong to you.',
@@ -85,6 +89,7 @@ return [
         'product_updated' => 'Product updated.',
         'product_deleted' => 'Product deleted.',
         'product_needs_image' => 'A product must have at least one image.',
+        'request_handled' => 'Request marked as handled.',
         'import_expired' => 'The import file has expired. Please upload it again.',
         'import_applied' => 'Stock updated: :count products.',
         'import_undone' => 'Import undone and previous stock restored.',

@@ -1,0 +1,150 @@
+import { Link } from '@inertiajs/react';
+import { Search } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLocalized } from '@/lib/localize';
+
+interface Suggestion {
+    slug: string;
+    name_ar: string;
+    name_en: string | null;
+    image: string | null;
+    price: number;
+    effective_price: number;
+    on_sale: boolean;
+    coming_soon: boolean;
+}
+
+/**
+ * Catalogue search with a live typeahead. The whole (small, server-cached)
+ * catalogue index is fetched ONCE on first interaction, then every keystroke
+ * filters it in-memory — so results are truly instant, with zero DB hits or
+ * network round-trips per key. Fetching lazily (not as an SSR prop) keeps the
+ * server-rendered page identical for crawlers. Enter runs the full grid filter.
+ */
+export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQuery: string; onSubmit: (q: string) => void }) {
+    const { t } = useTranslation();
+    const localized = useLocalized();
+    const currency = t('common.currency');
+
+    const [q, setQ] = useState(initialQuery);
+    const [index, setIndex] = useState<Suggestion[] | null>(null);
+    const [open, setOpen] = useState(false);
+    const boxRef = useRef<HTMLDivElement>(null);
+    const startedRef = useRef(false);
+
+    // One-shot fetch of the full index, triggered on first focus/type.
+    const loadIndex = useCallback(() => {
+        if (startedRef.current) return;
+        startedRef.current = true;
+        fetch('/shop/search-index', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+            .then((r) => r.json())
+            .then((d: { products: Suggestion[] }) => setIndex(d.products ?? []))
+            .catch(() => {
+                startedRef.current = false; // allow a retry on the next interaction
+            });
+    }, []);
+
+    const term = q.trim().toLowerCase();
+    const results = useMemo(() => {
+        if (!index || term.length < 1) return [];
+        return index
+            .filter((p) => p.name_ar.toLowerCase().includes(term) || (p.name_en ?? '').toLowerCase().includes(term))
+            .slice(0, 8);
+    }, [index, term]);
+
+    // Close on outside click / Escape.
+    useEffect(() => {
+        const onDown = (e: MouseEvent) => boxRef.current && !boxRef.current.contains(e.target as Node) && setOpen(false);
+        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+        window.addEventListener('mousedown', onDown);
+        window.addEventListener('keydown', onKey);
+        return () => {
+            window.removeEventListener('mousedown', onDown);
+            window.removeEventListener('keydown', onKey);
+        };
+    }, []);
+
+    const onChange = (value: string) => {
+        setQ(value);
+        loadIndex();
+        setOpen(value.trim().length >= 1);
+    };
+
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setOpen(false);
+        onSubmit(q.trim());
+    };
+
+    const showDropdown = open && term.length >= 1;
+
+    return (
+        <div ref={boxRef} className="relative min-w-0 flex-1 sm:max-w-xs">
+            <form onSubmit={submit}>
+                <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-brand-gold" />
+                <input
+                    type="search"
+                    value={q}
+                    onChange={(e) => onChange(e.target.value)}
+                    onFocus={() => {
+                        loadIndex();
+                        if (term.length >= 1) setOpen(true);
+                    }}
+                    placeholder={t('catalogue.searchPlaceholder')}
+                    aria-label={t('nav.search')}
+                    autoComplete="off"
+                    className="w-full rounded-full border border-brand-gold/30 bg-white py-2 ps-9 pe-4 text-sm text-brand-teal placeholder:text-brand-teal/40 focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/25"
+                />
+            </form>
+
+            {showDropdown && (
+                <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-brand-gold/20 bg-white shadow-lg sm:min-w-[22rem]">
+                    {results.length === 0 ? (
+                        <p className="px-4 py-3 text-sm text-brand-teal/60">
+                            {index === null ? t('catalogue.searching') : t('catalogue.noResults')}
+                        </p>
+                    ) : (
+                        <ul className="brand-scrollbar max-h-96 overflow-y-auto py-1">
+                            {results.map((r) => (
+                                <li key={r.slug}>
+                                    <Link
+                                        href={`/products/${r.slug}`}
+                                        onClick={() => setOpen(false)}
+                                        className="flex items-center gap-3 px-3 py-2 transition-colors hover:bg-brand-cream"
+                                    >
+                                        {r.image ? (
+                                            <img src={r.image} alt="" className="size-11 shrink-0 rounded-lg object-cover" />
+                                        ) : (
+                                            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-cream text-lg">🌴</span>
+                                        )}
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-sm font-medium text-brand-teal">{localized(r, 'name')}</span>
+                                            {r.coming_soon ? (
+                                                <span className="text-xs font-semibold text-brand-gold">{t('catalogue.comingSoon')}</span>
+                                            ) : (
+                                                <span className="text-xs text-brand-teal/70">
+                                                    {r.effective_price.toFixed(2)} {currency}
+                                                    {r.on_sale && <span className="ms-1.5 text-brand-teal/40 line-through">{r.price.toFixed(2)}</span>}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </Link>
+                                </li>
+                            ))}
+                            <li className="border-t border-brand-gold/10">
+                                <button
+                                    type="button"
+                                    onClick={submit}
+                                    className="w-full px-4 py-2.5 text-start text-sm font-medium text-brand-gold transition-colors hover:bg-brand-cream"
+                                >
+                                    {t('catalogue.searchViewAll')}
+                                </button>
+                            </li>
+                        </ul>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}

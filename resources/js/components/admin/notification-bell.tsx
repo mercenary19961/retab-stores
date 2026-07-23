@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Check, RotateCcw, ShoppingBag, type LucideIcon } from 'lucide-react';
+import { Bell, Check, RotateCcw, ShoppingBag, Sparkles, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAdminT } from '@/i18n/use-admin-t';
 import { relativeTimeFromIso } from '@/lib/relative-time';
@@ -10,6 +10,8 @@ interface NotificationData {
     total?: string;
     currency?: string;
     reason?: string;
+    product_name?: string | null;
+    contact?: string | null;
     url?: string;
 }
 
@@ -29,6 +31,7 @@ interface NotificationsProp {
 const ICONS: Record<string, LucideIcon> = {
     new_order: ShoppingBag,
     return_requested: RotateCcw,
+    product_requested: Sparkles,
 };
 
 /**
@@ -68,11 +71,13 @@ export default function NotificationBell() {
     const titleFor = (d: NotificationData): string => {
         if (d.type === 'new_order') return t('admin.notifications.items.newOrder.title', { order: d.order_number ?? '' });
         if (d.type === 'return_requested') return t('admin.notifications.items.returnRequested.title', { order: d.order_number ?? '' });
+        if (d.type === 'product_requested') return t('admin.notifications.items.productRequested.title');
         return t('admin.notifications.items.generic.title');
     };
     const bodyFor = (d: NotificationData): string => {
         if (d.type === 'new_order') return t('admin.notifications.items.newOrder.body', { total: d.total ?? '', currency: d.currency ?? '' });
         if (d.type === 'return_requested') return d.reason || t('admin.notifications.items.returnRequested.body');
+        if (d.type === 'product_requested') return t('admin.notifications.items.productRequested.body', { product: d.product_name ?? '' });
         return '';
     };
 

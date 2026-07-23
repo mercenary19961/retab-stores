@@ -40,6 +40,10 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::put('products/{product}', [ProductController::class, 'update'])->middleware('permission:products.edit')->name('products.update');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])->middleware('permission:products.delete')->name('products.destroy');
 
+    // "I want this" demand signals for Coming-Soon products.
+    Route::get('product-requests', [\App\Http\Controllers\Admin\ProductRequestController::class, 'index'])->middleware('permission:product_requests.view')->name('product-requests.index');
+    Route::post('product-requests/{productRequest}/handle', [\App\Http\Controllers\Admin\ProductRequestController::class, 'markHandled'])->middleware('permission:product_requests.manage')->name('product-requests.handle');
+
     // Product images (clean multipart POST, separate from the text form).
     Route::middleware('permission:products.edit')->group(function () {
         Route::post('products/{product}/images', [ProductImageController::class, 'store'])->name('products.images.store');

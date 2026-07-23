@@ -37,22 +37,28 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = $this->filteredQuery($request)
-            ->with(['category:id,name_ar', 'images'])
+            ->with(['category:id,name_ar,name_en', 'images'])
             ->paginate(20)
             ->withQueryString()
             ->through(fn (Product $p) => [
                 'id' => $p->id,
                 'name_ar' => $p->name_ar,
-                'image' => Media::url($p->primaryImage()?->path),
+                'name_en' => $p->name_en,
+                'image' => Media::url($p->primaryImage()?->path, 'thumb'),
                 'sku' => $p->sku,
                 'smacc_sku' => $p->smacc_sku,
-                'category' => $p->category?->name_ar,
+                'category' => $p->category?->only('name_ar', 'name_en'),
                 'price' => (float) $p->price,
                 'sale_price' => $p->sale_price !== null ? (float) $p->sale_price : null,
                 'stock' => $p->stock,
                 'is_low_stock' => $p->isLowStock(),
                 'is_active' => $p->is_active,
                 'is_featured' => $p->is_featured,
+                'is_coming_soon' => $p->is_coming_soon,
+                // Completeness flags — what a draft still needs before it can go live.
+                'needs_price' => (float) $p->price <= 0,
+                'needs_image' => $p->images->isEmpty(),
+                'needs_description' => trim((string) $p->description_ar) === '' && trim((string) $p->short_description_ar) === '',
             ]);
 
         return Inertia::render('admin/products/index', [
@@ -60,9 +66,11 @@ class ProductController extends Controller
             'filters' => [
                 'search' => $request->query('search'),
                 'category' => $request->query('category') ? (int) $request->query('category') : null,
+                'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon'], true) ? $request->query('status') : null,
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
             ],
+            'draftCount' => Product::where('is_active', false)->count(),
             'categories' => $this->categoryOptions(),
             'undoMeta' => session('undo:products'),
         ]);
@@ -76,6 +84,7 @@ class ProductController extends Controller
     {
         $search = $request->query('search');
         $categoryId = $request->query('category');
+        $status = $request->query('status');
         $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
 
@@ -87,7 +96,11 @@ class ProductController extends Controller
                 ->orWhere('products.name_en', 'like', "%{$search}%")
                 ->orWhere('products.sku', 'like', "%{$search}%")
                 ->orWhere('products.smacc_sku', 'like', "%{$search}%")))
-            ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId));
+            ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId))
+            // Drafts = hidden products (the workspace to finish + optionally flag Coming Soon).
+            ->when($status === 'active', fn ($q) => $q->where('products.is_active', true))
+            ->when($status === 'draft', fn ($q) => $q->where('products.is_active', false))
+            ->when($status === 'coming_soon', fn ($q) => $q->where('products.is_coming_soon', true));
 
         if ($sort === 'category') {
             $query->leftJoin('categories', 'categories.id', '=', 'products.category_id')
@@ -216,9 +229,10 @@ class ProductController extends Controller
             'low_stock_threshold' => $product->low_stock_threshold,
             'is_active' => $product->is_active,
             'is_featured' => $product->is_featured,
+            'is_coming_soon' => $product->is_coming_soon,
             'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
                 'id' => $img->id,
-                'url' => Media::url($img->path),
+                'url' => Media::url($img->path, 'card'),
                 'is_primary' => $img->is_primary,
             ]),
         ];
@@ -279,6 +293,7 @@ class ProductController extends Controller
             'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
+            'is_coming_soon' => ['boolean'],
         ]);
 
         if (empty($data['slug'])) {
@@ -305,13 +320,18 @@ class ProductController extends Controller
     }
 
     /**
-     * @return array<int, array{id: int, name_ar: string}>
+     * @return array<int, array{id: int, name_ar: string, name_en: string|null}>
      */
     private function categoryOptions(): array
     {
-        return Category::orderBy('sort_order')
-            ->get(['id', 'name_ar'])
-            ->map(fn (Category $c) => ['id' => $c->id, 'name_ar' => $c->name_ar])
+        // Only LEAF categories are assignable to a product. The top-level nav groups
+        // (التمور / الهدايا) exist purely to drive the storefront navbar, so excluding
+        // them also drops the duplicate "Dates" (parent group vs leaf) from the list.
+        // name_en ships too so the EN-first admin can localize the labels.
+        return Category::whereNotNull('parent_id')
+            ->orderBy('sort_order')
+            ->get(['id', 'name_ar', 'name_en'])
+            ->map(fn (Category $c) => ['id' => $c->id, 'name_ar' => $c->name_ar, 'name_en' => $c->name_en])
             ->all();
     }
 }

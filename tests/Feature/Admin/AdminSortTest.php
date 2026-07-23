@@ -74,7 +74,23 @@ class AdminSortTest extends TestCase
             ->get('/admin/products?sort=category&direction=asc')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('products.data.0.category', 'أجود التمور')
-                ->where('products.data.1.category', 'بلح فاخر'));
+                ->where('products.data.0.category.name_ar', 'أجود التمور')
+                ->where('products.data.1.category.name_ar', 'بلح فاخر'));
+    }
+
+    /** The category options a product can be assigned to are LEAF categories only —
+     *  the top-level nav groups (parent_id null) are excluded, so no duplicate. */
+    public function test_category_options_exclude_parent_nav_groups(): void
+    {
+        $parent = Category::create(['name_ar' => 'التمور', 'name_en' => 'Dates', 'slug' => 'cat-dates-x']);
+        $leaf = Category::create(['name_ar' => 'التمور', 'name_en' => 'Dates', 'slug' => 'dates-x', 'parent_id' => $parent->id]);
+
+        $this->actingAs($this->staff())->get('/admin/products')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->where('categories', function ($cats) use ($parent, $leaf) {
+                $ids = collect($cats)->pluck('id');
+
+                return $ids->contains($leaf->id) && ! $ids->contains($parent->id);
+            }),
+        );
     }
 }

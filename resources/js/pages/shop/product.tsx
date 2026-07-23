@@ -1,9 +1,10 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Check, Heart, Link2, Minus, Plus, ShoppingBag, Star } from 'lucide-react';
+import { Check, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
+import { Turnstile } from '@/components/turnstile';
 
 interface Product {
     id: number;
@@ -18,6 +19,7 @@ interface Product {
     effective_price: number;
     on_sale: boolean;
     in_stock: boolean;
+    coming_soon: boolean;
     purchase_count: number;
     category: { name_ar: string; name_en: string | null; slug: string } | null;
     images: string[];
@@ -147,6 +149,13 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
                         )}
                     </div>
 
+                    {product.coming_soon && (
+                        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-teal/10 px-3 py-1 text-sm font-semibold text-brand-teal">
+                            <Sparkles className="size-4" />
+                            {t('product.comingSoon')}
+                        </span>
+                    )}
+
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-brand-teal/70">
                         <span className="inline-flex items-center gap-1.5">
                             <Stars value={reviews.summary.average} />
@@ -161,19 +170,21 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
                         )}
                     </div>
 
-                    <div className="mt-4 flex items-center gap-3 font-heading">
-                        {product.on_sale ? (
-                            <>
-                                <span className="text-3xl font-bold text-brand-teal">{product.effective_price.toFixed(2)} {currency}</span>
-                                <span className="text-lg text-brand-teal/40 line-through">{product.price.toFixed(2)} {currency}</span>
-                            </>
-                        ) : (
-                            <span className="text-3xl font-bold text-brand-teal">{product.price.toFixed(2)} {currency}</span>
-                        )}
-                    </div>
+                    {!product.coming_soon && (
+                        <div className="mt-4 flex items-center gap-3 font-heading">
+                            {product.on_sale ? (
+                                <>
+                                    <span className="text-3xl font-bold text-brand-teal">{product.effective_price.toFixed(2)} {currency}</span>
+                                    <span className="text-lg text-brand-teal/40 line-through">{product.price.toFixed(2)} {currency}</span>
+                                </>
+                            ) : (
+                                <span className="text-3xl font-bold text-brand-teal">{product.price.toFixed(2)} {currency}</span>
+                            )}
+                        </div>
+                    )}
 
                     {/* Tamara installments (marketing estimate — no SDK) */}
-                    {product.in_stock && (
+                    {!product.coming_soon && product.in_stock && (
                         <div className="mt-4 rounded-xl border border-brand-gold/25 bg-brand-cream/40 p-3">
                             <span className="flex flex-wrap items-center gap-2 text-sm text-brand-teal">
                                 <span className="rounded-md bg-brand-teal px-2 py-0.5 text-xs font-bold lowercase tracking-wide text-white">tamara</span>
@@ -185,8 +196,10 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
 
                     {description && <p className="mt-5 leading-relaxed text-brand-teal/80">{description}</p>}
 
-                    {/* Quantity + add to cart */}
-                    {product.in_stock ? (
+                    {/* Buy — or, for Coming-Soon products, register interest instead */}
+                    {product.coming_soon ? (
+                        <RequestSection slug={product.slug} authed={authed} />
+                    ) : product.in_stock ? (
                         <div className="mt-6 flex flex-wrap items-center gap-4">
                             <div className="inline-flex items-center rounded-full border border-brand-gold/30 bg-white">
                                 <button
@@ -281,6 +294,70 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
                 )}
             </section>
         </StoreLayout>
+    );
+}
+
+/**
+ * Coming-Soon demand capture: a customer registers interest without buying.
+ * Signed-in customers are one click (their account carries the contact); guests
+ * supply a phone and pass the Turnstile bot gate (which renders nothing until a
+ * site key is configured, so dev/staging stays frictionless).
+ */
+function RequestSection({ slug, authed }: { slug: string; authed: boolean }) {
+    const { t } = useTranslation();
+    const [done, setDone] = useState(false);
+    const { data, setData, post, processing, errors } = useForm({ phone: '', 'cf-turnstile-response': '' });
+
+    const submit = (e?: FormEvent) => {
+        e?.preventDefault();
+        post(`/products/${slug}/request`, { preserveScroll: true, onSuccess: () => setDone(true) });
+    };
+
+    if (done) {
+        return (
+            <div className="mt-6 flex items-center gap-2 rounded-xl border border-brand-teal/20 bg-brand-cream/50 p-4 text-sm font-medium text-brand-teal">
+                <Check className="size-5 shrink-0 text-brand-teal" />
+                {t('product.requestThanks')}
+            </div>
+        );
+    }
+
+    if (authed) {
+        return (
+            <button
+                type="button"
+                onClick={() => submit()}
+                disabled={processing}
+                className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-brand-teal px-8 py-3 font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-60"
+            >
+                <Sparkles className="size-5" />
+                {t('product.requestButton')}
+            </button>
+        );
+    }
+
+    return (
+        <form onSubmit={submit} className="mt-6 space-y-3 rounded-xl border border-brand-gold/25 bg-white p-4">
+            <p className="text-sm text-brand-teal/80">{t('product.requestPrompt')}</p>
+            <input
+                value={data.phone}
+                onChange={(e) => setData('phone', e.target.value)}
+                inputMode="tel"
+                dir="ltr"
+                placeholder={t('product.phonePlaceholder')}
+                className="w-full rounded-lg border border-brand-gold/30 px-3 py-2 text-start text-sm text-brand-teal focus:border-brand-teal focus:outline-none"
+            />
+            {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+            <Turnstile onVerify={(token) => setData('cf-turnstile-response', token)} />
+            <button
+                type="submit"
+                disabled={processing}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-teal px-6 py-2.5 font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-60"
+            >
+                <Sparkles className="size-5" />
+                {t('product.requestButton')}
+            </button>
+        </form>
     );
 }
 

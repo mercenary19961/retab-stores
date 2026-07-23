@@ -45,6 +45,24 @@ class ShopControllerTest extends TestCase
         );
     }
 
+    public function test_catalogue_filter_hides_categories_without_a_visible_product(): void
+    {
+        // An empty nav-group parent (like التمور / cat-dates, which only drives the
+        // navbar) must NOT show up as a filter chip that lands on an empty page.
+        Category::create(['name_ar' => 'التمور', 'name_en' => 'Dates', 'slug' => 'cat-dates', 'is_active' => true]);
+        // A leaf with a hidden-only product must be excluded too.
+        $empty = Category::create(['name_ar' => 'مخفي', 'slug' => 'hidden-cat', 'is_active' => true]);
+        $this->makeProduct(['category_id' => $empty->id, 'slug' => 'hidden-only', 'is_active' => false]);
+
+        // Only the 'dates' leaf has a visible product (from makeProduct).
+        $this->makeProduct();
+
+        $this->get('/shop')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('categories', 1)
+                ->where('categories.0.slug', 'dates'),
+        );
+    }
+
     public function test_branches_page_renders_the_two_locations(): void
     {
         $this->get('/pages/branches')->assertOk()->assertInertia(
@@ -120,6 +138,38 @@ class ShopControllerTest extends TestCase
                 ->where('products.data.0.slug', 'khalas')
                 ->where('filters.q', 'Khalas'),
         );
+    }
+
+    public function test_search_index_returns_visible_products_with_a_thumbnail_field(): void
+    {
+        $this->makeProduct(['slug' => 'sukkari-live', 'name_ar' => 'سكري فاخر', 'name_en' => 'Sukkari Deluxe']);
+        $this->makeProduct(['slug' => 'khalas-live', 'name_ar' => 'خلاص']);
+
+        $this->getJson('/shop/search-index')->assertOk()
+            ->assertJsonCount(2, 'products')
+            ->assertJsonStructure(['products' => [['slug', 'name_ar', 'name_en', 'image', 'effective_price', 'coming_soon']]]);
+    }
+
+    public function test_search_index_includes_coming_soon_but_not_plain_hidden(): void
+    {
+        $this->makeProduct(['slug' => 'buyable-x', 'name_ar' => 'خلاص']);
+        $this->makeProduct(['slug' => 'soon-x', 'name_ar' => 'تمر قريباً', 'is_active' => false, 'is_coming_soon' => true]);
+        $this->makeProduct(['slug' => 'hidden-x', 'name_ar' => 'تمر مخفي', 'is_active' => false, 'is_coming_soon' => false]);
+
+        $slugs = collect($this->getJson('/shop/search-index')->assertOk()->json('products'))->pluck('slug');
+        $this->assertTrue($slugs->contains('buyable-x'));
+        $this->assertTrue($slugs->contains('soon-x'));
+        $this->assertFalse($slugs->contains('hidden-x'));
+    }
+
+    public function test_search_index_cache_busts_when_a_product_is_added(): void
+    {
+        $this->makeProduct(['slug' => 'one']);
+        $this->getJson('/shop/search-index')->assertOk()->assertJsonCount(1, 'products');
+
+        // Saving another product invalidates the cached index (model event).
+        $this->makeProduct(['slug' => 'two']);
+        $this->getJson('/shop/search-index')->assertOk()->assertJsonCount(2, 'products');
     }
 
     public function test_catalogue_offers_filter_returns_only_on_sale_products(): void

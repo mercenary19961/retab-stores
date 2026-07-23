@@ -45,7 +45,9 @@ class DiscountController extends Controller
                     'ends_at' => $p->sale_ends_at?->toDateTimeString(),
                     'status' => $p->saleStatus(),
                 ])->values(),
-            'categories' => Category::orderBy('name_ar')
+            // Leaf categories only: products live in leaves, so the parent nav groups
+            // (0 products) would just be dead options + a duplicate "Dates".
+            'categories' => Category::whereNotNull('parent_id')->orderBy('name_ar')
                 ->withCount(['products' => fn ($q) => $q->where('is_active', true)->where('price', '>', 0)])
                 ->get()
                 ->map(fn (Category $c) => ['id' => $c->id, 'name_ar' => $c->name_ar, 'name_en' => $c->name_en, 'count' => $c->products_count]),

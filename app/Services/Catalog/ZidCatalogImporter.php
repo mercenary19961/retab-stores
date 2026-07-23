@@ -94,12 +94,12 @@ class ZidCatalogImporter
 
             $active = strtolower(trim($row['published'])) === 'yes';
             $desc = trim($row['short_description_ar']);
+            $nameEn = trim($row['name_en']);
             $sale = trim($row['sale_price']) !== '' ? (float) $row['sale_price'] : null;
 
             $attributes = [
                 'category_id' => $categoryId,
                 'name_ar' => trim($row['name_ar']),
-                'name_en' => trim($row['name_en']) ?: null,
                 'price' => (float) $row['price'],
                 'sale_price' => $sale,
                 'sku' => $sku,
@@ -109,9 +109,13 @@ class ZidCatalogImporter
                 'is_featured' => false,
             ];
 
-            // Only touch descriptions when the sheet actually has one, so a re-run
-            // never wipes copy added by hand in admin (the Zid export has none for
-            // most rows). Omitting the keys leaves the existing value on update.
+            // Only touch the English name / descriptions when the sheet actually
+            // supplies one, so a re-run never wipes copy added by hand in admin (the
+            // Zid export has neither for most rows — the English names were authored
+            // afterwards). Omitting the keys leaves the existing value on update.
+            if ($nameEn !== '') {
+                $attributes['name_en'] = $nameEn;
+            }
             if ($desc !== '') {
                 $attributes['description_ar'] = $desc;
                 $attributes['short_description_ar'] = mb_substr($desc, 0, 500);
