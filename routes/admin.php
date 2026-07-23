@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Route;
 
 // Back-office (EN-first). Staff only — admin or editor.
 Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('admin.')->group(function () {
+    // Bare /admin → dashboard. The `auth` middleware sends guests to /login first,
+    // so an unauthenticated visitor lands on login and a signed-in staff member on
+    // the dashboard (no more bare-/admin 404).
+    Route::redirect('/', '/admin/dashboard');
+
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('search', [\App\Http\Controllers\Admin\GlobalSearchController::class, 'search'])->name('search');
     Route::put('preferences/table-widths', [\App\Http\Controllers\Admin\PreferenceController::class, 'tableWidths'])->name('preferences.table-widths');
