@@ -9,19 +9,38 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Plain password is hashed by the User model's `hashed` cast. Dev creds only.
+        $email = config('retab.admin.email');
+        $password = config('retab.admin.password');
+
+        // Never seed a known-password admin into production: require a real
+        // ADMIN_PASSWORD there. Dev/local keep the convenience default + editor.
+        if (app()->environment('production')) {
+            if (blank($password)) {
+                $this->command?->warn('AdminUserSeeder: set ADMIN_EMAIL + ADMIN_PASSWORD before seeding in production — admin not created.');
+
+                return;
+            }
+        } else {
+            $password ??= 'password';
+            $this->seedEditor();
+        }
+
+        // Plain password is hashed by the User model's `hashed` cast.
         User::updateOrCreate(
-            ['email' => 'admin@retab.com.sa'],
+            ['email' => $email],
             [
                 'name' => 'Retab Admin',
                 'role' => 'admin',
-                'password' => 'password',
+                'password' => $password,
                 'email_verified_at' => now(),
                 'locale' => 'ar',
                 'admin_theme' => 'light',
             ],
         );
+    }
 
+    private function seedEditor(): void
+    {
         User::updateOrCreate(
             ['email' => 'editor@retab.com.sa'],
             [
