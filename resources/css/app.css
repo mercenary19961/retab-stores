@@ -327,7 +327,8 @@ html[dir='rtl'] .cta-shimmer {
     --destructive-foreground: hsl(0, 0%, 98%);
     --border: hsl(0, 0%, 14.9%);
     --input: hsl(0, 0%, 14.9%);
-    --ring: hsl(0, 0%, 83.1%);
+    /* Brand-gold focus ring in the admin's dark scope too (was default light-gray). */
+    --ring: var(--color-brand-gold);
     --chart-1: hsl(220, 70%, 50%);
     --chart-2: hsl(160, 60%, 45%);
     --chart-3: hsl(30, 80%, 55%);
@@ -350,5 +351,17 @@ html[dir='rtl'] .cta-shimmer {
 
     body {
         @apply bg-background text-foreground;
+    }
+
+    /* Native form controls that a component doesn't already style fall back to
+       the browser's default focus outline (the "weird" default border). Brand it
+       to gold instead. Components that set their own focus (shadcn Input's ring,
+       the Select triggers) use `outline-none`/`outline-hidden` utilities, which
+       sit in the utilities layer and win — so this only touches the unstyled ones. */
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+        outline: 2px solid var(--color-brand-gold);
+        outline-offset: 1px;
     }
 }
