@@ -64,6 +64,10 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
 
     const [activeImage, setActiveImage] = useState(0);
     const [qty, setQty] = useState(1);
+    // Fall back to the 🌴 placeholder when an image URL fails to load (missing
+    // file / broken URL) instead of showing the browser's broken-image icon.
+    const [broken, setBroken] = useState<Record<string, true>>({});
+    const markBroken = (url: string) => setBroken((b) => ({ ...b, [url]: true }));
     const installment = product.effective_price / 4;
 
     // Product/Offer structured data for rich results.
@@ -110,8 +114,14 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
                 {/* Gallery */}
                 <div className="space-y-3">
                     <div className="overflow-hidden rounded-2xl border border-brand-gold/15 bg-white shadow-sm">
-                        {product.images.length > 0 ? (
-                            <img src={product.images[activeImage]} alt={name} loading="eager" className="aspect-square w-full object-cover" />
+                        {product.images.length > 0 && !broken[product.images[activeImage]] ? (
+                            <img
+                                src={product.images[activeImage]}
+                                alt={name}
+                                loading="eager"
+                                onError={() => markBroken(product.images[activeImage])}
+                                className="aspect-square w-full object-cover"
+                            />
                         ) : (
                             <div className="flex aspect-square items-center justify-center bg-brand-cream text-7xl">🌴</div>
                         )}
@@ -126,7 +136,11 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
                                     aria-label={`${name} ${i + 1}`}
                                     className={`overflow-hidden rounded-lg border-2 transition ${i === activeImage ? 'border-brand-teal' : 'border-transparent hover:border-brand-gold/40'}`}
                                 >
-                                    <img src={url} alt="" loading="lazy" className="aspect-square w-full object-cover" />
+                                    {broken[url] ? (
+                                        <div className="flex aspect-square w-full items-center justify-center bg-brand-cream text-lg">🌴</div>
+                                    ) : (
+                                        <img src={url} alt="" loading="lazy" onError={() => markBroken(url)} className="aspect-square w-full object-cover" />
+                                    )}
                                 </button>
                             ))}
                         </div>
