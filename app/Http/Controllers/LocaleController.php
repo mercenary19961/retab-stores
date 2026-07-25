@@ -19,6 +19,10 @@ class LocaleController extends Controller
 
         $request->session()->put('locale', $locale);
 
+        // Persist to the account so the preference follows a signed-in user
+        // across devices/sessions. Guests keep the session-only choice.
+        $request->user()?->update(['locale' => $locale]);
+
         return response()->json(['ok' => true, 'locale' => $locale]);
     }
 }
