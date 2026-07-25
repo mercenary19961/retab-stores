@@ -2,46 +2,34 @@ import { useEffect, useState } from 'react';
 
 export type Appearance = 'light' | 'dark' | 'system';
 
-const prefersDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-const applyTheme = (appearance: Appearance) => {
-    const isDark = appearance === 'dark' || (appearance === 'system' && prefersDark());
-
-    document.documentElement.classList.toggle('dark', isDark);
-};
-
-// Lazy + guarded: module-scope window access crashes the SSR process at import
-// time (ssr.jsx eagerly imports every page, which pulls this hook in).
-const mediaQuery = () => (typeof window === 'undefined' ? null : window.matchMedia('(prefers-color-scheme: dark)'));
-
-const handleSystemThemeChange = () => {
-    const currentAppearance = localStorage.getItem('appearance') as Appearance;
-    applyTheme(currentAppearance || 'system');
+// Dark mode is ADMIN-ONLY in this project: the admin scopes it to its own
+// `.admin-shell dark` wrapper. The customer-facing surfaces (storefront + auth)
+// are light-only, so the document root must NEVER carry `.dark` — otherwise a
+// visitor whose OS is set to dark mode gets a broken (black bg, invisible text,
+// inverted buttons) storefront/login. We keep the appearance API surface so the
+// starter-kit settings page still imports cleanly, but pin the public app to light.
+const forceLight = () => {
+    if (typeof document !== 'undefined') {
+        document.documentElement.classList.remove('dark');
+    }
 };
 
 export function initializeTheme() {
-    const savedAppearance = (localStorage.getItem('appearance') as Appearance) || 'system';
-
-    applyTheme(savedAppearance);
-
-    // Add the event listener for system theme changes...
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    forceLight();
 }
 
 export function useAppearance() {
-    const [appearance, setAppearance] = useState<Appearance>('system');
+    const [appearance, setAppearance] = useState<Appearance>('light');
 
+    // Reflects the setting's selection in the UI but never darkens the public
+    // app — the document root stays light regardless of the chosen mode.
     const updateAppearance = (mode: Appearance) => {
         setAppearance(mode);
-        localStorage.setItem('appearance', mode);
-        applyTheme(mode);
+        forceLight();
     };
 
     useEffect(() => {
-        const savedAppearance = localStorage.getItem('appearance') as Appearance | null;
-        updateAppearance(savedAppearance || 'system');
-
-        return () => mediaQuery()?.removeEventListener('change', handleSystemThemeChange);
+        forceLight();
     }, []);
 
     return { appearance, updateAppearance };

@@ -26,3 +26,10 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+
+# Playwright / E2E
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+/qa-shots
