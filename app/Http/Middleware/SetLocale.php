@@ -15,10 +15,14 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Session is the live source of truth; fall back to a signed-in user's
-        // saved preference (follows them across devices), then the AR default.
+        // Resolution order: this session's live choice → a signed-in user's saved
+        // preference (follows them across devices) → a returning guest's long-lived
+        // cookie → the AR default.
         $sessionLocale = $request->session()->get('locale');
-        $locale = $sessionLocale ?? $request->user()?->locale ?? 'ar';
+        $locale = $sessionLocale
+            ?? $request->user()?->locale
+            ?? $request->cookie('locale')
+            ?? 'ar';
 
         if (! in_array($locale, ['ar', 'en'], true)) {
             $locale = 'ar';
@@ -26,10 +30,10 @@ class SetLocale
 
         app()->setLocale($locale);
 
-        // Fresh login on a new device (session has no locale yet): seed it from
-        // the user's preference so the shared Inertia `locale` prop + first-paint
+        // Session had no locale but we resolved one from the account or the guest
+        // cookie: seed the session so the shared Inertia `locale` prop + first-paint
         // <html dir> match what the server rendered.
-        if ($sessionLocale === null && $request->user() !== null) {
+        if ($sessionLocale === null && $locale !== 'ar') {
             $request->session()->put('locale', $locale);
         }
 

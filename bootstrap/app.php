@@ -47,9 +47,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.locale' => \App\Http\Middleware\SetAdminLocale::class,
         ]);
 
-        // Set client-side (plaintext) by the admin language toggle, so it must be
-        // excluded from Laravel's cookie encryption or it gets dropped on read.
-        $middleware->encryptCookies(except: ['admin_locale']);
+        // Language cookies are read as plaintext, so they must be excluded from
+        // Laravel's cookie encryption or they get dropped on read. `admin_locale`
+        // = the admin toggle (client-set); `locale` = the storefront's long-lived
+        // guest preference (server-set in LocaleController). Neither is sensitive
+        // and SetLocale re-validates the value against the ar|en whitelist.
+        $middleware->encryptCookies(except: ['admin_locale', 'locale']);
 
         // Server-to-server webhooks (OTO, payment gateways) can't carry a CSRF token.
         $middleware->validateCsrfTokens(except: [

@@ -41,4 +41,23 @@ class LocaleTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->where('locale', 'en'));
     }
+
+    public function test_guest_toggle_sets_a_long_lived_cookie(): void
+    {
+        // The `locale` cookie is plaintext (excluded from encryption), so assert
+        // it without decryption (3rd arg = false).
+        $this->post('/locale/en')
+            ->assertOk()
+            ->assertCookie('locale', 'en', false);
+    }
+
+    public function test_returning_guest_uses_the_locale_cookie(): void
+    {
+        // No session, no account — a returning guest whose session expired but
+        // whose 1-year cookie survived still gets their chosen language. Use the
+        // unencrypted helper since the cookie is excluded from encryption.
+        $this->withUnencryptedCookie('locale', 'en')->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('locale', 'en'));
+    }
 }
