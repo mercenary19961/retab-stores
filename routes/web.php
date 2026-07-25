@@ -1,18 +1,23 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductRequestController;
+use App\Http\Controllers\RedirectController;
 use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SeoController;
 use App\Http\Controllers\ShopController;
-use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\Webhooks\MoyasarWebhookController;
 use App\Http\Controllers\Webhooks\OtoWebhookController;
 use App\Http\Controllers\Webhooks\TamaraWebhookController;
 use App\Http\Controllers\Webhooks\WhatsAppWebhookController;
+use App\Http\Controllers\WishlistController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -23,8 +28,8 @@ Route::post('/locale/{locale}', [LocaleController::class, 'set'])
     ->name('locale.set');
 
 // Crawler endpoints (routes, not static files — absolute URLs per environment).
-Route::get('/sitemap.xml', [\App\Http\Controllers\SeoController::class, 'sitemap'])->name('seo.sitemap');
-Route::get('/robots.txt', [\App\Http\Controllers\SeoController::class, 'robots'])->name('seo.robots');
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('seo.sitemap');
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('seo.robots');
 
 // Storefront (AR-first).
 Route::get('/', [ShopController::class, 'index'])->name('home');
@@ -34,9 +39,12 @@ Route::get('/shop', [ShopController::class, 'catalogue'])->name('shop.catalogue'
 Route::get('/shop/search-index', [ShopController::class, 'searchIndex'])->middleware('throttle:60,1')->name('shop.search-index');
 // Physical shops (map + directions). Registered before the CMS catch-all so the
 // footer's /pages/branches link resolves here, not to a content page.
-Route::get('/pages/branches', [\App\Http\Controllers\BranchController::class, 'index'])->name('branches');
-Route::get('/pages/{slug}', [\App\Http\Controllers\PageController::class, 'show'])->name('pages.show');
-Route::get('/products/{product:slug}', [ShopController::class, 'show'])->name('shop.product');
+Route::get('/pages/branches', [BranchController::class, 'index'])->name('branches');
+Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
+// On a slug miss, consult the 301 redirect map (old Zid URLs) before 404-ing.
+Route::get('/products/{product:slug}', [ShopController::class, 'show'])
+    ->name('shop.product')
+    ->missing(fn ($request) => (new RedirectController)->missingProduct($request));
 // "I want this" demand signal for Coming-Soon products (guests allowed → guests
 // supply a phone + pass the Turnstile bot gate; signed-in users are one click).
 Route::post('/products/{product:slug}/request', [ProductRequestController::class, 'store'])
@@ -64,7 +72,7 @@ Route::post('/webhooks/whatsapp', [WhatsAppWebhookController::class, 'handle'])-
 Route::middleware(['auth'])->group(function () {
     // Legacy starter-kit path: staff → back-office, customers → their account.
     Route::get('dashboard', function () {
-        return redirect(\Illuminate\Support\Facades\Auth::user()->isStaff() ? route('admin.dashboard') : route('account.dashboard'));
+        return redirect(Auth::user()->isStaff() ? route('admin.dashboard') : route('account.dashboard'));
     })->name('dashboard');
 
     // Customer account (storefront, AR-first).
