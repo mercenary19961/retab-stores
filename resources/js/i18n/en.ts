@@ -26,6 +26,10 @@ const en = {
         emailPlaceholder: 'email@example.com',
         password: 'Password',
         passwordPlaceholder: 'Password',
+        confirmPassword: 'Confirm password',
+        confirmPasswordPlaceholder: 'Confirm password',
+        name: 'Name',
+        namePlaceholder: 'Full name',
         forgotPassword: 'Forgot password?',
         remember: 'Remember me',
         login: {
@@ -34,6 +38,37 @@ const en = {
             submit: 'Log in',
             noAccount: "Don't have an account?",
             signUp: 'Sign up',
+        },
+        register: {
+            title: 'Create an account',
+            subtitle: 'Enter your details below to create your account',
+            submit: 'Create account',
+            haveAccount: 'Already have an account?',
+            signIn: 'Log in',
+        },
+        forgot: {
+            title: 'Forgot password',
+            subtitle: 'Enter your email to receive a password reset link',
+            submit: 'Email password reset link',
+            remembered: 'Or, return to',
+            loginLink: 'log in',
+        },
+        reset: {
+            title: 'Reset password',
+            subtitle: 'Please enter your new password below',
+            submit: 'Reset password',
+        },
+        confirm: {
+            title: 'Confirm your password',
+            subtitle: 'This is a secure area. Please confirm your password before continuing.',
+            submit: 'Confirm password',
+        },
+        verify: {
+            title: 'Verify email',
+            subtitle: 'Please verify your email address by clicking the link we just emailed you.',
+            sent: 'A new verification link has been sent to your email address.',
+            resend: 'Resend verification email',
+            logout: 'Log out',
         },
     },
     nav: {

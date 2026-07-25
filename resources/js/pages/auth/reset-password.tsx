@@ -1,6 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -13,86 +13,43 @@ interface ResetPasswordProps {
     email: string;
 }
 
-interface ResetPasswordForm {
-    token: string;
-    email: string;
-    password: string;
-    password_confirmation: string;
-}
-
 export default function ResetPassword({ token, email }: ResetPasswordProps) {
-    const { data, setData, post, processing, errors, reset } = useForm<ResetPasswordForm>({
-        token: token,
-        email: email,
-        password: '',
-        password_confirmation: '',
-    });
-
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-        post(route('password.store'), {
-            onFinish: () => reset('password', 'password_confirmation'),
-        });
-    };
+    const { t } = useTranslation();
 
     return (
-        <AuthLayout title="Reset password" description="Please enter your new password below">
-            <Head title="Reset password" />
+        <AuthLayout title={t('auth.reset.title')} description={t('auth.reset.subtitle')}>
+            <Head title={t('auth.reset.title')} />
 
-            <form onSubmit={submit}>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            name="email"
-                            autoComplete="email"
-                            value={data.email}
-                            className="mt-1 block w-full"
-                            readOnly
-                            onChange={(e) => setData('email', e.target.value)}
-                        />
-                        <InputError message={errors.email} className="mt-2" />
+            <Form action={route('password.store')} method="post" resetOnError={['password', 'password_confirmation']}>
+                {({ processing, errors }) => (
+                    <div className="grid gap-6">
+                        <input type="hidden" name="token" defaultValue={token} />
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="email">{t('auth.email')}</Label>
+                            <Input id="email" name="email" type="email" defaultValue={email} readOnly autoComplete="email" className="mt-1 block w-full" />
+                            <InputError message={errors.email} className="mt-2" />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="password">{t('auth.password')}</Label>
+                            <Input id="password" name="password" type="password" autoComplete="new-password" autoFocus placeholder={t('auth.passwordPlaceholder')} className="mt-1 block w-full" />
+                            <InputError message={errors.password} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="password_confirmation">{t('auth.confirmPassword')}</Label>
+                            <Input id="password_confirmation" name="password_confirmation" type="password" autoComplete="new-password" placeholder={t('auth.confirmPasswordPlaceholder')} className="mt-1 block w-full" />
+                            <InputError message={errors.password_confirmation} className="mt-2" />
+                        </div>
+
+                        <Button type="submit" className="mt-2 w-full" disabled={processing}>
+                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                            {t('auth.reset.submit')}
+                        </Button>
                     </div>
-
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            name="password"
-                            autoComplete="new-password"
-                            value={data.password}
-                            className="mt-1 block w-full"
-                            autoFocus
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
-                        <InputError message={errors.password} />
-                    </div>
-
-                    <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation">Confirm password</Label>
-                        <Input
-                            id="password_confirmation"
-                            type="password"
-                            name="password_confirmation"
-                            autoComplete="new-password"
-                            value={data.password_confirmation}
-                            className="mt-1 block w-full"
-                            onChange={(e) => setData('password_confirmation', e.target.value)}
-                            placeholder="Confirm password"
-                        />
-                        <InputError message={errors.password_confirmation} className="mt-2" />
-                    </div>
-
-                    <Button type="submit" className="mt-4 w-full" disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Reset password
-                    </Button>
-                </div>
-            </form>
+                )}
+            </Form>
         </AuthLayout>
     );
 }

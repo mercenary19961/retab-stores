@@ -1,41 +1,34 @@
-// Components
-import { Head, useForm } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function VerifyEmail({ status }: { status?: string }) {
-    const { post, processing } = useForm({});
-
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-
-        post(route('verification.send'));
-    };
+    const { t } = useTranslation();
 
     return (
-        <AuthLayout title="Verify email" description="Please verify your email address by clicking on the link we just emailed to you.">
-            <Head title="Email verification" />
+        <AuthLayout title={t('auth.verify.title')} description={t('auth.verify.subtitle')}>
+            <Head title={t('auth.verify.title')} />
 
             {status === 'verification-link-sent' && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address you provided during registration.
-                </div>
+                <div className="mb-4 text-center text-sm font-medium text-green-600">{t('auth.verify.sent')}</div>
             )}
 
-            <form onSubmit={submit} className="space-y-6 text-center">
-                <Button disabled={processing} variant="secondary">
-                    {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    Resend verification email
-                </Button>
+            <Form action={route('verification.send')} method="post" className="text-center">
+                {({ processing }) => (
+                    <Button disabled={processing} variant="secondary">
+                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                        {t('auth.verify.resend')}
+                    </Button>
+                )}
+            </Form>
 
-                <TextLink href={route('logout')} method="post" className="mx-auto block text-sm">
-                    Log out
-                </TextLink>
-            </form>
+            <TextLink href={route('logout')} method="post" className="mx-auto mt-6 block text-center text-sm">
+                {t('auth.verify.logout')}
+            </TextLink>
         </AuthLayout>
     );
 }
