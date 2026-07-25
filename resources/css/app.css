@@ -364,4 +364,19 @@ html[dir='rtl'] .cta-shimmer {
         outline: 2px solid var(--color-brand-gold);
         outline-offset: 1px;
     }
+
+    /* Same treatment for keyboard focus on plain buttons and links, so tabbing
+       through the UI reads as on-brand instead of the browser's default box.
+       :focus-visible only fires for keyboard/programmatic focus (not mouse
+       clicks), and disabled controls can't be focused, so this never shows on a
+       normal click. shadcn/Radix components set their own ring + `outline-none`
+       (utilities layer, which wins), so this only styles the otherwise-unstyled
+       ones. Modern browsers follow the element's own border-radius for the
+       outline, so rounded buttons/links keep their shape automatically. */
+    a:focus-visible,
+    button:focus-visible,
+    [role='button']:focus-visible {
+        outline: 2px solid var(--color-brand-gold);
+        outline-offset: 2px;
+    }
 }
