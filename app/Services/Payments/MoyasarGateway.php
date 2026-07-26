@@ -58,7 +58,7 @@ class MoyasarGateway implements PaymentGateway
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                'Moyasar invoice creation failed: ' . $response->status() . ' ' . $response->body()
+                'Moyasar invoice creation failed: '.$response->status().' '.$response->body()
             );
         }
 
@@ -80,7 +80,7 @@ class MoyasarGateway implements PaymentGateway
         $response = $this->client()->get("/payments/{$paymentId}");
 
         if (! $response->successful()) {
-            throw new RuntimeException("Moyasar fetch payment {$paymentId} failed: " . $response->status());
+            throw new RuntimeException("Moyasar fetch payment {$paymentId} failed: ".$response->status());
         }
 
         return $this->normalize($response->json());
@@ -91,7 +91,7 @@ class MoyasarGateway implements PaymentGateway
         $response = $this->client()->get("/invoices/{$invoiceId}");
 
         if (! $response->successful()) {
-            throw new RuntimeException("Moyasar fetch invoice {$invoiceId} failed: " . $response->status());
+            throw new RuntimeException("Moyasar fetch invoice {$invoiceId} failed: ".$response->status());
         }
 
         $data = $response->json();
@@ -116,6 +116,35 @@ class MoyasarGateway implements PaymentGateway
         return hash_equals($this->webhookToken, $token);
     }
 
+    /**
+     * Readiness probe for `integrations:check` — never throws. Confirms the secret
+     * key is set and actually authenticates, via a harmless read (listing invoices).
+     *
+     * @return array{configured: bool, ok: bool, status: int|null, message: string}
+     */
+    public function ping(): array
+    {
+        if ($this->secretKey === '') {
+            return ['configured' => false, 'ok' => false, 'status' => null, 'message' => 'MOYASAR_SECRET_KEY not set'];
+        }
+
+        try {
+            $response = $this->client()->get('/invoices');
+
+            if ($response->successful()) {
+                return ['configured' => true, 'ok' => true, 'status' => $response->status(), 'message' => 'authenticated'];
+            }
+
+            if (in_array($response->status(), [401, 403], true)) {
+                return ['configured' => true, 'ok' => false, 'status' => $response->status(), 'message' => 'secret key rejected'];
+            }
+
+            return ['configured' => true, 'ok' => false, 'status' => $response->status(), 'message' => 'unexpected response'];
+        } catch (\Throwable $e) {
+            return ['configured' => true, 'ok' => false, 'status' => null, 'message' => 'unreachable: '.$e->getMessage()];
+        }
+    }
+
     public function refundPayment(string $paymentId, int $amount): NormalizedPayment
     {
         $response = $this->client()->post("/payments/{$paymentId}/refund", [
@@ -124,7 +153,7 @@ class MoyasarGateway implements PaymentGateway
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                "Moyasar refund {$paymentId} failed: " . $response->status() . ' ' . $response->body()
+                "Moyasar refund {$paymentId} failed: ".$response->status().' '.$response->body()
             );
         }
 
@@ -162,6 +191,6 @@ class MoyasarGateway implements PaymentGateway
     {
         $separator = str_contains($url, '?') ? '&' : '?';
 
-        return $url . $separator . 'token=' . urlencode($this->webhookToken);
+        return $url.$separator.'token='.urlencode($this->webhookToken);
     }
 }

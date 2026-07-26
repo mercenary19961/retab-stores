@@ -38,7 +38,7 @@ class TamaraClient
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                'Tamara checkout creation failed: ' . $response->status() . ' ' . $response->body()
+                'Tamara checkout creation failed: '.$response->status().' '.$response->body()
             );
         }
 
@@ -56,7 +56,7 @@ class TamaraClient
         $response = $this->client()->get("/orders/{$orderId}");
 
         if (! $response->successful()) {
-            throw new RuntimeException("Tamara get order {$orderId} failed: " . $response->status());
+            throw new RuntimeException("Tamara get order {$orderId} failed: ".$response->status());
         }
 
         return $response->json();
@@ -69,7 +69,7 @@ class TamaraClient
 
         // 409 = already authorised / not in an authorisable state; caller re-reads status.
         if (! $response->successful() && $response->status() !== 409) {
-            throw new RuntimeException("Tamara authorise {$orderId} failed: " . $response->status() . ' ' . $response->body());
+            throw new RuntimeException("Tamara authorise {$orderId} failed: ".$response->status().' '.$response->body());
         }
 
         return $response->json() ?? [];
@@ -81,7 +81,7 @@ class TamaraClient
         $response = $this->client()->post('/payments/capture', array_merge(['order_id' => $orderId], $payload));
 
         if (! $response->successful()) {
-            throw new RuntimeException("Tamara capture {$orderId} failed: " . $response->status() . ' ' . $response->body());
+            throw new RuntimeException("Tamara capture {$orderId} failed: ".$response->status().' '.$response->body());
         }
 
         return $response->json();
@@ -93,7 +93,7 @@ class TamaraClient
         $response = $this->client()->post('/payments/simplified-refund', array_merge(['order_id' => $orderId], $payload));
 
         if (! $response->successful()) {
-            throw new RuntimeException("Tamara refund {$orderId} failed: " . $response->status() . ' ' . $response->body());
+            throw new RuntimeException("Tamara refund {$orderId} failed: ".$response->status().' '.$response->body());
         }
 
         return $response->json() ?? [];
@@ -106,10 +106,40 @@ class TamaraClient
 
         // 409 = already cancelled / not cancellable; treat as a no-op.
         if (! $response->successful() && $response->status() !== 409) {
-            throw new RuntimeException("Tamara cancel {$orderId} failed: " . $response->status() . ' ' . $response->body());
+            throw new RuntimeException("Tamara cancel {$orderId} failed: ".$response->status().' '.$response->body());
         }
 
         return $response->json() ?? [];
+    }
+
+    /**
+     * Readiness probe for `integrations:check` — never throws. Reads a
+     * non-existent order: a valid API token yields 404 (not found), an
+     * invalid/expired one yields 401/403, which is how we tell them apart.
+     *
+     * @return array{configured: bool, ok: bool, status: int|null, message: string}
+     */
+    public function ping(): array
+    {
+        if ($this->apiToken === '') {
+            return ['configured' => false, 'ok' => false, 'status' => null, 'message' => 'TAMARA_API_TOKEN not set'];
+        }
+
+        try {
+            $status = $this->client()->get('/orders/readiness-probe')->status();
+
+            if (in_array($status, [401, 403], true)) {
+                return ['configured' => true, 'ok' => false, 'status' => $status, 'message' => 'API token rejected'];
+            }
+
+            if ($status >= 500) {
+                return ['configured' => true, 'ok' => false, 'status' => $status, 'message' => 'Tamara server error'];
+            }
+
+            return ['configured' => true, 'ok' => true, 'status' => $status, 'message' => 'authenticated'];
+        } catch (\Throwable $e) {
+            return ['configured' => true, 'ok' => false, 'status' => null, 'message' => 'unreachable: '.$e->getMessage()];
+        }
     }
 
     /**

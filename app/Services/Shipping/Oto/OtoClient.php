@@ -28,12 +28,12 @@ class OtoClient
         return Cache::remember(self::TOKEN_CACHE_KEY, $this->tokenTtl(), function () {
             $response = Http::acceptJson()
                 ->timeout(20)
-                ->post($this->baseUrl . '/refreshToken', [
+                ->post($this->baseUrl.'/refreshToken', [
                     'refresh_token' => $this->refreshToken,
                 ]);
 
             if (! $response->successful()) {
-                throw new RuntimeException('OTO token refresh failed: ' . $response->status() . ' ' . $response->body());
+                throw new RuntimeException('OTO token refresh failed: '.$response->status().' '.$response->body());
             }
 
             $token = $response->json('access_token') ?? $response->json('token');
@@ -92,17 +92,50 @@ class OtoClient
         $response = $this->client()->post($path, $payload);
 
         if (! $response->successful()) {
-            throw new RuntimeException("OTO {$path} failed: " . $response->status() . ' ' . $response->body());
+            throw new RuntimeException("OTO {$path} failed: ".$response->status().' '.$response->body());
         }
 
         $data = $response->json() ?? [];
 
         // OTO returns success:false with a message on logical failures.
         if (array_key_exists('success', $data) && $data['success'] === false) {
-            throw new RuntimeException("OTO {$path} rejected: " . ($data['message'] ?? 'unknown error'));
+            throw new RuntimeException("OTO {$path} rejected: ".($data['message'] ?? 'unknown error'));
         }
 
         return $data;
+    }
+
+    /**
+     * Readiness probe for `integrations:check` — never throws. Exchanges the
+     * refresh token for an access token (uncached), which is the cleanest proof
+     * the credential is valid.
+     *
+     * @return array{configured: bool, ok: bool, status: int|null, message: string}
+     */
+    public function ping(): array
+    {
+        if ($this->refreshToken === '') {
+            return ['configured' => false, 'ok' => false, 'status' => null, 'message' => 'OTO_REFRESH_TOKEN not set'];
+        }
+
+        try {
+            $response = Http::acceptJson()->timeout(15)
+                ->post($this->baseUrl.'/refreshToken', ['refresh_token' => $this->refreshToken]);
+
+            $token = $response->json('access_token') ?? $response->json('token');
+
+            if ($response->successful() && $token) {
+                return ['configured' => true, 'ok' => true, 'status' => $response->status(), 'message' => 'token exchange OK'];
+            }
+
+            if (in_array($response->status(), [401, 403], true)) {
+                return ['configured' => true, 'ok' => false, 'status' => $response->status(), 'message' => 'refresh token rejected'];
+            }
+
+            return ['configured' => true, 'ok' => false, 'status' => $response->status(), 'message' => 'token exchange failed'];
+        } catch (\Throwable $e) {
+            return ['configured' => true, 'ok' => false, 'status' => null, 'message' => 'unreachable: '.$e->getMessage()];
+        }
     }
 
     /**
