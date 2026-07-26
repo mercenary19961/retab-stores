@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, construction_phase]
+    branches: [main, construction_phase, deployment_phase]
   pull_request:
 
 jobs:
@@ -56,3 +56,53 @@ jobs:
 
       - name: SSR build
         run: npm run build:ssr
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    # Report-only for now (like the Lighthouse pattern): the browser suite is new,
+    # so a flake must never red-gate a merge until it's proven stable. Promote to a
+    # hard gate once it's had a few clean runs.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, sqlite3, gd
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Prepare environment
+        run: cp .env.example .env && php artisan key:generate
+
+      # The E2E server serves the built assets (no Vite dev server in CI).
+      - name: Build assets
+        run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # No QA_BASE_URL → Playwright boots its own freshly-seeded SQLite app
+      # (webServer in playwright.config.ts) and runs the suite against it.
+      - name: Run E2E
+        run: npm run test:e2e
+
+      - name: Upload report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

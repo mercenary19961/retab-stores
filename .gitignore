@@ -33,3 +33,4 @@ yarn-error.log
 /blob-report
 /playwright/.cache
 /qa-shots
+/database/e2e.sqlite

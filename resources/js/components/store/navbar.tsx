@@ -167,6 +167,7 @@ export default function StoreNavbar() {
                         </Link>
                         <button
                             type="button"
+                            data-testid="lang-toggle"
                             onClick={toggleLanguage}
                             className="rounded-full border border-brand-gold/40 px-3 py-1 text-sm text-brand-gold transition-colors hover:bg-brand-gold/10"
                         >

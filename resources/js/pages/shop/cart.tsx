@@ -36,7 +36,7 @@ export default function Cart({ items, subtotal }: { items: CartItem[]; count: nu
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-3 lg:col-span-2">
                         {items.map((item) => (
-                            <div key={item.id} className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4">
+                            <div key={item.id} data-testid="cart-item" className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4">
                                 <div className="flex h-16 w-16 items-center justify-center rounded bg-[#f1ede7] text-2xl">🌴</div>
 
                                 <div className="flex-1">
@@ -49,6 +49,7 @@ export default function Cart({ items, subtotal }: { items: CartItem[]; count: nu
                                 <input
                                     type="number"
                                     min={1}
+                                    data-testid="cart-qty"
                                     defaultValue={item.quantity}
                                     onChange={(e) =>
                                         router.patch(
@@ -60,10 +61,11 @@ export default function Cart({ items, subtotal }: { items: CartItem[]; count: nu
                                     className="w-16 rounded border border-gray-300 px-2 py-1 text-center"
                                 />
 
-                                <div className="w-20 text-start font-semibold">{item.line_total} {currency}</div>
+                                <div data-testid="cart-line-total" className="w-20 text-start font-semibold">{item.line_total} {currency}</div>
 
                                 <button
                                     type="button"
+                                    data-testid="cart-remove"
                                     onClick={() => router.delete(`/cart/items/${item.id}`, { preserveScroll: true })}
                                     className="text-sm text-red-500 hover:text-red-700"
                                 >
@@ -76,7 +78,7 @@ export default function Cart({ items, subtotal }: { items: CartItem[]; count: nu
                     <div className="h-fit rounded-lg border border-gray-200 bg-white p-4">
                         <div className="flex justify-between text-lg font-bold">
                             <span>{t('cart.total')}</span>
-                            <span>{subtotal} {currency}</span>
+                            <span data-testid="cart-subtotal">{subtotal} {currency}</span>
                         </div>
                         <p className="mt-1 text-xs text-gray-500">{t('cart.shippingNote')}</p>
                         <Link

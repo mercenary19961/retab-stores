@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // Regression guard for the auth/storefront dark-leak bug: dark mode is ADMIN-only
 // (scoped to `.admin-shell dark`), so the customer-facing pages must stay light

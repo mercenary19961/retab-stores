@@ -58,6 +58,7 @@ export default function Checkout({
             </span>
             <input
                 type={type}
+                data-testid={name}
                 value={data[name]}
                 onChange={(e) => setData(name, e.target.value)}
                 className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
@@ -146,6 +147,7 @@ export default function Checkout({
                     </label>
                     <button
                         type="submit"
+                        data-testid="place-order"
                         disabled={processing}
                         className="mt-4 w-full rounded-lg bg-[#2f4f4f] px-6 py-3 font-semibold text-white transition hover:bg-[#264141] disabled:opacity-60"
                     >

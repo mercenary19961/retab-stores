@@ -238,6 +238,7 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
                             </div>
                             <button
                                 type="button"
+                                data-testid="add-to-cart"
                                 onClick={() => router.post('/cart', { product_id: product.id, quantity: qty }, { preserveScroll: true })}
                                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-brand-teal px-8 py-3 font-semibold text-white transition-colors hover:bg-brand-teal/90"
                             >
