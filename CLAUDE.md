@@ -9,6 +9,76 @@
 
 ---
 
+## ⚡ Quick Command Reference (cheatsheet)
+
+> The commands you reach for most, in one place. Fuller context lives in **Local Development** and the relevant Architecture sections. (Dev shell is PowerShell + Git Bash on Windows; these run in either.)
+
+**Run locally**
+```bash
+composer run dev          # all-in-one: artisan serve + queue + vite  → http://localhost:8000
+php artisan serve         # or run the halves separately
+npm run dev
+```
+
+**Database** (dev = XAMPP **MariaDB** on `127.0.0.1:3307`, db `retab-stores`)
+```bash
+php artisan migrate
+php artisan migrate:fresh --seed     # reset + reseed everything
+php artisan migrate:status           # inspect (⚠️ db:show ERRORS on MariaDB — cosmetic; use this)
+php artisan db:table <name>
+```
+
+**Quality gates** (run before shipping — these are exactly what CI checks)
+```bash
+php artisan test                     # PHP suite (in-memory sqlite)
+php artisan test --filter=<Name>     # a single test or class
+npx tsc --noEmit                     # the REAL type gate (Vite/esbuild strips types without checking)
+npm run lint                         # eslint . --fix  (lints the WHOLE tree, not per-file)
+npm run test:js                      # vitest (front-end helpers, e.g. consent logic)
+./vendor/bin/pint                    # PHP formatter (CI runs it in fix mode)
+npm run build                        # client build   (npm run build:ssr for the SSR bundle)
+```
+
+**End-to-end** (Playwright — see Infrastructure → "E2E suite")
+```bash
+npm run build && npm run test:e2e              # boots a freshly-seeded throwaway sqlite on :8100
+npm run test:e2e:report                        # open the last HTML report
+QA_BASE_URL=https://<site> npm run test:e2e    # run the specs against a deployment instead
+```
+
+**Catalogue + media**
+```bash
+php artisan catalog:import-zid                 # import the Zid CSV (--fresh wipes first · --no-images to skip)
+php artisan catalog:import-images <group> --dir=<folder> --dry-run   # <group> = key in database/data/image-maps.php
+php artisan catalog:clean-slugs                # dry-run: junk slugs → clean Arabic + build the 301 map
+php artisan catalog:clean-slugs --apply        # ⚠️ run on PROD at launch (this is what creates the redirects)
+php artisan media:variants                     # backfill responsive WebP variants (--force to regenerate)
+```
+
+**Integrations readiness** (payments + shipping — see the command's own docblock)
+```bash
+php artisan integrations:check                 # per provider: env vars, webhook URL to register, live auth probe
+php artisan integrations:check --offline       # env presence only (no network calls)
+```
+
+**Git** (full workflow under Git & Deploy)
+```bash
+git ship <branch>        # local merge → main → dual-push both repos → re-sync branch. NEVER the GitHub merge button.
+git remote -v            # must show 1 fetch + 2 push URLs on origin (dual-push)
+```
+
+**Deploy / prod** (Railway)
+```bash
+php artisan migrate --force                             # also runs the baseline-data migration
+php artisan db:seed --class=AdminUserSeeder --force     # once, AFTER setting ADMIN_EMAIL/ADMIN_PASSWORD env
+php artisan optimize                                    # config/route/view/event cache (optimize:clear to undo)
+```
+Set **`APP_URL`** to the real domain — webhook, payment-return, and email URLs are all built from it.
+
+**Dev logins** (seeded in local only): admin `admin@retab.com.sa` / `password` · editor `editor@retab.com.sa` / `password`
+
+---
+
 ## Project Overview
 
 **Store:** Retab Stores
