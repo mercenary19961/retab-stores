@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Auth\OtpService;
 use App\Services\CartService;
+use App\Services\TurnstileVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -28,7 +29,7 @@ class OtpAuthController extends Controller
         return Inertia::render('auth/whatsapp-login');
     }
 
-    public function send(Request $request, \App\Services\TurnstileVerifier $turnstile)
+    public function send(Request $request, TurnstileVerifier $turnstile)
     {
         $data = $request->validate([
             'phone' => ['required', 'string', 'max:20'],
@@ -64,7 +65,8 @@ class OtpAuthController extends Controller
 
         $user = User::where('phone', $phone)->first();
         if (! $user) {
-            $user = User::create([
+            // forceCreate: `role` is a guarded privilege field (not mass-assignable).
+            $user = User::forceCreate([
                 'phone' => $phone,
                 'role' => 'customer',
                 'locale' => 'ar',

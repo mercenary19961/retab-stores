@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
@@ -19,23 +20,23 @@ class DiscountTest extends TestCase
 
     private function admin(): User
     {
-        return User::create(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
+        return User::forceCreate(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
     }
 
     private function product(float $price, ?int $categoryId = null): Product
     {
-        $categoryId ??= Category::create(['name_ar' => 'ت', 'slug' => 'c-' . uniqid()])->id;
+        $categoryId ??= Category::create(['name_ar' => 'ت', 'slug' => 'c-'.uniqid()])->id;
 
         return Product::create([
-            'category_id' => $categoryId, 'name_ar' => 'م', 'slug' => 'p-' . uniqid(),
-            'price' => $price, 'sku' => 'SK-' . uniqid(), 'smacc_sku' => 'SM-' . uniqid(), 'stock' => 10, 'is_active' => true,
+            'category_id' => $categoryId, 'name_ar' => 'م', 'slug' => 'p-'.uniqid(),
+            'price' => $price, 'sku' => 'SK-'.uniqid(), 'smacc_sku' => 'SM-'.uniqid(), 'stock' => 10, 'is_active' => true,
         ]);
     }
 
-    private function placeOrderWith(): \App\Models\Order
+    private function placeOrderWith(): Order
     {
         $product = $this->product(50);
-        $cart = Cart::create(['session_token' => 's-' . uniqid()]);
+        $cart = Cart::create(['session_token' => 's-'.uniqid()]);
         $cart->items()->create(['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 50]);
 
         return app(CheckoutService::class)->placeOrder($cart, ['name' => 'Z', 'phone' => '+966500000000'], ['country' => 'SA', 'city' => 'Riyadh']);

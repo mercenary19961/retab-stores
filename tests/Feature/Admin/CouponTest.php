@@ -18,16 +18,16 @@ class CouponTest extends TestCase
 
     private function admin(): User
     {
-        return User::create(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
+        return User::forceCreate(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
     }
 
     private function product(): Product
     {
-        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-' . uniqid()]);
+        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-'.uniqid()]);
 
         return Product::create([
-            'category_id' => $cat->id, 'name_ar' => 'سكري', 'slug' => 'p-' . uniqid(),
-            'price' => 50, 'sku' => 'SK-' . uniqid(), 'smacc_sku' => 'SM-' . uniqid(), 'stock' => 100,
+            'category_id' => $cat->id, 'name_ar' => 'سكري', 'slug' => 'p-'.uniqid(),
+            'price' => 50, 'sku' => 'SK-'.uniqid(), 'smacc_sku' => 'SM-'.uniqid(), 'stock' => 100,
         ]);
     }
 
@@ -80,13 +80,13 @@ class CouponTest extends TestCase
 
     public function test_per_user_limit_is_enforced_at_checkout(): void
     {
-        $user = User::create(['name' => 'Cust', 'email' => 'c@test.com', 'password' => bcrypt('x')]);
+        $user = User::forceCreate(['name' => 'Cust', 'email' => 'c@test.com', 'password' => bcrypt('x')]);
         $product = $this->product();
         Coupon::create(['code' => 'ONCE', 'type' => 'fixed', 'value' => 5, 'per_user_limit' => 1, 'is_active' => true]);
         Setting::set(CheckoutService::SHIPPING_FEE_KEY, 0);
 
         $place = function () use ($user, $product) {
-            $cart = Cart::create(['session_token' => 's-' . uniqid(), 'user_id' => $user->id]);
+            $cart = Cart::create(['session_token' => 's-'.uniqid(), 'user_id' => $user->id]);
             $cart->items()->create(['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 50]);
 
             return app(CheckoutService::class)->placeOrder(

@@ -15,7 +15,7 @@ class SettingsAndPagesTest extends TestCase
 
     private function admin(): User
     {
-        return User::create(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
+        return User::forceCreate(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
     }
 
     public function test_admin_updates_settings(): void
@@ -58,7 +58,7 @@ class SettingsAndPagesTest extends TestCase
 
     public function test_customers_cannot_touch_settings(): void
     {
-        $user = User::create(['name' => 'C', 'email' => 'c@test.com', 'password' => bcrypt('secret')]);
+        $user = User::forceCreate(['name' => 'C', 'email' => 'c@test.com', 'password' => bcrypt('secret')]);
 
         $this->actingAs($user)->put('/admin/settings', ['shipping_flat_fee' => '1'])->assertForbidden();
     }

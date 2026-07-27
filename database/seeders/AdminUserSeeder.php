@@ -25,8 +25,9 @@ class AdminUserSeeder extends Seeder
             $this->seedEditor();
         }
 
-        // Plain password is hashed by the User model's `hashed` cast.
-        User::updateOrCreate(
+        // Plain password is hashed by the User model's `hashed` cast. Unguarded so
+        // the guarded privilege field `role` persists (see User::$fillable note).
+        User::unguarded(fn () => User::updateOrCreate(
             ['email' => $email],
             [
                 'name' => 'Retab Admin',
@@ -36,12 +37,13 @@ class AdminUserSeeder extends Seeder
                 'locale' => 'ar',
                 'admin_theme' => 'light',
             ],
-        );
+        ));
     }
 
     private function seedEditor(): void
     {
-        User::updateOrCreate(
+        // permissions left null → resolvedPermissions() falls back to DEFAULTS.
+        User::unguarded(fn () => User::updateOrCreate(
             ['email' => 'editor@retab.com.sa'],
             [
                 'name' => 'Retab Editor',
@@ -49,6 +51,6 @@ class AdminUserSeeder extends Seeder
                 'password' => 'password',
                 'email_verified_at' => now(),
             ],
-        );
+        ));
     }
 }

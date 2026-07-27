@@ -12,13 +12,13 @@ class CustomerViewTest extends TestCase
 
     private function admin(): User
     {
-        return User::create(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
+        return User::forceCreate(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
     }
 
     public function test_admin_sees_customers_but_not_staff(): void
     {
         $admin = $this->admin();
-        User::create(['name' => 'Zaid', 'email' => 'z@test.com', 'password' => bcrypt('secret'), 'confirmed_purchases_count' => 3]);
+        User::forceCreate(['name' => 'Zaid', 'email' => 'z@test.com', 'password' => bcrypt('secret'), 'confirmed_purchases_count' => 3]);
 
         $response = $this->actingAs($admin)->get('/admin/customers');
 
@@ -31,7 +31,7 @@ class CustomerViewTest extends TestCase
 
     public function test_customer_detail_shows_loyalty(): void
     {
-        $customer = User::create(['name' => 'Zaid', 'email' => 'z@test.com', 'password' => bcrypt('secret'), 'confirmed_purchases_count' => 7]);
+        $customer = User::forceCreate(['name' => 'Zaid', 'email' => 'z@test.com', 'password' => bcrypt('secret'), 'confirmed_purchases_count' => 7]);
 
         $response = $this->actingAs($this->admin())->get("/admin/customers/{$customer->id}");
 
@@ -47,7 +47,7 @@ class CustomerViewTest extends TestCase
 
         $this->actingAs($admin)->get("/admin/customers/{$admin->id}")->assertNotFound();
 
-        $customer = User::create(['name' => 'C', 'email' => 'c@test.com', 'password' => bcrypt('secret')]);
+        $customer = User::forceCreate(['name' => 'C', 'email' => 'c@test.com', 'password' => bcrypt('secret')]);
         $this->actingAs($customer)->get('/admin/customers')->assertForbidden();
     }
 }

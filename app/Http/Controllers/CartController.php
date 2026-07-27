@@ -23,7 +23,7 @@ class CartController
     {
         $data = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
-            'quantity' => ['nullable', 'integer', 'min:1'],
+            'quantity' => ['nullable', 'integer', 'min:1', 'max:99'],
         ]);
 
         $product = Product::where('is_active', true)->findOrFail($data['product_id']);
@@ -36,7 +36,7 @@ class CartController
     {
         $this->ensureOwned($item);
 
-        $data = $request->validate(['quantity' => ['required', 'integer', 'min:0']]);
+        $data = $request->validate(['quantity' => ['required', 'integer', 'min:0', 'max:99']]);
         $this->cart->updateQuantity($item, $data['quantity']);
 
         return back();

@@ -161,7 +161,10 @@ class CheckoutService
             return [null, 0.0];
         }
 
-        $coupon = Coupon::where('code', $couponCode)->first();
+        // Lock the row for the transaction so the validity check and the
+        // used_count increment can't interleave with a concurrent checkout and
+        // over-redeem a usage-capped coupon. (placeOrder wraps this in a txn.)
+        $coupon = Coupon::where('code', $couponCode)->lockForUpdate()->first();
         if (! $coupon || ! $coupon->isValid($subtotal)) {
             throw new \RuntimeException('Invalid or expired coupon.');
         }
@@ -183,7 +186,7 @@ class CheckoutService
     private function generateOrderNumber(): string
     {
         do {
-            $number = 'RTB-' . now()->format('ymd') . '-' . strtoupper(Str::random(5));
+            $number = 'RTB-'.now()->format('ymd').'-'.strtoupper(Str::random(5));
         } while (Order::where('order_number', $number)->exists());
 
         return $number;

@@ -15,6 +15,7 @@ use App\Services\Payments\PaymentGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class ReturnFlowTest extends TestCase
@@ -23,7 +24,7 @@ class ReturnFlowTest extends TestCase
 
     private function makeCustomer(): User
     {
-        return User::create([
+        return User::forceCreate([
             'name' => 'Customer',
             'email' => 'customer@test.com',
             'password' => bcrypt('secret'),
@@ -32,7 +33,7 @@ class ReturnFlowTest extends TestCase
 
     private function makeAdmin(): User
     {
-        return User::create([
+        return User::forceCreate([
             'name' => 'Admin',
             'email' => 'admin@test.com',
             'password' => bcrypt('secret'),
@@ -44,7 +45,7 @@ class ReturnFlowTest extends TestCase
     private function makeDeliveredOrder(User $user, array $overrides = []): array
     {
         $order = Order::create(array_merge([
-            'order_number' => 'RTB-' . fake()->unique()->numerify('######'),
+            'order_number' => 'RTB-'.fake()->unique()->numerify('######'),
             'user_id' => $user->id,
             'customer_name' => $user->name,
             'customer_phone' => '+966500000000',
@@ -70,7 +71,7 @@ class ReturnFlowTest extends TestCase
         return [$order, $item];
     }
 
-    private function fileReturn(User $user, Order $order, OrderItem $item): \Illuminate\Testing\TestResponse
+    private function fileReturn(User $user, Order $order, OrderItem $item): TestResponse
     {
         return $this->actingAs($user)->post("/orders/{$order->order_number}/return", [
             'reason' => 'وصلت التمور تالفة',
@@ -130,7 +131,7 @@ class ReturnFlowTest extends TestCase
         $owner = $this->makeCustomer();
         [$order] = $this->makeDeliveredOrder($owner);
 
-        $other = User::create(['name' => 'Other', 'email' => 'other@test.com', 'password' => bcrypt('secret')]);
+        $other = User::forceCreate(['name' => 'Other', 'email' => 'other@test.com', 'password' => bcrypt('secret')]);
 
         $this->actingAs($other)->get("/orders/{$order->order_number}/return")->assertForbidden();
     }

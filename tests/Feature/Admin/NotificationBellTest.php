@@ -18,13 +18,13 @@ class NotificationBellTest extends TestCase
 
     private function admin(string $email = 'admin@test.com'): User
     {
-        return User::create(['name' => 'Admin', 'email' => $email, 'password' => bcrypt('secret'), 'role' => 'admin']);
+        return User::forceCreate(['name' => 'Admin', 'email' => $email, 'password' => bcrypt('secret'), 'role' => 'admin']);
     }
 
     private function order(): Order
     {
         return Order::create([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'customer_name' => 'زيد',
             'customer_phone' => '+966500000000',
             'shipping_address' => ['country' => 'SA'],
@@ -39,8 +39,8 @@ class NotificationBellTest extends TestCase
     public function test_new_order_notifies_all_staff_but_not_customers(): void
     {
         $admin = $this->admin();
-        $editor = User::create(['name' => 'Ed', 'email' => 'ed@test.com', 'password' => bcrypt('secret'), 'role' => 'editor']);
-        $customer = User::create(['name' => 'Cust', 'email' => 'c@test.com', 'password' => bcrypt('secret')]);
+        $editor = User::forceCreate(['name' => 'Ed', 'email' => 'ed@test.com', 'password' => bcrypt('secret'), 'role' => 'editor']);
+        $customer = User::forceCreate(['name' => 'Cust', 'email' => 'c@test.com', 'password' => bcrypt('secret')]);
 
         $order = $this->order();
         Notification::send(User::staff()->get(), new NewOrderNotification($order));

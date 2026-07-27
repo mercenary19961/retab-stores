@@ -30,7 +30,7 @@ class ProductRequestTest extends TestCase
             'name_ar' => 'صفاوي المدينة',
             'slug' => 'safawi-soon',
             'price' => 0,
-            'sku' => 'CS-' . uniqid(),
+            'sku' => 'CS-'.uniqid(),
             'stock' => 0,
             'is_active' => false,
             'is_coming_soon' => true,
@@ -39,7 +39,7 @@ class ProductRequestTest extends TestCase
 
     private function staff(): User
     {
-        return User::create(['name' => 'Admin', 'email' => 'a' . uniqid() . '@test.com', 'password' => bcrypt('x'), 'role' => 'admin']);
+        return User::forceCreate(['name' => 'Admin', 'email' => 'a'.uniqid().'@test.com', 'password' => bcrypt('x'), 'role' => 'admin']);
     }
 
     public function test_coming_soon_product_shows_in_the_catalogue_with_its_flag(): void
@@ -102,7 +102,7 @@ class ProductRequestTest extends TestCase
         Notification::fake();
         $this->staff();
         $product = $this->comingSoon(['slug' => 'user-req']);
-        $customer = User::create(['name' => 'Zaid', 'phone' => '0555555555', 'password' => bcrypt('x')]);
+        $customer = User::forceCreate(['name' => 'Zaid', 'phone' => '0555555555', 'password' => bcrypt('x')]);
 
         $this->actingAs($customer)->post('/products/user-req/request', [])->assertSessionHasNoErrors();
 
@@ -116,7 +116,7 @@ class ProductRequestTest extends TestCase
     public function test_duplicate_open_request_is_collapsed(): void
     {
         $product = $this->comingSoon(['slug' => 'dup-req']);
-        $customer = User::create(['name' => 'Z', 'phone' => '0511111111', 'password' => bcrypt('x')]);
+        $customer = User::forceCreate(['name' => 'Z', 'phone' => '0511111111', 'password' => bcrypt('x')]);
 
         $this->actingAs($customer)->post('/products/dup-req/request', []);
         $this->actingAs($customer)->post('/products/dup-req/request', []);

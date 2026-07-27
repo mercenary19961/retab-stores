@@ -49,7 +49,8 @@ class UserController extends Controller
             'password' => ['required', Password::defaults()],
         ]);
 
-        $user = User::create([
+        // forceCreate: `role`/`permissions` are guarded privilege fields.
+        $user = User::forceCreate([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => $data['password'], // 'hashed' cast
@@ -76,7 +77,7 @@ class UserController extends Controller
             }
         }
 
-        $user->update(['permissions' => $clean]);
+        $user->forceFill(['permissions' => $clean])->save(); // guarded privilege field
 
         return back()->with('success', __('messages.admin.permissions_updated', ['name' => $user->name]));
     }

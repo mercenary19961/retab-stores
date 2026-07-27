@@ -15,7 +15,7 @@ class MarketingCampaignTest extends TestCase
 
     private function admin(): User
     {
-        return User::create(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
+        return User::forceCreate(['name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin']);
     }
 
     private function approvedTemplate(array $overrides = []): WhatsappTemplate
@@ -35,9 +35,9 @@ class MarketingCampaignTest extends TestCase
         $admin = $this->admin(); // staff with a phone must be excluded too
         $admin->forceFill(['phone' => '966599999999', 'whatsapp_opt_in' => true])->save();
 
-        User::create(['name' => 'In', 'email' => 'in@test.com', 'password' => bcrypt('x'), 'phone' => '966500000001', 'whatsapp_opt_in' => true]);
-        User::create(['name' => 'NoPhone', 'email' => 'np@test.com', 'password' => bcrypt('x'), 'whatsapp_opt_in' => true]);
-        User::create(['name' => 'Out', 'email' => 'out@test.com', 'password' => bcrypt('x'), 'phone' => '966500000002', 'whatsapp_opt_in' => false]);
+        User::forceCreate(['name' => 'In', 'email' => 'in@test.com', 'password' => bcrypt('x'), 'phone' => '966500000001', 'whatsapp_opt_in' => true]);
+        User::forceCreate(['name' => 'NoPhone', 'email' => 'np@test.com', 'password' => bcrypt('x'), 'whatsapp_opt_in' => true]);
+        User::forceCreate(['name' => 'Out', 'email' => 'out@test.com', 'password' => bcrypt('x'), 'phone' => '966500000002', 'whatsapp_opt_in' => false]);
 
         $template = $this->approvedTemplate();
 
@@ -61,7 +61,7 @@ class MarketingCampaignTest extends TestCase
 
     public function test_unapproved_template_cannot_be_sent(): void
     {
-        User::create(['name' => 'In', 'email' => 'in@test.com', 'password' => bcrypt('x'), 'phone' => '966500000001', 'whatsapp_opt_in' => true]);
+        User::forceCreate(['name' => 'In', 'email' => 'in@test.com', 'password' => bcrypt('x'), 'phone' => '966500000001', 'whatsapp_opt_in' => true]);
         $template = $this->approvedTemplate(['status' => 'pending']);
 
         $this->actingAs($this->admin())->post('/admin/marketing/campaigns', [
@@ -87,7 +87,7 @@ class MarketingCampaignTest extends TestCase
 
     private function optedIn(string $email, ?string $phone, int $purchases, bool $optIn = true): User
     {
-        return User::create([
+        return User::forceCreate([
             'name' => $email, 'email' => $email, 'password' => bcrypt('x'),
             'phone' => $phone, 'whatsapp_opt_in' => $optIn, 'confirmed_purchases_count' => $purchases,
         ]);

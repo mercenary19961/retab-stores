@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\Permission;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +17,7 @@ use Illuminate\Notifications\Notifiable;
  */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
     /**
@@ -29,17 +31,20 @@ class User extends Authenticatable
         'phone',
         'phone_verified_at',
         'password',
-        'role',
         'avatar',
         'city',
         'locale',
         'admin_theme',
         'ui_preferences',
-        'permissions',
         'whatsapp_opt_in',
         'whatsapp_opt_in_at',
         'confirmed_purchases_count',
     ];
+
+    // NOTE: `role` and `permissions` are deliberately NOT mass-assignable — they
+    // are privilege fields. Set them only with trusted, server-controlled values
+    // via forceCreate/forceFill (see Admin\UserController, AdminUserSeeder). This
+    // prevents any future `->update($request->...)` from escalating a user.
 
     /**
      * The attributes that should be hidden for serialization.
@@ -139,7 +144,7 @@ class User extends Authenticatable
         }
 
         [$section, $action] = array_pad(explode('.', $permission, 2), 2, '');
-        $perms = $this->permissions ?? \App\Support\Permission::DEFAULTS;
+        $perms = $this->permissions ?? Permission::DEFAULTS;
 
         return (bool) ($perms[$section][$action] ?? false);
     }
@@ -156,7 +161,7 @@ class User extends Authenticatable
             return [];
         }
 
-        $result = \App\Support\Permission::DEFAULTS;
+        $result = Permission::DEFAULTS;
 
         foreach (($this->permissions ?? []) as $section => $actions) {
             foreach ((array) $actions as $action => $value) {

@@ -21,7 +21,10 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    // LoginRequest already limits to 5 attempts per email+IP; this adds a global
+    // per-IP cap so credential-stuffing across many emails from one IP is bounded.
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:20,1');
 
     // WhatsApp OTP sign-in / sign-up (the decided primary method for customers).
     Route::get('login/whatsapp', [OtpAuthController::class, 'create'])->name('login.whatsapp');
@@ -34,12 +37,14 @@ Route::middleware('guest')->group(function () {
         ->name('password.request');
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:6,1')
         ->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
         ->name('password.store');
 });
 

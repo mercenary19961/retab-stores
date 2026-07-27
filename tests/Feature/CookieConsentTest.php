@@ -22,7 +22,7 @@ class CookieConsentTest extends TestCase
 
     public function test_admin_pages_do_not_ship_the_consent_block(): void
     {
-        $admin = User::create([
+        $admin = User::forceCreate([
             'name' => 'Admin', 'email' => 'admin@test.com', 'password' => bcrypt('secret'), 'role' => 'admin',
         ]);
 
