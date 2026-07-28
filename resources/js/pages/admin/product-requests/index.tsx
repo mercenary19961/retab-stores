@@ -1,9 +1,10 @@
-import { Head, router } from '@inertiajs/react';
-import { Check, ExternalLink } from 'lucide-react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import Pagination from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, router } from '@inertiajs/react';
+import { Check, ExternalLink } from 'lucide-react';
 
 interface RequestRow {
     id: number;
@@ -27,14 +28,18 @@ export default function ProductRequestsIndex({
     openCount = 0,
 }: {
     requests: Paginator<RequestRow>;
-    filters: { status: string | null };
+    filters: { status: string | null; per_page: number };
     openCount?: number;
 }) {
     const { t, i18n } = useAdminT();
     const loc = (ar: string | null, en: string | null) => (i18n.language === 'en' && en ? en : (ar ?? '—'));
 
     const setStatus = (status: string) =>
-        router.get('/admin/product-requests', { status: status || undefined }, { preserveState: true, preserveScroll: true });
+        router.get(
+            '/admin/product-requests',
+            { status: status || undefined, per_page: filters.per_page || undefined },
+            { preserveState: true, preserveScroll: true },
+        );
 
     return (
         <AdminLayout title={t('admin.productRequests.title')}>
@@ -47,7 +52,10 @@ export default function ProductRequestsIndex({
                     onChange={setStatus}
                     options={[
                         { value: '', label: t('admin.productRequests.filterAll') },
-                        { value: 'open', label: openCount > 0 ? `${t('admin.productRequests.filterOpen')} (${openCount})` : t('admin.productRequests.filterOpen') },
+                        {
+                            value: 'open',
+                            label: openCount > 0 ? `${t('admin.productRequests.filterOpen')} (${openCount})` : t('admin.productRequests.filterOpen'),
+                        },
                         { value: 'handled', label: t('admin.productRequests.filterHandled') },
                     ]}
                     className="w-full sm:w-52"
@@ -68,7 +76,9 @@ export default function ProductRequestsIndex({
                     <tbody>
                         {requests.data.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-neutral-400">{t('admin.productRequests.empty')}</td>
+                                <td colSpan={5} className="px-4 py-8 text-center text-neutral-400">
+                                    {t('admin.productRequests.empty')}
+                                </td>
                             </tr>
                         )}
                         {requests.data.map((r) => (
@@ -80,7 +90,7 @@ export default function ProductRequestsIndex({
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             dir="auto"
-                                            className="inline-flex items-center gap-1 text-brand-gold hover:underline"
+                                            className="text-brand-gold inline-flex items-center gap-1 hover:underline"
                                         >
                                             {loc(r.product.name_ar, r.product.name_en)}
                                             <ExternalLink className="h-3.5 w-3.5" />
@@ -91,12 +101,16 @@ export default function ProductRequestsIndex({
                                 </td>
                                 <td className="px-4 py-3">
                                     {r.is_guest ? (
-                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t('admin.productRequests.guest')}</span>
+                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                                            {t('admin.productRequests.guest')}
+                                        </span>
                                     ) : (
                                         <span dir="auto">{r.customer ?? '—'}</span>
                                     )}
                                 </td>
-                                <td className="px-4 py-3 font-mono text-neutral-500" dir="ltr">{r.phone ?? '—'}</td>
+                                <td className="px-4 py-3 font-mono text-neutral-500" dir="ltr">
+                                    {r.phone ?? '—'}
+                                </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-neutral-500">{r.created_at ?? '—'}</td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end">
@@ -122,20 +136,7 @@ export default function ProductRequestsIndex({
                 </table>
             </div>
 
-            {requests.total > requests.data.length && (
-                <div className="mt-4 flex flex-wrap gap-1">
-                    {requests.links.map((link, i) => (
-                        <button
-                            key={i}
-                            type="button"
-                            disabled={!link.url}
-                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
-                            className={`rounded px-3 py-1 text-sm ${link.active ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-600 disabled:opacity-40 dark:text-neutral-300'}`}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                        />
-                    ))}
-                </div>
-            )}
+            <Pagination paginator={requests} perPage={filters.per_page} />
         </AdminLayout>
     );
 }

@@ -13,10 +13,13 @@ use Inertia\Inertia;
  */
 class ClientReviewController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $perPage = $this->perPage($request, 20);
+
         return Inertia::render('admin/client-reviews/index', [
-            'reviews' => ClientReview::orderByDesc('is_active')->orderBy('sort_order')->latest()->paginate(20)
+            'reviews' => ClientReview::orderByDesc('is_active')->orderBy('sort_order')->latest()->paginate($perPage)
+                ->withQueryString()
                 ->through(fn (ClientReview $r) => [
                     'id' => $r->id,
                     'author_name' => $r->author_name,
@@ -28,6 +31,7 @@ class ClientReviewController extends Controller
                     'updated_at' => $r->updated_at?->toDateTimeString(),
                 ]),
             'activeCount' => ClientReview::where('is_active', true)->count(),
+            'perPage' => $perPage,
         ]);
     }
 

@@ -36,15 +36,18 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
+        $perPage = $this->perPage($request, 20);
         $products = $this->filteredQuery($request)
             ->with(['category:id,name_ar,name_en', 'images'])
-            ->paginate(20)
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Product $p) => [
                 'id' => $p->id,
                 'name_ar' => $p->name_ar,
                 'name_en' => $p->name_en,
                 'image' => Media::url($p->primaryImage()?->path, 'thumb'),
+                // All images (detail-size) so the admin can open + swap them in the viewer.
+                'images' => $p->images->sortBy('sort_order')->map(fn ($img) => Media::url($img->path, 'detail'))->filter()->values(),
                 'sku' => $p->sku,
                 'smacc_sku' => $p->smacc_sku,
                 'category' => $p->category?->only('name_ar', 'name_en'),
@@ -69,6 +72,7 @@ class ProductController extends Controller
                 'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon'], true) ? $request->query('status') : null,
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+                'per_page' => $perPage,
             ],
             'draftCount' => Product::where('is_active', false)->count(),
             'categories' => $this->categoryOptions(),

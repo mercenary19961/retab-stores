@@ -1,7 +1,3 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { Columns3, MoveHorizontal, Pencil, Plus, Upload } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Modal from '@/components/admin/modal';
@@ -11,6 +7,10 @@ import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, router, useForm } from '@inertiajs/react';
+import { Columns3, MoveHorizontal, Pencil, Plus, Upload } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
 
 const COLUMNS: ColumnDef[] = [
     { key: 'author', defaultWidth: 190, minWidth: 120 },
@@ -98,19 +98,36 @@ function ReviewForm({ review, onClose }: { review: ReviewRow | null; onClose: ()
             </div>
 
             <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+                <input
+                    type="checkbox"
+                    checked={data.is_active}
+                    onChange={(e) => setData('is_active', e.target.checked)}
+                    className="accent-brand-gold h-4 w-4"
+                />
                 {t('admin.reviews.form.activeLabel')}
             </label>
 
             <div className="flex justify-end gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-                <Button type="button" variant="secondary" onClick={onClose}>{t('admin.common.cancel')}</Button>
-                <Button type="submit" variant="primary" disabled={processing || !isDirty}>{t('admin.reviews.form.save')}</Button>
+                <Button type="button" variant="secondary" onClick={onClose}>
+                    {t('admin.common.cancel')}
+                </Button>
+                <Button type="submit" variant="primary" disabled={processing || !isDirty}>
+                    {t('admin.reviews.form.save')}
+                </Button>
             </div>
         </form>
     );
 }
 
-export default function ClientReviewsIndex({ reviews, activeCount }: { reviews: Paginator<ReviewRow>; activeCount: number }) {
+export default function ClientReviewsIndex({
+    reviews,
+    activeCount,
+    perPage,
+}: {
+    reviews: Paginator<ReviewRow>;
+    activeCount: number;
+    perPage: number;
+}) {
     const { t } = useAdminT();
     const rc = useResizableColumns({ tableKey: 'client_reviews', columns: COLUMNS });
 
@@ -129,12 +146,18 @@ export default function ClientReviewsIndex({ reviews, activeCount }: { reviews: 
                             <MoveHorizontal className="h-3.5 w-3.5" /> {t('admin.common.dragToResize')}
                         </span>
                     ) : (
-                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>{t('admin.common.resetColumns')}</Button>
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>
+                            {t('admin.common.resetColumns')}
+                        </Button>
                     )}
                 </div>
                 <div className="flex gap-2">
-                    <Button href="/admin/client-reviews/import" variant="secondary" icon={Upload}>{t('admin.reviews.bulkImport')}</Button>
-                    <Button variant="primary" icon={Plus} onClick={() => setEditing('new')}>{t('admin.reviews.newReview')}</Button>
+                    <Button href="/admin/client-reviews/import" variant="secondary" icon={Upload}>
+                        {t('admin.reviews.bulkImport')}
+                    </Button>
+                    <Button variant="primary" icon={Plus} onClick={() => setEditing('new')}>
+                        {t('admin.reviews.newReview')}
+                    </Button>
                 </div>
             </div>
 
@@ -142,46 +165,110 @@ export default function ClientReviewsIndex({ reviews, activeCount }: { reviews: 
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                         <tr>
-                            <ResizableTh colKey="author" width={rc.widths.author} resizeProps={rc.getResizeHandleProps('author')} resizing={rc.resizing === 'author'}>{t('admin.reviews.cols.author')}</ResizableTh>
-                            <ResizableTh colKey="review" width={rc.widths.review} resizeProps={rc.getResizeHandleProps('review')} resizing={rc.resizing === 'review'}>{t('admin.reviews.cols.review')}</ResizableTh>
-                            <ResizableTh colKey="rating" width={rc.widths.rating} resizeProps={rc.getResizeHandleProps('rating')} resizing={rc.resizing === 'rating'}>{t('admin.reviews.cols.rating')}</ResizableTh>
-                            <ResizableTh colKey="source" width={rc.widths.source} resizeProps={rc.getResizeHandleProps('source')} resizing={rc.resizing === 'source'}>{t('admin.reviews.cols.source')}</ResizableTh>
-                            <ResizableTh colKey="inPool" width={rc.widths.inPool} resizeProps={rc.getResizeHandleProps('inPool')} resizing={rc.resizing === 'inPool'}>{t('admin.reviews.cols.inPool')}</ResizableTh>
-                            <ResizableTh colKey="updated" width={rc.widths.updated} resizeProps={rc.getResizeHandleProps('updated')} resizing={rc.resizing === 'updated'}>{t('admin.reviews.cols.updated')}</ResizableTh>
-                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'} className="text-end">{t('admin.common.actions')}</ResizableTh>
+                            <ResizableTh
+                                colKey="author"
+                                width={rc.widths.author}
+                                resizeProps={rc.getResizeHandleProps('author')}
+                                resizing={rc.resizing === 'author'}
+                            >
+                                {t('admin.reviews.cols.author')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="review"
+                                width={rc.widths.review}
+                                resizeProps={rc.getResizeHandleProps('review')}
+                                resizing={rc.resizing === 'review'}
+                            >
+                                {t('admin.reviews.cols.review')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="rating"
+                                width={rc.widths.rating}
+                                resizeProps={rc.getResizeHandleProps('rating')}
+                                resizing={rc.resizing === 'rating'}
+                            >
+                                {t('admin.reviews.cols.rating')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="source"
+                                width={rc.widths.source}
+                                resizeProps={rc.getResizeHandleProps('source')}
+                                resizing={rc.resizing === 'source'}
+                            >
+                                {t('admin.reviews.cols.source')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="inPool"
+                                width={rc.widths.inPool}
+                                resizeProps={rc.getResizeHandleProps('inPool')}
+                                resizing={rc.resizing === 'inPool'}
+                            >
+                                {t('admin.reviews.cols.inPool')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="updated"
+                                width={rc.widths.updated}
+                                resizeProps={rc.getResizeHandleProps('updated')}
+                                resizing={rc.resizing === 'updated'}
+                            >
+                                {t('admin.reviews.cols.updated')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="actions"
+                                width={rc.widths.actions}
+                                resizeProps={rc.getResizeHandleProps('actions')}
+                                resizing={rc.resizing === 'actions'}
+                                className="text-end"
+                            >
+                                {t('admin.common.actions')}
+                            </ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
                         {reviews.data.length === 0 && (
-                            <tr><td colSpan={7} className="px-4 py-8 text-center text-neutral-400">{t('admin.reviews.empty')}</td></tr>
+                            <tr>
+                                <td colSpan={7} className="px-4 py-8 text-center text-neutral-400">
+                                    {t('admin.reviews.empty')}
+                                </td>
+                            </tr>
                         )}
                         {reviews.data.map((r) => (
                             <tr key={r.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
                                 <td className="px-4 py-3 align-top">
                                     <div className="flex min-w-0 items-center gap-2">
-                                        <span dir="auto" className="truncate font-medium text-neutral-800 dark:text-neutral-100">{r.author_name}</span>
-                                        {r.language && <span className="shrink-0 text-xs uppercase text-neutral-400">{r.language}</span>}
+                                        <span dir="auto" className="truncate font-medium text-neutral-800 dark:text-neutral-100">
+                                            {r.author_name}
+                                        </span>
+                                        {r.language && <span className="shrink-0 text-xs text-neutral-400 uppercase">{r.language}</span>}
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 align-top text-neutral-600 dark:text-neutral-300">
-                                    <span dir="auto" className="line-clamp-2 block">{r.body}</span>
+                                    <span dir="auto" className="line-clamp-2 block">
+                                        {r.body}
+                                    </span>
                                 </td>
-                                <td className="whitespace-nowrap px-4 py-3 align-top">
+                                <td className="px-4 py-3 align-top whitespace-nowrap">
                                     <span className="text-amber-500">{'★'.repeat(r.rating)}</span>
                                     <span className="text-neutral-300 dark:text-neutral-700">{'★'.repeat(5 - r.rating)}</span>
                                 </td>
                                 <td className="truncate px-4 py-3 align-top text-neutral-500">{r.source ?? '—'}</td>
                                 <td className="px-4 py-3 align-top">
                                     {r.is_active ? (
-                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">{t('admin.reviews.activeBadge')}</span>
+                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">
+                                            {t('admin.reviews.activeBadge')}
+                                        </span>
                                     ) : (
-                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t('admin.reviews.hiddenBadge')}</span>
+                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                                            {t('admin.reviews.hiddenBadge')}
+                                        </span>
                                     )}
                                 </td>
                                 <td className="truncate px-4 py-3 align-top text-neutral-500">{r.updated_at ?? '—'}</td>
                                 <td className="px-4 py-3 align-top">
                                     <div className="flex items-center justify-end gap-2">
-                                        <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(r)}>{t('admin.common.edit')}</Button>
+                                        <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(r)}>
+                                            {t('admin.common.edit')}
+                                        </Button>
                                         <ConfirmDeleteButton
                                             itemName={r.author_name}
                                             onConfirm={() => router.delete(`/admin/client-reviews/${r.id}`, { preserveScroll: true })}
@@ -194,15 +281,21 @@ export default function ClientReviewsIndex({ reviews, activeCount }: { reviews: 
                 </table>
             </StickyScrollWrapper>
 
-            <Pagination paginator={reviews} />
+            <Pagination paginator={reviews} perPage={perPage} />
 
             <Modal
                 open={editing !== null}
                 onClose={() => setEditing(null)}
-                title={editing && editing !== 'new' ? t('admin.reviews.form.editTitle', { name: editing.author_name }) : t('admin.reviews.form.newTitle')}
+                title={
+                    editing && editing !== 'new' ? t('admin.reviews.form.editTitle', { name: editing.author_name }) : t('admin.reviews.form.newTitle')
+                }
             >
                 {editing !== null && (
-                    <ReviewForm key={editing === 'new' ? 'new' : editing.id} review={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+                    <ReviewForm
+                        key={editing === 'new' ? 'new' : editing.id}
+                        review={editing === 'new' ? null : editing}
+                        onClose={() => setEditing(null)}
+                    />
                 )}
             </Modal>
         </AdminLayout>

@@ -22,11 +22,12 @@ import {
     X,
     type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useState, type PropsWithChildren, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type PropsWithChildren, type ReactNode } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import adminI18n from '@/i18n/admin';
 import AdminContextMenu from '@/components/admin/context-menu';
 import GlobalSearch from '@/components/admin/global-search';
+import MobileScrollNav from '@/components/admin/mobile-scroll-nav';
 import NotificationBell from '@/components/admin/notification-bell';
 import UndoToast from '@/components/admin/undo-toast';
 import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
@@ -113,6 +114,8 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
     const user = props.auth?.user;
     const flash = props.flash;
     const currentPath = page.url.split('?')[0];
+    // The scrollable content area, targeted by the mobile scroll-to-edge buttons.
+    const mainRef = useRef<HTMLElement>(null);
 
     // Dismissible flash banner — re-shows whenever a new flash message arrives.
     const [flashOpen, setFlashOpen] = useState(true);
@@ -349,7 +352,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+                <main ref={mainRef} className="flex-1 overflow-y-auto p-4 sm:p-6">
                     {flashOpen && flash?.success && (
                         <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
                             <span dir="auto">{flash.success}</span>
@@ -373,6 +376,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
 
             <UndoToast />
             <AdminContextMenu />
+            <MobileScrollNav scrollRef={mainRef} />
 
             {/* Per-page "How it works" drawer. Slides from the reading-end side
                 (right in LTR, left in RTL). Physical transform, so RTL is handled

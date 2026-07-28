@@ -204,11 +204,14 @@ class ShopController
         $product->load('category:id,name_ar,name_en,slug', 'images');
         $user = $request->user();
 
-        // Detail-size WebP for the gallery; the full original stays for a future zoom.
-        $images = $product->images->sortBy('sort_order')
-            ->map(fn ($img) => Media::url($img->path, 'detail'))
-            ->filter()
+        // Detail-size WebP for the gallery + the full original for the click-to-zoom
+        // viewer. Both are built from the same sorted, path-filtered set so their
+        // indices stay aligned (the gallery swaps between them by index).
+        $sortedImages = $product->images->sortBy('sort_order')
+            ->filter(fn ($img) => filled($img->path))
             ->values();
+        $images = $sortedImages->map(fn ($img) => Media::url($img->path, 'detail'))->values();
+        $imagesFull = $sortedImages->map(fn ($img) => Media::url($img->path))->values();
 
         $reviews = Review::where('product_id', $product->id)
             ->where('is_approved', true)
@@ -248,6 +251,7 @@ class ShopController
                 'purchase_count' => $purchaseCount,
                 'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
                 'images' => $images,
+                'images_full' => $imagesFull,
                 'url' => route('shop.product', $product->slug), // absolute, for JSON-LD/OG
             ],
             'reviews' => [

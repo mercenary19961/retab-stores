@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import Button from '@/components/admin/button';
+import CopyText from '@/components/copy-text';
 import OrderStatusBadge from '@/components/order-status-badge';
 import PaymentStatusBadge from '@/components/admin/payment-status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
@@ -182,7 +183,13 @@ export default function OrderDetailView({
                                     {order.items.map((item, i) => (
                                         <tr key={i} className="border-t border-neutral-100 dark:border-neutral-800">
                                             <td className="py-2" dir="auto">{item.name}</td>
-                                            <td className="py-2 font-mono text-neutral-500">{item.sku ?? '—'}</td>
+                                            <td className="py-2 font-mono text-neutral-500">
+                                                {item.sku ? (
+                                                    <CopyText value={item.sku} copyLabel={t('admin.common.copy')} copiedLabel={t('admin.common.copied')} />
+                                                ) : (
+                                                    '—'
+                                                )}
+                                            </td>
                                             <td className="py-2 text-right">{item.unit_price}</td>
                                             <td className="py-2 text-right">{item.quantity}</td>
                                             <td className="py-2 text-right">{item.line_total}</td>
