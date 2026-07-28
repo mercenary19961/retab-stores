@@ -8,6 +8,7 @@ import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import CopyText from '@/components/copy-text';
+import ImageLightbox from '@/components/image-lightbox';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -31,6 +32,7 @@ interface ProductRow {
     name_ar: string;
     name_en: string | null;
     image: string | null;
+    images: string[];
     sku: string;
     smacc_sku: string | null;
     category: { name_ar: string; name_en: string | null } | null;
@@ -138,6 +140,15 @@ export default function ProductsIndex({
         }
     };
 
+    // Click a product thumbnail → open its images in the shared zoom viewer.
+    const [lightbox, setLightbox] = useState<{ images: string[]; name: string } | null>(null);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    const openLightbox = (p: ProductRow) => {
+        if (p.images.length === 0) return;
+        setLightboxIndex(0);
+        setLightbox({ images: p.images, name: loc(p.name_ar, p.name_en) });
+    };
+
     const query = (next: Record<string, unknown>) => {
         router.get(
             '/admin/products',
@@ -224,6 +235,23 @@ export default function ProductsIndex({
             )}
         </>
     );
+
+    // Product thumbnail: a 🌴 placeholder when imageless, otherwise a button that
+    // opens the image viewer. `box` sizes it, `ph` sizes the placeholder emoji.
+    const thumb = (p: ProductRow, box: string, ph: string) =>
+        p.image ? (
+            <button
+                type="button"
+                onClick={() => openLightbox(p)}
+                aria-label={t('admin.products.viewImages')}
+                title={t('admin.products.viewImages')}
+                className={`${box} shrink-0 cursor-zoom-in overflow-hidden rounded`}
+            >
+                <img src={p.image} alt="" className="h-full w-full object-cover" />
+            </button>
+        ) : (
+            <div className={`flex ${box} shrink-0 items-center justify-center rounded bg-neutral-100 ${ph} dark:bg-neutral-800`}>🌴</div>
+        );
 
     const rowActions = (p: ProductRow) => (
         <>
@@ -473,13 +501,7 @@ export default function ProductsIndex({
                                 <tr key={p.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
                                     <td className="px-4 py-3">
                                         <div className="flex min-w-0 items-center gap-2">
-                                            {p.image ? (
-                                                <img src={p.image} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
-                                            ) : (
-                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-neutral-100 text-sm dark:bg-neutral-800">
-                                                    🌴
-                                                </div>
-                                            )}
+                                            {thumb(p, 'h-9 w-9', 'text-sm')}
                                             <span dir="auto" className="truncate">
                                                 {loc(p.name_ar, p.name_en)}
                                             </span>
@@ -530,13 +552,7 @@ export default function ProductsIndex({
                             className="flex flex-col rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
                         >
                             <div className="flex items-start gap-3">
-                                {p.image ? (
-                                    <img src={p.image} alt="" className="h-16 w-16 shrink-0 rounded object-cover" />
-                                ) : (
-                                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded bg-neutral-100 text-xl dark:bg-neutral-800">
-                                        🌴
-                                    </div>
-                                )}
+                                {thumb(p, 'h-16 w-16', 'text-xl')}
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-start gap-1.5">
                                         <span dir="auto" className="line-clamp-2 font-medium">
@@ -621,6 +637,24 @@ export default function ProductsIndex({
                     <ProductEditor key={editing.id} productId={editing.id} categories={categories} onSaved={() => setEditing(null)} />
                 )}
             </Modal>
+
+            <ImageLightbox
+                open={lightbox !== null}
+                onOpenChange={(v) => !v && setLightbox(null)}
+                images={lightbox?.images ?? []}
+                imagesFull={lightbox?.images ?? []}
+                name={lightbox?.name ?? ''}
+                active={lightboxIndex}
+                setActive={setLightboxIndex}
+                labels={{
+                    close: t('admin.common.close'),
+                    zoomIn: t('admin.common.zoomIn'),
+                    zoomOut: t('admin.common.zoomOut'),
+                    resetZoom: t('admin.common.resetZoom'),
+                    previous: t('admin.common.prevImage'),
+                    next: t('admin.common.nextImage'),
+                }}
+            />
         </AdminLayout>
     );
 }

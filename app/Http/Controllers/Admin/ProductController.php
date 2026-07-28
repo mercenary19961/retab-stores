@@ -45,6 +45,8 @@ class ProductController extends Controller
                 'name_ar' => $p->name_ar,
                 'name_en' => $p->name_en,
                 'image' => Media::url($p->primaryImage()?->path, 'thumb'),
+                // All images (detail-size) so the admin can open + swap them in the viewer.
+                'images' => $p->images->sortBy('sort_order')->map(fn ($img) => Media::url($img->path, 'detail'))->filter()->values(),
                 'sku' => $p->sku,
                 'smacc_sku' => $p->smacc_sku,
                 'category' => $p->category?->only('name_ar', 'name_en'),
