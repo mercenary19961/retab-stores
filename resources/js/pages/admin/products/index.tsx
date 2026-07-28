@@ -4,6 +4,7 @@ import { Columns3, MoveHorizontal, Pencil, Plus } from 'lucide-react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
+import CopyText from '@/components/copy-text';
 import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
 import ProductFormBody, { type Product } from '@/components/admin/product-form-body';
@@ -246,8 +247,16 @@ export default function ProductsIndex({
                                         {p.is_featured && <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-200">{t('admin.products.featured')}</span>}
                                     </div>
                                 </td>
-                                <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.sku}</td>
-                                <td className="truncate px-4 py-3 font-mono text-neutral-500">{p.smacc_sku ?? '—'}</td>
+                                <td className="px-4 py-3 font-mono text-neutral-500">
+                                    <CopyText value={p.sku} copyLabel={t('admin.common.copy')} copiedLabel={t('admin.common.copied')} />
+                                </td>
+                                <td className="px-4 py-3 font-mono text-neutral-500">
+                                    {p.smacc_sku ? (
+                                        <CopyText value={p.smacc_sku} copyLabel={t('admin.common.copy')} copiedLabel={t('admin.common.copied')} />
+                                    ) : (
+                                        '—'
+                                    )}
+                                </td>
                                 <td className="truncate px-4 py-3" dir="auto">{p.category ? loc(p.category.name_ar, p.category.name_en) : '—'}</td>
                                 <td className="px-4 py-3">
                                     {p.sale_price !== null ? (

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
 import ProductGallery from '@/components/store/product-gallery';
+import CopyText from '@/components/copy-text';
 import { Turnstile } from '@/components/turnstile';
 
 interface Product {
@@ -217,8 +218,14 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
                     )}
 
                     {product.sku && (
-                        <p className="mt-6 text-sm text-brand-teal/60">
-                            <span className="font-medium text-brand-teal/80">{t('product.sku')}:</span> <span dir="ltr">{product.sku}</span>
+                        <p className="mt-6 flex items-center gap-1.5 text-sm text-brand-teal/60">
+                            <span className="font-medium text-brand-teal/80">{t('product.sku')}:</span>
+                            <CopyText
+                                value={product.sku}
+                                copyLabel={t('product.copySku')}
+                                copiedLabel={t('product.skuCopied')}
+                                className="text-brand-teal transition-colors hover:text-brand-gold"
+                            />
                         </p>
                     )}
 
