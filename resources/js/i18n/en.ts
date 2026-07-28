@@ -91,6 +91,9 @@ const en = {
     bestSellers: {
         title: 'Best Sellers',
     },
+    offers: {
+        title: 'Special Offers',
+    },
     newArrivals: {
         title: 'New Arrivals',
         badge: 'New',

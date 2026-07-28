@@ -28,6 +28,17 @@ class ShopController
     {
         return Inertia::render('shop/index', [
             'bestSellers' => $this->bestSellers(),
+            // Active discounted products for the homepage "offers" strip (empty →
+            // the section renders nothing). Featured first, then newest.
+            'offers' => Product::where('is_active', true)
+                ->onSale()
+                ->with(['category:id,name_ar,name_en,slug', 'images'])
+                ->orderByDesc('is_featured')
+                ->latest()
+                ->limit(10)
+                ->get()
+                ->map(fn (Product $p) => $this->card($p))
+                ->all(),
             'newArrivals' => Product::where('is_active', true)
                 ->with(['category:id,name_ar,name_en,slug', 'images'])
                 ->latest()

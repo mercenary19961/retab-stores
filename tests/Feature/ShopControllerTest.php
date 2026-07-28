@@ -119,6 +119,29 @@ class ShopControllerTest extends TestCase
         );
     }
 
+    public function test_home_offers_strip_lists_only_discounted_products(): void
+    {
+        $this->makeProduct(['slug' => 'on-sale', 'price' => 50, 'sale_price' => 40]);
+        $this->makeProduct(['slug' => 'full-price', 'price' => 30]);
+
+        // The offers strip carries only the discounted product; hasOffers is true.
+        $this->get('/')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('offers', 1)
+                ->where('offers.0.slug', 'on-sale')
+                ->where('hasOffers', true),
+        );
+    }
+
+    public function test_offers_are_hidden_without_any_discount(): void
+    {
+        $this->makeProduct(['slug' => 'full-price', 'price' => 30]);
+
+        // No discounts → empty strip + the nav flag is false (nav item hidden).
+        $this->get('/')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('offers', 0)->where('hasOffers', false),
+        );
+    }
+
     public function test_shop_filters_by_category(): void
     {
         $this->makeProduct(); // seeded into the 'dates' category

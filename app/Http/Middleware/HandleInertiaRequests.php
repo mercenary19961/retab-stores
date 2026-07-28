@@ -80,6 +80,10 @@ class HandleInertiaRequests extends Middleware
             'cart' => [
                 'count' => app(\App\Services\CartService::class)->count(),
             ],
+            // Whether any active discounted product exists → drives the storefront
+            // "Offers" nav visibility (hidden when there are none). Closure: a cheap
+            // EXISTS resolved only for full Inertia page loads.
+            'hasOffers' => fn () => \App\Models\Product::where('is_active', true)->onSale()->exists(),
             // Footer/contact block, admin-editable via settings (falls back to
             // FOOTER_DEFAULTS when a key is unset). Closure → resolved only for
             // Inertia page responses; one batched query.

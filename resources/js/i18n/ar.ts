@@ -95,6 +95,9 @@ const ar = {
     bestSellers: {
         title: 'الأكثر مبيعاً',
     },
+    offers: {
+        title: 'عروض خاصة',
+    },
     newArrivals: {
         title: 'وصل حديثاً',
         badge: 'صنف جديد',

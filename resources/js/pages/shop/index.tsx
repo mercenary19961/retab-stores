@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import StoreLayout from '@/layouts/store-layout';
 import StoreHero from '@/components/store/hero';
 import BestSellers from '@/components/store/best-sellers';
+import Offers from '@/components/store/offers';
 import CategoriesSection from '@/components/store/categories-section';
 import PrimaryBanner from '@/components/store/primary-banner';
 import NewArrivals from '@/components/store/new-arrivals';
@@ -40,11 +41,13 @@ interface ReviewItem {
 
 export default function ShopIndex({
     bestSellers = [],
+    offers = [],
     newArrivals = [],
     featuredCategories = [],
     reviews = [],
 }: {
     bestSellers?: ProductCard[];
+    offers?: ProductCard[];
     newArrivals?: ProductCard[];
     featuredCategories?: FeaturedCategory[];
     reviews?: ReviewItem[];
@@ -61,6 +64,7 @@ export default function ShopIndex({
 
             <StoreHero />
             <BestSellers products={bestSellers} />
+            <Offers products={offers} />
             <CategoriesSection categories={featuredCategories} />
             <PrimaryBanner />
             <NewArrivals products={newArrivals} />

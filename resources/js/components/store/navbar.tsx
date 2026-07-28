@@ -17,6 +17,7 @@ interface SharedProps {
     navCategories?: NavCategory[];
     cart?: { count?: number };
     auth?: { user?: unknown };
+    hasOffers?: boolean;
     [key: string]: unknown;
 }
 
@@ -41,6 +42,7 @@ export default function StoreNavbar() {
     const url = page.url;
 
     const navCategories = props.navCategories ?? [];
+    const hasOffers = Boolean(props.hasOffers);
     const cartCount = props.cart?.count ?? 0;
     const loggedIn = Boolean(props.auth?.user);
     const accountHref = loggedIn ? '/account' : '/login/whatsapp';
@@ -219,12 +221,14 @@ export default function StoreNavbar() {
                         ),
                     )}
 
-                    <Link
-                        href="/shop?on_sale=1"
-                        className={`${linkBase} ${url.includes('on_sale=1') ? linkActive : linkIdle}`}
-                    >
-                        {t('nav.offers')}
-                    </Link>
+                    {hasOffers && (
+                        <Link
+                            href="/shop?on_sale=1"
+                            className={`${linkBase} ${url.includes('on_sale=1') ? linkActive : linkIdle}`}
+                        >
+                            {t('nav.offers')}
+                        </Link>
+                    )}
                     <Link href="/pages/about" className={`${linkBase} ${isActive('/pages/about') ? linkActive : linkIdle}`}>
                         {t('nav.about')}
                     </Link>
@@ -286,9 +290,11 @@ export default function StoreNavbar() {
                             </div>
                         ))}
 
-                        <Link href="/shop?on_sale=1" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
-                            {t('nav.offers')}
-                        </Link>
+                        {hasOffers && (
+                            <Link href="/shop?on_sale=1" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
+                                {t('nav.offers')}
+                            </Link>
+                        )}
                         <Link href="/pages/about" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
                             {t('nav.about')}
                         </Link>
