@@ -720,6 +720,10 @@ const en = {
             needsPrice: 'No price',
             needsImage: 'No image',
             needsDescription: 'No description',
+            viewTable: 'Table view',
+            viewCards: 'Card view',
+            sortBy: 'Sort by',
+            sortDefault: 'Default order',
             cols: {
                 product: 'Product',
                 sku: 'SKU',

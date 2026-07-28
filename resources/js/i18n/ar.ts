@@ -724,6 +724,10 @@ const ar = {
             needsPrice: 'بدون سعر',
             needsImage: 'بدون صورة',
             needsDescription: 'بدون وصف',
+            viewTable: 'عرض جدول',
+            viewCards: 'عرض بطاقات',
+            sortBy: 'ترتيب حسب',
+            sortDefault: 'الترتيب الافتراضي',
             cols: {
                 product: 'المنتج',
                 sku: 'الرمز',
