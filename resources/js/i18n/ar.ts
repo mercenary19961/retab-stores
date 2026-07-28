@@ -494,6 +494,8 @@ const ar = {
             resetZoom: 'إعادة الضبط',
             prevImage: 'الصورة السابقة',
             nextImage: 'الصورة التالية',
+            scrollToTop: 'التمرير إلى الأعلى',
+            scrollToBottom: 'التمرير إلى الأسفل',
             cancel: 'إلغاء',
             upload: 'رفع',
             close: 'إغلاق',

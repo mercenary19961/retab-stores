@@ -490,6 +490,8 @@ const en = {
             resetZoom: 'Reset zoom',
             prevImage: 'Previous image',
             nextImage: 'Next image',
+            scrollToTop: 'Scroll to top',
+            scrollToBottom: 'Scroll to bottom',
             cancel: 'Cancel',
             upload: 'Upload',
             close: 'Close',
