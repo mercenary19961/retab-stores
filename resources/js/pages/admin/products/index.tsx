@@ -2,6 +2,7 @@ import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
+import Pagination from '@/components/admin/pagination';
 import ProductFormBody, { type Product } from '@/components/admin/product-form-body';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
@@ -60,6 +61,7 @@ interface Filters {
     status: string | null;
     sort: string | null;
     direction: 'asc' | 'desc';
+    per_page: number;
 }
 
 interface Paginator<T> {
@@ -158,6 +160,7 @@ export default function ProductsIndex({
                 status: filters.status || undefined,
                 sort: filters.sort || undefined,
                 direction: filters.sort ? filters.direction : undefined,
+                per_page: filters.per_page || undefined,
                 ...next,
             },
             { preserveState: true, preserveScroll: true },
@@ -607,20 +610,7 @@ export default function ProductsIndex({
                 </div>
             )}
 
-            {products.total > products.data.length && (
-                <div className="mt-4 flex flex-wrap gap-1">
-                    {products.links.map((link, i) => (
-                        <button
-                            key={i}
-                            type="button"
-                            disabled={!link.url}
-                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
-                            className={`rounded px-3 py-1 text-sm ${link.active ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-600 disabled:opacity-40 dark:text-neutral-300'}`}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                        />
-                    ))}
-                </div>
-            )}
+            <Pagination paginator={products} perPage={filters.per_page} />
 
             <Modal
                 open={editing !== null}

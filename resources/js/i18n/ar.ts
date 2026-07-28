@@ -496,6 +496,7 @@ const ar = {
             nextImage: 'الصورة التالية',
             scrollToTop: 'التمرير إلى الأعلى',
             scrollToBottom: 'التمرير إلى الأسفل',
+            perPage: 'لكل صفحة',
             cancel: 'إلغاء',
             upload: 'رفع',
             close: 'إغلاق',

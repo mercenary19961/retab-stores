@@ -36,9 +36,10 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
+        $perPage = $this->perPage($request, 20);
         $products = $this->filteredQuery($request)
             ->with(['category:id,name_ar,name_en', 'images'])
-            ->paginate(20)
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Product $p) => [
                 'id' => $p->id,
@@ -71,6 +72,7 @@ class ProductController extends Controller
                 'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon'], true) ? $request->query('status') : null,
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+                'per_page' => $perPage,
             ],
             'draftCount' => Product::where('is_active', false)->count(),
             'categories' => $this->categoryOptions(),

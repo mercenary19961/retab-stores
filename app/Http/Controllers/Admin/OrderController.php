@@ -39,8 +39,9 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
+        $perPage = $this->perPage($request, 20);
         $orders = $this->filteredQuery($request)
-            ->paginate(20)
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (Order $order) => [
                 'order_number' => $order->order_number,
@@ -58,6 +59,7 @@ class OrderController extends Controller
                 'status' => $request->query('status'),
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+                'per_page' => $perPage,
             ],
             'statuses' => array_map(fn (OrderStatus $s) => $s->value, OrderStatus::cases()),
             'counts' => $this->statusCounts(),

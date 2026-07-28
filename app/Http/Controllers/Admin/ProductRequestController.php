@@ -18,11 +18,12 @@ class ProductRequestController extends Controller
     {
         $status = $request->query('status'); // open | handled | (all)
 
+        $perPage = $this->perPage($request, 30);
         $requests = ProductRequest::with(['product:id,name_ar,name_en,slug', 'user:id,name,phone'])
             ->when($status === 'open', fn ($q) => $q->whereNull('handled_at'))
             ->when($status === 'handled', fn ($q) => $q->whereNotNull('handled_at'))
             ->latest()
-            ->paginate(30)
+            ->paginate($perPage)
             ->withQueryString()
             ->through(fn (ProductRequest $r) => [
                 'id' => $r->id,
@@ -40,7 +41,10 @@ class ProductRequestController extends Controller
 
         return Inertia::render('admin/product-requests/index', [
             'requests' => $requests,
-            'filters' => ['status' => in_array($status, ['open', 'handled'], true) ? $status : null],
+            'filters' => [
+                'status' => in_array($status, ['open', 'handled'], true) ? $status : null,
+                'per_page' => $perPage,
+            ],
             'openCount' => ProductRequest::whereNull('handled_at')->count(),
         ]);
     }

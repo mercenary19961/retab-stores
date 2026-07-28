@@ -29,8 +29,10 @@ class CustomerController extends Controller
 
     public function index(Request $request)
     {
+        $perPage = $this->perPage($request, 25);
+
         return Inertia::render('admin/customers/index', [
-            'customers' => $this->filteredQuery($request)->paginate(25)->withQueryString()->through(fn (User $u) => [
+            'customers' => $this->filteredQuery($request)->paginate($perPage)->withQueryString()->through(fn (User $u) => [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
@@ -44,6 +46,7 @@ class CustomerController extends Controller
                 'opt_in' => $request->query('opt_in'),
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
+                'per_page' => $perPage,
             ],
         ]);
     }

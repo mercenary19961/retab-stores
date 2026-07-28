@@ -58,6 +58,26 @@ class AdminProductControllerTest extends TestCase
                 ->has('products.data', 1));
     }
 
+    public function test_per_page_is_honored_and_whitelisted(): void
+    {
+        $category = $this->category();
+        for ($i = 0; $i < 11; $i++) {
+            Product::create($this->validPayload($category, ['slug' => "pp-{$i}", 'sku' => "PP-{$i}"]));
+        }
+
+        // A whitelisted size limits the page and echoes back in filters.
+        $this->actingAs($this->staff())
+            ->get('/admin/products?per_page=10')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('products.data', 10)->where('filters.per_page', 10));
+
+        // An arbitrary size is rejected and falls back to the default (20 → all 11).
+        $this->actingAs($this->staff())
+            ->get('/admin/products?per_page=999')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->has('products.data', 11)->where('filters.per_page', 20));
+    }
+
     public function test_store_creates_product_and_auto_generates_slug(): void
     {
         Storage::fake('public');

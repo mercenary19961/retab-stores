@@ -492,6 +492,7 @@ const en = {
             nextImage: 'Next image',
             scrollToTop: 'Scroll to top',
             scrollToBottom: 'Scroll to bottom',
+            perPage: 'Per page',
             cancel: 'Cancel',
             upload: 'Upload',
             close: 'Close',
