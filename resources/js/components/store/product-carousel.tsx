@@ -56,16 +56,25 @@ export default function ProductCarousel({
     title,
     products,
     badgeLabel,
+    mirrorPattern = false,
 }: {
     title: string;
     products: CarouselProduct[];
     badgeLabel?: string;
+    /** Flip the corner watermark to the right edge (mirrored) instead of the left. */
+    mirrorPattern?: boolean;
 }) {
     const { t } = useTranslation();
     const localized = useLocalized();
     const currency = t('common.currency');
     const trackRef = useRef<HTMLDivElement>(null);
     const [edges, setEdges] = useState({ atStart: true, atEnd: false });
+    // Whether the track actually overflows at the current breakpoint — drives
+    // both the arrows (hidden when everything fits) and centring (few cards are
+    // centred instead of hugging the start). Default heuristic: more cards than
+    // the widest view shows (4); measure() corrects it to the real overflow on
+    // mount / resize, so tablet (3) and mobile (2) are handled too.
+    const [scrollable, setScrollable] = useState(() => products.length > 4);
     const [imageHeight, setImageHeight] = useState(0);
 
     const measure = useCallback(() => {
@@ -74,6 +83,7 @@ export default function ProductCarousel({
         const max = el.scrollWidth - el.clientWidth;
         const pos = Math.abs(el.scrollLeft);
         setEdges({ atStart: pos <= 1, atEnd: pos >= max - 1 });
+        setScrollable(max > 1);
 
         // Height of the first card's square image (its first child), so arrows
         // sit at its centre — not the centre of the taller card incl. name/price.
@@ -111,12 +121,15 @@ export default function ProductCarousel({
 
     return (
         <section className="relative w-full overflow-hidden bg-white py-10 sm:py-14">
-            {/* Faint flowing-lines watermark (Asset 3), anchored to the start edge. */}
+            {/* Faint flowing-lines watermark (Asset 3), bottom corner. Mirrored to
+                the right edge when `mirrorPattern` is set (e.g. the Offers strip). */}
             <img
                 src="/images/best-sellers/pattern.png"
                 alt=""
                 aria-hidden
-                className="pointer-events-none absolute bottom-0 left-0 h-full w-auto select-none opacity-70"
+                className={`pointer-events-none absolute bottom-0 h-full w-auto select-none opacity-70 ${
+                    mirrorPattern ? 'right-0 -scale-x-100' : 'left-0'
+                }`}
             />
 
             <div className="relative mx-auto max-w-[1600px] px-6 lg:px-12">
@@ -125,24 +138,29 @@ export default function ProductCarousel({
                 </h2>
 
                 <div className="relative">
-                    {/* Prev (left) arrow — sits in the left gutter, clear of the cards. */}
-                    <button
-                        type="button"
-                        onClick={() => page('left')}
-                        aria-label={t('carousel.prev')}
-                        style={{ top: arrowTop }}
-                        className={`${arrowBase} left-0 ${arrowTop === undefined ? 'top-1/2' : ''} ${
-                            edges.atStart ? 'pointer-events-none opacity-20' : 'opacity-70 hover:opacity-100'
-                        }`}
-                    >
-                        <Arrow flip />
-                    </button>
+                    {/* Prev (left) arrow — sits in the left gutter, clear of the cards.
+                        Only shown when the track overflows (few cards → no arrows). */}
+                    {scrollable && (
+                        <button
+                            type="button"
+                            onClick={() => page('left')}
+                            aria-label={t('carousel.prev')}
+                            style={{ top: arrowTop }}
+                            className={`${arrowBase} left-0 ${arrowTop === undefined ? 'top-1/2' : ''} ${
+                                edges.atStart ? 'pointer-events-none opacity-20' : 'opacity-70 hover:opacity-100'
+                            }`}
+                        >
+                            <Arrow flip />
+                        </button>
+                    )}
 
                     {/* Track: full-bleed on mobile (swipe), inset by gutters on ≥sm so
                         the arrows have room. Cards exactly fill it — no partial peek. */}
                     <div
                         ref={trackRef}
-                        className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth sm:mx-14 lg:mx-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                        className={`flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth sm:mx-14 lg:mx-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                            scrollable ? '' : 'justify-center'
+                        }`}
                     >
                         {products.map((p) => (
                             <Link
@@ -192,17 +210,19 @@ export default function ProductCarousel({
                     </div>
 
                     {/* Next (right) arrow. */}
-                    <button
-                        type="button"
-                        onClick={() => page('right')}
-                        aria-label={t('carousel.next')}
-                        style={{ top: arrowTop }}
-                        className={`${arrowBase} right-0 ${arrowTop === undefined ? 'top-1/2' : ''} ${
-                            edges.atEnd ? 'pointer-events-none opacity-20' : 'opacity-70 hover:opacity-100'
-                        }`}
-                    >
-                        <Arrow />
-                    </button>
+                    {scrollable && (
+                        <button
+                            type="button"
+                            onClick={() => page('right')}
+                            aria-label={t('carousel.next')}
+                            style={{ top: arrowTop }}
+                            className={`${arrowBase} right-0 ${arrowTop === undefined ? 'top-1/2' : ''} ${
+                                edges.atEnd ? 'pointer-events-none opacity-20' : 'opacity-70 hover:opacity-100'
+                            }`}
+                        >
+                            <Arrow />
+                        </button>
+                    )}
                 </div>
             </div>
         </section>

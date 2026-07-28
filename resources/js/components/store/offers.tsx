@@ -5,5 +5,5 @@ import ProductCarousel, { type CarouselProduct } from '@/components/store/produc
  *  Self-hides when there are no offers (the carousel renders nothing when empty). */
 export default function Offers({ products }: { products: CarouselProduct[] }) {
     const { t } = useTranslation();
-    return <ProductCarousel title={t('offers.title')} products={products} />;
+    return <ProductCarousel title={t('offers.title')} products={products} mirrorPattern />;
 }
