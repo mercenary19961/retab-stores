@@ -213,6 +213,13 @@ const en = {
         requestPrompt: 'Not available yet. Leave your phone number and we’ll message you as soon as it’s in stock.',
         phonePlaceholder: 'Your phone number',
         requestThanks: 'Thanks! We’ve noted your interest and will let you know as soon as it’s available.',
+        openFullImage: 'View full image',
+        zoomIn: 'Zoom in',
+        zoomOut: 'Zoom out',
+        resetZoom: 'Reset zoom',
+        previousImage: 'Previous image',
+        nextImage: 'Next image',
+        closeViewer: 'Close',
     },
     cart: {
         title: 'Shopping Cart',

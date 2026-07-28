@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
+import ProductGallery from '@/components/store/product-gallery';
 import { Turnstile } from '@/components/turnstile';
 
 interface Product {
@@ -23,6 +24,7 @@ interface Product {
     purchase_count: number;
     category: { name_ar: string; name_en: string | null; slug: string } | null;
     images: string[];
+    images_full: string[];
     url: string;
 }
 
@@ -62,12 +64,7 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
     const name = localized(product, 'name');
     const description = localized(product, 'description');
 
-    const [activeImage, setActiveImage] = useState(0);
     const [qty, setQty] = useState(1);
-    // Fall back to the 🌴 placeholder when an image URL fails to load (missing
-    // file / broken URL) instead of showing the browser's broken-image icon.
-    const [broken, setBroken] = useState<Record<string, true>>({});
-    const markBroken = (url: string) => setBroken((b) => ({ ...b, [url]: true }));
     const installment = product.effective_price / 4;
 
     // Product/Offer structured data for rich results.
@@ -112,40 +109,7 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
 
             <div className="grid gap-8 md:grid-cols-2">
                 {/* Gallery */}
-                <div className="space-y-3">
-                    <div className="overflow-hidden rounded-2xl border border-brand-gold/15 bg-white shadow-sm">
-                        {product.images.length > 0 && !broken[product.images[activeImage]] ? (
-                            <img
-                                src={product.images[activeImage]}
-                                alt={name}
-                                loading="eager"
-                                onError={() => markBroken(product.images[activeImage])}
-                                className="aspect-square w-full object-cover"
-                            />
-                        ) : (
-                            <div className="flex aspect-square items-center justify-center bg-brand-cream text-7xl">🌴</div>
-                        )}
-                    </div>
-                    {product.images.length > 1 && (
-                        <div className="grid grid-cols-5 gap-2">
-                            {product.images.slice(0, 5).map((url, i) => (
-                                <button
-                                    key={url}
-                                    type="button"
-                                    onClick={() => setActiveImage(i)}
-                                    aria-label={`${name} ${i + 1}`}
-                                    className={`overflow-hidden rounded-lg border-2 transition ${i === activeImage ? 'border-brand-teal' : 'border-transparent hover:border-brand-gold/40'}`}
-                                >
-                                    {broken[url] ? (
-                                        <div className="flex aspect-square w-full items-center justify-center bg-brand-cream text-lg">🌴</div>
-                                    ) : (
-                                        <img src={url} alt="" loading="lazy" onError={() => markBroken(url)} className="aspect-square w-full object-cover" />
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                <ProductGallery images={product.images} imagesFull={product.images_full ?? product.images} name={name} />
 
                 {/* Details */}
                 <div>

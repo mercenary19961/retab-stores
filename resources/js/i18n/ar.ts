@@ -217,6 +217,13 @@ const ar = {
         requestPrompt: 'غير متوفر حالياً. اترك رقم جوالك وسنراسلك فور توفّره.',
         phonePlaceholder: 'رقم جوالك',
         requestThanks: 'شكراً لك! سجّلنا اهتمامك وسنعلمك فور توفّر المنتج.',
+        openFullImage: 'عرض الصورة كاملة',
+        zoomIn: 'تكبير',
+        zoomOut: 'تصغير',
+        resetZoom: 'إعادة الضبط',
+        previousImage: 'الصورة السابقة',
+        nextImage: 'الصورة التالية',
+        closeViewer: 'إغلاق',
     },
     cart: {
         title: 'سلة التسوق',

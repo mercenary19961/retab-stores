@@ -9,6 +9,7 @@ use App\Models\ClientReview;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductImage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -99,6 +100,19 @@ class ShopControllerTest extends TestCase
 
         $this->get('/products/sukkari-x')->assertOk()->assertInertia(
             fn (Assert $page) => $page->where('product.sku', 'SKU-X')->where('product.purchase_count', 3),
+        );
+    }
+
+    public function test_product_page_ships_gallery_and_full_size_images(): void
+    {
+        // The gallery renders the detail-size variants; the click-to-zoom viewer
+        // uses the full-size originals. Both arrays ship, aligned by index.
+        $product = $this->makeProduct(['slug' => 'sukkari-gallery']);
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/1/a.jpg', 'sort_order' => 1, 'is_primary' => true]);
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/1/b.jpg', 'sort_order' => 2, 'is_primary' => false]);
+
+        $this->get('/products/sukkari-gallery')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->has('product.images', 2)->has('product.images_full', 2),
         );
     }
 
