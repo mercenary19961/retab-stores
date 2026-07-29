@@ -1,14 +1,16 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Download, History, Upload } from 'lucide-react';
+import { AlertTriangle, Check, Download, History, Upload } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDialog from '@/components/admin/confirm-dialog';
 import ExportButtons from '@/components/admin/export-buttons';
 import { useAdminT } from '@/i18n/use-admin-t';
+import { relativeTimeFromIso } from '@/lib/relative-time';
 
 interface LastSynced {
     at: string | null;
+    iso: string | null;
     hours: number | null;
     stale: boolean;
 }
@@ -23,7 +25,11 @@ interface HistoryRow {
 }
 
 export default function StockImportIndex({ lastSynced, history }: { lastSynced: LastSynced; history: HistoryRow[] }) {
-    const { t } = useAdminT();
+    const { t, i18n } = useAdminT();
+    // Fresh (< 24h, green) · stale (≥ 24h, amber) · never synced (amber). Relative
+    // time is localized to the admin toggle; the exact stamp stays alongside.
+    const syncWarn = !lastSynced.at || lastSynced.stale;
+    const syncRelative = lastSynced.iso ? relativeTimeFromIso(lastSynced.iso, i18n.language) : '';
     const { setData, post, processing, errors, isDirty } = useForm<{ file: File | null }>({ file: null });
 
     const submit = (e: FormEvent) => {
@@ -42,23 +48,33 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
         <AdminLayout title={t('admin.inventory.title')}>
             <Head title={t('admin.inventory.title')} />
 
-            {/* Last-synced indicator */}
+            {/* Last-synced health indicator: fresh (green) · stale / never (amber) */}
             <div
-                className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
-                    lastSynced.stale
-                        ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200'
-                        : 'border-neutral-200 bg-white text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300'
+                className={`mb-6 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm ${
+                    syncWarn
+                        ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-200'
+                        : 'border-green-300 bg-green-50 text-green-800 dark:border-green-900/60 dark:bg-green-500/10 dark:text-green-200'
                 }`}
             >
-                {lastSynced.at ? (
-                    <>
-                        {t('admin.inventory.syncedPrefix')} <b>{lastSynced.at}</b>
-                        {lastSynced.hours !== null && ` ${t('admin.inventory.hoursAgo', { hours: lastSynced.hours })}`}
-                        {lastSynced.stale && ` ${t('admin.inventory.staleNote')}`}
-                    </>
-                ) : (
-                    t('admin.inventory.neverSynced')
-                )}
+                <span
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                        syncWarn
+                            ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400'
+                            : 'bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400'
+                    }`}
+                >
+                    {syncWarn ? <AlertTriangle className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                </span>
+                <div className="min-w-0">
+                    <p className="font-medium">
+                        {!lastSynced.at
+                            ? t('admin.inventory.neverSynced')
+                            : lastSynced.stale
+                              ? t('admin.inventory.syncedStale', { time: syncRelative })
+                              : t('admin.inventory.syncedFresh', { time: syncRelative })}
+                    </p>
+                    {lastSynced.at && <p className="mt-0.5 text-xs opacity-70">{lastSynced.at}</p>}
+                </div>
             </div>
 
             {/* Current-stock export (feeds the daily SMACC reconciliation) */}

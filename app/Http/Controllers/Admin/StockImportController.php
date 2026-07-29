@@ -77,13 +77,13 @@ class StockImportController extends Controller
             'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
         ]);
 
-        $token = Str::uuid() . '.csv';
+        $token = Str::uuid().'.csv';
         $request->file('file')->storeAs(self::DIR, $token, 'local');
 
         try {
-            $rows = $this->service->parse(Storage::disk('local')->path(self::DIR . '/' . $token));
+            $rows = $this->service->parse(Storage::disk('local')->path(self::DIR.'/'.$token));
         } catch (\RuntimeException $e) {
-            Storage::disk('local')->delete(self::DIR . '/' . $token);
+            Storage::disk('local')->delete(self::DIR.'/'.$token);
 
             return back()->with('error', $e->getMessage());
         }
@@ -100,7 +100,7 @@ class StockImportController extends Controller
             'token' => ['required', 'string'],
         ]);
 
-        $relative = self::DIR . '/' . basename($data['token']); // basename guards path traversal
+        $relative = self::DIR.'/'.basename($data['token']); // basename guards path traversal
         if (! Storage::disk('local')->exists($relative)) {
             return redirect()->route('admin.stock-import.index')
                 ->with('error', __('messages.admin.import_expired'));
@@ -133,19 +133,21 @@ class StockImportController extends Controller
     }
 
     /**
-     * @return array{at:string|null, hours:int|null, stale:bool}
+     * @return array{at:string|null, iso:string|null, hours:int|null, stale:bool}
      */
     private function lastSyncedPayload(): array
     {
         $raw = Setting::get(SmaccImportService::LAST_SYNCED_KEY);
         if (! $raw) {
-            return ['at' => null, 'hours' => null, 'stale' => true];
+            return ['at' => null, 'iso' => null, 'hours' => null, 'stale' => true];
         }
 
         $at = Carbon::parse($raw);
         $hours = (int) $at->diffInHours(now());
 
-        return ['at' => $at->toDateTimeString(), 'hours' => $hours, 'stale' => $hours >= 24];
+        // `iso` feeds the client's friendly "N days ago" (Intl.RelativeTimeFormat,
+        // localized to the admin toggle); `at` is the exact human-readable stamp.
+        return ['at' => $at->toDateTimeString(), 'iso' => $at->toIso8601String(), 'hours' => $hours, 'stale' => $hours >= 24];
     }
 
     /**

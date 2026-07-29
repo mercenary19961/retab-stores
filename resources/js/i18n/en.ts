@@ -1227,9 +1227,8 @@ const en = {
         },
         inventory: {
             title: 'Inventory sync',
-            syncedPrefix: 'Stock last synced:',
-            hoursAgo: '({{hours}}h ago)',
-            staleNote: 'Over 24h ago, please run today’s import.',
+            syncedFresh: 'Stock synced {{time}}.',
+            syncedStale: 'Stock last synced {{time}}. Please run today’s import.',
             neverSynced: 'Stock has never been synced from SMACC. Upload today’s export to begin.',
             exportTitle: 'Export current website stock',
             exportDesc: 'Today’s stock snapshot to reconcile against SMACC before the next export.',
