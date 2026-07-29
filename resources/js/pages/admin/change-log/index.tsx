@@ -3,6 +3,7 @@ import { Check, ExternalLink, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import ConfirmDialog from '@/components/admin/confirm-dialog';
 import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -53,9 +54,11 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
         return () => clearTimeout(timer);
     }, [highlight]);
 
-    const revert = (row: LogRow) => {
-        if (!window.confirm(t('admin.changeLog.revertConfirm'))) return;
-        router.post(`/admin/change-log/${row.id}/revert`, {}, { preserveScroll: true });
+    const [confirmRow, setConfirmRow] = useState<LogRow | null>(null);
+    const revert = (row: LogRow) => setConfirmRow(row);
+    const doRevert = () => {
+        if (!confirmRow) return;
+        router.post(`/admin/change-log/${confirmRow.id}/revert`, {}, { preserveScroll: true });
     };
 
     return (
@@ -169,6 +172,17 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                     ))}
                 </div>
             )}
+
+            <ConfirmDialog
+                open={!!confirmRow}
+                onClose={() => setConfirmRow(null)}
+                onConfirm={doRevert}
+                title={t('admin.changeLog.revert')}
+                message={t('admin.changeLog.revertConfirm')}
+                confirmLabel={t('admin.changeLog.revert')}
+                confirmVariant="warning"
+                icon={RotateCcw}
+            />
         </AdminLayout>
     );
 }

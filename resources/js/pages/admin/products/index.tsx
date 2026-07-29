@@ -210,7 +210,7 @@ export default function ProductsIndex({
                     tone="green"
                     label={t('admin.products.active')}
                     url={`/admin/products/${p.id}/toggle-active`}
-                    title={t('admin.products.deactivateHint')}
+                    hint={t('admin.products.deactivateHint')}
                 />
             ) : (
                 <StatusToggle
@@ -218,7 +218,7 @@ export default function ProductsIndex({
                     label={t('admin.products.hidden')}
                     url={`/admin/products/${p.id}/toggle-active`}
                     disabled={p.needs_image}
-                    title={p.needs_image ? t('admin.products.activateBlockedNoImage') : t('admin.products.activateHint')}
+                    hint={p.needs_image ? t('admin.products.activateBlockedNoImage') : t('admin.products.activateHint')}
                 />
             )}
             {!p.is_active && p.is_coming_soon && <StatusPill tone="teal">{t('admin.products.comingSoon')}</StatusPill>}

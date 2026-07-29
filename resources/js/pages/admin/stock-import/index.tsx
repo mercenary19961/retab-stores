@@ -1,8 +1,9 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { Download, History, Upload } from 'lucide-react';
-import { type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import ConfirmDialog from '@/components/admin/confirm-dialog';
 import ExportButtons from '@/components/admin/export-buttons';
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -30,9 +31,11 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
         post('/admin/stock-import/preview', { forceFormData: true });
     };
 
-    const undo = (id: number) => {
-        if (!window.confirm(t('admin.inventory.undoConfirm'))) return;
-        router.post(`/admin/stock-import/${id}/undo`, {}, { preserveScroll: true });
+    const [undoId, setUndoId] = useState<number | null>(null);
+    const undo = (id: number) => setUndoId(id);
+    const doUndo = () => {
+        if (undoId === null) return;
+        router.post(`/admin/stock-import/${undoId}/undo`, {}, { preserveScroll: true });
     };
 
     return (
@@ -123,6 +126,17 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                     )}
                 </section>
             </div>
+
+            <ConfirmDialog
+                open={undoId !== null}
+                onClose={() => setUndoId(null)}
+                onConfirm={doUndo}
+                title={t('admin.inventory.undo')}
+                message={t('admin.inventory.undoConfirm')}
+                confirmLabel={t('admin.inventory.undo')}
+                confirmVariant="warning"
+                icon={History}
+            />
         </AdminLayout>
     );
 }

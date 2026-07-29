@@ -269,7 +269,7 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                                         tone={STATUS_TONE[c.status] ?? 'neutral'}
                                         label={t(`admin.coupons.status.${c.status}`)}
                                         url={`/admin/coupons/${c.id}/toggle`}
-                                        title={t(c.is_active ? 'admin.coupons.deactivateHint' : 'admin.coupons.activateHint')}
+                                        hint={t(c.is_active ? 'admin.coupons.deactivateHint' : 'admin.coupons.activateHint')}
                                     />
                                 </td>
                                 <td className="px-4 py-3">
