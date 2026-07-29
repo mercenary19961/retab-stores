@@ -3,6 +3,7 @@ import { Check, ExternalLink, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 
 interface FieldChange {
@@ -33,11 +34,11 @@ interface Paginated {
     total: number;
 }
 
-const ACTION_STYLES: Record<string, string> = {
-    created: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-    updated: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-    deleted: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-    restored: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+const ACTION_TONE: Record<string, StatusTone> = {
+    created: 'green',
+    updated: 'blue',
+    deleted: 'red',
+    restored: 'amber',
 };
 
 export default function ChangeLogIndex({ logs, highlight = null }: { logs: Paginated; highlight?: number | null }) {
@@ -91,13 +92,9 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                                     <td className="whitespace-nowrap px-4 py-3 text-neutral-500">{row.created_at}</td>
                                     <td className="whitespace-nowrap px-4 py-3">{row.section}</td>
                                     <td className="whitespace-nowrap px-4 py-3">
-                                        <span
-                                            className={`rounded px-2 py-0.5 text-xs font-medium ${
-                                                ACTION_STYLES[row.action] ?? 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
-                                            }`}
-                                        >
+                                        <StatusPill tone={ACTION_TONE[row.action] ?? 'neutral'}>
                                             {t(`admin.changeLog.actions.${row.action}`, { defaultValue: row.action.replace(/_/g, ' ') })}
-                                        </span>
+                                        </StatusPill>
                                         {row.reverts_log_id !== null && (
                                             <Link
                                                 href={`/admin/change-log?highlight=${row.reverts_log_id}`}

@@ -10,6 +10,7 @@ import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import CopyText from '@/components/copy-text';
 import ImageLightbox from '@/components/image-lightbox';
+import StatusPill from '@/components/status-pill';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -204,19 +205,11 @@ export default function ProductsIndex({
     const statusBadges = (p: ProductRow) => (
         <>
             {p.is_active ? (
-                <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">
-                    {t('admin.products.active')}
-                </span>
+                <StatusPill tone="green">{t('admin.products.active')}</StatusPill>
             ) : (
-                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                    {t('admin.products.hidden')}
-                </span>
+                <StatusPill tone="neutral">{t('admin.products.hidden')}</StatusPill>
             )}
-            {!p.is_active && p.is_coming_soon && (
-                <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs text-teal-800 dark:bg-teal-950 dark:text-teal-200">
-                    {t('admin.products.comingSoon')}
-                </span>
-            )}
+            {!p.is_active && p.is_coming_soon && <StatusPill tone="teal">{t('admin.products.comingSoon')}</StatusPill>}
             {!p.is_active && (p.needs_price || p.needs_image || p.needs_description) && (
                 <span className="flex flex-wrap gap-1">
                     {p.needs_price && (

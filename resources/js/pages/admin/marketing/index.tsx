@@ -5,9 +5,18 @@ import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import Pagination, { type Paginator } from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
+import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 
 const PLACEHOLDER_RE = /\{\{\s*(\d+)\s*\}\}/g;
+
+// Meta template approval states → pill tone.
+const TEMPLATE_STATUS_TONE: Record<string, StatusTone> = {
+    approved: 'green',
+    pending: 'amber',
+    rejected: 'red',
+    draft: 'neutral',
+};
 
 /** Distinct {{n}} placeholders in a template body, as sorted numbers. */
 function detectPlaceholders(body: string): number[] {
@@ -179,9 +188,7 @@ export default function MarketingIndex({
                                     <span className="ms-2 text-xs text-neutral-400">{label('lang', t.language)} · {label('categories', t.category)} · {t.param_count} {tr('admin.marketing.vars')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className={`rounded-full px-2 py-0.5 text-xs ${t.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800'}`}>
-                                        {label('templateStatus', t.status)}
-                                    </span>
+                                    <StatusPill tone={TEMPLATE_STATUS_TONE[t.status] ?? 'neutral'}>{label('templateStatus', t.status)}</StatusPill>
                                     <Button
                                         size="sm"
                                         variant="ghost"

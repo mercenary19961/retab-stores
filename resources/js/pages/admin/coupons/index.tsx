@@ -9,6 +9,7 @@ import Pagination, { type Paginator } from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -42,12 +43,12 @@ interface CouponRow {
 const INPUT =
     'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
 
-const STATUS_STYLE: Record<string, string> = {
-    active: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200',
-    scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
-    expired: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
-    used_up: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200',
-    inactive: 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300',
+const STATUS_TONE: Record<string, StatusTone> = {
+    active: 'green',
+    scheduled: 'blue',
+    expired: 'red',
+    used_up: 'amber',
+    inactive: 'neutral',
 };
 
 // 'YYYY-MM-DD HH:MM:SS' → the value a <input type="datetime-local"> expects.
@@ -263,7 +264,7 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                                     {c.per_user_limit != null && <span className="ms-1 text-xs text-neutral-400">({t('admin.coupons.perUser', { n: c.per_user_limit })})</span>}
                                 </td>
                                 <td className="px-4 py-3">
-                                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_STYLE[c.status] ?? STATUS_STYLE.inactive}`}>{t(`admin.coupons.status.${c.status}`)}</span>
+                                    <StatusPill tone={STATUS_TONE[c.status] ?? 'neutral'}>{t(`admin.coupons.status.${c.status}`)}</StatusPill>
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end gap-2">

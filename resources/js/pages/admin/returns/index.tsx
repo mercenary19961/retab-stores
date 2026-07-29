@@ -6,8 +6,9 @@ import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
 import ResizableTh from '@/components/admin/resizable-th';
-import ReturnDetailView, { type RefundPreview, type ReturnDetail, type ReturnOrderSummary } from '@/components/admin/return-detail-view';
+import ReturnDetailView, { RETURN_STATUS_TONE, type RefundPreview, type ReturnDetail, type ReturnOrderSummary } from '@/components/admin/return-detail-view';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import StatusPill from '@/components/status-pill';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -187,7 +188,7 @@ export default function ReturnsIndex({
                                 <td className="truncate px-4 py-3 font-mono font-medium text-neutral-800 dark:text-neutral-100">#{r.id}</td>
                                 <td className="truncate px-4 py-3 font-mono">{r.order_number ?? '—'}</td>
                                 <td className="truncate px-4 py-3">{r.customer ?? '—'}</td>
-                                <td className="truncate px-4 py-3">{t(`admin.returns.status.${r.status}`)}</td>
+                                <td className="truncate px-4 py-3"><StatusPill tone={RETURN_STATUS_TONE[r.status] ?? 'neutral'}>{t(`admin.returns.status.${r.status}`)}</StatusPill></td>
                                 <td className="truncate px-4 py-3 text-neutral-500" dir="auto">{r.reason}</td>
                                 <td className="truncate px-4 py-3 text-neutral-500">{r.created_at ?? '—'}</td>
                                 <td className="px-4 py-3">

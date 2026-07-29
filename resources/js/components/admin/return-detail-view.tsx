@@ -18,7 +18,17 @@ import {
 } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import Button from '@/components/admin/button';
+import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
+
+// Return lifecycle → pill tone (shared with the returns list).
+export const RETURN_STATUS_TONE: Record<string, StatusTone> = {
+    requested: 'amber',
+    approved: 'blue',
+    rejected: 'red',
+    exchanged: 'green',
+    refunded: 'purple',
+};
 
 export interface ReturnDetail {
     id: number;
@@ -86,7 +96,9 @@ export default function ReturnDetailView({
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm dark:bg-neutral-800">{t(`admin.returns.status.${orderReturn.status}`)}</span>
+                <StatusPill tone={RETURN_STATUS_TONE[orderReturn.status] ?? 'neutral'} className="px-3 py-1 text-sm">
+                    {t(`admin.returns.status.${orderReturn.status}`)}
+                </StatusPill>
                 <span className="text-sm text-neutral-400">{orderReturn.created_at ?? '—'}</span>
             </div>
 

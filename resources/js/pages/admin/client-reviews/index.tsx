@@ -5,6 +5,7 @@ import Pagination, { type Paginator } from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import StatusPill from '@/components/status-pill';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -254,13 +255,9 @@ export default function ClientReviewsIndex({
                                 <td className="truncate px-4 py-3 align-top text-neutral-500">{r.source ?? '—'}</td>
                                 <td className="px-4 py-3 align-top">
                                     {r.is_active ? (
-                                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">
-                                            {t('admin.reviews.activeBadge')}
-                                        </span>
+                                        <StatusPill tone="green">{t('admin.reviews.activeBadge')}</StatusPill>
                                     ) : (
-                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                                            {t('admin.reviews.hiddenBadge')}
-                                        </span>
+                                        <StatusPill tone="neutral">{t('admin.reviews.hiddenBadge')}</StatusPill>
                                     )}
                                 </td>
                                 <td className="truncate px-4 py-3 align-top text-neutral-500">{r.updated_at ?? '—'}</td>

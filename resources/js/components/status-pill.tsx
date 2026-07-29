@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 
-export type StatusTone = 'neutral' | 'amber' | 'blue' | 'indigo' | 'green' | 'red' | 'purple';
+export type StatusTone = 'neutral' | 'amber' | 'blue' | 'indigo' | 'green' | 'red' | 'purple' | 'teal';
 
 // Soft-tint status pill: a tinted fill carries the semantic colour, an inset ring
 // crisps the edge, and a small leading dot makes the state scannable at a glance
@@ -36,6 +36,10 @@ const TONES: Record<StatusTone, { pill: string; dot: string }> = {
     purple: {
         pill: 'bg-purple-50 text-purple-700 ring-purple-600/20 dark:bg-purple-500/10 dark:text-purple-300 dark:ring-purple-400/25',
         dot: 'bg-purple-500 dark:bg-purple-400',
+    },
+    teal: {
+        pill: 'bg-teal-50 text-teal-700 ring-teal-600/20 dark:bg-teal-500/10 dark:text-teal-300 dark:ring-teal-400/25',
+        dot: 'bg-teal-500 dark:bg-teal-400',
     },
 };
 

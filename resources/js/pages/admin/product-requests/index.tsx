@@ -1,6 +1,7 @@
 import Button from '@/components/admin/button';
 import Pagination from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
+import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
@@ -101,9 +102,7 @@ export default function ProductRequestsIndex({
                                 </td>
                                 <td className="px-4 py-3">
                                     {r.is_guest ? (
-                                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                                            {t('admin.productRequests.guest')}
-                                        </span>
+                                        <StatusPill tone="neutral" dot={false}>{t('admin.productRequests.guest')}</StatusPill>
                                     ) : (
                                         <span dir="auto">{r.customer ?? '—'}</span>
                                     )}
@@ -115,9 +114,9 @@ export default function ProductRequestsIndex({
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end">
                                         {r.handled ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-950 dark:text-green-200">
-                                                <Check className="h-3.5 w-3.5" /> {t('admin.productRequests.handled')}
-                                            </span>
+                                            <StatusPill tone="green" dot={false}>
+                                                <Check className="me-1 h-3.5 w-3.5" /> {t('admin.productRequests.handled')}
+                                            </StatusPill>
                                         ) : (
                                             <Button
                                                 size="sm"

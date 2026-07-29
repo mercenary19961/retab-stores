@@ -6,6 +6,7 @@ import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 
 interface DiscountedRow {
@@ -28,10 +29,11 @@ interface ReviewRewardState { enabled: boolean; percent: number }
 const INPUT =
     'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
 const CARD = 'rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900';
-const STATUS_STYLE: Record<string, string> = {
-    active: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200',
-    scheduled: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200',
-    expired: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
+const STATUS_TONE: Record<string, StatusTone> = { active: 'green', scheduled: 'blue', expired: 'red' };
+// Soft tint for the bordered summary boxes (not pills) at the top of the page.
+const SUMMARY_TINT: Record<'active' | 'scheduled', string> = {
+    active: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300',
+    scheduled: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300',
 };
 
 // 'YYYY-MM-DD HH:MM:SS' → the value a <input type="datetime-local"> expects.
@@ -155,7 +157,7 @@ export default function DiscountsIndex({
                                         <span className="text-xs text-green-600 dark:text-green-400">-{p.percent}%</span>
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-2 text-neutral-500">{windowLabel(p.starts_at, p.ends_at)}</td>
-                                    <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_STYLE[p.status] ?? ''}`}>{t(`admin.discounts.status.${p.status}`)}</span></td>
+                                    <td className="px-3 py-2"><StatusPill tone={STATUS_TONE[p.status] ?? 'neutral'}>{t(`admin.discounts.status.${p.status}`)}</StatusPill></td>
                                     <td className="px-3 py-2 text-end">
                                         <Button size="sm" variant="ghost" icon={Trash2} onClick={() => clearOne(p.id)}>{t('admin.discounts.current.clear')}</Button>
                                     </td>
@@ -283,7 +285,7 @@ export default function DiscountsIndex({
         <section className={CARD}>
             <div className="mb-1 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 font-bold"><Truck className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.free.title')}</h2>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${freeStatus === 'off' ? 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300' : STATUS_STYLE[freeStatus === 'active' ? 'active' : 'scheduled']}`}>{t(`admin.discounts.free.status_${freeStatus}`)}</span>
+                <StatusPill tone={freeStatus === 'off' ? 'neutral' : freeStatus === 'active' ? 'green' : 'blue'}>{t(`admin.discounts.free.status_${freeStatus}`)}</StatusPill>
             </div>
             <p className="mb-4 text-sm text-neutral-500">{t('admin.discounts.free.desc')}</p>
             <form onSubmit={saveFree} className="space-y-4">
@@ -313,9 +315,9 @@ export default function DiscountsIndex({
         <section className={CARD}>
             <div className="mb-1 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 font-bold"><Gift className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.reviewReward.title')}</h2>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${review.data.enabled ? STATUS_STYLE.active : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'}`}>
+                <StatusPill tone={review.data.enabled ? 'green' : 'neutral'}>
                     {t(review.data.enabled ? 'admin.discounts.reviewReward.status_on' : 'admin.discounts.reviewReward.status_off')}
-                </span>
+                </StatusPill>
             </div>
             <p className="mb-4 text-sm text-neutral-500">{t('admin.discounts.reviewReward.desc')}</p>
             <form onSubmit={saveReview} className="space-y-4">
@@ -352,7 +354,7 @@ export default function DiscountsIndex({
                 <span className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
                     {t('admin.discounts.summary.discounted', { active: activeNow, total: discounted.length })}
                 </span>
-                <span className={`rounded-lg border px-3 py-2 ${freeStatus === 'off' ? 'border-neutral-200 bg-white text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900' : STATUS_STYLE[freeStatus === 'active' ? 'active' : 'scheduled'] + ' border-transparent'}`}>
+                <span className={`rounded-lg border px-3 py-2 ${freeStatus === 'off' ? 'border-neutral-200 bg-white text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900' : SUMMARY_TINT[freeStatus === 'active' ? 'active' : 'scheduled'] + ' border-transparent'}`}>
                     {t(`admin.discounts.summary.free_${freeStatus}`)}
                 </span>
             </div>
