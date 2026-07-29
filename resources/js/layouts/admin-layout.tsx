@@ -26,6 +26,7 @@ import { useEffect, useRef, useState, type PropsWithChildren, type ReactNode } f
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import adminI18n from '@/i18n/admin';
 import AdminContextMenu from '@/components/admin/context-menu';
+import AdminToasts from '@/components/admin/admin-toasts';
 import GlobalSearch from '@/components/admin/global-search';
 import MobileScrollNav from '@/components/admin/mobile-scroll-nav';
 import NotificationBell from '@/components/admin/notification-bell';
@@ -112,14 +113,9 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
         helpPulse?: boolean | null;
     };
     const user = props.auth?.user;
-    const flash = props.flash;
     const currentPath = page.url.split('?')[0];
     // The scrollable content area, targeted by the mobile scroll-to-edge buttons.
     const mainRef = useRef<HTMLElement>(null);
-
-    // Dismissible flash banner — re-shows whenever a new flash message arrives.
-    const [flashOpen, setFlashOpen] = useState(true);
-    useEffect(() => setFlashOpen(true), [flash?.success, flash?.error]);
 
     // Editors see only the sections they can view; admins (permissions === null) see all.
     const isAdmin = user?.role === 'admin';
@@ -353,27 +349,12 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                 </header>
 
                 <main ref={mainRef} className="flex-1 overflow-y-auto p-4 sm:p-6">
-                    {flashOpen && flash?.success && (
-                        <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-green-900 bg-green-950 px-4 py-3 text-sm text-green-200">
-                            <span dir="auto">{flash.success}</span>
-                            <button type="button" onClick={() => setFlashOpen(false)} aria-label={t('admin.common.dismiss')} className="shrink-0 rounded p-0.5 text-green-300/70 transition-colors hover:text-green-100">
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-                    )}
-                    {flashOpen && flash?.error && (
-                        <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-200">
-                            <span dir="auto">{flash.error}</span>
-                            <button type="button" onClick={() => setFlashOpen(false)} aria-label={t('admin.common.dismiss')} className="shrink-0 rounded p-0.5 text-red-300/70 transition-colors hover:text-red-100">
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-                    )}
                     <RevertConflictBanner />
                     {children}
                 </main>
             </div>
 
+            <AdminToasts />
             <UndoToast />
             <AdminContextMenu />
             <MobileScrollNav scrollRef={mainRef} />

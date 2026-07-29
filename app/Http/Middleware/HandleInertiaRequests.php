@@ -2,9 +2,15 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Admin\SettingController;
 use App\Models\Category;
+use App\Models\Product;
+use App\Models\Setting;
+use App\Models\User;
+use App\Services\CartService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -53,7 +59,7 @@ class HandleInertiaRequests extends Middleware
             // Global toggle for the admin "How it works" attention beam (staff only;
             // per-session dismissal is client-side). Default on when unset.
             'helpPulse' => fn () => $request->user()?->isStaff()
-                ? \App\Models\Setting::get('admin_help_pulse', '1') !== '0'
+                ? Setting::get('admin_help_pulse', '1') !== '0'
                 : null,
             // Null while unset → the Turnstile widget renders nothing (dev).
             'turnstileSiteKey' => config('services.turnstile.site_key'),
@@ -78,12 +84,12 @@ class HandleInertiaRequests extends Middleware
                     ])->values(),
                 ])->values(),
             'cart' => [
-                'count' => app(\App\Services\CartService::class)->count(),
+                'count' => app(CartService::class)->count(),
             ],
             // Whether any active discounted product exists → drives the storefront
             // "Offers" nav visibility (hidden when there are none). Closure: a cheap
             // EXISTS resolved only for full Inertia page loads.
-            'hasOffers' => fn () => \App\Models\Product::where('is_active', true)->onSale()->exists(),
+            'hasOffers' => fn () => Product::where('is_active', true)->onSale()->exists(),
             // Footer/contact block, admin-editable via settings (falls back to
             // FOOTER_DEFAULTS when a key is unset). Closure → resolved only for
             // Inertia page responses; one batched query.
@@ -93,8 +99,12 @@ class HandleInertiaRequests extends Middleware
                 ? (object) ($request->user()->ui_preferences['tableWidths'] ?? [])
                 : null,
             'flash' => [
-                'success' => $request->session()->get('success'),
-                'error' => $request->session()->get('error'),
+                'success' => $success = $request->session()->get('success'),
+                'error' => $error = $request->session()->get('error'),
+                // A per-response nonce, set only when a message exists, so the client
+                // shows a fresh toast even when two consecutive actions flash the SAME
+                // text (an identical string wouldn't change a value-compared effect dep).
+                'id' => ($success || $error) ? (string) Str::uuid() : null,
                 // Structured revert-conflict (fields + the blocking change to
                 // undo first) → rendered as a banner with a "take me to it" link.
                 'revertConflict' => $request->session()->get('revertConflict'),
@@ -118,7 +128,7 @@ class HandleInertiaRequests extends Middleware
      *
      * @return array{unread:int, items:list<array<string, mixed>>}
      */
-    private function adminNotifications(\App\Models\User $user): array
+    private function adminNotifications(User $user): array
     {
         $items = $user->notifications()->latest()->limit(10)->get()
             ->map(fn ($n) => [
@@ -142,8 +152,8 @@ class HandleInertiaRequests extends Middleware
      */
     private function footerSettings(): array
     {
-        $defaults = \App\Http\Controllers\Admin\SettingController::FOOTER_DEFAULTS;
-        $stored = \App\Models\Setting::query()
+        $defaults = SettingController::FOOTER_DEFAULTS;
+        $stored = Setting::query()
             ->whereIn('key', array_keys($defaults))
             ->pluck('value', 'key');
 
