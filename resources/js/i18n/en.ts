@@ -202,6 +202,7 @@ const en = {
         yourReview: 'Your review',
         helpful: '👍 Helpful ({{n}})',
         ratingsLabel: '{{n}} ratings',
+        rateThis: 'Rate this product',
         timesBought: 'Purchased {{n}} times',
         tamaraSplit: 'Split into 4 payments of {{amount}} {{currency}}',
         tamaraNote: 'No late fees, Sharia-compliant',

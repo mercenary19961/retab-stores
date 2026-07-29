@@ -206,6 +206,7 @@ const ar = {
         yourReview: 'تقييمك',
         helpful: '👍 مفيد ({{n}})',
         ratingsLabel: '{{n}} تقييم',
+        rateThis: 'قيّم هذا المنتج',
         timesBought: 'تم شراؤه {{n}} مرة',
         tamaraSplit: 'قسّمها على 4 دفعات بقيمة {{amount}} {{currency}}',
         tamaraNote: 'بدون رسوم تأخير، متوافقة مع الشريعة الإسلامية',

@@ -3,8 +3,11 @@ import { useTranslation } from 'react-i18next';
 import ImageLightbox from '@/components/image-lightbox';
 
 interface Props {
-    /** Detail-size WebP variants — used for the gallery + hover-magnify + thumbnails. */
+    /** Detail-size WebP variants — the main image + hover-magnify. */
     images: string[];
+    /** Card-size WebP variants — the small thumbnail strip (a browser downscale of
+     *  the 1400px detail into ~100px aliases badly on detailed packaging). */
+    imagesThumb: string[];
     /** Full-size originals — used only inside the zoom viewer. Falls back to `images`. */
     imagesFull: string[];
     name: string;
@@ -15,7 +18,7 @@ interface Props {
  * (desktop pointer) and, on click, opens the shared full-screen zoom viewer
  * showing the original full-resolution photo. RTL-aware.
  */
-export default function ProductGallery({ images, imagesFull, name }: Props) {
+export default function ProductGallery({ images, imagesThumb, imagesFull, name }: Props) {
     const { t } = useTranslation();
     const [active, setActive] = useState(0);
     const [open, setOpen] = useState(false);
@@ -65,10 +68,10 @@ export default function ProductGallery({ images, imagesFull, name }: Props) {
                 )}
             </div>
 
-            {/* Thumbnails — select the main image. */}
-            {images.length > 1 && (
+            {/* Thumbnails — select the main image. Card-size (not the 1400px detail). */}
+            {imagesThumb.length > 1 && (
                 <div className="grid grid-cols-5 gap-2">
-                    {images.slice(0, 5).map((url, i) => (
+                    {imagesThumb.slice(0, 5).map((url, i) => (
                         <button
                             key={url}
                             type="button"

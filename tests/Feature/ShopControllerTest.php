@@ -112,7 +112,7 @@ class ShopControllerTest extends TestCase
         ProductImage::create(['product_id' => $product->id, 'path' => 'products/1/b.jpg', 'sort_order' => 2, 'is_primary' => false]);
 
         $this->get('/products/sukkari-gallery')->assertOk()->assertInertia(
-            fn (Assert $page) => $page->has('product.images', 2)->has('product.images_full', 2),
+            fn (Assert $page) => $page->has('product.images', 2)->has('product.images_thumb', 2)->has('product.images_full', 2),
         );
     }
 

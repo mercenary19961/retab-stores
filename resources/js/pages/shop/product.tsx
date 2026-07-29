@@ -25,6 +25,7 @@ interface Product {
     purchase_count: number;
     category: { name_ar: string; name_en: string | null; slug: string } | null;
     images: string[];
+    images_thumb: string[];
     images_full: string[];
     url: string;
 }
@@ -110,7 +111,12 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
 
             <div className="grid gap-8 md:grid-cols-2">
                 {/* Gallery */}
-                <ProductGallery images={product.images} imagesFull={product.images_full ?? product.images} name={name} />
+                <ProductGallery
+                    images={product.images}
+                    imagesThumb={product.images_thumb ?? product.images}
+                    imagesFull={product.images_full ?? product.images}
+                    name={name}
+                />
 
                 {/* Details */}
                 <div>
@@ -136,11 +142,17 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
                     )}
 
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-brand-teal/70">
-                        <span className="inline-flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
+                            title={t('product.rateThis')}
+                            aria-label={t('product.rateThis')}
+                            className="inline-flex items-center gap-1.5 rounded transition-opacity hover:opacity-75"
+                        >
                             <Stars value={reviews.summary.average} />
                             {reviews.summary.count > 0 && <span className="font-medium text-brand-teal">{reviews.summary.average}</span>}
                             <span className="text-brand-teal/50">{t('product.ratingsLabel', { n: reviews.summary.count })}</span>
-                        </span>
+                        </button>
                         {product.purchase_count > 0 && (
                             <span className="inline-flex items-center gap-1.5 text-brand-teal/50">
                                 <ShoppingBag className="size-4" />
@@ -234,7 +246,7 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
             </div>
 
             {/* Reviews */}
-            <section className="mt-14">
+            <section id="reviews" className="mt-14 scroll-mt-24">
                 <h2 className="mb-4 font-heading text-xl font-bold text-brand-teal">{t('product.reviewsHeading')}</h2>
 
                 {reviews.can_review && <ReviewForm slug={product.slug} />}
