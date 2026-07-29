@@ -47,7 +47,7 @@ class ZidCatalogImporter
     private const CATEGORY_MAP = [
         'التمور' => ['dates', 'Dates', 'cat-dates', 'sukkari.webp'],
         'التمور المحشية' => ['stuffed-dates', 'Stuffed Dates', 'cat-dates', 'stuffed-dates.webp'],
-        'الشوابير' => ['rusks', 'Rusks & Toast', 'cat-dates', null],
+        'الشوابير' => ['rusks', 'Rusks & Toast', 'cat-dates', 'rusks.webp'],
         'البوكسات' => ['boxes', 'Gift Boxes', 'cat-gifts', 'boxes.webp'],
         'هدايا المناسبات' => ['occasion-gifts', 'Occasion Gifts', 'cat-gifts', 'occasion-gifts.webp'],
         'منتجات متنوعة' => ['assorted', 'Assorted Products', 'cat-gifts', null],
