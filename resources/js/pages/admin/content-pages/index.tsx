@@ -3,6 +3,7 @@ import { FileText } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
+import StatusPill from '@/components/status-pill';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
@@ -63,15 +64,9 @@ function PageEditor({ page }: { page: PageItem }) {
                             : t('admin.contentPages.updatedAt', { at: page.updated_at ?? '' })}
                     </p>
                 </div>
-                <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
-                        page.is_published
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-                    }`}
-                >
+                <StatusPill tone={page.is_published ? 'green' : 'amber'} className="shrink-0">
                     {page.is_published ? t('admin.contentPages.publishedBadge') : t('admin.contentPages.draftBadge')}
-                </span>
+                </StatusPill>
             </div>
 
             <div className="space-y-4">
