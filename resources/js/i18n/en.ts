@@ -997,6 +997,15 @@ const en = {
                 status_scheduled: 'Scheduled',
                 status_off: 'Off',
             },
+            reviewReward: {
+                title: 'Review reward',
+                desc: 'A customer who writes a review (with a comment) on a product they bought earns a one-time discount for their next order, valid 30 days, once per customer. A WhatsApp reminder goes out ~1 day after delivery.',
+                enable: 'Reward reviews with a discount',
+                percentLabel: 'Discount amount',
+                save: 'Save review reward',
+                status_on: 'On',
+                status_off: 'Off',
+            },
             bulk: {
                 title: 'Bulk discount',
                 desc: 'Apply one discount to every active product in the chosen scope.',
@@ -1098,11 +1107,6 @@ const en = {
                 label: 'Attention pulse on “How it works”',
                 hint: 'Gently pulses the How it works button once each session until it is opened. Turn off to hide it for all staff.',
             },
-            reviewReward: {
-                label: 'Reward reviews with a discount',
-                hint: 'When on, a customer who posts a review with a comment earns a one-time discount coupon (valid 30 days) for their next order — issued once per customer. A WhatsApp reminder goes out ~1 day after delivery.',
-                percentLabel: 'Discount amount',
-            },
             saveHint: 'Changes apply to the storefront right away.',
             sections: {
                 store: { title: 'Store', desc: 'Shipping price and the legal entity name.' },
@@ -1110,7 +1114,6 @@ const en = {
                 contact: { title: 'Contact & registration', desc: 'Shown in the storefront footer.' },
                 social: { title: 'Social links', desc: 'Footer icons. Leave a field blank to hide that icon.' },
                 preferences: { title: 'Admin preferences', desc: 'Options for this admin panel, not the storefront.' },
-                reviewReward: { title: 'Review reward', desc: 'A one-time discount for customers who review a product they bought.' },
             },
             groups: {
                 footerContact: 'Footer & contact',

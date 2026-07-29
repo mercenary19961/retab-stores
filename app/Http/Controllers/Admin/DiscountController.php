@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Services\CheckoutService;
 use App\Services\Discount\DiscountService;
+use App\Services\ReviewRewardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -63,8 +64,26 @@ class DiscountController extends Controller
                 'ends_at' => Setting::get(CheckoutService::FREE_SHIPPING_ENDS_KEY) ?: null,
                 'live' => app(CheckoutService::class)->freeShippingActive(),
             ],
+            'reviewReward' => [
+                'enabled' => app(ReviewRewardService::class)->enabled(),
+                'percent' => app(ReviewRewardService::class)->percent(),
+            ],
             'history' => $this->recentApplies(),
         ]);
+    }
+
+    /** Toggle the one-time "write a review, get a discount" reward + its percentage. */
+    public function reviewReward(Request $request)
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+            'percent' => ['required', 'integer', 'in:10,20'],
+        ]);
+
+        Setting::set('review_reward_enabled', $data['enabled'] ? '1' : '0');
+        Setting::set('review_reward_percent', (string) $data['percent']);
+
+        return back()->with('success', __('messages.admin.review_reward_saved'));
     }
 
     public function apply(Request $request)
@@ -132,13 +151,13 @@ class DiscountController extends Controller
     {
         $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
 
-        $token = Str::uuid() . '.csv';
+        $token = Str::uuid().'.csv';
         $request->file('file')->storeAs(self::DIR, $token, 'local');
 
         try {
-            $rows = $this->service->parse(Storage::disk('local')->path(self::DIR . '/' . $token));
+            $rows = $this->service->parse(Storage::disk('local')->path(self::DIR.'/'.$token));
         } catch (\RuntimeException $e) {
-            Storage::disk('local')->delete(self::DIR . '/' . $token);
+            Storage::disk('local')->delete(self::DIR.'/'.$token);
 
             return back()->with('error', $e->getMessage());
         }
@@ -157,7 +176,7 @@ class DiscountController extends Controller
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
         ]);
 
-        $relative = self::DIR . '/' . basename($data['token']); // basename guards path traversal
+        $relative = self::DIR.'/'.basename($data['token']); // basename guards path traversal
         if (! Storage::disk('local')->exists($relative)) {
             return redirect()->route('admin.discounts.index')->with('error', __('messages.admin.import_expired'));
         }

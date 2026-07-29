@@ -88,6 +88,7 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::middleware('permission:discounts.manage')->group(function () {
         Route::post('discounts/apply', [DiscountController::class, 'apply'])->name('discounts.apply');
         Route::post('discounts/free-shipping', [DiscountController::class, 'freeShipping'])->name('discounts.free-shipping');
+        Route::post('discounts/review-reward', [DiscountController::class, 'reviewReward'])->name('discounts.review-reward');
         Route::post('discounts/import/preview', [DiscountController::class, 'previewImport'])->name('discounts.import.preview');
         Route::post('discounts/import/apply', [DiscountController::class, 'applyImport'])->name('discounts.import.apply');
         Route::post('discounts/clear', [DiscountController::class, 'clear'])->name('discounts.clear');

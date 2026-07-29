@@ -103,6 +103,7 @@ return [
         'discount_none_to_clear' => 'No matching discounted products to clear.',
         'discount_import_columns' => 'The file needs a sku column and a discount_percent column.',
         'free_shipping_saved' => 'Free shipping settings saved.',
+        'review_reward_saved' => 'Review reward settings saved.',
         'change_reverted' => 'Change reverted.',
         'change_revert_conflict' => 'Cannot revert: :fields changed again after this entry. Review the current values instead.',
         'change_revert_blocked' => 'This change can no longer be reverted.',

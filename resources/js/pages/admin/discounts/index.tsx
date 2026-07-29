@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { BadgePercent, Percent, RotateCcw, Trash2, Truck, Upload } from 'lucide-react';
+import { BadgePercent, Gift, Percent, RotateCcw, Trash2, Truck, Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
@@ -23,6 +23,7 @@ interface DiscountedRow {
 interface CategoryOpt { id: number; name_ar: string; name_en: string | null; count: number }
 interface HistoryRow { id: number; mode: string; applied: number; discount_mode: string; value: number | null; user: string | null; created_at: string | null; reverted_at: string | null }
 interface FreeShippingState { active: boolean; starts_at: string | null; ends_at: string | null; live: boolean }
+interface ReviewRewardState { enabled: boolean; percent: number }
 
 const INPUT =
     'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
@@ -42,6 +43,7 @@ export default function DiscountsIndex({
     activeCount,
     activeNow,
     freeShipping,
+    reviewReward,
     history,
 }: {
     discounted: DiscountedRow[];
@@ -49,6 +51,7 @@ export default function DiscountsIndex({
     activeCount: number;
     activeNow: number;
     freeShipping: FreeShippingState;
+    reviewReward: ReviewRewardState;
     history: HistoryRow[];
 }) {
     const { t, i18n } = useAdminT();
@@ -83,6 +86,13 @@ export default function DiscountsIndex({
         free.post('/admin/discounts/free-shipping', { preserveScroll: true });
     };
     const freeStatus = freeShipping.live ? 'active' : freeShipping.active ? 'scheduled' : 'off';
+
+    // One-time "write a review, get a discount" reward.
+    const review = useForm({ enabled: reviewReward.enabled, percent: String(reviewReward.percent) });
+    const saveReview = (e: FormEvent) => {
+        e.preventDefault();
+        review.post('/admin/discounts/review-reward', { preserveScroll: true });
+    };
 
     const clearOne = (id: number) => router.post('/admin/discounts/clear', { product_id: id }, { preserveScroll: true });
     const undo = (id: number) => router.post(`/admin/discounts/undo/${id}`, {}, { preserveScroll: true });
@@ -299,6 +309,38 @@ export default function DiscountsIndex({
         </section>
     );
 
+    const reviewCard = (
+        <section className={CARD}>
+            <div className="mb-1 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 font-bold"><Gift className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.reviewReward.title')}</h2>
+                <span className={`rounded-full px-2 py-0.5 text-xs ${review.data.enabled ? STATUS_STYLE.active : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'}`}>
+                    {t(review.data.enabled ? 'admin.discounts.reviewReward.status_on' : 'admin.discounts.reviewReward.status_off')}
+                </span>
+            </div>
+            <p className="mb-4 text-sm text-neutral-500">{t('admin.discounts.reviewReward.desc')}</p>
+            <form onSubmit={saveReview} className="space-y-4">
+                <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={review.data.enabled} onChange={(e) => review.setData('enabled', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+                    {t('admin.discounts.reviewReward.enable')}
+                </label>
+                {review.data.enabled && (
+                    <label className="block text-sm">
+                        <span className="text-neutral-600 dark:text-neutral-300">{t('admin.discounts.reviewReward.percentLabel')}</span>
+                        <Select
+                            value={review.data.percent}
+                            onChange={(v) => review.setData('percent', v)}
+                            options={[{ value: '10', label: '10%' }, { value: '20', label: '20%' }]}
+                            className="mt-1 w-full"
+                        />
+                    </label>
+                )}
+                <div className="flex justify-end">
+                    <Button type="submit" variant="primary" icon={Gift} disabled={review.processing}>{t('admin.discounts.reviewReward.save')}</Button>
+                </div>
+            </form>
+        </section>
+    );
+
     return (
         <AdminLayout title={t('admin.discounts.title')}>
             <Head title={t('admin.discounts.title')} />
@@ -326,6 +368,7 @@ export default function DiscountsIndex({
                     {bulkCard}
                     {importCard}
                     {freeCard}
+                    {reviewCard}
                 </div>
             </div>
         </AdminLayout>

@@ -169,15 +169,27 @@ class ReviewRewardTest extends TestCase
         $this->assertDatabaseMissing('whatsapp_messages', ['order_id' => $order->id, 'template' => 'review_reminder']);
     }
 
-    // ---- Setting validation --------------------------------------------------
+    // ---- Admin control (on the Discounts page) -------------------------------
 
-    public function test_percent_setting_rejects_values_other_than_10_or_20(): void
+    public function test_review_reward_endpoint_saves_the_setting(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)
-            ->from('/admin/settings')
-            ->put('/admin/settings', ['shipping_flat_fee' => 25, 'review_reward_percent' => 15])
-            ->assertSessionHasErrors('review_reward_percent');
+            ->post('/admin/discounts/review-reward', ['enabled' => true, 'percent' => 20])
+            ->assertRedirect();
+
+        $this->assertSame('1', Setting::get('review_reward_enabled'));
+        $this->assertSame('20', Setting::get('review_reward_percent'));
+    }
+
+    public function test_review_reward_endpoint_rejects_a_bad_percent(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->from('/admin/discounts')
+            ->post('/admin/discounts/review-reward', ['enabled' => true, 'percent' => 15])
+            ->assertSessionHasErrors('percent');
     }
 }

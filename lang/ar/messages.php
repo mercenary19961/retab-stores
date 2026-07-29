@@ -103,6 +103,7 @@ return [
         'discount_none_to_clear' => 'لا توجد منتجات مخفَّضة مطابقة لإلغائها.',
         'discount_import_columns' => 'يحتاج الملف إلى عمود sku وعمود discount_percent.',
         'free_shipping_saved' => 'تم حفظ إعدادات الشحن المجاني.',
+        'review_reward_saved' => 'تم حفظ إعدادات مكافأة التقييم.',
         'change_reverted' => 'تم التراجع عن التغيير.',
         'change_revert_conflict' => 'تعذر التراجع: :fields تغيّرت مرة أخرى بعد هذا السجل. يُرجى مراجعة القيم الحالية.',
         'change_revert_blocked' => 'لم يعد بالإمكان التراجع عن هذا التغيير.',
