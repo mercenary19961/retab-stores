@@ -45,6 +45,10 @@ class SettingController extends Controller
         'social_linkedin' => ['nullable', 'url', 'max:255'],
         // Admin UX: the "How it works" attention beam (stored '1'/'0').
         'admin_help_pulse' => ['boolean'],
+        // Review reward: a one-time discount for writing a review (stored '1'/'0'
+        // + a 10/20 percentage). See ReviewRewardService.
+        'review_reward_enabled' => ['boolean'],
+        'review_reward_percent' => ['nullable', 'integer', 'in:10,20'],
     ];
 
     /**
@@ -113,10 +117,12 @@ class SettingController extends Controller
     {
         $data = $request->validate(self::FIELDS);
 
-        // Normalise the boolean toggle to a clean '1'/'0' string (a raw PHP false
+        // Normalise the boolean toggles to a clean '1'/'0' string (a raw PHP false
         // would persist as '' and read back as "on").
-        if (array_key_exists('admin_help_pulse', $data)) {
-            $data['admin_help_pulse'] = $request->boolean('admin_help_pulse') ? '1' : '0';
+        foreach (['admin_help_pulse', 'review_reward_enabled'] as $flag) {
+            if (array_key_exists($flag, $data)) {
+                $data[$flag] = $request->boolean($flag) ? '1' : '0';
+            }
         }
 
         DB::transaction(function () use ($data, $changeLog) {

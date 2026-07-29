@@ -14,6 +14,7 @@ return [
 
     'review' => [
         'posted' => 'Your review has been posted. Thank you!',
+        'reward_issued' => 'Thanks for your review! Your :percent% discount code :code is on your account, valid for 30 days.',
         'only_purchased' => 'You can only review products you have purchased.',
         'no_self_vote' => 'You can’t vote on your own review.',
         'anonymous' => 'Customer',

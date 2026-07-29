@@ -37,13 +37,18 @@ class AccountController extends Controller
         $milestone = LoyaltyService::PURCHASE_MILESTONE;
         $progress = $count % $milestone;
 
-        // Unused loyalty reward coupons bound to this account.
+        // Unused reward coupons bound to this account (loyalty + review rewards).
         $rewards = Coupon::where('user_id', $user->id)
-            ->where('source', 'loyalty')
+            ->whereIn('source', ['loyalty', 'review'])
             ->where('is_active', true)
             ->get()
             ->filter(fn (Coupon $c) => (int) $c->used_count < (int) ($c->usage_limit ?? 1))
-            ->map(fn (Coupon $c) => ['code' => $c->code, 'value' => (float) $c->value])
+            ->map(fn (Coupon $c) => [
+                'code' => $c->code,
+                'value' => (float) $c->value,
+                'source' => $c->source,
+                'expires_at' => $c->expires_at?->toDateString(),
+            ])
             ->values();
 
         return Inertia::render('account/dashboard', [

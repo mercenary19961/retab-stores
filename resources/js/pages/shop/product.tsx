@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Check, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
+import { Check, Gift, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocalized } from '@/lib/localize';
@@ -48,6 +48,11 @@ interface Reviews {
     can_review: boolean;
 }
 
+interface ReviewReward {
+    available: boolean;
+    percent: number;
+}
+
 function Stars({ value, className = '' }: { value: number; className?: string }) {
     const rounded = Math.round(value);
     return (
@@ -59,7 +64,19 @@ function Stars({ value, className = '' }: { value: number; className?: string })
     );
 }
 
-export default function ShopProduct({ product, reviews, wishlisted, authed }: { product: Product; reviews: Reviews; wishlisted: boolean; authed: boolean }) {
+export default function ShopProduct({
+    product,
+    reviews,
+    reviewReward,
+    wishlisted,
+    authed,
+}: {
+    product: Product;
+    reviews: Reviews;
+    reviewReward: ReviewReward;
+    wishlisted: boolean;
+    authed: boolean;
+}) {
     const { t } = useTranslation();
     const localized = useLocalized();
     const currency = t('common.currency');
@@ -248,6 +265,13 @@ export default function ShopProduct({ product, reviews, wishlisted, authed }: { 
             {/* Reviews */}
             <section id="reviews" className="mt-14 scroll-mt-24">
                 <h2 className="mb-4 font-heading text-xl font-bold text-brand-teal">{t('product.reviewsHeading')}</h2>
+
+                {reviewReward.available && (
+                    <div className="mb-4 flex items-start gap-3 rounded-xl border border-brand-gold/30 bg-brand-cream/50 p-4">
+                        <Gift className="mt-0.5 size-5 shrink-0 text-brand-gold" />
+                        <p className="text-sm font-medium text-brand-teal">{t('product.reviewReward', { percent: reviewReward.percent })}</p>
+                    </div>
+                )}
 
                 {reviews.can_review && <ReviewForm slug={product.slug} />}
 

@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
+import { Gift, Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
@@ -85,8 +85,10 @@ export default function SettingsIndex({
     const { data, setData, put, processing, errors, isDirty } = useForm(
         Object.fromEntries([
             ...ALL_KEYS.map((k) => [k, settings[k] ?? '']),
-            // Attention-beam toggle, kept as '1'/'0' so the whole form stays string-typed.
+            // Toggles/selects kept as strings so the whole form stays string-typed.
             ['admin_help_pulse', settings['admin_help_pulse'] === '0' ? '0' : '1'],
+            ['review_reward_enabled', settings['review_reward_enabled'] === '1' ? '1' : '0'],
+            ['review_reward_percent', settings['review_reward_percent'] === '20' ? '20' : '10'],
         ]) as Record<string, string>,
     );
 
@@ -155,6 +157,7 @@ export default function SettingsIndex({
     );
 
     const pulseOn = data.admin_help_pulse === '1';
+    const rewardOn = data.review_reward_enabled === '1';
 
     return (
         <AdminLayout title={t('admin.settings.title')}>
@@ -201,6 +204,52 @@ export default function SettingsIndex({
                                     style={{ insetInlineStart: '0.125rem', transform: pulseOn ? `translateX(${rtl ? '-1.25rem' : '1.25rem'})` : 'translateX(0)' }}
                                 />
                             </button>
+                        </div>
+                    </section>
+
+                    {/* Review reward — a one-time discount for writing a product review. */}
+                    <section className={CARD}>
+                        {sectionHeader(Gift, 'reviewReward')}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+                                <div className="min-w-0">
+                                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                                        {t('admin.settings.reviewReward.label')}
+                                    </span>
+                                    <p className="text-xs text-neutral-400">{t('admin.settings.reviewReward.hint')}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={rewardOn}
+                                    aria-label={t('admin.settings.reviewReward.label')}
+                                    onClick={() => setData('review_reward_enabled', rewardOn ? '0' : '1')}
+                                    className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
+                                        rewardOn ? 'bg-brand-teal' : 'bg-neutral-300 dark:bg-neutral-600'
+                                    }`}
+                                >
+                                    <span
+                                        aria-hidden
+                                        className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                                        style={{ insetInlineStart: '0.125rem', transform: rewardOn ? `translateX(${rtl ? '-1.25rem' : '1.25rem'})` : 'translateX(0)' }}
+                                    />
+                                </button>
+                            </div>
+                            {rewardOn && (
+                                <label className="block">
+                                    <span className="mb-1 block text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                                        {t('admin.settings.reviewReward.percentLabel')}
+                                    </span>
+                                    <select
+                                        value={data.review_reward_percent}
+                                        onChange={(e) => setData('review_reward_percent', e.target.value)}
+                                        className={INPUT}
+                                    >
+                                        <option value="10">10%</option>
+                                        <option value="20">20%</option>
+                                    </select>
+                                </label>
+                            )}
                         </div>
                     </section>
 

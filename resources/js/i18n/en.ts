@@ -203,6 +203,7 @@ const en = {
         helpful: '👍 Helpful ({{n}})',
         ratingsLabel: '{{n}} ratings',
         rateThis: 'Rate this product',
+        reviewReward: 'Write a review with a comment and get {{percent}}% off your next order (valid 30 days).',
         timesBought: 'Purchased {{n}} times',
         tamaraSplit: 'Split into 4 payments of {{amount}} {{currency}}',
         tamaraNote: 'No late fees, Sharia-compliant',
@@ -1097,6 +1098,11 @@ const en = {
                 label: 'Attention pulse on “How it works”',
                 hint: 'Gently pulses the How it works button once each session until it is opened. Turn off to hide it for all staff.',
             },
+            reviewReward: {
+                label: 'Reward reviews with a discount',
+                hint: 'When on, a customer who posts a review with a comment earns a one-time discount coupon (valid 30 days) for their next order — issued once per customer. A WhatsApp reminder goes out ~1 day after delivery.',
+                percentLabel: 'Discount amount',
+            },
             saveHint: 'Changes apply to the storefront right away.',
             sections: {
                 store: { title: 'Store', desc: 'Shipping price and the legal entity name.' },
@@ -1104,6 +1110,7 @@ const en = {
                 contact: { title: 'Contact & registration', desc: 'Shown in the storefront footer.' },
                 social: { title: 'Social links', desc: 'Footer icons. Leave a field blank to hide that icon.' },
                 preferences: { title: 'Admin preferences', desc: 'Options for this admin panel, not the storefront.' },
+                reviewReward: { title: 'Review reward', desc: 'A one-time discount for customers who review a product they bought.' },
             },
             groups: {
                 footerContact: 'Footer & contact',

@@ -3,8 +3,10 @@
 namespace App\Services\Shipping;
 
 use App\Enums\OrderStatus;
+use App\Jobs\SendReviewReminder;
 use App\Models\Order;
 use App\Models\OrderActivity;
+use App\Services\ReviewRewardService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -110,6 +112,13 @@ class ShippingService
 
             $order->forceFill($attributes)->save();
             OrderActivity::logStatusChange($order, $old, $mapped->value, null);
+
+            // Delivered → queue the "write a review, get a discount" WhatsApp nudge
+            // for ~1 day later. The job re-checks eligibility at send time; we only
+            // bother queueing for account orders while the feature is on.
+            if ($mapped === OrderStatus::Delivered && $order->user_id && app(ReviewRewardService::class)->enabled()) {
+                SendReviewReminder::dispatch($order->id)->delay(now()->addDay());
+            }
         }
 
         return $order;

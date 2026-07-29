@@ -41,6 +41,10 @@ class SettingsSeeder extends Seeder
 
             // Admin UX default: the "How it works" attention beam is on at handover.
             'admin_help_pulse' => '1',
+
+            // Review reward: off by default; 10% when the admin turns it on.
+            'review_reward_enabled' => '0',
+            'review_reward_percent' => '10',
         ];
     }
 }

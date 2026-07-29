@@ -4,6 +4,9 @@ namespace App\Services\WhatsApp;
 
 use App\Models\LoyaltyReward;
 use App\Models\Order;
+use App\Models\OrderReturn;
+use App\Models\User;
+use App\Models\WhatsappCampaign;
 use App\Models\WhatsappMessage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -28,6 +31,8 @@ class WhatsAppService
     public const T_ORDER_SHIPPED = 'order_shipped';
 
     public const T_LOYALTY_REWARD = 'loyalty_reward';
+
+    public const T_REVIEW_REMINDER = 'review_reminder';
 
     public const T_RETURN_UPDATE = 'return_update';
 
@@ -83,6 +88,20 @@ class WhatsAppService
     }
 
     /**
+     * Post-delivery nudge: review a purchased product to earn a one-time discount.
+     * Sent ~1 day after delivery (queued) since most customers won't reopen the
+     * site on their own. Utility template — tied to their own order.
+     */
+    public function notifyReviewReminder(Order $order, int $discountPercent, string $reviewUrl): ?WhatsappMessage
+    {
+        return $this->dispatch($order->customer_phone, self::T_REVIEW_REMINDER, [
+            $order->customer_name ?? '',
+            (string) $discountPercent,
+            $reviewUrl,
+        ], purpose: 'review_reminder', order: $order, userId: $order->user_id);
+    }
+
+    /**
      * Send a one-time sign-in code. The plaintext code is sent to WhatsApp but
      * NEVER persisted — the ledger row redacts it.
      */
@@ -96,7 +115,7 @@ class WhatsAppService
      * template's OWN language (campaigns may be authored in either locale)
      * and links the ledger row to the campaign for delivery stats.
      */
-    public function sendCampaignMessage(\App\Models\User $user, \App\Models\WhatsappCampaign $campaign): ?WhatsappMessage
+    public function sendCampaignMessage(User $user, WhatsappCampaign $campaign): ?WhatsappMessage
     {
         $template = $campaign->template;
 
@@ -113,7 +132,7 @@ class WhatsAppService
     }
 
     /** Return request moved (approved / rejected / exchanged / refunded). */
-    public function notifyReturnUpdate(\App\Models\OrderReturn $return): ?WhatsappMessage
+    public function notifyReturnUpdate(OrderReturn $return): ?WhatsappMessage
     {
         $order = $return->order;
 
@@ -125,7 +144,7 @@ class WhatsAppService
     }
 
     /** A defect/damage return was filed — alert every configured admin recipient. */
-    public function notifyAdminsReturnRequested(\App\Models\OrderReturn $return): void
+    public function notifyAdminsReturnRequested(OrderReturn $return): void
     {
         $order = $return->order;
 

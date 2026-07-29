@@ -44,6 +44,7 @@ class Order extends Model
         'confirmed_by',
         'cancelled_at',
         'delivered_at',
+        'review_reminder_sent_at',
     ];
 
     protected $casts = [
@@ -59,6 +60,7 @@ class Order extends Model
         'confirmed_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'review_reminder_sent_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

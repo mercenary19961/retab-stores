@@ -10,10 +10,11 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\ReviewHelpfulVote;
 use App\Models\Wishlist;
+use App\Services\ReviewRewardService;
 use App\Services\ReviewService;
 use App\Support\Media;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -196,7 +197,7 @@ class ShopController
             ->all();
     }
 
-    public function show(Request $request, Product $product, ReviewService $reviewService): Response
+    public function show(Request $request, Product $product, ReviewService $reviewService, ReviewRewardService $reviewReward): Response
     {
         // Coming-Soon products are viewable (request-only); everything else hidden 404s.
         abort_unless($product->is_active || $product->is_coming_soon, 404);
@@ -225,6 +226,9 @@ class ShopController
         $votedIds = $user
             ? ReviewHelpfulVote::where('user_id', $user->id)->whereIn('review_id', $reviews->pluck('id'))->pluck('review_id')->all()
             : [];
+
+        // Verified-purchase eligibility (drives the review form + the reward nudge).
+        $canReview = $user ? (bool) $reviewService->eligibleOrderId($user, $product->id) : false;
 
         // Units sold across fulfilled orders — social proof ("purchased N times").
         $purchaseCount = (int) OrderItem::where('product_id', $product->id)
@@ -273,7 +277,12 @@ class ShopController
                     'is_mine' => $user && $r->user_id === $user->id,
                     'date' => $r->created_at?->toDateString(),
                 ])->values(),
-                'can_review' => $user ? (bool) $reviewService->eligibleOrderId($user, $product->id) : false,
+                'can_review' => $canReview,
+            ],
+            // One-time "review → discount" offer (drives the storefront nudge).
+            'review_reward' => [
+                'available' => $canReview && $reviewReward->availableFor($user),
+                'percent' => $reviewReward->percent(),
             ],
             'wishlisted' => $user
                 ? Wishlist::where('user_id', $user->id)->where('product_id', $product->id)->exists()
