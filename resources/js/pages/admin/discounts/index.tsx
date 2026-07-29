@@ -358,17 +358,17 @@ export default function DiscountsIndex({
             </div>
 
             <div className="grid items-start gap-6 lg:grid-cols-2">
-                {/* Left: what's live now + the audit trail */}
-                <div className="space-y-6">
-                    {currentCard}
-                    {historyCard}
-                </div>
-                {/* Right: the tools that create discounts */}
+                {/* Left: the tools that create discounts */}
                 <div className="space-y-6">
                     {bulkCard}
                     {importCard}
                     {freeCard}
                     {reviewCard}
+                </div>
+                {/* Right: what's live now + the audit trail */}
+                <div className="space-y-6">
+                    {currentCard}
+                    {historyCard}
                 </div>
             </div>
         </AdminLayout>
