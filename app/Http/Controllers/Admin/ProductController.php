@@ -261,6 +261,26 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_updated'));
     }
 
+    /**
+     * Quick show/hide from the list — flips is_active. Activation mirrors the
+     * update() invariant: a live product must have at least one image. Logged +
+     * revertable like a normal edit.
+     */
+    public function toggleActive(Product $product, ChangeLogService $changeLog)
+    {
+        if (! $product->is_active && ! $product->images()->exists()) {
+            return back()->with('error', __('messages.admin.product_needs_image'));
+        }
+
+        DB::transaction(function () use ($product, $changeLog) {
+            $before = $product->attributesToArray();
+            $product->update(['is_active' => ! $product->is_active]);
+            $changeLog->logUpdated($product, $before, $product->name_ar);
+        });
+
+        return back()->with('success', __($product->is_active ? 'messages.admin.product_activated' : 'messages.admin.product_deactivated'));
+    }
+
     public function destroy(Product $product, ChangeLogService $changeLog)
     {
         DB::transaction(function () use ($product, $changeLog) {
@@ -312,12 +332,12 @@ class ProductController extends Controller
      */
     private function uniqueSlug(string $source, ?int $ignoreId): string
     {
-        $base = Str::slug($source) ?: Str::slug('product-' . Str::random(6));
+        $base = Str::slug($source) ?: Str::slug('product-'.Str::random(6));
         $slug = $base;
         $i = 2;
 
         while (Product::where('slug', $slug)->when($ignoreId, fn ($q) => $q->whereKeyNot($ignoreId))->exists()) {
-            $slug = $base . '-' . $i++;
+            $slug = $base.'-'.$i++;
         }
 
         return $slug;

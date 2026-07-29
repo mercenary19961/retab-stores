@@ -100,6 +100,20 @@ class CouponTest extends TestCase
         $place(); // second use by the same user is blocked
     }
 
+    public function test_toggle_flips_the_active_state(): void
+    {
+        $admin = $this->admin();
+        $coupon = Coupon::create(['code' => 'TOGGLE', 'type' => 'fixed', 'value' => 5, 'is_active' => true]);
+
+        $this->actingAs($admin)->from('/admin/coupons')
+            ->patch("/admin/coupons/{$coupon->id}/toggle")
+            ->assertRedirect('/admin/coupons')->assertSessionHas('success');
+        $this->assertFalse($coupon->fresh()->is_active);
+
+        $this->actingAs($admin)->patch("/admin/coupons/{$coupon->id}/toggle");
+        $this->assertTrue($coupon->fresh()->is_active);
+    }
+
     public function test_used_coupon_cannot_be_deleted_but_unused_can(): void
     {
         $admin = $this->admin();

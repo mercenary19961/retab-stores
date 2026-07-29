@@ -9,7 +9,8 @@ import Pagination, { type Paginator } from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
-import StatusPill, { type StatusTone } from '@/components/status-pill';
+import { type StatusTone } from '@/components/status-pill';
+import StatusToggle from '@/components/admin/status-toggle';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -264,7 +265,12 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                                     {c.per_user_limit != null && <span className="ms-1 text-xs text-neutral-400">({t('admin.coupons.perUser', { n: c.per_user_limit })})</span>}
                                 </td>
                                 <td className="px-4 py-3">
-                                    <StatusPill tone={STATUS_TONE[c.status] ?? 'neutral'}>{t(`admin.coupons.status.${c.status}`)}</StatusPill>
+                                    <StatusToggle
+                                        tone={STATUS_TONE[c.status] ?? 'neutral'}
+                                        label={t(`admin.coupons.status.${c.status}`)}
+                                        url={`/admin/coupons/${c.id}/toggle`}
+                                        title={t(c.is_active ? 'admin.coupons.deactivateHint' : 'admin.coupons.activateHint')}
+                                    />
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end gap-2">

@@ -737,6 +737,9 @@ const ar = {
             needsPrice: 'بدون سعر',
             needsImage: 'بدون صورة',
             needsDescription: 'بدون وصف',
+            deactivateHint: 'اضغط لإخفائه من المتجر',
+            activateHint: 'اضغط لإظهاره في المتجر',
+            activateBlockedNoImage: 'أضف صورة للمنتج قبل نشره',
             viewImages: 'عرض الصور',
             viewTable: 'عرض جدول',
             viewCards: 'عرض بطاقات',
@@ -953,6 +956,8 @@ const ar = {
                 used_up: 'استُنفد',
                 inactive: 'غير فعّال',
             },
+            activateHint: 'اضغط لتفعيل الكوبون',
+            deactivateHint: 'اضغط لتعطيل الكوبون',
             form: {
                 newTitle: 'كوبون جديد',
                 editTitle: 'تعديل {{code}}',

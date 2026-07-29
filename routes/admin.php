@@ -56,6 +56,7 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::get('products/{product}/detail', [ProductController::class, 'detail'])->middleware('permission:products.edit')->name('products.detail');
     Route::get('products/{product}/edit', [ProductController::class, 'edit'])->middleware('permission:products.edit')->name('products.edit');
     Route::put('products/{product}', [ProductController::class, 'update'])->middleware('permission:products.edit')->name('products.update');
+    Route::patch('products/{product}/toggle-active', [ProductController::class, 'toggleActive'])->middleware('permission:products.edit')->name('products.toggle-active');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])->middleware('permission:products.delete')->name('products.destroy');
 
     // "I want this" demand signals for Coming-Soon products.
@@ -80,6 +81,7 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     // Coupons — percentage / fixed / free-delivery, with date window + usage caps.
     Route::get('coupons', [CouponController::class, 'index'])->middleware('permission:coupons.view')->name('coupons.index');
     Route::post('coupons', [CouponController::class, 'store'])->middleware('permission:coupons.create')->name('coupons.store');
+    Route::patch('coupons/{coupon}/toggle', [CouponController::class, 'toggle'])->middleware('permission:coupons.edit')->name('coupons.toggle');
     Route::put('coupons/{coupon}', [CouponController::class, 'update'])->middleware('permission:coupons.edit')->name('coupons.update');
     Route::delete('coupons/{coupon}', [CouponController::class, 'destroy'])->middleware('permission:coupons.delete')->name('coupons.destroy');
 

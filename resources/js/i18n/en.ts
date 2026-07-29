@@ -733,6 +733,9 @@ const en = {
             needsPrice: 'No price',
             needsImage: 'No image',
             needsDescription: 'No description',
+            deactivateHint: 'Click to hide from the store',
+            activateHint: 'Click to show on the store',
+            activateBlockedNoImage: 'Add a product image before it can go live',
             viewImages: 'View images',
             viewTable: 'Table view',
             viewCards: 'Card view',
@@ -949,6 +952,8 @@ const en = {
                 used_up: 'Used up',
                 inactive: 'Inactive',
             },
+            activateHint: 'Click to activate this coupon',
+            deactivateHint: 'Click to deactivate this coupon',
             form: {
                 newTitle: 'New coupon',
                 editTitle: 'Edit {{code}}',

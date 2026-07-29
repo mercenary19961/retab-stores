@@ -47,6 +47,14 @@ class CouponController extends Controller
         ]);
     }
 
+    /** Quick on/off from the list — flips is_active without opening the editor. */
+    public function toggle(Coupon $coupon)
+    {
+        $coupon->update(['is_active' => ! $coupon->is_active]);
+
+        return back()->with('success', __($coupon->is_active ? 'messages.admin.coupon_activated' : 'messages.admin.coupon_deactivated'));
+    }
+
     public function store(Request $request)
     {
         $data = $this->validated($request);

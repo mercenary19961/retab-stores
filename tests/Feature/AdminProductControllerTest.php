@@ -22,7 +22,7 @@ class AdminProductControllerTest extends TestCase
 
     private function category(): Category
     {
-        return Category::create(['name_ar' => 'تمور', 'slug' => 'dates-' . uniqid()]);
+        return Category::create(['name_ar' => 'تمور', 'slug' => 'dates-'.uniqid()]);
     }
 
     private function validPayload(Category $category, array $overrides = []): array
@@ -31,7 +31,7 @@ class AdminProductControllerTest extends TestCase
             'category_id' => $category->id,
             'name_ar' => 'تمر سكري',
             'price' => 75,
-            'sku' => 'SUK-' . uniqid(),
+            'sku' => 'SUK-'.uniqid(),
             'stock' => 100,
             'is_active' => true,
             'is_featured' => false,
@@ -166,7 +166,7 @@ class AdminProductControllerTest extends TestCase
     public function test_export_respects_category_filter(): void
     {
         $dates = $this->category();
-        $other = Category::create(['name_ar' => 'أخرى', 'slug' => 'other-' . uniqid()]);
+        $other = Category::create(['name_ar' => 'أخرى', 'slug' => 'other-'.uniqid()]);
         Product::create($this->validPayload($dates, ['slug' => 'in-1', 'sku' => 'IN-1', 'name_ar' => 'منتج داخل الفلتر']));
         Product::create($this->validPayload($other, ['slug' => 'out-1', 'sku' => 'OUT-1', 'name_ar' => 'منتج خارج الفلتر']));
 
@@ -219,5 +219,49 @@ class AdminProductControllerTest extends TestCase
             ->assertRedirect(route('admin.products.index'));
 
         $this->assertSoftDeleted($product);
+    }
+
+    public function test_toggle_active_hides_a_live_product(): void
+    {
+        $category = $this->category();
+        $product = Product::create($this->validPayload($category, ['slug' => 'p-live', 'is_active' => true]));
+        $product->images()->create(['path' => 'products/seed.jpg', 'sort_order' => 1, 'is_primary' => true]);
+
+        $this->actingAs($this->staff())
+            ->from('/admin/products')
+            ->patch("/admin/products/{$product->id}/toggle-active")
+            ->assertRedirect('/admin/products')
+            ->assertSessionHas('success');
+
+        $this->assertFalse($product->fresh()->is_active);
+    }
+
+    public function test_toggle_active_shows_a_hidden_product_that_has_an_image(): void
+    {
+        $category = $this->category();
+        $product = Product::create($this->validPayload($category, ['slug' => 'p-hidden', 'is_active' => false]));
+        $product->images()->create(['path' => 'products/seed.jpg', 'sort_order' => 1, 'is_primary' => true]);
+
+        $this->actingAs($this->staff())
+            ->from('/admin/products')
+            ->patch("/admin/products/{$product->id}/toggle-active")
+            ->assertRedirect('/admin/products')
+            ->assertSessionHas('success');
+
+        $this->assertTrue($product->fresh()->is_active);
+    }
+
+    public function test_toggle_active_is_blocked_when_the_product_has_no_image(): void
+    {
+        $category = $this->category();
+        $product = Product::create($this->validPayload($category, ['slug' => 'p-noimg-toggle', 'is_active' => false]));
+
+        $this->actingAs($this->staff())
+            ->from('/admin/products')
+            ->patch("/admin/products/{$product->id}/toggle-active")
+            ->assertRedirect('/admin/products')
+            ->assertSessionHas('error');
+
+        $this->assertFalse($product->fresh()->is_active); // still hidden
     }
 }

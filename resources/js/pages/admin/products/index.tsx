@@ -11,6 +11,7 @@ import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import CopyText from '@/components/copy-text';
 import ImageLightbox from '@/components/image-lightbox';
 import StatusPill from '@/components/status-pill';
+import StatusToggle from '@/components/admin/status-toggle';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -205,9 +206,20 @@ export default function ProductsIndex({
     const statusBadges = (p: ProductRow) => (
         <>
             {p.is_active ? (
-                <StatusPill tone="green">{t('admin.products.active')}</StatusPill>
+                <StatusToggle
+                    tone="green"
+                    label={t('admin.products.active')}
+                    url={`/admin/products/${p.id}/toggle-active`}
+                    title={t('admin.products.deactivateHint')}
+                />
             ) : (
-                <StatusPill tone="neutral">{t('admin.products.hidden')}</StatusPill>
+                <StatusToggle
+                    tone="neutral"
+                    label={t('admin.products.hidden')}
+                    url={`/admin/products/${p.id}/toggle-active`}
+                    disabled={p.needs_image}
+                    title={p.needs_image ? t('admin.products.activateBlockedNoImage') : t('admin.products.activateHint')}
+                />
             )}
             {!p.is_active && p.is_coming_soon && <StatusPill tone="teal">{t('admin.products.comingSoon')}</StatusPill>}
             {!p.is_active && (p.needs_price || p.needs_image || p.needs_description) && (
