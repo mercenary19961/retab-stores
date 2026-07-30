@@ -20,6 +20,7 @@
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.35",
         "openspout/openspout": "^4.28",
+        "resend/resend-php": "^1.7",
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {

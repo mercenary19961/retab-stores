@@ -6,6 +6,7 @@ use App\Services\Payments\MoyasarGateway;
 use App\Services\Payments\PaymentGateway;
 use App\Services\Payments\Tamara\TamaraClient;
 use App\Services\Shipping\Oto\OtoClient;
+use App\Support\ResendProbe;
 use Illuminate\Console\Command;
 
 /**
@@ -30,6 +31,12 @@ use Illuminate\Console\Command;
  *                      (+ TAMARA_BASE_URL = https://api-sandbox.tamara.co to test)
  *   OTO / Tryoto     → OTO_REFRESH_TOKEN, OTO_WEBHOOK_SECRET, OTO_ORIGIN_CITY
  *                      tryoto.com dashboard → generate a refresh token
+ *   Resend (email)   → RESEND_KEY + MAIL_MAILER=resend + a real MAIL_FROM_ADDRESS
+ *                      resend.com → API Keys (a send-only key is preferred) and
+ *                      Domains → add retabstore.com, then paste the DKIM/SPF
+ *                      records into Cloudflare DNS. Until a domain is verified
+ *                      the ONLY usable from-address is onboarding@resend.dev.
+ *                      Send a real probe with `php artisan mail:test <address>`.
  *
  * Exit code is non-zero only when a *configured* provider fails its live probe,
  * so "not configured yet" never fails the command (that's the expected pre-launch
@@ -91,6 +98,33 @@ class CheckIntegrations extends Command
                 'webhook' => 'webhooks.oto',
                 'probe' => fn (): array => app(OtoClient::class)->ping(),
             ],
+            [
+                'label' => 'Resend — transactional email (staff alerts, customer mail)',
+                'env' => [
+                    'RESEND_KEY' => 'services.resend.key',
+                    'MAIL_FROM_ADDRESS' => 'mail.from.address',
+                ],
+                'webhook' => null, // we don't consume Resend's delivery webhooks
+                'probe' => fn (): array => app(ResendProbe::class)->ping(),
+                // Mail has two failure modes the env list alone can't show: a valid
+                // key that nothing routes through, and the scaffold's placeholder
+                // from-address (which Resend will reject).
+                'notes' => function (): array {
+                    $notes = [];
+                    $mailer = (string) config('mail.default');
+                    $from = (string) config('mail.from.address');
+
+                    $notes[] = ['MAIL_MAILER', $mailer === 'resend'
+                        ? "<info>{$mailer}</info>"
+                        : "<comment>{$mailer}</comment> — mail will NOT go through Resend until this is 'resend' (expected in local dev)"];
+
+                    if (str_contains($from, 'example.com')) {
+                        $notes[] = ['from address', "<error>{$from}</error> — still the scaffold placeholder; set a real address on a verified domain"];
+                    }
+
+                    return $notes;
+                },
+            ],
         ];
 
         $failures = 0;
@@ -103,7 +137,13 @@ class CheckIntegrations extends Command
                 $this->line(sprintf('   %-24s %s', $var, $set ? '<info>set</info>' : '<error>MISSING</error>'));
             }
 
-            $this->line(sprintf('   %-24s <comment>%s</comment>', 'webhook to register', route($provider['webhook'])));
+            foreach (($provider['notes'] ?? fn () => [])() as [$label, $text]) {
+                $this->line(sprintf('   %-24s %s', $label, $text));
+            }
+
+            if ($provider['webhook'] !== null) {
+                $this->line(sprintf('   %-24s <comment>%s</comment>', 'webhook to register', route($provider['webhook'])));
+            }
 
             if ($offline) {
                 $this->line(sprintf('   %-24s <comment>skipped (--offline)</comment>', 'live check'));
