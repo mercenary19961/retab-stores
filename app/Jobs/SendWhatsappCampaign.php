@@ -10,9 +10,12 @@ use Illuminate\Foundation\Queue\Queueable;
 
 /**
  * Sends a queued campaign to the opt-in segment in chunks. WhatsAppService
- * swallows per-recipient transport failures into `failed` ledger rows, so one
- * bad number never aborts the blast. Re-running is safe-ish (rows would
- * duplicate) — hence the `sending` status gate in CampaignService.
+ * records a ledger row per recipient and hands each Meta call to its own
+ * SendWhatsappMessage job, so one bad number never aborts the blast (and each
+ * message retries independently rather than the whole blast). Re-running is
+ * safe-ish (rows would duplicate) — hence the `sending` status gate in
+ * CampaignService. Note the campaign flips to `sent` once every message is
+ * ENQUEUED; per-recipient delivery is tracked on the ledger rows themselves.
  */
 class SendWhatsappCampaign implements ShouldQueue
 {

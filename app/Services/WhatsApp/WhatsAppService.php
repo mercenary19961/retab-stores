@@ -2,6 +2,7 @@
 
 namespace App\Services\WhatsApp;
 
+use App\Jobs\SendWhatsappMessage;
 use App\Models\LoyaltyReward;
 use App\Models\Order;
 use App\Models\OrderReturn;
@@ -20,6 +21,12 @@ use Illuminate\Support\Str;
  * Template names below must match the Meta-approved templates. Inside the 24h
  * customer window free text is allowed; business-initiated messages here are all
  * templates (Utility), per Meta's rules.
+ *
+ * Transport: the ledger row is written synchronously, then the Meta call is
+ * handed to SendWhatsappMessage on the queue (retried with backoff) — so every
+ * send here returns a row still marked `queued`. The one exception is the OTP,
+ * which is sent inline. ⚠️ A queue worker must be running or messages sit in the
+ * `jobs` table (see CLAUDE.md → Notifications & alerts).
  */
 class WhatsAppService
 {
@@ -104,10 +111,15 @@ class WhatsAppService
     /**
      * Send a one-time sign-in code. The plaintext code is sent to WhatsApp but
      * NEVER persisted — the ledger row redacts it.
+     *
+     * Sent INLINE (`queue: false`), unlike every other message: the customer is
+     * staring at the code field, so a queue delay would be a real UX regression —
+     * and it keeps the plaintext code out of the `jobs` table, matching the
+     * redaction intent above.
      */
     public function sendOtp(string $phone, string $code): ?WhatsappMessage
     {
-        return $this->dispatch($phone, self::T_OTP, [$code], purpose: 'otp', category: 'authentication', redactParams: true);
+        return $this->dispatch($phone, self::T_OTP, [$code], purpose: 'otp', category: 'authentication', redactParams: true, queue: false);
     }
 
     /**
@@ -206,6 +218,7 @@ class WhatsAppService
         bool $redactParams = false,
         ?int $campaignId = null,
         ?string $language = null,
+        bool $queue = true,
     ): ?WhatsappMessage {
         $to = $this->normalize($to);
         if ($to === null) {
@@ -226,6 +239,17 @@ class WhatsAppService
             'payload' => ['language' => $language, 'params' => $redactParams ? ['***'] : $params],
         ]);
 
+        // Default path: hand the network call to the queue so a slow or failing
+        // Meta API can't add latency to (or silently swallow an alert from) the
+        // request that triggered it. The row is returned still marked `queued`;
+        // the job flips it to sent/failed. Retries live in SendWhatsappMessage.
+        if ($queue) {
+            SendWhatsappMessage::dispatch($message->id, array_values($params));
+
+            return $message;
+        }
+
+        // Inline path — only for sends the user is actively waiting on (OTP).
         try {
             $wamId = $this->gateway->sendTemplate($to, $template, $language, $params);
             $message->update(['status' => 'sent', 'wam_id' => $wamId, 'sent_at' => now()]);

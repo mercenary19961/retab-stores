@@ -38,6 +38,10 @@ class WhatsAppServiceTest extends TestCase
         $message = app(WhatsAppService::class)->notifyOrderConfirmed($order);
 
         $this->assertNotNull($message);
+
+        // The service returns the row as `queued` — SendWhatsappMessage performs the
+        // Meta call and stamps the outcome (inline here, since tests run sync).
+        $message->refresh();
         $this->assertSame('sent', $message->status);
         $this->assertSame('966500000000', $message->recipient); // normalized to E.164 digits
         $this->assertSame('order_confirm', $message->purpose);
@@ -69,8 +73,12 @@ class WhatsAppServiceTest extends TestCase
         });
 
         $order = $this->order();
+
+        // Must NOT bubble out of the caller even though the job rethrows on a real
+        // queue connection: under `sync` a Meta outage would otherwise break checkout.
         $message = app(WhatsAppService::class)->notifyOrderConfirmed($order);
 
+        $message->refresh();
         $this->assertSame('failed', $message->status);
         $this->assertStringContainsString('network down', (string) $message->error);
     }

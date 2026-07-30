@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Check, RotateCcw, ShoppingBag, Sparkles, type LucideIcon } from 'lucide-react';
+import { Bell, Check, RotateCcw, ShoppingBag, Sparkles, Volume2, VolumeX, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAdminT } from '@/i18n/use-admin-t';
 import { relativeTimeFromIso } from '@/lib/relative-time';
@@ -34,20 +34,128 @@ const ICONS: Record<string, LucideIcon> = {
     product_requested: Sparkles,
 };
 
+// Quiet enough that each staff member costs two indexed queries a minute, quick
+// enough that an order placed while someone sits on one page gets noticed.
+const POLL_MS = 45_000;
+const SOUND_KEY = 'admin.notifications.sound';
+
+/**
+ * A short WebAudio blip for a newly arrived notification — generated rather than
+ * loaded so there's no asset to ship, cache-bust, or 404. Silently gives up if
+ * the browser's autoplay policy blocks it: a missed chime must never throw.
+ */
+function chime(): void {
+    try {
+        const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!Ctx) return;
+
+        const ctx = new Ctx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.32);
+        osc.onended = () => void ctx.close();
+    } catch {
+        // No WebAudio, or blocked before the first user gesture.
+    }
+}
+
 /**
  * The admin navbar notification bell. Reads the shared `notifications` prop
  * (unread count + latest items) and renders each item's title/message from
  * client-side i18n so it follows the admin language toggle. Clicking an item
  * marks it read server-side and redirects to its target.
+ *
+ * Live without websockets: the shared prop is re-fetched on an interval via an
+ * Inertia PARTIAL reload (`only: ['notifications']`), so an order that arrives
+ * while an admin sits on one page still surfaces — announced by a tab-title
+ * badge and an optional chime. Deliberately polling rather than broadcasting:
+ * two indexed queries every 45s needs no Reverb/Pusher service to operate.
  */
 export default function NotificationBell() {
     const { t, i18n } = useAdminT();
     const page = usePage();
     const notifications = (page.props as { notifications?: NotificationsProp | null }).notifications;
     const [open, setOpen] = useState(false);
+    const [muted, setMuted] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+    /** Unread ids seen on the previous pass — null until the first one lands. */
+    const seenUnread = useRef<Set<string> | null>(null);
+
+    const isStaff = Boolean(notifications);
+    const unread = notifications?.unread ?? 0;
 
     const close = useCallback(() => setOpen(false), []);
+
+    // Per-browser preference, like the products card/table view.
+    useEffect(() => {
+        setMuted(localStorage.getItem(SOUND_KEY) === 'off');
+    }, []);
+
+    const toggleSound = () => {
+        setMuted((current) => {
+            const next = !current;
+            localStorage.setItem(SOUND_KEY, next ? 'off' : 'on');
+            return next;
+        });
+    };
+
+    // Poll for new notifications via Inertia's own poller: a PARTIAL reload, so the
+    // server recomputes only the `notifications` closure (two indexed queries) and
+    // scroll/state are preserved for free. `keepAlive: false` (the default) throttles
+    // a hidden tab to one poll in ten ticks instead of hammering a background page.
+    useEffect(() => {
+        if (!isStaff) return;
+
+        const { stop } = router.poll(POLL_MS, { only: ['notifications'] }, { keepAlive: false });
+
+        return stop;
+    }, [isStaff]);
+
+    // Chime once for genuinely NEW unread items. The first pass only records what
+    // was already there, so a page load never replays history as fresh arrivals.
+    useEffect(() => {
+        if (!notifications) return;
+
+        const unreadIds = notifications.items.filter((n) => !n.read).map((n) => n.id);
+        const known = seenUnread.current;
+        seenUnread.current = new Set(unreadIds);
+
+        if (known === null) return;
+        if (!muted && unreadIds.some((id) => !known.has(id))) chime();
+    }, [notifications, muted]);
+
+    // Mirror the unread count into the tab title, so a minimised panel still shows
+    // it. Inertia rewrites <title> on hydration and on every navigation, which
+    // silently drops a badge written once — so instead of racing it, re-apply
+    // whenever anything touches the head. The equality guard stops our own write
+    // from looping the observer.
+    useEffect(() => {
+        const apply = () => {
+            const base = document.title.replace(/^\(\d+\)\s*/, '');
+            const next = unread > 0 ? `(${unread}) ${base}` : base;
+            if (document.title !== next) document.title = next;
+        };
+
+        apply();
+
+        const observer = new MutationObserver(apply);
+        observer.observe(document.head, { childList: true, characterData: true, subtree: true });
+
+        return () => {
+            observer.disconnect();
+            document.title = document.title.replace(/^\(\d+\)\s*/, '');
+        };
+    }, [unread]);
 
     useEffect(() => {
         if (!open) return;
@@ -66,7 +174,7 @@ export default function NotificationBell() {
 
     if (!notifications) return null;
 
-    const { unread, items } = notifications;
+    const { items } = notifications;
 
     const titleFor = (d: NotificationData): string => {
         if (d.type === 'new_order') return t('admin.notifications.items.newOrder.title', { order: d.order_number ?? '' });
@@ -101,16 +209,29 @@ export default function NotificationBell() {
 
             {open && (
                 <div
+                    data-testid="notifications-dropdown"
                     className="absolute end-0 mt-2 w-80 overflow-hidden rounded-xl border border-neutral-700 bg-neutral-900 text-neutral-200 shadow-2xl"
                     style={{ zIndex: 60 }}
                 >
                     <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2.5">
                         <span className="text-sm font-semibold text-neutral-100">{t('admin.notifications.title')}</span>
-                        {unread > 0 && (
-                            <button type="button" onClick={markAllRead} className="flex items-center gap-1 text-xs text-brand-gold transition-colors hover:underline">
-                                <Check className="h-3.5 w-3.5" /> {t('admin.notifications.markAllRead')}
+                        <span className="flex items-center gap-3">
+                            {unread > 0 && (
+                                <button type="button" onClick={markAllRead} className="flex items-center gap-1 text-xs text-brand-gold transition-colors hover:underline">
+                                    <Check className="h-3.5 w-3.5" /> {t('admin.notifications.markAllRead')}
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={toggleSound}
+                                aria-pressed={!muted}
+                                aria-label={muted ? t('admin.notifications.soundOff') : t('admin.notifications.soundOn')}
+                                title={muted ? t('admin.notifications.soundOff') : t('admin.notifications.soundOn')}
+                                className="rounded p-0.5 text-neutral-400 transition-colors hover:text-neutral-100"
+                            >
+                                {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
                             </button>
-                        )}
+                        </span>
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">

@@ -280,7 +280,10 @@ class ShopController
                 'can_review' => $canReview,
             ],
             // One-time "review → discount" offer (drives the storefront nudge).
-            'review_reward' => [
+            // ⚠️ camelCase to match the page's destructured prop name (and the rest
+            // of the app's multi-word props) — a mismatch here is invisible to
+            // tsc/PHPUnit and white-screens the page on hydration. See ShopProduct.
+            'reviewReward' => [
                 'available' => $canReview && $reviewReward->availableFor($user),
                 'percent' => $reviewReward->percent(),
             ],

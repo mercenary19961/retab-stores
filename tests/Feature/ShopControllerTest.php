@@ -83,6 +83,26 @@ class ShopControllerTest extends TestCase
         );
     }
 
+    public function test_product_page_ships_every_prop_the_page_destructures(): void
+    {
+        // Regression: the review-reward prop shipped as `review_reward` while the
+        // page destructures `reviewReward`, so hydration threw on
+        // `reviewReward.available` and the page rendered BLANK for every visitor.
+        // Neither tsc nor a status-code assertion can see an Inertia prop-name
+        // mismatch, so pin the names the component actually reads.
+        $this->makeProduct(['slug' => 'sukkari-props']);
+
+        $this->get('/products/sukkari-props')->assertOk()->assertInertia(
+            fn (Assert $page) => $page
+                ->has('product')
+                ->has('reviews')
+                ->has('reviewReward.available')
+                ->has('reviewReward.percent')
+                ->has('wishlisted')
+                ->has('authed'),
+        );
+    }
+
     public function test_product_page_ships_sku_and_purchase_count(): void
     {
         $product = $this->makeProduct(['slug' => 'sukkari-x', 'sku' => 'SKU-X']);

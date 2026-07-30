@@ -67,6 +67,32 @@ class NotificationBellTest extends TestCase
         $this->assertFalse($props['notifications']['items'][0]['read']);
     }
 
+    public function test_partial_reload_refreshes_only_the_notifications_prop(): void
+    {
+        // This is the mechanism behind the bell's live polling (router.poll with
+        // `only: ['notifications']`): the shared closure must resolve on a partial
+        // request, and the page's own heavier props must NOT be recomputed.
+        $admin = $this->admin();
+        $admin->notify(new NewOrderNotification($this->order()));
+
+        // Matching asset version, or Inertia answers 409 (forced full reload).
+        $version = $this->actingAs($admin)->get('/admin/dashboard')->inertiaPage()['version'];
+
+        $props = $this->actingAs($admin)
+            ->withHeaders([
+                'X-Inertia' => 'true',
+                'X-Inertia-Version' => (string) $version,
+                'X-Inertia-Partial-Component' => 'admin/dashboard',
+                'X-Inertia-Partial-Data' => 'notifications',
+            ])
+            ->getJson('/admin/dashboard')
+            ->assertOk()
+            ->json('props');
+
+        $this->assertSame(1, $props['notifications']['unread']);
+        $this->assertArrayNotHasKey('stats', $props);
+    }
+
     public function test_open_marks_read_and_redirects_to_target(): void
     {
         $admin = $this->admin();

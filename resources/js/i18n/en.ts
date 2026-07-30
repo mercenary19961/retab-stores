@@ -521,6 +521,8 @@ const en = {
             title: 'Notifications',
             markAllRead: 'Mark all read',
             empty: 'You are all caught up',
+            soundOn: 'Sound on for new notifications',
+            soundOff: 'Sound off for new notifications',
             items: {
                 newOrder: {
                     title: 'New order {{order}}',
