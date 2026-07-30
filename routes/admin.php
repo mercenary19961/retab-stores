@@ -32,7 +32,10 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::get('search', [GlobalSearchController::class, 'search'])->name('search');
     Route::put('preferences/table-widths', [PreferenceController::class, 'tableWidths'])->name('preferences.table-widths');
 
-    // Notification bell (every staff member has their own copies — no extra permission).
+    // Notification bell + history (every staff member has their own copies — no
+    // extra permission). `read-all` is declared before the `{notification}`
+    // wildcard so the literal segment always wins.
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::get('notifications/{notification}', [NotificationController::class, 'open'])->name('notifications.open');
 

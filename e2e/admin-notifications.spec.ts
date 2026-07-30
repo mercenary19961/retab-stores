@@ -52,6 +52,24 @@ test('a new order reaches the admin bell and badges the tab title', async ({ pag
     await expect(page.getByTestId('notifications-dropdown').getByText(orderNumber, { exact: false })).toBeVisible();
 });
 
+test('the bell links to a full history page listing past notifications', async ({ page }) => {
+    const orderNumber = await placeOrder(page);
+
+    await loginAsAdmin(page);
+    await page.goto('/admin/dashboard');
+
+    // Reached the way a real admin reaches it: bell → "View all".
+    await page.getByRole('button', { name: /notifications/i }).click();
+    await page.getByRole('button', { name: /view all notifications/i }).click();
+
+    await expect(page).toHaveURL(/\/admin\/notifications$/);
+    await expect(page.getByText(orderNumber, { exact: false }).first()).toBeVisible();
+
+    // Filtering to the other type empties the list (proves the JSON-path filter).
+    await page.goto('/admin/notifications?type=return_requested');
+    await expect(page.getByText(/No notifications match this filter/i)).toBeVisible();
+});
+
 test('the bell refreshes itself without a manual reload', async ({ page }) => {
     // One poll interval is 45s, which is the whole default test budget.
     test.setTimeout(120_000);

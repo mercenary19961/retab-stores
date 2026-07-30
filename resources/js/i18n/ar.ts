@@ -527,6 +527,22 @@ const ar = {
             empty: 'لا توجد تنبيهات جديدة',
             soundOn: 'الصوت مفعّل للتنبيهات الجديدة',
             soundOff: 'الصوت متوقف للتنبيهات الجديدة',
+            viewAll: 'عرض كل التنبيهات',
+            types: {
+                new_order: 'الطلبات الجديدة',
+                return_requested: 'طلبات الإرجاع',
+                product_requested: 'طلبات المنتجات',
+            },
+            history: {
+                title: 'التنبيهات',
+                intro: 'كل ما وصلك من تنبيهات. الجرس يحتفظ بآخر ١٠ فقط.',
+                empty: 'لا توجد تنبيهات مطابقة',
+                unread: 'غير مقروء',
+                filterAll: 'الكل',
+                filterUnread: 'غير المقروء فقط',
+                filterRead: 'المقروء فقط',
+                filterAnyType: 'كل الأنواع',
+            },
             items: {
                 newOrder: {
                     title: 'طلب جديد {{order}}',

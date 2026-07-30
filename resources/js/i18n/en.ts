@@ -523,6 +523,22 @@ const en = {
             empty: 'You are all caught up',
             soundOn: 'Sound on for new notifications',
             soundOff: 'Sound off for new notifications',
+            viewAll: 'View all notifications',
+            types: {
+                new_order: 'New orders',
+                return_requested: 'Return requests',
+                product_requested: 'Product requests',
+            },
+            history: {
+                title: 'Notifications',
+                intro: 'Everything you have been alerted about. The bell only keeps the latest 10.',
+                empty: 'No notifications match this filter',
+                unread: 'Unread',
+                filterAll: 'All',
+                filterUnread: 'Unread only',
+                filterRead: 'Read only',
+                filterAnyType: 'Any type',
+            },
             items: {
                 newOrder: {
                     title: 'New order {{order}}',

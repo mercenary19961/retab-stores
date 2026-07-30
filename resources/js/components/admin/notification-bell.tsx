@@ -1,38 +1,14 @@
 import { router, usePage } from '@inertiajs/react';
-import { Bell, Check, RotateCcw, ShoppingBag, Sparkles, Volume2, VolumeX, type LucideIcon } from 'lucide-react';
+import { Bell, Check, Volume2, VolumeX } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { iconFor, useNotificationText, type NotificationItem } from '@/components/admin/notification-content';
 import { useAdminT } from '@/i18n/use-admin-t';
 import { relativeTimeFromIso } from '@/lib/relative-time';
-
-interface NotificationData {
-    type?: string;
-    order_number?: string | null;
-    total?: string;
-    currency?: string;
-    reason?: string;
-    product_name?: string | null;
-    contact?: string | null;
-    url?: string;
-}
-
-interface NotificationItem {
-    id: string;
-    read: boolean;
-    created_at: string | null;
-    data: NotificationData;
-}
 
 interface NotificationsProp {
     unread: number;
     items: NotificationItem[];
 }
-
-// Per notification `type`, the leading icon in the dropdown.
-const ICONS: Record<string, LucideIcon> = {
-    new_order: ShoppingBag,
-    return_requested: RotateCcw,
-    product_requested: Sparkles,
-};
 
 // Quiet enough that each staff member costs two indexed queries a minute, quick
 // enough that an order placed while someone sits on one page gets noticed.
@@ -83,6 +59,7 @@ function chime(): void {
  */
 export default function NotificationBell() {
     const { t, i18n } = useAdminT();
+    const { titleFor, bodyFor } = useNotificationText();
     const page = usePage();
     const notifications = (page.props as { notifications?: NotificationsProp | null }).notifications;
     const [open, setOpen] = useState(false);
@@ -176,19 +153,6 @@ export default function NotificationBell() {
 
     const { items } = notifications;
 
-    const titleFor = (d: NotificationData): string => {
-        if (d.type === 'new_order') return t('admin.notifications.items.newOrder.title', { order: d.order_number ?? '' });
-        if (d.type === 'return_requested') return t('admin.notifications.items.returnRequested.title', { order: d.order_number ?? '' });
-        if (d.type === 'product_requested') return t('admin.notifications.items.productRequested.title');
-        return t('admin.notifications.items.generic.title');
-    };
-    const bodyFor = (d: NotificationData): string => {
-        if (d.type === 'new_order') return t('admin.notifications.items.newOrder.body', { total: d.total ?? '', currency: d.currency ?? '' });
-        if (d.type === 'return_requested') return d.reason || t('admin.notifications.items.returnRequested.body');
-        if (d.type === 'product_requested') return t('admin.notifications.items.productRequested.body', { product: d.product_name ?? '' });
-        return '';
-    };
-
     const markAllRead = () => router.post('/admin/notifications/read-all', {}, { preserveScroll: true, preserveState: true });
 
     return (
@@ -239,7 +203,7 @@ export default function NotificationBell() {
                             <p className="px-4 py-10 text-center text-sm text-neutral-500">{t('admin.notifications.empty')}</p>
                         ) : (
                             items.map((n) => {
-                                const Icon = ICONS[n.data.type ?? ''] ?? Bell;
+                                const Icon = iconFor(n.data.type);
                                 const body = bodyFor(n.data);
                                 return (
                                     <button
@@ -268,6 +232,15 @@ export default function NotificationBell() {
                             })
                         )}
                     </div>
+
+                    {/* The dropdown only carries the latest 10 — everything older lives here. */}
+                    <button
+                        type="button"
+                        onClick={() => router.visit('/admin/notifications')}
+                        className="w-full border-t border-neutral-800 px-4 py-2.5 text-center text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+                    >
+                        {t('admin.notifications.viewAll')}
+                    </button>
                 </div>
             )}
         </div>
