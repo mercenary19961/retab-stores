@@ -16,6 +16,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\Smacc\SmaccImportService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 /**
@@ -249,7 +250,7 @@ class DashboardController extends Controller
         ])->all();
     }
 
-    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
+    /** @return Collection<int, array<string, mixed>> */
     private function recentOrders()
     {
         return Order::query()

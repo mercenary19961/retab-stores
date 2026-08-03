@@ -22,7 +22,7 @@ class SeoTest extends TestCase
             'category_id' => $category->id,
             'name_ar' => 'تمر سكري',
             'slug' => 'sukkari',
-            'sku' => 'SKU-' . fake()->unique()->numerify('####'),
+            'sku' => 'SKU-'.fake()->unique()->numerify('####'),
             'price' => 50,
             'stock' => 10,
             'is_active' => true,
@@ -54,7 +54,7 @@ class SeoTest extends TestCase
         $response->assertOk();
         $body = $response->getContent();
         $this->assertStringContainsString('Disallow: /admin', $body);
-        $this->assertStringContainsString('Sitemap: ' . route('seo.sitemap'), $body);
+        $this->assertStringContainsString('Sitemap: '.route('seo.sitemap'), $body);
     }
 
     public function test_ssr_gateway_binding_resolves_to_timeout_gateway(): void

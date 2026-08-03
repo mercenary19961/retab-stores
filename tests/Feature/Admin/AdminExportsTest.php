@@ -30,7 +30,7 @@ class AdminExportsTest extends TestCase
     private function order(array $overrides = []): Order
     {
         return Order::create(array_merge([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'customer_name' => 'زيد العميل',
             'customer_phone' => '+966500000000',
             'shipping_address' => ['country' => 'SA', 'city' => 'Riyadh'],
@@ -48,9 +48,9 @@ class AdminExportsTest extends TestCase
         return Product::create([
             'category_id' => $category->id,
             'name_ar' => $name,
-            'slug' => 'p-' . uniqid(),
+            'slug' => 'p-'.uniqid(),
             'price' => 10,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => $stock,
         ]);
     }

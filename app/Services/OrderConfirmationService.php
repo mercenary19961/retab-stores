@@ -6,9 +6,11 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\DemandEvent;
+use App\Models\LoyaltyReward;
 use App\Models\Order;
 use App\Models\OrderActivity;
 use App\Models\Product;
+use App\Services\Payments\PaymentService;
 use App\Services\Payments\Tamara\TamaraService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -28,12 +30,12 @@ class OrderConfirmationService
      * caller (admin OrderController) fire the loyalty WhatsApp without coupling
      * this service — or LoyaltyService — to the messaging layer.
      */
-    public ?\App\Models\LoyaltyReward $issuedReward = null;
+    public ?LoyaltyReward $issuedReward = null;
 
     public function __construct(
         protected TamaraService $tamara,
         protected LoyaltyService $loyalty,
-        protected \App\Services\Payments\PaymentService $payments,
+        protected PaymentService $payments,
     ) {}
 
     /**

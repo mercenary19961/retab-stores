@@ -1,9 +1,9 @@
+import StoreSelect from '@/components/store/select';
+import StoreLayout from '@/layouts/store-layout';
+import { useLocalized } from '@/lib/localize';
 import { Head, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
-import StoreLayout from '@/layouts/store-layout';
-import StoreSelect from '@/components/store/select';
 
 interface Item {
     id: number;
@@ -127,15 +127,34 @@ export default function Checkout({
                     <ul className="space-y-1 text-sm">
                         {items.map((it) => (
                             <li key={it.id} className="flex justify-between">
-                                <span>{localized(it, 'name')} × {it.quantity}</span>
-                                <span>{it.line_total} {currency}</span>
+                                <span>
+                                    {localized(it, 'name')} × {it.quantity}
+                                </span>
+                                <span>
+                                    {it.line_total} {currency}
+                                </span>
                             </li>
                         ))}
                     </ul>
                     <div className="mt-3 border-t pt-3 text-sm">
-                        <div className="flex justify-between"><span>{t('checkout.subtotal')}</span><span>{subtotal} {currency}</span></div>
-                        <div className="flex justify-between"><span>{t('checkout.shipping')}</span><span>{shippingFee} {currency}</span></div>
-                        <div className="mt-2 flex justify-between text-lg font-bold"><span>{t('checkout.total')}</span><span>{total} {currency}</span></div>
+                        <div className="flex justify-between">
+                            <span>{t('checkout.subtotal')}</span>
+                            <span>
+                                {subtotal} {currency}
+                            </span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>{t('checkout.shipping')}</span>
+                            <span>
+                                {shippingFee} {currency}
+                            </span>
+                        </div>
+                        <div className="mt-2 flex justify-between text-lg font-bold">
+                            <span>{t('checkout.total')}</span>
+                            <span>
+                                {total} {currency}
+                            </span>
+                        </div>
                     </div>
                     <label className="mt-3 block">
                         <span className="text-sm text-gray-600">{t('checkout.couponCode')}</span>

@@ -1,14 +1,14 @@
-import { Head } from '@inertiajs/react';
-import { useTranslation } from 'react-i18next';
-import StoreLayout from '@/layouts/store-layout';
-import StoreHero from '@/components/store/hero';
 import BestSellers from '@/components/store/best-sellers';
-import Offers from '@/components/store/offers';
 import CategoriesSection from '@/components/store/categories-section';
-import PrimaryBanner from '@/components/store/primary-banner';
-import NewArrivals from '@/components/store/new-arrivals';
 import ClientReviews from '@/components/store/client-reviews';
 import FooterBanner from '@/components/store/footer-banner';
+import StoreHero from '@/components/store/hero';
+import NewArrivals from '@/components/store/new-arrivals';
+import Offers from '@/components/store/offers';
+import PrimaryBanner from '@/components/store/primary-banner';
+import StoreLayout from '@/layouts/store-layout';
+import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 interface ProductCard {
     id: number;

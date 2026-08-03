@@ -27,9 +27,9 @@ class StockImportControllerTest extends TestCase
         return Product::create([
             'category_id' => $category->id,
             'name_ar' => 'منتج',
-            'slug' => 'p-' . uniqid(),
+            'slug' => 'p-'.uniqid(),
             'price' => 50,
-            'sku' => 'SKU-' . uniqid(),
+            'sku' => 'SKU-'.uniqid(),
             'smacc_sku' => $smaccSku,
             'stock' => $stock,
         ]);

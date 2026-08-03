@@ -27,16 +27,14 @@ function ReviewCard({ review }: { review: Review }) {
     return (
         <div className="rounded-[2rem] bg-[#d9d9d9]/45 p-6 sm:p-7">
             <div className="flex items-center gap-3">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-gold text-lg font-bold text-white">
+                <div className="bg-brand-gold flex size-12 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white">
                     {initial}
                 </div>
                 <div className="min-w-0">
-                    <p dir="auto" className="truncate text-lg font-bold text-brand-teal">
+                    <p dir="auto" className="text-brand-teal truncate text-lg font-bold">
                         {review.author_name}
                     </p>
-                    <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
-                        {t('clientReviews.client')}
-                    </p>
+                    <p className="text-sm font-medium tracking-wide text-neutral-400 uppercase">{t('clientReviews.client')}</p>
                 </div>
             </div>
 
@@ -87,12 +85,8 @@ export default function ClientReviews({ reviews }: { reviews: Review[] }) {
                     >
                         <div className="absolute inset-0 bg-black/45" />
                         <div className="relative">
-                            <h2 className="font-heading font-black text-brand-gold text-[clamp(1.75rem,3vw,2.5rem)]">
-                                {t('clientReviews.title')}
-                            </h2>
-                            <p className="mt-5 text-justify text-[0.95rem] leading-loose text-white/90">
-                                {t('clientReviews.intro')}
-                            </p>
+                            <h2 className="font-heading text-brand-gold text-[clamp(1.75rem,3vw,2.5rem)] font-black">{t('clientReviews.title')}</h2>
+                            <p className="mt-5 text-justify text-[0.95rem] leading-loose text-white/90">{t('clientReviews.intro')}</p>
                         </div>
                     </div>
 

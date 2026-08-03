@@ -15,10 +15,11 @@ export function useHighlightFields() {
         const param = new URL(url, window.location.origin).searchParams.get('highlight');
         if (!param) return;
 
-        const names = param.split(',').map((s) => s.trim()).filter(Boolean);
-        const els = names
-            .map((n) => document.getElementById(`field-${n}`))
-            .filter((el): el is HTMLElement => el !== null);
+        const names = param
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        const els = names.map((n) => document.getElementById(`field-${n}`)).filter((el): el is HTMLElement => el !== null);
         if (els.length === 0) return;
 
         els[0].scrollIntoView({ behavior: 'smooth', block: 'center' });

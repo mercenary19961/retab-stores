@@ -1,18 +1,18 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { Columns3, MoveHorizontal, Pencil, Plus } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Modal from '@/components/admin/modal';
 import Pagination, { type Paginator } from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
+import StatusToggle from '@/components/admin/status-toggle';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { type StatusTone } from '@/components/status-pill';
-import StatusToggle from '@/components/admin/status-toggle';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, router, useForm } from '@inertiajs/react';
+import { Columns3, MoveHorizontal, Pencil, Plus } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
 
 const COLUMNS: ColumnDef[] = [
     { key: 'code', defaultWidth: 170, minWidth: 110 },
@@ -121,13 +121,29 @@ function CouponForm({ coupon, onClose }: { coupon: CouponRow | null; onClose: ()
                 <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block">
                         {lbl(isPercentage ? t('admin.coupons.form.valuePercent') : t('admin.coupons.form.valueFixed'))}
-                        <input type="number" step="0.01" min="0" max={isPercentage ? 100 : undefined} value={data.value} onChange={(e) => setData('value', e.target.value)} className={INPUT} />
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max={isPercentage ? 100 : undefined}
+                            value={data.value}
+                            onChange={(e) => setData('value', e.target.value)}
+                            className={INPUT}
+                        />
                         {err(errors.value)}
                     </label>
                     {isPercentage && (
                         <label className="block">
                             {lbl(t('admin.coupons.form.maxDiscount'))}
-                            <input type="number" step="0.01" min="0" value={data.max_discount} onChange={(e) => setData('max_discount', e.target.value)} className={INPUT} placeholder={t('admin.coupons.form.optional')} />
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={data.max_discount}
+                                onChange={(e) => setData('max_discount', e.target.value)}
+                                className={INPUT}
+                                placeholder={t('admin.coupons.form.optional')}
+                            />
                             <span className="mt-1 block text-xs text-neutral-400">{t('admin.coupons.form.maxDiscountHint')}</span>
                             {err(errors.max_discount)}
                         </label>
@@ -137,7 +153,15 @@ function CouponForm({ coupon, onClose }: { coupon: CouponRow | null; onClose: ()
 
             <label className="block">
                 {lbl(t('admin.coupons.form.minOrder'))}
-                <input type="number" step="0.01" min="0" value={data.min_order_total} onChange={(e) => setData('min_order_total', e.target.value)} className={INPUT} placeholder={t('admin.coupons.form.optional')} />
+                <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={data.min_order_total}
+                    onChange={(e) => setData('min_order_total', e.target.value)}
+                    className={INPUT}
+                    placeholder={t('admin.coupons.form.optional')}
+                />
                 <span className="mt-1 block text-xs text-neutral-400">{t('admin.coupons.form.minOrderHint')}</span>
                 {err(errors.min_order_total)}
             </label>
@@ -145,13 +169,29 @@ function CouponForm({ coupon, onClose }: { coupon: CouponRow | null; onClose: ()
             <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                     {lbl(t('admin.coupons.form.usageLimit'))}
-                    <input type="number" step="1" min="1" value={data.usage_limit} onChange={(e) => setData('usage_limit', e.target.value)} className={INPUT} placeholder={t('admin.coupons.form.unlimited')} />
+                    <input
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={data.usage_limit}
+                        onChange={(e) => setData('usage_limit', e.target.value)}
+                        className={INPUT}
+                        placeholder={t('admin.coupons.form.unlimited')}
+                    />
                     <span className="mt-1 block text-xs text-neutral-400">{t('admin.coupons.form.usageLimitHint')}</span>
                     {err(errors.usage_limit)}
                 </label>
                 <label className="block">
                     {lbl(t('admin.coupons.form.perUserLimit'))}
-                    <input type="number" step="1" min="1" value={data.per_user_limit} onChange={(e) => setData('per_user_limit', e.target.value)} className={INPUT} placeholder={t('admin.coupons.form.unlimited')} />
+                    <input
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={data.per_user_limit}
+                        onChange={(e) => setData('per_user_limit', e.target.value)}
+                        className={INPUT}
+                        placeholder={t('admin.coupons.form.unlimited')}
+                    />
                     <span className="mt-1 block text-xs text-neutral-400">{t('admin.coupons.form.perUserLimitHint')}</span>
                     {err(errors.per_user_limit)}
                 </label>
@@ -173,24 +213,45 @@ function CouponForm({ coupon, onClose }: { coupon: CouponRow | null; onClose: ()
             <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                     {lbl(t('admin.coupons.form.descAr'))}
-                    <input dir="rtl" value={data.description_ar} onChange={(e) => setData('description_ar', e.target.value)} className={INPUT} placeholder={t('admin.coupons.form.optional')} />
+                    <input
+                        dir="rtl"
+                        value={data.description_ar}
+                        onChange={(e) => setData('description_ar', e.target.value)}
+                        className={INPUT}
+                        placeholder={t('admin.coupons.form.optional')}
+                    />
                     {err(errors.description_ar)}
                 </label>
                 <label className="block">
                     {lbl(t('admin.coupons.form.descEn'))}
-                    <input dir="ltr" value={data.description_en} onChange={(e) => setData('description_en', e.target.value)} className={INPUT} placeholder={t('admin.coupons.form.optional')} />
+                    <input
+                        dir="ltr"
+                        value={data.description_en}
+                        onChange={(e) => setData('description_en', e.target.value)}
+                        className={INPUT}
+                        placeholder={t('admin.coupons.form.optional')}
+                    />
                     {err(errors.description_en)}
                 </label>
             </div>
 
             <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+                <input
+                    type="checkbox"
+                    checked={data.is_active}
+                    onChange={(e) => setData('is_active', e.target.checked)}
+                    className="accent-brand-gold h-4 w-4"
+                />
                 {t('admin.coupons.form.activeLabel')}
             </label>
 
             <div className="flex justify-end gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-                <Button type="button" variant="secondary" onClick={onClose}>{t('admin.common.cancel')}</Button>
-                <Button type="submit" variant="primary" disabled={processing || !isDirty}>{t('admin.coupons.form.save')}</Button>
+                <Button type="button" variant="secondary" onClick={onClose}>
+                    {t('admin.common.cancel')}
+                </Button>
+                <Button type="submit" variant="primary" disabled={processing || !isDirty}>
+                    {t('admin.coupons.form.save')}
+                </Button>
             </div>
         </form>
     );
@@ -207,7 +268,8 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
 
     const discountLabel = (c: CouponRow) => {
         if (c.type === 'free_shipping') return t('admin.coupons.freeDelivery');
-        if (c.type === 'percentage') return c.max_discount ? `${c.value}% (${t('admin.coupons.maxCap', { amount: money(c.max_discount) })})` : `${c.value}%`;
+        if (c.type === 'percentage')
+            return c.max_discount ? `${c.value}% (${t('admin.coupons.maxCap', { amount: money(c.max_discount) })})` : `${c.value}%`;
         return money(c.value);
     };
 
@@ -232,27 +294,78 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                             <MoveHorizontal className="h-3.5 w-3.5" /> {t('admin.common.dragToResize')}
                         </span>
                     ) : (
-                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>{t('admin.common.resetColumns')}</Button>
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>
+                            {t('admin.common.resetColumns')}
+                        </Button>
                     )}
                 </div>
-                <Button variant="primary" icon={Plus} onClick={() => setEditing('new')}>{t('admin.coupons.newCoupon')}</Button>
+                <Button variant="primary" icon={Plus} onClick={() => setEditing('new')}>
+                    {t('admin.coupons.newCoupon')}
+                </Button>
             </div>
 
             <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                         <tr>
-                            <ResizableTh colKey="code" width={rc.widths.code} resizeProps={rc.getResizeHandleProps('code')} resizing={rc.resizing === 'code'}>{t('admin.coupons.cols.code')}</ResizableTh>
-                            <ResizableTh colKey="discount" width={rc.widths.discount} resizeProps={rc.getResizeHandleProps('discount')} resizing={rc.resizing === 'discount'}>{t('admin.coupons.cols.discount')}</ResizableTh>
-                            <ResizableTh colKey="window" width={rc.widths.window} resizeProps={rc.getResizeHandleProps('window')} resizing={rc.resizing === 'window'}>{t('admin.coupons.cols.window')}</ResizableTh>
-                            <ResizableTh colKey="usage" width={rc.widths.usage} resizeProps={rc.getResizeHandleProps('usage')} resizing={rc.resizing === 'usage'}>{t('admin.coupons.cols.usage')}</ResizableTh>
-                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'}>{t('admin.coupons.cols.status')}</ResizableTh>
-                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'} className="text-end">{t('admin.common.actions')}</ResizableTh>
+                            <ResizableTh
+                                colKey="code"
+                                width={rc.widths.code}
+                                resizeProps={rc.getResizeHandleProps('code')}
+                                resizing={rc.resizing === 'code'}
+                            >
+                                {t('admin.coupons.cols.code')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="discount"
+                                width={rc.widths.discount}
+                                resizeProps={rc.getResizeHandleProps('discount')}
+                                resizing={rc.resizing === 'discount'}
+                            >
+                                {t('admin.coupons.cols.discount')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="window"
+                                width={rc.widths.window}
+                                resizeProps={rc.getResizeHandleProps('window')}
+                                resizing={rc.resizing === 'window'}
+                            >
+                                {t('admin.coupons.cols.window')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="usage"
+                                width={rc.widths.usage}
+                                resizeProps={rc.getResizeHandleProps('usage')}
+                                resizing={rc.resizing === 'usage'}
+                            >
+                                {t('admin.coupons.cols.usage')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="status"
+                                width={rc.widths.status}
+                                resizeProps={rc.getResizeHandleProps('status')}
+                                resizing={rc.resizing === 'status'}
+                            >
+                                {t('admin.coupons.cols.status')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="actions"
+                                width={rc.widths.actions}
+                                resizeProps={rc.getResizeHandleProps('actions')}
+                                resizing={rc.resizing === 'actions'}
+                                className="text-end"
+                            >
+                                {t('admin.common.actions')}
+                            </ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
                         {coupons.data.length === 0 && (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-400">{t('admin.coupons.empty')}</td></tr>
+                            <tr>
+                                <td colSpan={6} className="px-4 py-8 text-center text-neutral-400">
+                                    {t('admin.coupons.empty')}
+                                </td>
+                            </tr>
                         )}
                         {coupons.data.map((c) => (
                             <tr key={c.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
@@ -262,7 +375,9 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                                 <td className="truncate px-4 py-3 text-neutral-500">
                                     {c.used_count}
                                     {c.usage_limit != null ? ` / ${c.usage_limit}` : ` / ${t('admin.coupons.unlimited')}`}
-                                    {c.per_user_limit != null && <span className="ms-1 text-xs text-neutral-400">({t('admin.coupons.perUser', { n: c.per_user_limit })})</span>}
+                                    {c.per_user_limit != null && (
+                                        <span className="ms-1 text-xs text-neutral-400">({t('admin.coupons.perUser', { n: c.per_user_limit })})</span>
+                                    )}
                                 </td>
                                 <td className="px-4 py-3">
                                     <StatusToggle
@@ -274,7 +389,9 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end gap-2">
-                                        <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(c)}>{t('admin.common.edit')}</Button>
+                                        <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(c)}>
+                                            {t('admin.common.edit')}
+                                        </Button>
                                         {c.used_count === 0 && (
                                             <ConfirmDeleteButton
                                                 itemName={c.code}
@@ -299,7 +416,11 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                 title={editing && editing !== 'new' ? t('admin.coupons.form.editTitle', { code: editing.code }) : t('admin.coupons.form.newTitle')}
             >
                 {editing !== null && (
-                    <CouponForm key={editing === 'new' ? 'new' : editing.id} coupon={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+                    <CouponForm
+                        key={editing === 'new' ? 'new' : editing.id}
+                        coupon={editing === 'new' ? null : editing}
+                        onClose={() => setEditing(null)}
+                    />
                 )}
             </Modal>
         </AdminLayout>

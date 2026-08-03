@@ -145,13 +145,11 @@ export default function GlobalSearch() {
             {open && (
                 <div className="absolute z-50 mt-2 max-h-[70vh] w-full overflow-y-auto rounded-lg border border-neutral-700 bg-neutral-900 py-2 shadow-xl">
                     {flat.length === 0 ? (
-                        <p className="px-4 py-3 text-sm text-neutral-500">
-                            {loading ? '…' : t('admin.search.noResults')}
-                        </p>
+                        <p className="px-4 py-3 text-sm text-neutral-500">{loading ? '…' : t('admin.search.noResults')}</p>
                     ) : (
                         sections.map((section) => (
                             <div key={section.type}>
-                                <div className="px-4 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                                <div className="px-4 py-1 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
                                     {t(`admin.search.groups.${section.type}`)}
                                 </div>
                                 {section.items.map(({ item, index }) => (
@@ -162,8 +160,14 @@ export default function GlobalSearch() {
                                         onClick={() => go(item)}
                                         className={`flex w-full flex-col items-start px-4 py-2 text-start ${index === active ? 'bg-neutral-800' : ''}`}
                                     >
-                                        <span className="text-sm text-neutral-100" dir="auto">{item.label}</span>
-                                        {item.sublabel && <span className="text-xs text-neutral-500" dir="auto">{item.sublabel}</span>}
+                                        <span className="text-sm text-neutral-100" dir="auto">
+                                            {item.label}
+                                        </span>
+                                        {item.sublabel && (
+                                            <span className="text-xs text-neutral-500" dir="auto">
+                                                {item.sublabel}
+                                            </span>
+                                        )}
                                     </button>
                                 ))}
                             </div>

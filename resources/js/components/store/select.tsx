@@ -1,7 +1,7 @@
+import { cn } from '@/lib/utils';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
 
 export interface StoreSelectOption {
     value: string;
@@ -42,13 +42,13 @@ export default function StoreSelect({
             <SelectPrimitive.Trigger
                 aria-label={ariaLabel}
                 className={cn(
-                    'inline-flex items-center justify-between gap-2 rounded-full border border-brand-gold/30 bg-white px-4 py-2 text-sm font-medium text-brand-teal transition-colors hover:bg-brand-gold/5 focus:border-brand-teal focus:outline-none data-[state=open]:border-brand-teal',
+                    'border-brand-gold/30 text-brand-teal hover:bg-brand-gold/5 focus:border-brand-teal data-[state=open]:border-brand-teal inline-flex items-center justify-between gap-2 rounded-full border bg-white px-4 py-2 text-sm font-medium transition-colors focus:outline-none',
                     triggerClassName,
                 )}
             >
                 <SelectPrimitive.Value placeholder={placeholder} />
                 <SelectPrimitive.Icon asChild>
-                    <ChevronDown className="size-4 text-brand-gold transition-transform" />
+                    <ChevronDown className="text-brand-gold size-4 transition-transform" />
                 </SelectPrimitive.Icon>
             </SelectPrimitive.Trigger>
 
@@ -57,7 +57,7 @@ export default function StoreSelect({
                     position="popper"
                     sideOffset={6}
                     className={cn(
-                        'z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-brand-gold/20 bg-white p-1 font-sans text-brand-teal shadow-lg data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+                        'border-brand-gold/20 text-brand-teal data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border bg-white p-1 font-sans shadow-lg',
                         contentClassName,
                     )}
                 >
@@ -66,11 +66,11 @@ export default function StoreSelect({
                             <SelectPrimitive.Item
                                 key={option.value}
                                 value={option.value}
-                                className="relative flex cursor-pointer select-none items-center rounded-lg py-2 pe-8 ps-3 text-sm outline-none transition-colors data-[highlighted]:bg-brand-cream data-[highlighted]:text-brand-teal data-[state=checked]:font-bold"
+                                className="data-[highlighted]:bg-brand-cream data-[highlighted]:text-brand-teal relative flex cursor-pointer items-center rounded-lg py-2 ps-3 pe-8 text-sm transition-colors outline-none select-none data-[state=checked]:font-bold"
                             >
                                 <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
                                 <SelectPrimitive.ItemIndicator className="absolute end-2 inline-flex items-center">
-                                    <Check className="size-4 text-brand-teal" />
+                                    <Check className="text-brand-teal size-4" />
                                 </SelectPrimitive.ItemIndicator>
                             </SelectPrimitive.Item>
                         ))}

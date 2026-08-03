@@ -1,3 +1,8 @@
+import Button from '@/components/admin/button';
+import PaymentStatusBadge from '@/components/admin/payment-status-badge';
+import CopyText from '@/components/copy-text';
+import OrderStatusBadge from '@/components/order-status-badge';
+import { useAdminT } from '@/i18n/use-admin-t';
 import {
     Ban,
     Building2,
@@ -21,12 +26,7 @@ import {
     X,
     type LucideIcon,
 } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
-import Button from '@/components/admin/button';
-import CopyText from '@/components/copy-text';
-import OrderStatusBadge from '@/components/order-status-badge';
-import PaymentStatusBadge from '@/components/admin/payment-status-badge';
-import { useAdminT } from '@/i18n/use-admin-t';
+import { useState, type ReactNode } from 'react';
 
 export interface OrderItem {
     name: string;
@@ -92,7 +92,7 @@ function Row({ label, value, icon: Icon }: { label: string; value: ReactNode; ic
 function SectionHeader({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
     return (
         <h2 className="mb-3 flex items-center gap-2 font-bold">
-            <Icon className="h-4 w-4 text-brand-gold" />
+            <Icon className="text-brand-gold h-4 w-4" />
             {children}
         </h2>
     );
@@ -130,17 +130,32 @@ export default function OrderDetailView({
                 <div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                     <div className="flex flex-wrap items-center gap-3">
                         {can.confirm && (
-                            <Button variant="success" icon={Check} disabled={busy} onClick={() => onAction('confirm', {}, t('admin.orders.show.confirmMsg'))}>
+                            <Button
+                                variant="success"
+                                icon={Check}
+                                disabled={busy}
+                                onClick={() => onAction('confirm', {}, t('admin.orders.show.confirmMsg'))}
+                            >
                                 {t('admin.orders.show.confirmOrder')}
                             </Button>
                         )}
                         {can.ship && (
-                            <Button variant="primary" icon={Truck} disabled={busy} onClick={() => onAction('ship', {}, t('admin.orders.show.shipMsg'))}>
+                            <Button
+                                variant="primary"
+                                icon={Truck}
+                                disabled={busy}
+                                onClick={() => onAction('ship', {}, t('admin.orders.show.shipMsg'))}
+                            >
                                 {t('admin.orders.show.ship')}
                             </Button>
                         )}
                         {can.cancel && (
-                            <Button variant="danger" icon={X} disabled={busy} onClick={() => onAction('cancel', {}, t('admin.orders.show.cancelMsg'))}>
+                            <Button
+                                variant="danger"
+                                icon={X}
+                                disabled={busy}
+                                onClick={() => onAction('cancel', {}, t('admin.orders.show.cancelMsg'))}
+                            >
                                 {t('admin.orders.show.cancel')}
                             </Button>
                         )}
@@ -156,7 +171,12 @@ export default function OrderDetailView({
                                     className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
                                 />
                             </label>
-                            <Button variant="warning" icon={Ban} disabled={busy} onClick={() => onAction('unavailable', { note }, t('admin.orders.show.unavailableMsg'))}>
+                            <Button
+                                variant="warning"
+                                icon={Ban}
+                                disabled={busy}
+                                onClick={() => onAction('unavailable', { note }, t('admin.orders.show.unavailableMsg'))}
+                            >
                                 {t('admin.orders.show.markUnavailable')}
                             </Button>
                         </div>
@@ -182,10 +202,16 @@ export default function OrderDetailView({
                                 <tbody>
                                     {order.items.map((item, i) => (
                                         <tr key={i} className="border-t border-neutral-100 dark:border-neutral-800">
-                                            <td className="py-2" dir="auto">{item.name}</td>
+                                            <td className="py-2" dir="auto">
+                                                {item.name}
+                                            </td>
                                             <td className="py-2 font-mono text-neutral-500">
                                                 {item.sku ? (
-                                                    <CopyText value={item.sku} copyLabel={t('admin.common.copy')} copiedLabel={t('admin.common.copied')} />
+                                                    <CopyText
+                                                        value={item.sku}
+                                                        copyLabel={t('admin.common.copy')}
+                                                        copiedLabel={t('admin.common.copied')}
+                                                    />
                                                 ) : (
                                                     '—'
                                                 )}
@@ -200,11 +226,15 @@ export default function OrderDetailView({
                         </div>
                         <div className="mt-3 border-t border-neutral-200 pt-3 dark:border-neutral-800">
                             <Row label={t('admin.common.subtotal')} value={`${order.subtotal} ${order.currency}`} />
-                            {order.discount_total > 0 && <Row label={t('admin.common.discount')} value={`−${order.discount_total} ${order.currency}`} />}
+                            {order.discount_total > 0 && (
+                                <Row label={t('admin.common.discount')} value={`−${order.discount_total} ${order.currency}`} />
+                            )}
                             <Row label={t('admin.common.shipping')} value={`${order.shipping_fee} ${order.currency}`} />
                             <div className="flex justify-between pt-1 font-bold">
                                 <span>{t('admin.common.total')}</span>
-                                <span>{order.total} {order.currency}</span>
+                                <span>
+                                    {order.total} {order.currency}
+                                </span>
                             </div>
                         </div>
                     </section>
@@ -216,11 +246,15 @@ export default function OrderDetailView({
                         ) : (
                             <ul className="space-y-2 text-sm">
                                 {order.activities.map((a, i) => (
-                                    <li key={i} className="flex justify-between gap-3 border-b border-neutral-100 pb-2 last:border-0 dark:border-neutral-800">
+                                    <li
+                                        key={i}
+                                        className="flex justify-between gap-3 border-b border-neutral-100 pb-2 last:border-0 dark:border-neutral-800"
+                                    >
                                         <span>
                                             {a.type === 'status_change' ? (
                                                 <>
-                                                    {a.from_status ? t(`status.${a.from_status}`) : '—'} → <b>{a.to_status ? t(`status.${a.to_status}`) : ''}</b>
+                                                    {a.from_status ? t(`status.${a.from_status}`) : '—'} →{' '}
+                                                    <b>{a.to_status ? t(`status.${a.to_status}`) : ''}</b>
                                                 </>
                                             ) : (
                                                 a.type
@@ -257,7 +291,11 @@ export default function OrderDetailView({
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={CreditCard}>{t('admin.common.payment')}</SectionHeader>
-                        <Row icon={CreditCard} label={t('admin.common.method')} value={order.payment_method ? t(`admin.paymentMethod.${order.payment_method}`) : '—'} />
+                        <Row
+                            icon={CreditCard}
+                            label={t('admin.common.method')}
+                            value={order.payment_method ? t(`admin.paymentMethod.${order.payment_method}`) : '—'}
+                        />
                         <Row icon={CircleDollarSign} label={t('admin.common.status')} value={<PaymentStatusBadge status={order.payment_status} />} />
                     </section>
 

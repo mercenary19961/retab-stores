@@ -36,7 +36,7 @@ class ImageVariants
     {
         $dir = pathinfo($originalPath, PATHINFO_DIRNAME);
         $name = pathinfo($originalPath, PATHINFO_FILENAME);
-        $prefix = ($dir && $dir !== '.') ? $dir . '/' : '';
+        $prefix = ($dir && $dir !== '.') ? $dir.'/' : '';
 
         return "{$prefix}{$name}-{$variant}.webp";
     }

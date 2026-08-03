@@ -80,7 +80,7 @@ class LoyaltyService
     private function uniqueCode(): string
     {
         do {
-            $code = 'LOYAL-' . strtoupper(Str::random(6));
+            $code = 'LOYAL-'.strtoupper(Str::random(6));
         } while (Coupon::where('code', $code)->exists());
 
         return $code;

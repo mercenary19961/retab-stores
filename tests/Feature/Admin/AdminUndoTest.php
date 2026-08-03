@@ -26,8 +26,8 @@ class AdminUndoTest extends TestCase
     private function product(Category $c, string $name = 'سكري'): Product
     {
         $product = Product::create([
-            'category_id' => $c->id, 'name_ar' => $name, 'slug' => 'p-' . uniqid(),
-            'price' => 50, 'sku' => 'SK-' . uniqid(), 'stock' => 100, 'is_active' => true, 'is_featured' => false,
+            'category_id' => $c->id, 'name_ar' => $name, 'slug' => 'p-'.uniqid(),
+            'price' => 50, 'sku' => 'SK-'.uniqid(), 'stock' => 100, 'is_active' => true, 'is_featured' => false,
         ]);
 
         // Products must have an image to be updatable (see ProductController::update).
@@ -46,7 +46,7 @@ class AdminUndoTest extends TestCase
 
     public function test_product_save_surfaces_undo_on_index(): void
     {
-        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-' . uniqid()]);
+        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-'.uniqid()]);
         $product = $this->product($cat);
         $staff = $this->staff();
 
@@ -64,7 +64,7 @@ class AdminUndoTest extends TestCase
 
     public function test_dismiss_clears_the_pointer(): void
     {
-        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-' . uniqid()]);
+        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-'.uniqid()]);
         $product = $this->product($cat);
         $staff = $this->staff();
 
@@ -77,7 +77,7 @@ class AdminUndoTest extends TestCase
 
     public function test_undo_reverts_the_change_and_clears_the_pointer(): void
     {
-        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-' . uniqid()]);
+        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-'.uniqid()]);
         $product = $this->product($cat, 'الاسم الأصلي');
         $staff = $this->staff();
 

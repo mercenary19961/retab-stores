@@ -29,9 +29,9 @@ class ReviewServiceTest extends TestCase
         return Product::create([
             'category_id' => $category->id,
             'name_ar' => 'سكري',
-            'slug' => 'p-' . uniqid(),
+            'slug' => 'p-'.uniqid(),
             'price' => 50,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => 10,
         ]);
     }
@@ -39,7 +39,7 @@ class ReviewServiceTest extends TestCase
     private function orderFor(User $user, Product $product, OrderStatus $status): Order
     {
         $order = Order::create([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'user_id' => $user->id,
             'customer_name' => 'Zaid',
             'customer_phone' => '966500000000',

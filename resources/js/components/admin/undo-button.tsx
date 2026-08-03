@@ -30,28 +30,24 @@ export default function UndoButton({ section, undoMeta }: { section: string; und
         router.post(`/admin/change-log/${undoMeta.id}/revert`, {}, { preserveScroll: true });
     };
 
-    const dismiss = () =>
-        router.delete(`/admin/change-log/undo/${section}`, { preserveScroll: true, preserveState: true });
+    const dismiss = () => router.delete(`/admin/change-log/undo/${section}`, { preserveScroll: true, preserveState: true });
 
     return (
-        <div className="group/undo relative inline-flex items-center gap-1 rounded-lg border border-brand-gold/40 bg-brand-gold/10 py-1.5 pe-1.5 ps-3 text-sm text-brand-gold">
+        <div className="group/undo border-brand-gold/40 bg-brand-gold/10 text-brand-gold relative inline-flex items-center gap-1 rounded-lg border py-1.5 ps-3 pe-1.5 text-sm">
             <button type="button" data-undo onClick={() => setConfirming(true)} className="flex items-center gap-2 font-medium">
                 <History className="h-4 w-4" />
                 <span>{t('admin.undo.button')}</span>
                 {undoMeta.changes.length > 0 && <span className="text-xs opacity-70">({undoMeta.changes.length})</span>}
             </button>
-            <button
-                type="button"
-                onClick={dismiss}
-                aria-label={t('admin.undo.dismiss')}
-                className="rounded p-0.5 opacity-70 hover:opacity-100"
-            >
+            <button type="button" onClick={dismiss} aria-label={t('admin.undo.dismiss')} className="rounded p-0.5 opacity-70 hover:opacity-100">
                 <X className="h-3.5 w-3.5" />
             </button>
 
             {undoMeta.changes.length > 0 && (
                 <div className="pointer-events-none absolute top-full z-40 mt-2 hidden w-72 rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-xs text-neutral-300 shadow-xl group-hover/undo:block">
-                    <p className="mb-2 font-semibold text-neutral-100" dir="auto">{undoMeta.label}</p>
+                    <p className="mb-2 font-semibold text-neutral-100" dir="auto">
+                        {undoMeta.label}
+                    </p>
                     <ul className="space-y-1">
                         {undoMeta.changes.slice(0, 8).map((c, i) => (
                             <li key={i} dir="auto">

@@ -1,7 +1,7 @@
+import { useAdminT } from '@/i18n/use-admin-t';
 import { router } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, ArrowUp, RotateCw, Save, Undo2, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAdminT } from '@/i18n/use-admin-t';
 
 interface MenuState {
     x: number;
@@ -77,9 +77,7 @@ export default function AdminContextMenu() {
             { key: 'save', icon: Save, enabled: menu.canSave, onClick: () => findSave()?.click() },
             { key: 'undo', icon: Undo2, enabled: menu.canUndo, onClick: () => findUndo()?.click() },
         ],
-        [
-            { key: 'top', icon: ArrowUp, enabled: true, onClick: () => document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }) },
-        ],
+        [{ key: 'top', icon: ArrowUp, enabled: true, onClick: () => document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }) }],
     ];
 
     return (

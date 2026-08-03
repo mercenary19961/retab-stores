@@ -1,7 +1,7 @@
+import StoreLayout from '@/layouts/store-layout';
+import { useLocalized } from '@/lib/localize';
 import { Head, Link, router } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
-import StoreLayout from '@/layouts/store-layout';
 
 interface Item {
     id: number;
@@ -25,7 +25,9 @@ export default function Wishlist({ items }: { items: Item[] }) {
 
             <div className="mb-6 flex items-center justify-between">
                 <h1 className="text-2xl font-bold">{t('wishlist.title')}</h1>
-                <Link href="/account" className="text-sm text-gray-500 underline">{t('wishlist.back')}</Link>
+                <Link href="/account" className="text-sm text-gray-500 underline">
+                    {t('wishlist.back')}
+                </Link>
             </div>
 
             {items.length === 0 ? (
@@ -34,15 +36,23 @@ export default function Wishlist({ items }: { items: Item[] }) {
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {items.map((p) => (
                         <div key={p.id} className="rounded-lg border border-gray-200 bg-white p-4">
-                            <Link href={`/products/${p.slug}`} className="font-semibold hover:underline">{localized(p, 'name')}</Link>
+                            <Link href={`/products/${p.slug}`} className="font-semibold hover:underline">
+                                {localized(p, 'name')}
+                            </Link>
                             <div className="mt-2 text-[#2f4f4f]">
                                 {p.sale_price !== null ? (
                                     <>
-                                        <span className="font-bold">{p.effective_price} {currency}</span>{' '}
-                                        <span className="text-sm text-gray-400 line-through">{p.price} {currency}</span>
+                                        <span className="font-bold">
+                                            {p.effective_price} {currency}
+                                        </span>{' '}
+                                        <span className="text-sm text-gray-400 line-through">
+                                            {p.price} {currency}
+                                        </span>
                                     </>
                                 ) : (
-                                    <span className="font-bold">{p.price} {currency}</span>
+                                    <span className="font-bold">
+                                        {p.price} {currency}
+                                    </span>
                                 )}
                             </div>
                             <div className="mt-3 flex items-center justify-between">

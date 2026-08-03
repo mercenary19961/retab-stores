@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use App\Services\OrderConfirmationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -23,14 +24,14 @@ class OrderConfirmationServiceTest extends TestCase
 
     private function makeProduct(int $stock = 100): Product
     {
-        $category = Category::create(['name_ar' => 'تمور', 'slug' => 'dates-' . uniqid()]);
+        $category = Category::create(['name_ar' => 'تمور', 'slug' => 'dates-'.uniqid()]);
 
         return Product::create([
             'category_id' => $category->id,
             'name_ar' => 'سكري',
-            'slug' => 'p-' . uniqid(),
+            'slug' => 'p-'.uniqid(),
             'price' => 50,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => $stock,
         ]);
     }
@@ -38,7 +39,7 @@ class OrderConfirmationServiceTest extends TestCase
     private function makeOrder(Product $product, array $overrides = [], int $qty = 3): Order
     {
         $order = Order::create(array_merge([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'customer_name' => 'Zaid',
             'customer_phone' => '+966500000000',
             'shipping_address' => ['country' => 'SA', 'city' => 'Riyadh'],
@@ -102,7 +103,7 @@ class OrderConfirmationServiceTest extends TestCase
 
     public function test_confirm_counts_the_purchase_toward_loyalty(): void
     {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $product = $this->makeProduct();
         $order = $this->makeOrder($product, ['user_id' => $user->id], 1);
 

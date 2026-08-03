@@ -1,45 +1,56 @@
 name: linter
 
+# Formatting is a CHECK, not a fix (changed 2026-08-03).
+#
+# This job used to run Pint/Prettier in WRITE mode with an auto-commit step that
+# was commented out — so CI reformatted its own checkout, threw the result away,
+# and always reported green. Formatting was enforced by nobody, and the repo
+# silently drifted to 67 Pint + 92 Prettier files out of style, which makes a real
+# diff unreviewable the moment anyone does run a formatter locally.
+#
+# Fix locally with `./vendor/bin/pint` + `npm run format` before pushing.
 on:
   push:
-    branches:
-      - develop
-      - main
+    # Must match ci.yml. The old list named `develop`, a branch that has never
+    # existed in this repo, so this workflow only ever ran on `main`.
+    branches: [main, construction_phase, deployment_phase]
   pull_request:
-    branches:
-      - develop
-      - main
 
 permissions:
-  contents: write
+  # Read-only: nothing writes back now that the auto-commit step is gone.
+  contents: read
 
 jobs:
   quality:
+    name: Format + lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          # Matches ci.yml and the deployment target (composer requires ^8.2).
+          php-version: '8.2'
+          coverage: none
 
-      - name: Install Dependencies
-        run: |
-          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-          npm install
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
 
-      - name: Run Pint
-        run: vendor/bin/pint
+      - name: Install PHP dependencies
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-      - name: Format Frontend
-        run: npm run format
+      - name: Install npm dependencies
+        run: npm ci
 
-      - name: Lint Frontend
-        run: npm run lint
+      - name: Check PHP formatting (Pint)
+        run: vendor/bin/pint --test
 
-      # - name: Commit Changes
-      #   uses: stefanzweifel/git-auto-commit-action@v5
-      #   with:
-      #     commit_message: fix code style
-      #     commit_options: '--no-verify'
+      - name: Check frontend formatting (Prettier)
+        run: npm run format:check
+
+      - name: Lint frontend (ESLint)
+        run: npm run lint:check

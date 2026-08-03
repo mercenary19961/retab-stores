@@ -17,11 +17,11 @@ interface WhatsAppGateway
      * Send an approved template message. Business-initiated messages outside the
      * customer's 24h reply window MUST be templates (Meta rule).
      *
-     * @param  string  $to        recipient phone in E.164 (no '+')
+     * @param  string  $to  recipient phone in E.164 (no '+')
      * @param  string  $template  approved template name
      * @param  string  $language  template language code (e.g. 'ar')
      * @param  list<string>  $params  ordered body placeholder values ({{1}}, {{2}}, …)
-     * @return string  the provider message id (wam_id)
+     * @return string the provider message id (wam_id)
      *
      * @throws \Throwable on transport failure
      */
@@ -31,7 +31,7 @@ interface WhatsAppGateway
      * Send a free-form text message. Only valid INSIDE the 24h customer window;
      * used for replies / OTP, not business-initiated marketing.
      *
-     * @return string  the provider message id (wam_id)
+     * @return string the provider message id (wam_id)
      *
      * @throws \Throwable on transport failure
      */

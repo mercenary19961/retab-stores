@@ -19,7 +19,7 @@ class WhatsAppServiceTest extends TestCase
     private function order(array $overrides = []): Order
     {
         return Order::create(array_merge([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'customer_name' => 'Zaid',
             'customer_phone' => '+966 50 000 0000',
             'shipping_address' => ['country' => 'SA', 'city' => 'Riyadh'],
@@ -60,7 +60,8 @@ class WhatsAppServiceTest extends TestCase
     public function test_transport_failure_is_swallowed_and_logged_as_failed(): void
     {
         // Bind a gateway that always throws.
-        $this->app->bind(WhatsAppGateway::class, fn () => new class implements WhatsAppGateway {
+        $this->app->bind(WhatsAppGateway::class, fn () => new class implements WhatsAppGateway
+        {
             public function sendTemplate(string $to, string $template, string $language, array $params = []): string
             {
                 throw new \RuntimeException('network down');

@@ -1,8 +1,8 @@
+import { applyConsent, choiceForAction, needsConsent, type ConsentAction, type ConsentChoice } from '@/lib/consent';
 import { Link } from '@inertiajs/react';
 import { Cookie, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { applyConsent, choiceForAction, needsConsent, type ConsentAction, type ConsentChoice } from '@/lib/consent';
 
 /** Fire this event (e.g. from a footer "Cookie settings" link) to re-open the banner. */
 export const OPEN_CONSENT_EVENT = 'retab:open-consent';
@@ -62,17 +62,17 @@ export default function CookieConsent() {
                 entered ? 'translate-y-0' : 'translate-y-[130%]'
             }`}
         >
-            <div className="mx-auto max-w-4xl rounded-2xl border border-brand-gold/20 bg-white p-5 shadow-[0_8px_40px_rgba(27,78,83,0.18)] sm:p-6">
+            <div className="border-brand-gold/20 mx-auto max-w-4xl rounded-2xl border bg-white p-5 shadow-[0_8px_40px_rgba(27,78,83,0.18)] sm:p-6">
                 <div className="flex items-start gap-3">
-                    <span className="mt-0.5 shrink-0 rounded-full bg-brand-cream p-2 text-brand-teal">
+                    <span className="bg-brand-cream text-brand-teal mt-0.5 shrink-0 rounded-full p-2">
                         <Cookie className="size-5" />
                     </span>
                     <div className="min-w-0">
-                        <h2 className="font-heading text-lg font-bold text-brand-teal">{t('consent.title')}</h2>
-                        <p className="mt-1 text-sm leading-relaxed text-brand-teal/70">{t('consent.body')}</p>
+                        <h2 className="font-heading text-brand-teal text-lg font-bold">{t('consent.title')}</h2>
+                        <p className="text-brand-teal/70 mt-1 text-sm leading-relaxed">{t('consent.body')}</p>
                         <Link
                             href="/pages/privacy-policy"
-                            className="mt-1 inline-block text-sm font-medium text-brand-gold underline underline-offset-2 hover:text-brand-teal"
+                            className="text-brand-gold hover:text-brand-teal mt-1 inline-block text-sm font-medium underline underline-offset-2"
                         >
                             {t('consent.privacyLink')}
                         </Link>
@@ -80,7 +80,7 @@ export default function CookieConsent() {
                 </div>
 
                 {panelOpen && (
-                    <div className="mt-4 space-y-2 border-t border-brand-gold/15 pt-4">
+                    <div className="border-brand-gold/15 mt-4 space-y-2 border-t pt-4">
                         <CategoryRow
                             icon={<ShieldCheck className="size-4" />}
                             label={t('consent.categories.necessary.label')}
@@ -106,7 +106,7 @@ export default function CookieConsent() {
                     <button
                         type="button"
                         onClick={() => setPanelOpen((o) => !o)}
-                        className="rounded-full border border-brand-gold/30 px-5 py-2.5 text-sm font-medium text-brand-teal transition-colors hover:bg-brand-gold/10"
+                        className="border-brand-gold/30 text-brand-teal hover:bg-brand-gold/10 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors"
                     >
                         {panelOpen ? t('consent.back') : t('consent.customise')}
                     </button>
@@ -116,7 +116,7 @@ export default function CookieConsent() {
                     <button
                         type="button"
                         onClick={() => submit('reject_all')}
-                        className="rounded-full border border-brand-gold/30 px-5 py-2.5 text-sm font-medium text-brand-teal transition-colors hover:bg-brand-gold/10"
+                        className="border-brand-gold/30 text-brand-teal hover:bg-brand-gold/10 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors"
                     >
                         {t('consent.rejectAll')}
                     </button>
@@ -124,7 +124,7 @@ export default function CookieConsent() {
                     <button
                         type="button"
                         onClick={() => submit(panelOpen ? 'custom' : 'accept_all')}
-                        className="rounded-full bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+                        className="bg-brand-teal hover:bg-brand-teal/90 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-colors"
                     >
                         {panelOpen ? t('consent.save') : t('consent.acceptAll')}
                     </button>
@@ -147,17 +147,17 @@ function CategoryRow({ label, description, icon, checked, onChange, lockedLabel 
     const locked = onChange === undefined;
 
     return (
-        <div className="flex items-start justify-between gap-4 rounded-xl bg-brand-cream/50 p-3">
+        <div className="bg-brand-cream/50 flex items-start justify-between gap-4 rounded-xl p-3">
             <div className="min-w-0">
-                <span className="flex items-center gap-1.5 text-sm font-semibold text-brand-teal">
+                <span className="text-brand-teal flex items-center gap-1.5 text-sm font-semibold">
                     {icon}
                     {label}
                 </span>
-                <p className="mt-0.5 text-xs leading-relaxed text-brand-teal/60">{description}</p>
+                <p className="text-brand-teal/60 mt-0.5 text-xs leading-relaxed">{description}</p>
             </div>
 
             {locked ? (
-                <span className="shrink-0 whitespace-nowrap rounded-full bg-brand-cream px-2.5 py-1 text-[11px] font-medium text-brand-teal">
+                <span className="bg-brand-cream text-brand-teal shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap">
                     {lockedLabel}
                 </span>
             ) : (

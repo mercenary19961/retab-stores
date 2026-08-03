@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
@@ -111,7 +112,7 @@ class CartService
     }
 
     /**
-     * @return array{items: \Illuminate\Support\Collection, count: int, subtotal: float}
+     * @return array{items: Collection, count: int, subtotal: float}
      */
     public function summary(): array
     {

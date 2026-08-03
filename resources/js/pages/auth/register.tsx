@@ -27,25 +27,58 @@ export default function Register() {
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">{t('auth.name')}</Label>
-                                <Input id="name" name="name" type="text" required autoFocus tabIndex={1} autoComplete="name" placeholder={t('auth.namePlaceholder')} />
+                                <Input
+                                    id="name"
+                                    name="name"
+                                    type="text"
+                                    required
+                                    autoFocus
+                                    tabIndex={1}
+                                    autoComplete="name"
+                                    placeholder={t('auth.namePlaceholder')}
+                                />
                                 <InputError message={errors.name} className="mt-2" />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="email">{t('auth.email')}</Label>
-                                <Input id="email" name="email" type="email" required tabIndex={2} autoComplete="email" placeholder={t('auth.emailPlaceholder')} />
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    required
+                                    tabIndex={2}
+                                    autoComplete="email"
+                                    placeholder={t('auth.emailPlaceholder')}
+                                />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password">{t('auth.password')}</Label>
-                                <Input id="password" name="password" type="password" required tabIndex={3} autoComplete="new-password" placeholder={t('auth.passwordPlaceholder')} />
+                                <Input
+                                    id="password"
+                                    name="password"
+                                    type="password"
+                                    required
+                                    tabIndex={3}
+                                    autoComplete="new-password"
+                                    placeholder={t('auth.passwordPlaceholder')}
+                                />
                                 <InputError message={errors.password} />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">{t('auth.confirmPassword')}</Label>
-                                <Input id="password_confirmation" name="password_confirmation" type="password" required tabIndex={4} autoComplete="new-password" placeholder={t('auth.confirmPasswordPlaceholder')} />
+                                <Input
+                                    id="password_confirmation"
+                                    name="password_confirmation"
+                                    type="password"
+                                    required
+                                    tabIndex={4}
+                                    autoComplete="new-password"
+                                    placeholder={t('auth.confirmPasswordPlaceholder')}
+                                />
                                 <InputError message={errors.password_confirmation} />
                             </div>
 

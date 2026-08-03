@@ -58,7 +58,7 @@ class CloudApiGateway implements WhatsAppGateway
         $response = $this->client()->post("/{$this->phoneNumberId}/messages", $payload);
 
         if (! $response->successful()) {
-            throw new RuntimeException('WhatsApp send failed: ' . $response->status() . ' ' . $response->body());
+            throw new RuntimeException('WhatsApp send failed: '.$response->status().' '.$response->body());
         }
 
         $wamId = $response->json('messages.0.id');

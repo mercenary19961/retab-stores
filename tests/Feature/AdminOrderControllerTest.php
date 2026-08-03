@@ -24,18 +24,18 @@ class AdminOrderControllerTest extends TestCase
 
     private function makeOrder(int $stock = 100, array $overrides = [], int $qty = 3): Order
     {
-        $category = Category::create(['name_ar' => 'تمور', 'slug' => 'dates-' . uniqid()]);
+        $category = Category::create(['name_ar' => 'تمور', 'slug' => 'dates-'.uniqid()]);
         $product = Product::create([
             'category_id' => $category->id,
             'name_ar' => 'سكري',
-            'slug' => 'p-' . uniqid(),
+            'slug' => 'p-'.uniqid(),
             'price' => 50,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => $stock,
         ]);
 
         $order = Order::create(array_merge([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'customer_name' => 'Zaid',
             'customer_phone' => '+966500000000',
             'shipping_address' => ['country' => 'SA', 'city' => 'Riyadh'],

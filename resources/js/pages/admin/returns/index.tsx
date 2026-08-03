@@ -1,16 +1,21 @@
-import { Head, router } from '@inertiajs/react';
-import { Columns3, Eye, MoveHorizontal } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
 import ResizableTh from '@/components/admin/resizable-th';
-import ReturnDetailView, { RETURN_STATUS_TONE, type RefundPreview, type ReturnDetail, type ReturnOrderSummary } from '@/components/admin/return-detail-view';
+import ReturnDetailView, {
+    RETURN_STATUS_TONE,
+    type RefundPreview,
+    type ReturnDetail,
+    type ReturnOrderSummary,
+} from '@/components/admin/return-detail-view';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import StatusPill from '@/components/status-pill';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, router } from '@inertiajs/react';
+import { Columns3, Eye, MoveHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const COLUMNS: ColumnDef[] = [
     { key: 'return', defaultWidth: 100, minWidth: 70 },
@@ -51,7 +56,9 @@ function ReturnModalBody({ returnId }: { returnId: number }) {
             })
             .then((d: DetailPayload) => alive && setData(d))
             .catch(() => alive && setFailed(true));
-        return () => { alive = false; };
+        return () => {
+            alive = false;
+        };
     }, [returnId, reload]);
 
     const act = (action: string, payload: Record<string, string | boolean>) => {
@@ -156,7 +163,9 @@ export default function ReturnsIndex({
                             <MoveHorizontal className="h-3.5 w-3.5" /> {t('admin.common.dragToResize')}
                         </span>
                     ) : (
-                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>{t('admin.common.resetColumns')}</Button>
+                        <Button size="sm" variant="ghost" icon={Columns3} onClick={rc.resetAll}>
+                            {t('admin.common.resetColumns')}
+                        </Button>
                     )}
                 </div>
                 <ExportButtons base="/admin/returns/export" params={exportParams} />
@@ -166,13 +175,83 @@ export default function ReturnsIndex({
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
                     <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
                         <tr>
-                            <ResizableTh colKey="return" width={rc.widths.return} resizeProps={rc.getResizeHandleProps('return')} resizing={rc.resizing === 'return'} sortKey="id" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.return')}</ResizableTh>
-                            <ResizableTh colKey="order" width={rc.widths.order} resizeProps={rc.getResizeHandleProps('order')} resizing={rc.resizing === 'order'} sortKey="order_number" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.order')}</ResizableTh>
-                            <ResizableTh colKey="customer" width={rc.widths.customer} resizeProps={rc.getResizeHandleProps('customer')} resizing={rc.resizing === 'customer'} sortKey="customer_name" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.customer')}</ResizableTh>
-                            <ResizableTh colKey="status" width={rc.widths.status} resizeProps={rc.getResizeHandleProps('status')} resizing={rc.resizing === 'status'} sortKey="status" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.status')}</ResizableTh>
-                            <ResizableTh colKey="reason" width={rc.widths.reason} resizeProps={rc.getResizeHandleProps('reason')} resizing={rc.resizing === 'reason'}>{t('admin.returns.cols.reason')}</ResizableTh>
-                            <ResizableTh colKey="filed" width={rc.widths.filed} resizeProps={rc.getResizeHandleProps('filed')} resizing={rc.resizing === 'filed'} sortKey="created_at" sort={filters.sort} direction={filters.direction} onSort={toggleSort}>{t('admin.returns.cols.filed')}</ResizableTh>
-                            <ResizableTh colKey="actions" width={rc.widths.actions} resizeProps={rc.getResizeHandleProps('actions')} resizing={rc.resizing === 'actions'} className="text-end">{t('admin.common.actions')}</ResizableTh>
+                            <ResizableTh
+                                colKey="return"
+                                width={rc.widths.return}
+                                resizeProps={rc.getResizeHandleProps('return')}
+                                resizing={rc.resizing === 'return'}
+                                sortKey="id"
+                                sort={filters.sort}
+                                direction={filters.direction}
+                                onSort={toggleSort}
+                            >
+                                {t('admin.returns.cols.return')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="order"
+                                width={rc.widths.order}
+                                resizeProps={rc.getResizeHandleProps('order')}
+                                resizing={rc.resizing === 'order'}
+                                sortKey="order_number"
+                                sort={filters.sort}
+                                direction={filters.direction}
+                                onSort={toggleSort}
+                            >
+                                {t('admin.returns.cols.order')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="customer"
+                                width={rc.widths.customer}
+                                resizeProps={rc.getResizeHandleProps('customer')}
+                                resizing={rc.resizing === 'customer'}
+                                sortKey="customer_name"
+                                sort={filters.sort}
+                                direction={filters.direction}
+                                onSort={toggleSort}
+                            >
+                                {t('admin.returns.cols.customer')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="status"
+                                width={rc.widths.status}
+                                resizeProps={rc.getResizeHandleProps('status')}
+                                resizing={rc.resizing === 'status'}
+                                sortKey="status"
+                                sort={filters.sort}
+                                direction={filters.direction}
+                                onSort={toggleSort}
+                            >
+                                {t('admin.returns.cols.status')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="reason"
+                                width={rc.widths.reason}
+                                resizeProps={rc.getResizeHandleProps('reason')}
+                                resizing={rc.resizing === 'reason'}
+                            >
+                                {t('admin.returns.cols.reason')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="filed"
+                                width={rc.widths.filed}
+                                resizeProps={rc.getResizeHandleProps('filed')}
+                                resizing={rc.resizing === 'filed'}
+                                sortKey="created_at"
+                                sort={filters.sort}
+                                direction={filters.direction}
+                                onSort={toggleSort}
+                            >
+                                {t('admin.returns.cols.filed')}
+                            </ResizableTh>
+                            <ResizableTh
+                                colKey="actions"
+                                width={rc.widths.actions}
+                                resizeProps={rc.getResizeHandleProps('actions')}
+                                resizing={rc.resizing === 'actions'}
+                                className="text-end"
+                            >
+                                {t('admin.common.actions')}
+                            </ResizableTh>
                         </tr>
                     </thead>
                     <tbody>
@@ -188,12 +267,18 @@ export default function ReturnsIndex({
                                 <td className="truncate px-4 py-3 font-mono font-medium text-neutral-800 dark:text-neutral-100">#{r.id}</td>
                                 <td className="truncate px-4 py-3 font-mono">{r.order_number ?? '—'}</td>
                                 <td className="truncate px-4 py-3">{r.customer ?? '—'}</td>
-                                <td className="truncate px-4 py-3"><StatusPill tone={RETURN_STATUS_TONE[r.status] ?? 'neutral'}>{t(`admin.returns.status.${r.status}`)}</StatusPill></td>
-                                <td className="truncate px-4 py-3 text-neutral-500" dir="auto">{r.reason}</td>
+                                <td className="truncate px-4 py-3">
+                                    <StatusPill tone={RETURN_STATUS_TONE[r.status] ?? 'neutral'}>{t(`admin.returns.status.${r.status}`)}</StatusPill>
+                                </td>
+                                <td className="truncate px-4 py-3 text-neutral-500" dir="auto">
+                                    {r.reason}
+                                </td>
                                 <td className="truncate px-4 py-3 text-neutral-500">{r.created_at ?? '—'}</td>
                                 <td className="px-4 py-3">
                                     <div className="flex justify-end">
-                                        <Button size="sm" variant="secondary" icon={Eye} onClick={() => setViewing(r)}>{t('admin.common.view')}</Button>
+                                        <Button size="sm" variant="secondary" icon={Eye} onClick={() => setViewing(r)}>
+                                            {t('admin.common.view')}
+                                        </Button>
                                     </div>
                                 </td>
                             </tr>
@@ -217,12 +302,7 @@ export default function ReturnsIndex({
                 </div>
             )}
 
-            <Modal
-                open={viewing !== null}
-                onClose={() => setViewing(null)}
-                size="lg"
-                title={<span className="font-mono">#{viewing?.id}</span>}
-            >
+            <Modal open={viewing !== null} onClose={() => setViewing(null)} size="lg" title={<span className="font-mono">#{viewing?.id}</span>}>
                 {viewing && <ReturnModalBody key={viewing.id} returnId={viewing.id} />}
             </Modal>
         </AdminLayout>

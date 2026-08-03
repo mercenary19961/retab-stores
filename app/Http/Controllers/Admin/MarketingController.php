@@ -8,6 +8,7 @@ use App\Models\WhatsappTemplate;
 use App\Services\WhatsApp\CampaignService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 /**
@@ -72,7 +73,7 @@ class MarketingController extends Controller
             'whatsapp_template_id' => ['required', 'integer', 'exists:whatsapp_templates,id'],
             'params' => ['array'],
             'params.*' => ['required', 'string', 'max:255'],
-            'segment' => ['nullable', \Illuminate\Validation\Rule::in(CampaignService::SEGMENTS)],
+            'segment' => ['nullable', Rule::in(CampaignService::SEGMENTS)],
         ]);
 
         $template = WhatsappTemplate::findOrFail($data['whatsapp_template_id']);
@@ -109,7 +110,7 @@ class MarketingController extends Controller
                 'required', 'string', 'max:100', 'regex:/^[a-z0-9_]+$/',
                 // Mirrors the DB's composite unique (name+language) so a
                 // duplicate validates cleanly instead of throwing.
-                \Illuminate\Validation\Rule::unique('whatsapp_templates', 'name')
+                Rule::unique('whatsapp_templates', 'name')
                     ->where('language', (string) $request->input('language'))
                     ->ignore($template?->id),
             ],
@@ -117,7 +118,7 @@ class MarketingController extends Controller
             'category' => ['required', 'in:marketing,utility'],
             'body' => ['required', 'string', 'max:2000'],
             'param_count' => ['required', 'integer', 'min:0', 'max:10'],
-            'status' => ['required', 'in:' . implode(',', WhatsappTemplate::STATUSES)],
+            'status' => ['required', 'in:'.implode(',', WhatsappTemplate::STATUSES)],
         ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Services\ChangeLog\RevertResult;
 use App\Services\Smacc\SmaccImportService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 /**
@@ -18,7 +19,7 @@ class ChangeLogController extends Controller
 {
     public function __construct(private ChangeLogService $changeLog) {}
 
-    public function index(\Illuminate\Http\Request $request)
+    public function index(Request $request)
     {
         // Jump to the page containing a specific entry (the conflict "take me to
         // it" link) — logs are id-desc, so the entry's position is the count of

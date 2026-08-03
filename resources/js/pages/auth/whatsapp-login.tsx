@@ -1,8 +1,8 @@
+import { Turnstile, type TurnstileHandle } from '@/components/turnstile';
+import StoreLayout from '@/layouts/store-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { type FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Turnstile, type TurnstileHandle } from '@/components/turnstile';
-import StoreLayout from '@/layouts/store-layout';
 
 export default function WhatsAppLogin() {
     const { t } = useTranslation();
@@ -38,9 +38,7 @@ export default function WhatsAppLogin() {
 
                 {step === 'phone' ? (
                     <>
-                        <p className="mb-6 text-sm text-gray-600">
-                            {t('login.phoneInstructions')}
-                        </p>
+                        <p className="mb-6 text-sm text-gray-600">{t('login.phoneInstructions')}</p>
                         <form onSubmit={sendCode} className="space-y-4">
                             <label className="block">
                                 <span className="text-sm text-gray-600">{t('login.phone')}</span>
@@ -72,7 +70,11 @@ export default function WhatsAppLogin() {
                 ) : (
                     <>
                         <p className="mb-6 text-sm text-gray-600">
-                            {t('login.codeInstructions')} <span dir="ltr" className="font-mono">{data.phone}</span>.
+                            {t('login.codeInstructions')}{' '}
+                            <span dir="ltr" className="font-mono">
+                                {data.phone}
+                            </span>
+                            .
                         </p>
                         <form onSubmit={verify} className="space-y-4">
                             <label className="block">
@@ -110,7 +112,9 @@ export default function WhatsAppLogin() {
                 )}
 
                 <div className="mt-6 text-center text-sm text-gray-500">
-                    <Link href="/login" className="underline">{t('login.useEmail')}</Link>
+                    <Link href="/login" className="underline">
+                        {t('login.useEmail')}
+                    </Link>
                 </div>
             </div>
         </StoreLayout>

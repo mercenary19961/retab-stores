@@ -121,9 +121,9 @@ export const Turnstile = forwardRef<TurnstileHandle, TurnstileProps>(function Tu
                 widgetIdRef.current = null;
             }
         };
-    // siteKey + theme are stable per page; intentionally omit callbacks from deps
-    // so a parent re-render doesn't tear down + re-render the widget.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // siteKey + theme are stable per page; intentionally omit callbacks from deps
+        // so a parent re-render doesn't tear down + re-render the widget.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [siteKey, theme, errored]);
 
     if (!siteKey) return null;

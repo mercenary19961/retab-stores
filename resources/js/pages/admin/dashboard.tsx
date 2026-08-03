@@ -1,3 +1,6 @@
+import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { relativeTimeFromMinutes } from '@/lib/relative-time';
 import { Head, Link } from '@inertiajs/react';
 import {
     Banknote,
@@ -19,9 +22,6 @@ import {
     Users,
     type LucideIcon,
 } from 'lucide-react';
-import AdminLayout from '@/layouts/admin-layout';
-import { useAdminT } from '@/i18n/use-admin-t';
-import { relativeTimeFromMinutes } from '@/lib/relative-time';
 
 interface Kpis {
     currency: string;
@@ -93,7 +93,6 @@ const TASK_ICON: Record<string, LucideIcon> = {
     tamaraExpiring: Clock,
 };
 
-
 export default function AdminDashboard({
     kpis,
     trend,
@@ -158,16 +157,36 @@ export default function AdminDashboard({
 
             {/* Revenue KPIs */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <KpiCard label={t('admin.dashboard.kpis.revenue30')} value={money(kpis.revenue30)} cur={kpis.revenue30} prev={kpis.revenuePrev30} sub={t('admin.dashboard.kpis.vsPrev')} />
-                <KpiCard label={t('admin.dashboard.kpis.orders30')} value={kpis.orders30.toLocaleString()} cur={kpis.orders30} prev={kpis.ordersPrev30} sub={t('admin.dashboard.kpis.vsPrev')} />
+                <KpiCard
+                    label={t('admin.dashboard.kpis.revenue30')}
+                    value={money(kpis.revenue30)}
+                    cur={kpis.revenue30}
+                    prev={kpis.revenuePrev30}
+                    sub={t('admin.dashboard.kpis.vsPrev')}
+                />
+                <KpiCard
+                    label={t('admin.dashboard.kpis.orders30')}
+                    value={kpis.orders30.toLocaleString()}
+                    cur={kpis.orders30}
+                    prev={kpis.ordersPrev30}
+                    sub={t('admin.dashboard.kpis.vsPrev')}
+                />
                 <KpiCard label={t('admin.dashboard.kpis.aov')} value={money(aov)} cur={aov} prev={aovPrev} sub={t('admin.dashboard.kpis.vsPrev')} />
-                <KpiCard label={t('admin.dashboard.kpis.revenueToday')} value={money(kpis.revenueToday)} cur={kpis.revenueToday} prev={kpis.revenueYesterday} sub={t('admin.dashboard.kpis.vsYesterday')} />
+                <KpiCard
+                    label={t('admin.dashboard.kpis.revenueToday')}
+                    value={money(kpis.revenueToday)}
+                    cur={kpis.revenueToday}
+                    prev={kpis.revenueYesterday}
+                    sub={t('admin.dashboard.kpis.vsYesterday')}
+                />
             </div>
 
             {/* Daily revenue trend */}
             <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
                 <h2 className="mb-4 flex items-center justify-between gap-2 font-semibold text-neutral-100">
-                    <span className="flex items-center gap-2"><BarChart3 className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.trend.title')}</span>
+                    <span className="flex items-center gap-2">
+                        <BarChart3 className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.trend.title')}
+                    </span>
                     {trendPeak > 0 && (
                         <span className="text-xs font-normal text-neutral-400">{t('admin.dashboard.trend.peak', { value: money(trendPeak) })}</span>
                     )}
@@ -180,14 +199,14 @@ export default function AdminDashboard({
                             {trend.map((p) => (
                                 <div key={p.date} className="group relative flex h-full flex-1 flex-col justify-end">
                                     <div
-                                        className="w-full rounded-t bg-brand-gold/50 transition-colors group-hover:bg-brand-gold"
+                                        className="bg-brand-gold/50 group-hover:bg-brand-gold w-full rounded-t transition-colors"
                                         style={{ height: `${Math.max(2, (p.revenue / trendMax) * 100)}%` }}
                                     />
                                     {/* Styled hover tooltip (replaces the clunky native title) — anchored
                                         above the column so it sits at a consistent height for every bar. */}
-                                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-start shadow-lg group-hover:block">
+                                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-start whitespace-nowrap shadow-lg group-hover:block">
                                         <div className="text-xs font-medium text-neutral-100">{fmtDay(p.date)}</div>
-                                        <div className="text-xs text-brand-gold">{money(p.revenue)}</div>
+                                        <div className="text-brand-gold text-xs">{money(p.revenue)}</div>
                                         <div className="text-[11px] text-neutral-400">{t('admin.dashboard.trend.orders', { n: p.orders })}</div>
                                     </div>
                                 </div>
@@ -204,7 +223,9 @@ export default function AdminDashboard({
 
             {/* Needs attention */}
             <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                <h2 className="mb-4 flex items-center gap-2 font-semibold text-neutral-100"><BellRing className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.tasks.title')}</h2>
+                <h2 className="mb-4 flex items-center gap-2 font-semibold text-neutral-100">
+                    <BellRing className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.tasks.title')}
+                </h2>
                 {openTasks.length === 0 ? (
                     <p className="text-sm text-neutral-500">{t('admin.dashboard.tasks.allClear')}</p>
                 ) : (
@@ -221,7 +242,9 @@ export default function AdminDashboard({
                                             : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700'
                                     }`}
                                 >
-                                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${task.urgent ? 'bg-amber-500/20 text-amber-300' : 'bg-neutral-800 text-neutral-300'}`}>
+                                    <span
+                                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${task.urgent ? 'bg-amber-500/20 text-amber-300' : 'bg-neutral-800 text-neutral-300'}`}
+                                    >
                                         <Icon className="h-5 w-5" />
                                     </span>
                                     <div className="min-w-0">
@@ -240,8 +263,12 @@ export default function AdminDashboard({
                 {/* Inventory */}
                 <section className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
                     <div className="mb-3 flex items-center justify-between">
-                        <h2 className="flex items-center gap-2 font-semibold text-neutral-100"><Boxes className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.inventory.title')}</h2>
-                        <Link href="/admin/stock-import" className="text-xs text-brand-gold hover:underline">{t('admin.dashboard.viewAll')}</Link>
+                        <h2 className="flex items-center gap-2 font-semibold text-neutral-100">
+                            <Boxes className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.inventory.title')}
+                        </h2>
+                        <Link href="/admin/stock-import" className="text-brand-gold text-xs hover:underline">
+                            {t('admin.dashboard.viewAll')}
+                        </Link>
                     </div>
 
                     <div
@@ -254,17 +281,23 @@ export default function AdminDashboard({
                         {inventory.lastSynced.at === null || inventory.lastSynced.minutes === null
                             ? t('admin.dashboard.inventory.syncNever')
                             : inventory.lastSynced.stale
-                              ? t('admin.dashboard.inventory.syncStale', { ago: relativeTimeFromMinutes(inventory.lastSynced.minutes, i18n.language) })
+                              ? t('admin.dashboard.inventory.syncStale', {
+                                    ago: relativeTimeFromMinutes(inventory.lastSynced.minutes, i18n.language),
+                                })
                               : t('admin.dashboard.inventory.syncOk', { ago: relativeTimeFromMinutes(inventory.lastSynced.minutes, i18n.language) })}
                     </div>
 
                     <div className="mb-4 grid grid-cols-3 gap-3 text-center">
                         <div className="rounded-lg bg-neutral-950/40 p-3">
-                            <div className={`text-xl font-bold ${inventory.outOfStock ? 'text-red-400' : 'text-neutral-100'}`}>{inventory.outOfStock}</div>
+                            <div className={`text-xl font-bold ${inventory.outOfStock ? 'text-red-400' : 'text-neutral-100'}`}>
+                                {inventory.outOfStock}
+                            </div>
                             <div className="text-xs text-neutral-500">{t('admin.dashboard.inventory.outOfStock')}</div>
                         </div>
                         <div className="rounded-lg bg-neutral-950/40 p-3">
-                            <div className={`text-xl font-bold ${inventory.lowStock ? 'text-amber-400' : 'text-neutral-100'}`}>{inventory.lowStock}</div>
+                            <div className={`text-xl font-bold ${inventory.lowStock ? 'text-amber-400' : 'text-neutral-100'}`}>
+                                {inventory.lowStock}
+                            </div>
                             <div className="text-xs text-neutral-500">{t('admin.dashboard.inventory.lowStock')}</div>
                         </div>
                         <div className="rounded-lg bg-neutral-950/40 p-3">
@@ -273,17 +306,28 @@ export default function AdminDashboard({
                         </div>
                     </div>
 
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('admin.dashboard.inventory.lowStockList')}</h3>
+                    <h3 className="mb-2 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
+                        {t('admin.dashboard.inventory.lowStockList')}
+                    </h3>
                     {inventory.lowStockList.length === 0 ? (
                         <p className="text-sm text-neutral-500">{t('admin.dashboard.inventory.allStocked')}</p>
                     ) : (
                         <ul className="space-y-1 text-sm">
                             {inventory.lowStockList.map((p) => (
-                                <li key={p.id} className="flex items-center justify-between gap-2 border-b border-neutral-800/60 py-1.5 last:border-0">
-                                    <Link href={`/admin/products/${p.id}/edit`} className="min-w-0 truncate text-neutral-200 hover:text-brand-gold" dir="auto">
+                                <li
+                                    key={p.id}
+                                    className="flex items-center justify-between gap-2 border-b border-neutral-800/60 py-1.5 last:border-0"
+                                >
+                                    <Link
+                                        href={`/admin/products/${p.id}/edit`}
+                                        className="hover:text-brand-gold min-w-0 truncate text-neutral-200"
+                                        dir="auto"
+                                    >
                                         {loc(p.name_ar, p.name_en)}
                                     </Link>
-                                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${p.stock <= 0 ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}>
+                                    <span
+                                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${p.stock <= 0 ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}
+                                    >
                                         {t('admin.dashboard.inventory.units', { count: p.stock })}
                                     </span>
                                 </li>
@@ -294,14 +338,23 @@ export default function AdminDashboard({
 
                 {/* Insights */}
                 <section className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                    <h2 className="mb-3 flex items-center gap-2 font-semibold text-neutral-100"><Trophy className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.insights.topProducts')}</h2>
+                    <h2 className="mb-3 flex items-center gap-2 font-semibold text-neutral-100">
+                        <Trophy className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.insights.topProducts')}
+                    </h2>
                     {insights.topProducts.length === 0 ? (
                         <p className="mb-5 text-sm text-neutral-500">{t('admin.dashboard.insights.noSales')}</p>
                     ) : (
                         <ul className="mb-5 space-y-1 text-sm">
                             {insights.topProducts.map((p) => (
-                                <li key={p.product_id} className="flex items-center justify-between gap-2 border-b border-neutral-800/60 py-1.5 last:border-0">
-                                    <Link href={`/admin/products/${p.product_id}/edit`} className="min-w-0 truncate text-neutral-200 hover:text-brand-gold" dir="auto">
+                                <li
+                                    key={p.product_id}
+                                    className="flex items-center justify-between gap-2 border-b border-neutral-800/60 py-1.5 last:border-0"
+                                >
+                                    <Link
+                                        href={`/admin/products/${p.product_id}/edit`}
+                                        className="hover:text-brand-gold min-w-0 truncate text-neutral-200"
+                                        dir="auto"
+                                    >
                                         {loc(p.name_ar, p.name_en)}
                                     </Link>
                                     <span className="shrink-0 text-xs text-neutral-400">
@@ -312,7 +365,7 @@ export default function AdminDashboard({
                         </ul>
                     )}
 
-                    <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
                         <PackageX className="h-3.5 w-3.5" /> {t('admin.dashboard.insights.demand')}
                     </h3>
                     {insights.demand.length === 0 ? (
@@ -320,11 +373,20 @@ export default function AdminDashboard({
                     ) : (
                         <ul className="space-y-1 text-sm">
                             {insights.demand.map((d) => (
-                                <li key={d.product_id} className="flex items-center justify-between gap-2 border-b border-neutral-800/60 py-1.5 last:border-0">
-                                    <Link href={`/admin/products/${d.product_id}/edit`} className="min-w-0 truncate text-neutral-200 hover:text-brand-gold" dir="auto">
+                                <li
+                                    key={d.product_id}
+                                    className="flex items-center justify-between gap-2 border-b border-neutral-800/60 py-1.5 last:border-0"
+                                >
+                                    <Link
+                                        href={`/admin/products/${d.product_id}/edit`}
+                                        className="hover:text-brand-gold min-w-0 truncate text-neutral-200"
+                                        dir="auto"
+                                    >
                                         {loc(d.name_ar, d.name_en)}
                                     </Link>
-                                    <span className="shrink-0 text-xs text-red-300">{t('admin.dashboard.insights.demandCount', { count: d.count })}</span>
+                                    <span className="shrink-0 text-xs text-red-300">
+                                        {t('admin.dashboard.insights.demandCount', { count: d.count })}
+                                    </span>
                                 </li>
                             ))}
                         </ul>
@@ -336,15 +398,30 @@ export default function AdminDashboard({
             <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <MiniStat icon={Users} label={t('admin.dashboard.customers.total')} value={customers.total} href="/admin/customers" />
                 <MiniStat icon={UserPlus} label={t('admin.dashboard.customers.new')} value={customers.new30} href="/admin/customers" />
-                <MiniStat icon={MessageCircle} label={t('admin.dashboard.customers.whatsapp')} value={customers.whatsappAudience} href="/admin/marketing" />
-                <MiniStat icon={Gift} label={t('admin.dashboard.customers.nearReward')} value={customers.nearReward} href="/admin/customers" highlight={customers.nearReward > 0} />
+                <MiniStat
+                    icon={MessageCircle}
+                    label={t('admin.dashboard.customers.whatsapp')}
+                    value={customers.whatsappAudience}
+                    href="/admin/marketing"
+                />
+                <MiniStat
+                    icon={Gift}
+                    label={t('admin.dashboard.customers.nearReward')}
+                    value={customers.nearReward}
+                    href="/admin/customers"
+                    highlight={customers.nearReward > 0}
+                />
             </div>
 
             {/* Recent orders */}
             <div className="mt-6 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
                 <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-3">
-                    <h2 className="flex items-center gap-2 font-semibold text-neutral-100"><ShoppingBag className="h-4 w-4 text-brand-gold" /> {t('admin.dashboard.recentOrders')}</h2>
-                    <Link href="/admin/orders" className="text-sm text-brand-gold hover:underline">{t('admin.dashboard.viewAll')}</Link>
+                    <h2 className="flex items-center gap-2 font-semibold text-neutral-100">
+                        <ShoppingBag className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.recentOrders')}
+                    </h2>
+                    <Link href="/admin/orders" className="text-brand-gold text-sm hover:underline">
+                        {t('admin.dashboard.viewAll')}
+                    </Link>
                 </div>
 
                 {recentOrders.length === 0 ? (
@@ -365,18 +442,24 @@ export default function AdminDashboard({
                                 {recentOrders.map((o) => (
                                     <tr key={o.order_number} className="border-b border-neutral-800 last:border-0">
                                         <td className="px-5 py-3">
-                                            <Link href={`/admin/orders/${o.order_number}`} className="font-semibold text-brand-gold hover:underline">
+                                            <Link href={`/admin/orders/${o.order_number}`} className="text-brand-gold font-semibold hover:underline">
                                                 {o.order_number}
                                             </Link>
                                         </td>
-                                        <td className="px-5 py-3 text-neutral-300" dir="auto">{o.customer_name}</td>
+                                        <td className="px-5 py-3 text-neutral-300" dir="auto">
+                                            {o.customer_name}
+                                        </td>
                                         <td className="px-5 py-3">
                                             <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs text-neutral-300">
                                                 {t(`status.${o.status}`)}
                                             </span>
                                         </td>
-                                        <td className="px-5 py-3 text-neutral-300" dir="ltr">{o.total.toFixed(2)} {sar}</td>
-                                        <td className="px-5 py-3 text-neutral-400" dir="ltr">{o.created_at ?? '—'}</td>
+                                        <td className="px-5 py-3 text-neutral-300" dir="ltr">
+                                            {o.total.toFixed(2)} {sar}
+                                        </td>
+                                        <td className="px-5 py-3 text-neutral-400" dir="ltr">
+                                            {o.created_at ?? '—'}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -388,15 +471,31 @@ export default function AdminDashboard({
     );
 }
 
-function MiniStat({ icon: Icon, label, value, href, highlight }: { icon: LucideIcon; label: string; value: number; href: string; highlight?: boolean }) {
+function MiniStat({
+    icon: Icon,
+    label,
+    value,
+    href,
+    highlight,
+}: {
+    icon: LucideIcon;
+    label: string;
+    value: number;
+    href: string;
+    highlight?: boolean;
+}) {
     return (
         <Link
             href={href}
             className={`flex items-center gap-3 rounded-xl border p-4 transition-colors ${
-                highlight ? 'border-brand-gold/40 bg-brand-gold/10 hover:border-brand-gold' : 'border-neutral-800 bg-neutral-900 hover:border-neutral-700'
+                highlight
+                    ? 'border-brand-gold/40 bg-brand-gold/10 hover:border-brand-gold'
+                    : 'border-neutral-800 bg-neutral-900 hover:border-neutral-700'
             }`}
         >
-            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${highlight ? 'bg-brand-gold/20 text-brand-gold' : 'bg-neutral-800 text-neutral-300'}`}>
+            <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${highlight ? 'bg-brand-gold/20 text-brand-gold' : 'bg-neutral-800 text-neutral-300'}`}
+            >
                 <Icon className="h-5 w-5" />
             </span>
             <div className="min-w-0">

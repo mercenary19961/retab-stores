@@ -26,10 +26,7 @@ export default function ProductImage({ src, alt }: { src: string | null; alt: st
 
     return (
         <div className="relative aspect-square w-full overflow-hidden rounded-[23%] bg-white shadow-sm transition-shadow group-hover:shadow-md">
-            <div
-                aria-hidden
-                className="absolute inset-0 flex items-center justify-center bg-white"
-            >
+            <div aria-hidden className="absolute inset-0 flex items-center justify-center bg-white">
                 <img src="/images/brand/logo.png" alt="" className="w-1/2 max-w-[7rem] opacity-20" />
             </div>
 
@@ -41,9 +38,7 @@ export default function ProductImage({ src, alt }: { src: string | null; alt: st
                     loading="lazy"
                     decoding="async"
                     onLoad={() => setLoaded(true)}
-                    className={`relative h-full w-full object-cover transition-opacity duration-500 ${
-                        loaded ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className={`relative h-full w-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                 />
             )}
         </div>

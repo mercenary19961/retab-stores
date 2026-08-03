@@ -30,7 +30,7 @@ class ImportProductImages extends Command
         $group = $this->argument('group');
 
         if (! isset($maps[$group])) {
-            $this->error("Unknown map group '{$group}'. Available: " . implode(', ', array_keys($maps)));
+            $this->error("Unknown map group '{$group}'. Available: ".implode(', ', array_keys($maps)));
 
             return self::FAILURE;
         }
@@ -46,7 +46,7 @@ class ImportProductImages extends Command
         $dry = (bool) $this->option('dry-run');
         $files = $this->scan($dir);
 
-        $this->info('Scanned ' . count($files) . ' image(s)' . ($dry ? '  (dry run — nothing will be written)' : ''));
+        $this->info('Scanned '.count($files).' image(s)'.($dry ? '  (dry run — nothing will be written)' : ''));
 
         $totalStored = 0;
         foreach ($maps[$group] as $slug => [$include, $exclude]) {
@@ -58,9 +58,9 @@ class ImportProductImages extends Command
             }
 
             $matched = $this->match($files, $include, $exclude, $cap);
-            $this->line("  · {$product->name_ar}: " . count($matched) . ' image(s)');
+            $this->line("  · {$product->name_ar}: ".count($matched).' image(s)');
             foreach ($matched as $i => $path) {
-                $this->line('       ' . ($i === 0 ? '★ ' : '  ') . basename($path));
+                $this->line('       '.($i === 0 ? '★ ' : '  ').basename($path));
             }
 
             if (! $dry) {

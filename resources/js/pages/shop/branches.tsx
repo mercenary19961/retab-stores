@@ -1,8 +1,8 @@
+import StoreLayout from '@/layouts/store-layout';
+import { useLocalized } from '@/lib/localize';
 import { Head } from '@inertiajs/react';
 import { Clock, MapPin, Navigation, Phone, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
-import StoreLayout from '@/layouts/store-layout';
 
 interface Branch {
     key: string;
@@ -30,10 +30,8 @@ export default function Branches({ branches }: { branches: Branch[] }) {
                 <meta name="description" content={t('branches.metaDescription')} />
             </Head>
 
-            <h1 className="mb-2 text-center font-heading font-black text-brand-teal text-[clamp(1.75rem,4vw,2.75rem)]">
-                {t('branches.heading')}
-            </h1>
-            <p className="mb-10 text-center text-brand-teal/70">{t('branches.subtitle')}</p>
+            <h1 className="font-heading text-brand-teal mb-2 text-center text-[clamp(1.75rem,4vw,2.75rem)] font-black">{t('branches.heading')}</h1>
+            <p className="text-brand-teal/70 mb-10 text-center">{t('branches.subtitle')}</p>
 
             <div className="grid gap-8 md:grid-cols-2">
                 {branches.map((b) => {
@@ -42,7 +40,7 @@ export default function Branches({ branches }: { branches: Branch[] }) {
                     const directions = `https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`;
 
                     return (
-                        <div key={b.key} className="overflow-hidden rounded-2xl border border-brand-gold/20 bg-white shadow-sm">
+                        <div key={b.key} className="border-brand-gold/20 overflow-hidden rounded-2xl border bg-white shadow-sm">
                             <iframe
                                 src={embed}
                                 title={localized(b, 'name')}
@@ -53,20 +51,20 @@ export default function Branches({ branches }: { branches: Branch[] }) {
 
                             <div className="space-y-4 p-6">
                                 <div className="flex items-start justify-between gap-3">
-                                    <h2 className="font-heading text-xl font-bold text-brand-teal">{localized(b, 'name')}</h2>
-                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-cream px-2.5 py-1 text-sm font-semibold text-brand-teal">
-                                        <Star className="size-4 fill-brand-gold text-brand-gold" />
+                                    <h2 className="font-heading text-brand-teal text-xl font-bold">{localized(b, 'name')}</h2>
+                                    <span className="bg-brand-cream text-brand-teal inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold">
+                                        <Star className="fill-brand-gold text-brand-gold size-4" />
                                         {b.rating.toFixed(1)}
                                         <span className="text-brand-teal/50">({b.reviews})</span>
                                     </span>
                                 </div>
 
-                                <p className="flex items-start gap-2 text-sm text-brand-teal/80">
-                                    <MapPin className="mt-0.5 size-4 shrink-0 text-brand-gold" />
+                                <p className="text-brand-teal/80 flex items-start gap-2 text-sm">
+                                    <MapPin className="text-brand-gold mt-0.5 size-4 shrink-0" />
                                     {localized(b, 'address')}
                                 </p>
-                                <p className="flex items-center gap-2 text-sm text-brand-teal/80">
-                                    <Clock className="size-4 shrink-0 text-brand-gold" />
+                                <p className="text-brand-teal/80 flex items-center gap-2 text-sm">
+                                    <Clock className="text-brand-gold size-4 shrink-0" />
                                     {localized(b, 'hours')}
                                 </p>
 
@@ -75,7 +73,7 @@ export default function Branches({ branches }: { branches: Branch[] }) {
                                         href={directions}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 rounded-full bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+                                        className="bg-brand-teal hover:bg-brand-teal/90 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition-colors"
                                     >
                                         <Navigation className="size-4" />
                                         {t('branches.directions')}
@@ -84,7 +82,7 @@ export default function Branches({ branches }: { branches: Branch[] }) {
                                         href={`tel:${b.phone}`}
                                         dir="ltr"
                                         aria-label={t('branches.call')}
-                                        className="inline-flex items-center gap-2 rounded-full border border-brand-gold/40 px-5 py-2.5 text-sm font-semibold text-brand-teal transition-colors hover:bg-brand-gold/10"
+                                        className="border-brand-gold/40 text-brand-teal hover:bg-brand-gold/10 inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-colors"
                                     >
                                         <Phone className="size-4" />
                                         {b.phone.replace('+966', '0')}

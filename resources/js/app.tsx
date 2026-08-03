@@ -22,10 +22,7 @@ createInertiaApp({
     // so resolvePageComponent's Promise<{ default: Component }> must be
     // unwrapped to the component with .then((m) => m.default).
     resolve: (name) =>
-        resolvePageComponent(
-            `./pages/${name}.tsx`,
-            import.meta.glob<{ default: ComponentType }>('./pages/**/*.tsx'),
-        ).then((m) => m.default),
+        resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob<{ default: ComponentType }>('./pages/**/*.tsx')).then((m) => m.default),
     setup({ el, App, props }) {
         const root = createRoot(el);
 

@@ -47,7 +47,7 @@ export default function AdminToasts() {
     if (toasts.length === 0) return null;
 
     return (
-        <div className="pointer-events-none fixed top-4 end-4 z-[100] flex w-[min(24rem,calc(100%-2rem))] flex-col gap-2">
+        <div className="pointer-events-none fixed end-4 top-4 z-[100] flex w-[min(24rem,calc(100%-2rem))] flex-col gap-2">
             {toasts.map((toast) => (
                 <ToastItem key={toast.key} toast={toast} onDismiss={() => remove(toast.key)} dismissLabel={t('admin.common.dismiss')} />
             ))}
@@ -94,7 +94,9 @@ function ToastItem({ toast, onDismiss, dismissLabel }: { toast: ToastData; onDis
             <span
                 className={cn(
                     'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
-                    isError ? 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400' : 'bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400',
+                    isError
+                        ? 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400'
+                        : 'bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400',
                 )}
             >
                 <Icon className="h-3.5 w-3.5" />

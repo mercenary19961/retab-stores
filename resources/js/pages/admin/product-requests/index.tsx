@@ -102,7 +102,9 @@ export default function ProductRequestsIndex({
                                 </td>
                                 <td className="px-4 py-3">
                                     {r.is_guest ? (
-                                        <StatusPill tone="neutral" dot={false}>{t('admin.productRequests.guest')}</StatusPill>
+                                        <StatusPill tone="neutral" dot={false}>
+                                            {t('admin.productRequests.guest')}
+                                        </StatusPill>
                                     ) : (
                                         <span dir="auto">{r.customer ?? '—'}</span>
                                     )}

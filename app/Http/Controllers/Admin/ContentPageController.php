@@ -83,7 +83,7 @@ class ContentPageController extends Controller
     private function validated(Request $request, ?ContentPage $page = null): array
     {
         return $request->validate([
-            'slug' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9-]+$/', 'unique:content_pages,slug' . ($page ? ",{$page->id}" : '')],
+            'slug' => ['required', 'string', 'max:100', 'regex:/^[a-z0-9-]+$/', 'unique:content_pages,slug'.($page ? ",{$page->id}" : '')],
             'title_ar' => ['required', 'string', 'max:255'],
             'title_en' => ['nullable', 'string', 'max:255'],
             'body_ar' => ['required', 'string'],

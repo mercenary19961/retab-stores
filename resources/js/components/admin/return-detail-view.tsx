@@ -1,3 +1,6 @@
+import Button from '@/components/admin/button';
+import StatusPill, { type StatusTone } from '@/components/status-pill';
+import { useAdminT } from '@/i18n/use-admin-t';
 import {
     Calendar,
     Check,
@@ -16,10 +19,7 @@ import {
     X,
     type LucideIcon,
 } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
-import Button from '@/components/admin/button';
-import StatusPill, { type StatusTone } from '@/components/status-pill';
-import { useAdminT } from '@/i18n/use-admin-t';
+import { useState, type ReactNode } from 'react';
 
 // Return lifecycle → pill tone (shared with the returns list).
 export const RETURN_STATUS_TONE: Record<string, StatusTone> = {
@@ -66,7 +66,9 @@ function DlRow({ icon: Icon, label, value, mono, dir }: { icon: LucideIcon; labe
             <dt className="flex items-center gap-2 text-neutral-500">
                 <Icon className="h-3.5 w-3.5 shrink-0" /> {label}
             </dt>
-            <dd className={mono ? 'font-mono' : ''} dir={dir}>{value}</dd>
+            <dd className={mono ? 'font-mono' : ''} dir={dir}>
+                {value}
+            </dd>
         </div>
     );
 }
@@ -106,23 +108,29 @@ export default function ReturnDetailView({
                 <div className="space-y-6 lg:col-span-2">
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                         <h2 className="mb-3 flex items-center gap-2 font-bold">
-                            <RotateCcw className="h-4 w-4 text-brand-gold" /> {t('admin.returns.show.headTitle', { id: orderReturn.id })}
+                            <RotateCcw className="text-brand-gold h-4 w-4" /> {t('admin.returns.show.headTitle', { id: orderReturn.id })}
                         </h2>
 
-                        <p className="mb-1 text-xs font-medium uppercase text-neutral-400">{t('admin.returns.show.customerDescription')}</p>
-                        <p className="mb-4 whitespace-pre-wrap text-sm" dir="auto">{orderReturn.reason}</p>
+                        <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{t('admin.returns.show.customerDescription')}</p>
+                        <p className="mb-4 text-sm whitespace-pre-wrap" dir="auto">
+                            {orderReturn.reason}
+                        </p>
 
-                        <p className="mb-1 text-xs font-medium uppercase text-neutral-400">{t('admin.returns.show.items')}</p>
+                        <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{t('admin.returns.show.items')}</p>
                         <ul className="mb-4 space-y-1 text-sm">
                             {orderReturn.items.map((item, i) => (
                                 <li key={i} className="flex justify-between gap-3">
-                                    <span dir="auto">{item.name_ar ?? '—'} × {item.quantity}</span>
-                                    <span className="whitespace-nowrap text-neutral-500">{(item.unit_price * item.quantity).toFixed(2)} {t('admin.common.sar')}</span>
+                                    <span dir="auto">
+                                        {item.name_ar ?? '—'} × {item.quantity}
+                                    </span>
+                                    <span className="whitespace-nowrap text-neutral-500">
+                                        {(item.unit_price * item.quantity).toFixed(2)} {t('admin.common.sar')}
+                                    </span>
                                 </li>
                             ))}
                         </ul>
 
-                        <p className="mb-2 text-xs font-medium uppercase text-neutral-400">{t('admin.returns.show.photos')}</p>
+                        <p className="mb-2 text-xs font-medium text-neutral-400 uppercase">{t('admin.returns.show.photos')}</p>
                         {orderReturn.photos.length === 0 ? (
                             <p className="text-sm text-neutral-400">{t('admin.returns.show.noPhotos')}</p>
                         ) : (
@@ -139,7 +147,7 @@ export default function ReturnDetailView({
                     {(orderReturn.status === 'requested' || orderReturn.status === 'approved') && (
                         <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                             <h2 className="mb-3 flex items-center gap-2 font-bold">
-                                <Gavel className="h-4 w-4 text-brand-gold" /> {t('admin.returns.show.resolve')}
+                                <Gavel className="text-brand-gold h-4 w-4" /> {t('admin.returns.show.resolve')}
                             </h2>
 
                             <label className="mb-3 block">
@@ -154,8 +162,12 @@ export default function ReturnDetailView({
 
                             {orderReturn.status === 'requested' && (
                                 <div className="flex gap-3">
-                                    <Button variant="success" icon={Check} disabled={busy} onClick={() => onAction('approve', { notes })}>{t('admin.returns.show.approve')}</Button>
-                                    <Button variant="danger" icon={X} disabled={busy} onClick={() => onAction('reject', { notes })}>{t('admin.returns.show.reject')}</Button>
+                                    <Button variant="success" icon={Check} disabled={busy} onClick={() => onAction('approve', { notes })}>
+                                        {t('admin.returns.show.approve')}
+                                    </Button>
+                                    <Button variant="danger" icon={X} disabled={busy} onClick={() => onAction('reject', { notes })}>
+                                        {t('admin.returns.show.reject')}
+                                    </Button>
                                 </div>
                             )}
 
@@ -166,13 +178,26 @@ export default function ReturnDetailView({
                                         {t('admin.returns.show.refundShippingLabel')}
                                     </label>
                                     <p className="text-sm text-neutral-500">
-                                        {t('admin.returns.show.refundAmountLabel')} <b>{(refundShipping ? refundPreview.with_shipping : refundPreview.items_only).toFixed(2)} {t('admin.common.sar')}</b>
-                                        {' '}{t('admin.returns.show.via')} <b>{order.payment_method ?? '—'}</b>
+                                        {t('admin.returns.show.refundAmountLabel')}{' '}
+                                        <b>
+                                            {(refundShipping ? refundPreview.with_shipping : refundPreview.items_only).toFixed(2)}{' '}
+                                            {t('admin.common.sar')}
+                                        </b>{' '}
+                                        {t('admin.returns.show.via')} <b>{order.payment_method ?? '—'}</b>
                                         {order.payment_method === 'bank_transfer' && ` ${t('admin.returns.show.manualNote')}`}
                                     </p>
                                     <div className="flex gap-3">
-                                        <Button variant="primary" icon={Undo2} disabled={busy} onClick={() => onAction('refund', { notes, refund_shipping: refundShipping })}>{t('admin.returns.show.refund')}</Button>
-                                        <Button variant="secondary" icon={RefreshCw} disabled={busy} onClick={() => onAction('exchange', { notes })}>{t('admin.returns.show.resolveAsExchange')}</Button>
+                                        <Button
+                                            variant="primary"
+                                            icon={Undo2}
+                                            disabled={busy}
+                                            onClick={() => onAction('refund', { notes, refund_shipping: refundShipping })}
+                                        >
+                                            {t('admin.returns.show.refund')}
+                                        </Button>
+                                        <Button variant="secondary" icon={RefreshCw} disabled={busy} onClick={() => onAction('exchange', { notes })}>
+                                            {t('admin.returns.show.resolveAsExchange')}
+                                        </Button>
                                     </div>
                                 </div>
                             )}
@@ -182,7 +207,7 @@ export default function ReturnDetailView({
 
                 <div className="h-fit space-y-4 rounded-lg border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="flex items-center gap-2 font-bold">
-                        <ShoppingBag className="h-4 w-4 text-brand-gold" /> {t('admin.common.order')}
+                        <ShoppingBag className="text-brand-gold h-4 w-4" /> {t('admin.common.order')}
                     </h2>
                     <dl className="space-y-2">
                         <DlRow icon={Hash} label={t('admin.common.order')} value={order.order_number ?? '—'} mono />
@@ -198,12 +223,16 @@ export default function ReturnDetailView({
                     {orderReturn.resolved_at && (
                         <div className="border-t border-neutral-100 pt-3 dark:border-neutral-800">
                             <p className="text-neutral-500">
-                                {t('admin.returns.show.resolved')} {orderReturn.resolution ? `(${t(`admin.returns.status.${orderReturn.resolution}`)})` : ''} {orderReturn.resolved_at}
+                                {t('admin.returns.show.resolved')}{' '}
+                                {orderReturn.resolution ? `(${t(`admin.returns.status.${orderReturn.resolution}`)})` : ''} {orderReturn.resolved_at}
                                 {orderReturn.resolved_by ? ` ${t('admin.common.by', { user: orderReturn.resolved_by })}` : ''}
                             </p>
                             {orderReturn.refund_amount !== null && (
                                 <p className="mt-1">
-                                    {t('admin.returns.show.refundedLine')} <b>{orderReturn.refund_amount.toFixed(2)} {t('admin.common.sar')}</b>
+                                    {t('admin.returns.show.refundedLine')}{' '}
+                                    <b>
+                                        {orderReturn.refund_amount.toFixed(2)} {t('admin.common.sar')}
+                                    </b>
                                     {orderReturn.refund_shipping ? ` ${t('admin.returns.show.inclShipping')}` : ''}
                                 </p>
                             )}
@@ -212,7 +241,7 @@ export default function ReturnDetailView({
 
                     {orderReturn.admin_notes && (
                         <div className="border-t border-neutral-100 pt-3 dark:border-neutral-800">
-                            <p className="mb-1 text-xs font-medium uppercase text-neutral-400">{t('admin.common.notes')}</p>
+                            <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{t('admin.common.notes')}</p>
                             <p className="whitespace-pre-wrap">{orderReturn.admin_notes}</p>
                         </div>
                     )}

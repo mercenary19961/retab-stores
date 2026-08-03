@@ -1,8 +1,8 @@
+import { useLocalized } from '@/lib/localize';
 import { Link } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
 
 interface Suggestion {
     slug: string;
@@ -48,9 +48,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
     const term = q.trim().toLowerCase();
     const results = useMemo(() => {
         if (!index || term.length < 1) return [];
-        return index
-            .filter((p) => p.name_ar.toLowerCase().includes(term) || (p.name_en ?? '').toLowerCase().includes(term))
-            .slice(0, 8);
+        return index.filter((p) => p.name_ar.toLowerCase().includes(term) || (p.name_en ?? '').toLowerCase().includes(term)).slice(0, 8);
     }, [index, term]);
 
     // Close on outside click / Escape.
@@ -82,7 +80,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
     return (
         <div ref={boxRef} className="relative min-w-0 flex-1 sm:max-w-xs">
             <form onSubmit={submit}>
-                <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-brand-gold" />
+                <Search className="text-brand-gold pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2" />
                 <input
                     type="search"
                     value={q}
@@ -94,16 +92,14 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                     placeholder={t('catalogue.searchPlaceholder')}
                     aria-label={t('nav.search')}
                     autoComplete="off"
-                    className="w-full rounded-full border border-brand-gold/30 bg-white py-2 ps-9 pe-4 text-sm text-brand-teal placeholder:text-brand-teal/40 focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/25"
+                    className="border-brand-gold/30 text-brand-teal placeholder:text-brand-teal/40 focus:border-brand-gold focus:ring-brand-gold/25 w-full rounded-full border bg-white py-2 ps-9 pe-4 text-sm focus:ring-2 focus:outline-none"
                 />
             </form>
 
             {showDropdown && (
-                <div className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-brand-gold/20 bg-white shadow-lg sm:min-w-[22rem]">
+                <div className="border-brand-gold/20 absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border bg-white shadow-lg sm:min-w-[22rem]">
                     {results.length === 0 ? (
-                        <p className="px-4 py-3 text-sm text-brand-teal/60">
-                            {index === null ? t('catalogue.searching') : t('catalogue.noResults')}
-                        </p>
+                        <p className="text-brand-teal/60 px-4 py-3 text-sm">{index === null ? t('catalogue.searching') : t('catalogue.noResults')}</p>
                     ) : (
                         <ul className="brand-scrollbar max-h-96 overflow-y-auto py-1">
                             {results.map((r) => (
@@ -111,32 +107,36 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                                     <Link
                                         href={`/products/${r.slug}`}
                                         onClick={() => setOpen(false)}
-                                        className="flex items-center gap-3 px-3 py-2 transition-colors hover:bg-brand-cream"
+                                        className="hover:bg-brand-cream flex items-center gap-3 px-3 py-2 transition-colors"
                                     >
                                         {r.image ? (
                                             <img src={r.image} alt="" className="size-11 shrink-0 rounded-lg object-cover" />
                                         ) : (
-                                            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-cream text-lg">🌴</span>
+                                            <span className="bg-brand-cream flex size-11 shrink-0 items-center justify-center rounded-lg text-lg">
+                                                🌴
+                                            </span>
                                         )}
                                         <span className="min-w-0 flex-1">
-                                            <span className="block truncate text-sm font-medium text-brand-teal">{localized(r, 'name')}</span>
+                                            <span className="text-brand-teal block truncate text-sm font-medium">{localized(r, 'name')}</span>
                                             {r.coming_soon ? (
-                                                <span className="text-xs font-semibold text-brand-gold">{t('catalogue.comingSoon')}</span>
+                                                <span className="text-brand-gold text-xs font-semibold">{t('catalogue.comingSoon')}</span>
                                             ) : (
-                                                <span className="text-xs text-brand-teal/70">
+                                                <span className="text-brand-teal/70 text-xs">
                                                     {r.effective_price.toFixed(2)} {currency}
-                                                    {r.on_sale && <span className="ms-1.5 text-brand-teal/40 line-through">{r.price.toFixed(2)}</span>}
+                                                    {r.on_sale && (
+                                                        <span className="text-brand-teal/40 ms-1.5 line-through">{r.price.toFixed(2)}</span>
+                                                    )}
                                                 </span>
                                             )}
                                         </span>
                                     </Link>
                                 </li>
                             ))}
-                            <li className="border-t border-brand-gold/10">
+                            <li className="border-brand-gold/10 border-t">
                                 <button
                                     type="button"
                                     onClick={submit}
-                                    className="w-full px-4 py-2.5 text-start text-sm font-medium text-brand-gold transition-colors hover:bg-brand-cream"
+                                    className="text-brand-gold hover:bg-brand-cream w-full px-4 py-2.5 text-start text-sm font-medium transition-colors"
                                 >
                                     {t('catalogue.searchViewAll')}
                                 </button>

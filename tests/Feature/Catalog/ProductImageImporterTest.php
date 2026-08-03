@@ -17,18 +17,18 @@ class ProductImageImporterTest extends TestCase
 
     private function product(): Product
     {
-        $category = Category::create(['name_ar' => 'ت', 'slug' => 'c-' . uniqid()]);
+        $category = Category::create(['name_ar' => 'ت', 'slug' => 'c-'.uniqid()]);
 
         return Product::create([
-            'category_id' => $category->id, 'name_ar' => 'م', 'slug' => 'p-' . uniqid(),
-            'price' => 10, 'sku' => 'SK-' . uniqid(), 'stock' => 5, 'is_active' => true,
+            'category_id' => $category->id, 'name_ar' => 'م', 'slug' => 'p-'.uniqid(),
+            'price' => 10, 'sku' => 'SK-'.uniqid(), 'stock' => 5, 'is_active' => true,
         ]);
     }
 
     /** A valid 1×1 PNG on disk (passes Media's extension + MIME checks). */
     private function tmpPng(): string
     {
-        $path = sys_get_temp_dir() . '/pi_' . uniqid() . '.png';
+        $path = sys_get_temp_dir().'/pi_'.uniqid().'.png';
         file_put_contents($path, base64_decode(
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
         ));

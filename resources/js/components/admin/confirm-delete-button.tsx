@@ -1,8 +1,8 @@
-import { AlertTriangle, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 import Button from '@/components/admin/button';
 import Modal from '@/components/admin/modal';
 import { useAdminT } from '@/i18n/use-admin-t';
+import { AlertTriangle, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Guarded delete trigger (inspired by Sky Amman's ConfirmDeleteButton): a danger
@@ -60,7 +60,9 @@ export default function ConfirmDeleteButton({
                             <p className="text-sm text-neutral-700 dark:text-neutral-200" dir="auto">
                                 {t('admin.deleteModal.lead', { name: itemName ?? '' })}
                             </p>
-                            <p className={`mt-1 text-xs ${reversible ? 'text-neutral-500 dark:text-neutral-400' : 'font-medium text-red-600 dark:text-red-400'}`}>
+                            <p
+                                className={`mt-1 text-xs ${reversible ? 'text-neutral-500 dark:text-neutral-400' : 'font-medium text-red-600 dark:text-red-400'}`}
+                            >
                                 {reversible ? t('admin.deleteModal.reversible') : t('admin.deleteModal.permanent')}
                             </p>
                         </div>
@@ -76,13 +78,17 @@ export default function ConfirmDeleteButton({
                             onKeyDown={(e) => e.key === 'Enter' && confirm()}
                             placeholder={confirmWord}
                             autoComplete="off"
-                            className="mt-1 w-full rounded-lg border border-red-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-red-900 dark:bg-neutral-950"
+                            className="mt-1 w-full rounded-lg border border-red-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500/40 focus:outline-none dark:border-red-900 dark:bg-neutral-950"
                         />
                     </label>
 
                     <div className="flex justify-end gap-2 pt-1">
-                        <Button variant="secondary" onClick={() => setOpen(false)}>{t('admin.common.cancel')}</Button>
-                        <Button variant="danger" icon={Trash2} disabled={!ready} onClick={confirm}>{t('admin.deleteModal.confirm')}</Button>
+                        <Button variant="secondary" onClick={() => setOpen(false)}>
+                            {t('admin.common.cancel')}
+                        </Button>
+                        <Button variant="danger" icon={Trash2} disabled={!ready} onClick={confirm}>
+                            {t('admin.deleteModal.confirm')}
+                        </Button>
                     </div>
                 </div>
             </Modal>

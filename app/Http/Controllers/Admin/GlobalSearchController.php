@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 class GlobalSearchController extends Controller
 {
     private const PER_GROUP = 6;   // results shown per entity
+
     private const CANDIDATES = 30; // rows pulled from the DB before scoring
 
     public function search(Request $request): JsonResponse

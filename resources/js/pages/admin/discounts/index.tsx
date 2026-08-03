@@ -1,13 +1,13 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { BadgePercent, Gift, Percent, RotateCcw, Trash2, Truck, Upload } from 'lucide-react';
-import { type FormEvent } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Select from '@/components/admin/select';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, router, useForm } from '@inertiajs/react';
+import { BadgePercent, Gift, Percent, RotateCcw, Trash2, Truck, Upload } from 'lucide-react';
+import { type FormEvent } from 'react';
 
 interface DiscountedRow {
     id: number;
@@ -21,10 +21,32 @@ interface DiscountedRow {
     ends_at: string | null;
     status: string;
 }
-interface CategoryOpt { id: number; name_ar: string; name_en: string | null; count: number }
-interface HistoryRow { id: number; mode: string; applied: number; discount_mode: string; value: number | null; user: string | null; created_at: string | null; reverted_at: string | null }
-interface FreeShippingState { active: boolean; starts_at: string | null; ends_at: string | null; live: boolean }
-interface ReviewRewardState { enabled: boolean; percent: number }
+interface CategoryOpt {
+    id: number;
+    name_ar: string;
+    name_en: string | null;
+    count: number;
+}
+interface HistoryRow {
+    id: number;
+    mode: string;
+    applied: number;
+    discount_mode: string;
+    value: number | null;
+    user: string | null;
+    created_at: string | null;
+    reverted_at: string | null;
+}
+interface FreeShippingState {
+    active: boolean;
+    starts_at: string | null;
+    ends_at: string | null;
+    live: boolean;
+}
+interface ReviewRewardState {
+    enabled: boolean;
+    percent: number;
+}
 
 const INPUT =
     'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
@@ -65,9 +87,7 @@ export default function DiscountsIndex({
     // Bulk apply form.
     const bulk = useForm({ mode: 'percentage', value: '', max_discount: '', category_id: '', starts_at: '', ends_at: '', free_shipping: false });
     const isPct = bulk.data.mode === 'percentage';
-    const scopeCount = bulk.data.category_id
-        ? (categories.find((c) => String(c.id) === bulk.data.category_id)?.count ?? 0)
-        : activeCount;
+    const scopeCount = bulk.data.category_id ? (categories.find((c) => String(c.id) === bulk.data.category_id)?.count ?? 0) : activeCount;
     const applyBulk = (e: FormEvent) => {
         e.preventDefault();
         bulk.post('/admin/discounts/apply', { preserveScroll: true, onSuccess: () => bulk.reset() });
@@ -120,7 +140,9 @@ export default function DiscountsIndex({
     const currentCard = (
         <section className={CARD}>
             <div className="mb-4 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 font-bold"><BadgePercent className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.current.title')} ({discounted.length})</h2>
+                <h2 className="flex items-center gap-2 font-bold">
+                    <BadgePercent className="text-brand-gold h-4 w-4" /> {t('admin.discounts.current.title')} ({discounted.length})
+                </h2>
                 {discounted.length > 0 && (
                     <ConfirmDeleteButton
                         label={t('admin.discounts.current.clearAll')}
@@ -148,18 +170,24 @@ export default function DiscountsIndex({
                             {discounted.map((p) => (
                                 <tr key={p.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
                                     <td className="px-3 py-2">
-                                        <span dir="auto" className="font-medium text-neutral-800 dark:text-neutral-100">{loc(p.name_ar, p.name_en)}</span>
+                                        <span dir="auto" className="font-medium text-neutral-800 dark:text-neutral-100">
+                                            {loc(p.name_ar, p.name_en)}
+                                        </span>
                                         <span className="ms-2 font-mono text-xs text-neutral-400">{p.sku}</span>
                                     </td>
-                                    <td className="whitespace-nowrap px-3 py-2">
+                                    <td className="px-3 py-2 whitespace-nowrap">
                                         <span className="text-neutral-400 line-through">{money(p.price)}</span>{' '}
                                         <span className="font-medium text-neutral-800 dark:text-neutral-100">{money(p.sale_price)}</span>{' '}
                                         <span className="text-xs text-green-600 dark:text-green-400">-{p.percent}%</span>
                                     </td>
-                                    <td className="whitespace-nowrap px-3 py-2 text-neutral-500">{windowLabel(p.starts_at, p.ends_at)}</td>
-                                    <td className="px-3 py-2"><StatusPill tone={STATUS_TONE[p.status] ?? 'neutral'}>{t(`admin.discounts.status.${p.status}`)}</StatusPill></td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-neutral-500">{windowLabel(p.starts_at, p.ends_at)}</td>
+                                    <td className="px-3 py-2">
+                                        <StatusPill tone={STATUS_TONE[p.status] ?? 'neutral'}>{t(`admin.discounts.status.${p.status}`)}</StatusPill>
+                                    </td>
                                     <td className="px-3 py-2 text-end">
-                                        <Button size="sm" variant="ghost" icon={Trash2} onClick={() => clearOne(p.id)}>{t('admin.discounts.current.clear')}</Button>
+                                        <Button size="sm" variant="ghost" icon={Trash2} onClick={() => clearOne(p.id)}>
+                                            {t('admin.discounts.current.clear')}
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}
@@ -172,21 +200,31 @@ export default function DiscountsIndex({
 
     const historyCard = (
         <section className={CARD}>
-            <h2 className="mb-4 flex items-center gap-2 font-bold"><RotateCcw className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.history.title')}</h2>
+            <h2 className="mb-4 flex items-center gap-2 font-bold">
+                <RotateCcw className="text-brand-gold h-4 w-4" /> {t('admin.discounts.history.title')}
+            </h2>
             {history.length === 0 ? (
                 <p className="py-4 text-center text-sm text-neutral-400">{t('admin.discounts.history.empty')}</p>
             ) : (
                 <ul className="max-h-80 space-y-2 overflow-y-auto text-sm">
                     {history.map((h) => (
-                        <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
+                        <li
+                            key={h.id}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800"
+                        >
                             <div>
                                 <span className="font-medium text-neutral-700 dark:text-neutral-200">{historyLabel(h)}</span>
-                                <span className="ms-2 text-xs text-neutral-400">{h.created_at}{h.user ? ` · ${h.user}` : ''}</span>
+                                <span className="ms-2 text-xs text-neutral-400">
+                                    {h.created_at}
+                                    {h.user ? ` · ${h.user}` : ''}
+                                </span>
                             </div>
                             {h.reverted_at ? (
                                 <span className="text-xs text-neutral-400">{t('admin.discounts.history.reverted')}</span>
                             ) : (
-                                <Button size="sm" variant="secondary" icon={RotateCcw} onClick={() => undo(h.id)}>{t('admin.discounts.history.undo')}</Button>
+                                <Button size="sm" variant="secondary" icon={RotateCcw} onClick={() => undo(h.id)}>
+                                    {t('admin.discounts.history.undo')}
+                                </Button>
                             )}
                         </li>
                     ))}
@@ -197,7 +235,9 @@ export default function DiscountsIndex({
 
     const bulkCard = (
         <section className={CARD}>
-            <h2 className="mb-1 flex items-center gap-2 font-bold"><Percent className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.bulk.title')}</h2>
+            <h2 className="mb-1 flex items-center gap-2 font-bold">
+                <Percent className="text-brand-gold h-4 w-4" /> {t('admin.discounts.bulk.title')}
+            </h2>
             <p className="mb-4 text-sm text-neutral-500">{t('admin.discounts.bulk.desc')}</p>
             <form onSubmit={applyBulk} className="space-y-4">
                 <div className="flex gap-2">
@@ -214,14 +254,33 @@ export default function DiscountsIndex({
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block text-sm">
-                        <span className="text-neutral-600 dark:text-neutral-300">{isPct ? t('admin.discounts.bulk.percent') : t('admin.discounts.bulk.amount')}</span>
-                        <input type="number" step={isPct ? '1' : '0.01'} min={isPct ? '1' : '0.01'} max={isPct ? '99' : undefined} value={bulk.data.value} onChange={(e) => bulk.setData('value', e.target.value)} className={INPUT} placeholder={isPct ? '20' : '10'} />
+                        <span className="text-neutral-600 dark:text-neutral-300">
+                            {isPct ? t('admin.discounts.bulk.percent') : t('admin.discounts.bulk.amount')}
+                        </span>
+                        <input
+                            type="number"
+                            step={isPct ? '1' : '0.01'}
+                            min={isPct ? '1' : '0.01'}
+                            max={isPct ? '99' : undefined}
+                            value={bulk.data.value}
+                            onChange={(e) => bulk.setData('value', e.target.value)}
+                            className={INPUT}
+                            placeholder={isPct ? '20' : '10'}
+                        />
                         {bulk.errors.value && <span className="mt-1 block text-xs text-red-500">{bulk.errors.value}</span>}
                     </label>
                     {isPct && (
                         <label className="block text-sm">
                             <span className="text-neutral-600 dark:text-neutral-300">{t('admin.discounts.bulk.maxDiscount')}</span>
-                            <input type="number" step="0.01" min="0" value={bulk.data.max_discount} onChange={(e) => bulk.setData('max_discount', e.target.value)} className={INPUT} placeholder={t('admin.discounts.bulk.optional')} />
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={bulk.data.max_discount}
+                                onChange={(e) => bulk.setData('max_discount', e.target.value)}
+                                className={INPUT}
+                                placeholder={t('admin.discounts.bulk.optional')}
+                            />
                         </label>
                     )}
                 </div>
@@ -240,22 +299,39 @@ export default function DiscountsIndex({
                 <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block text-sm">
                         <span className="text-neutral-600 dark:text-neutral-300">{t('admin.discounts.bulk.startsAt')}</span>
-                        <input type="datetime-local" value={bulk.data.starts_at} onChange={(e) => bulk.setData('starts_at', e.target.value)} className={INPUT} />
+                        <input
+                            type="datetime-local"
+                            value={bulk.data.starts_at}
+                            onChange={(e) => bulk.setData('starts_at', e.target.value)}
+                            className={INPUT}
+                        />
                     </label>
                     <label className="block text-sm">
                         <span className="text-neutral-600 dark:text-neutral-300">{t('admin.discounts.bulk.endsAt')}</span>
-                        <input type="datetime-local" value={bulk.data.ends_at} onChange={(e) => bulk.setData('ends_at', e.target.value)} className={INPUT} />
+                        <input
+                            type="datetime-local"
+                            value={bulk.data.ends_at}
+                            onChange={(e) => bulk.setData('ends_at', e.target.value)}
+                            className={INPUT}
+                        />
                         {bulk.errors.ends_at && <span className="mt-1 block text-xs text-red-500">{bulk.errors.ends_at}</span>}
                     </label>
                 </div>
                 <label className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300">
-                    <input type="checkbox" checked={bulk.data.free_shipping} onChange={(e) => bulk.setData('free_shipping', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
-                    <Truck className="h-4 w-4 shrink-0 text-brand-gold" />
+                    <input
+                        type="checkbox"
+                        checked={bulk.data.free_shipping}
+                        onChange={(e) => bulk.setData('free_shipping', e.target.checked)}
+                        className="accent-brand-gold h-4 w-4"
+                    />
+                    <Truck className="text-brand-gold h-4 w-4 shrink-0" />
                     {t('admin.discounts.bulk.alsoFreeShipping')}
                 </label>
                 <div className="flex items-center justify-between gap-3">
                     <span className="text-xs text-neutral-400">{t('admin.discounts.bulk.appliesTo', { n: scopeCount })}</span>
-                    <Button type="submit" variant="primary" icon={BadgePercent} disabled={bulk.processing || !bulk.data.value}>{t('admin.discounts.bulk.apply')}</Button>
+                    <Button type="submit" variant="primary" icon={BadgePercent} disabled={bulk.processing || !bulk.data.value}>
+                        {t('admin.discounts.bulk.apply')}
+                    </Button>
                 </div>
             </form>
         </section>
@@ -263,20 +339,28 @@ export default function DiscountsIndex({
 
     const importCard = (
         <section className={CARD}>
-            <h2 className="mb-1 flex items-center gap-2 font-bold"><Upload className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.import.title')}</h2>
+            <h2 className="mb-1 flex items-center gap-2 font-bold">
+                <Upload className="text-brand-gold h-4 w-4" /> {t('admin.discounts.import.title')}
+            </h2>
             <p className="mb-4 text-sm text-neutral-500">{t('admin.discounts.import.desc')}</p>
             <form onSubmit={submitImport} className="space-y-4">
                 <input
                     type="file"
                     accept=".csv,text/csv"
                     onChange={(e) => imp.setData('file', e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm text-neutral-500 file:me-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-gold/15 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-gold file:transition-colors hover:file:bg-brand-gold/30"
+                    className="file:bg-brand-gold/15 file:text-brand-gold hover:file:bg-brand-gold/30 block w-full text-sm text-neutral-500 file:me-3 file:cursor-pointer file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-sm file:font-medium file:transition-colors"
                 />
                 {imp.errors.file && <span className="block text-xs text-red-500">{imp.errors.file}</span>}
                 <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 font-mono text-xs text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950">
-                    sku, discount_percent<br />SK-1001, 20<br />SK-1002, 15
+                    sku, discount_percent
+                    <br />
+                    SK-1001, 20
+                    <br />
+                    SK-1002, 15
                 </div>
-                <Button type="submit" variant="secondary" icon={Upload} disabled={imp.processing || !imp.data.file}>{t('admin.discounts.import.upload')}</Button>
+                <Button type="submit" variant="secondary" icon={Upload} disabled={imp.processing || !imp.data.file}>
+                    {t('admin.discounts.import.upload')}
+                </Button>
             </form>
         </section>
     );
@@ -284,28 +368,49 @@ export default function DiscountsIndex({
     const freeCard = (
         <section className={CARD}>
             <div className="mb-1 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 font-bold"><Truck className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.free.title')}</h2>
-                <StatusPill tone={freeStatus === 'off' ? 'neutral' : freeStatus === 'active' ? 'green' : 'blue'}>{t(`admin.discounts.free.status_${freeStatus}`)}</StatusPill>
+                <h2 className="flex items-center gap-2 font-bold">
+                    <Truck className="text-brand-gold h-4 w-4" /> {t('admin.discounts.free.title')}
+                </h2>
+                <StatusPill tone={freeStatus === 'off' ? 'neutral' : freeStatus === 'active' ? 'green' : 'blue'}>
+                    {t(`admin.discounts.free.status_${freeStatus}`)}
+                </StatusPill>
             </div>
             <p className="mb-4 text-sm text-neutral-500">{t('admin.discounts.free.desc')}</p>
             <form onSubmit={saveFree} className="space-y-4">
                 <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={free.data.active} onChange={(e) => free.setData('active', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+                    <input
+                        type="checkbox"
+                        checked={free.data.active}
+                        onChange={(e) => free.setData('active', e.target.checked)}
+                        className="accent-brand-gold h-4 w-4"
+                    />
                     {t('admin.discounts.free.enable')}
                 </label>
                 <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block text-sm">
                         <span className="text-neutral-600 dark:text-neutral-300">{t('admin.discounts.bulk.startsAt')}</span>
-                        <input type="datetime-local" value={free.data.starts_at} onChange={(e) => free.setData('starts_at', e.target.value)} className={INPUT} />
+                        <input
+                            type="datetime-local"
+                            value={free.data.starts_at}
+                            onChange={(e) => free.setData('starts_at', e.target.value)}
+                            className={INPUT}
+                        />
                     </label>
                     <label className="block text-sm">
                         <span className="text-neutral-600 dark:text-neutral-300">{t('admin.discounts.bulk.endsAt')}</span>
-                        <input type="datetime-local" value={free.data.ends_at} onChange={(e) => free.setData('ends_at', e.target.value)} className={INPUT} />
+                        <input
+                            type="datetime-local"
+                            value={free.data.ends_at}
+                            onChange={(e) => free.setData('ends_at', e.target.value)}
+                            className={INPUT}
+                        />
                         {free.errors.ends_at && <span className="mt-1 block text-xs text-red-500">{free.errors.ends_at}</span>}
                     </label>
                 </div>
                 <div className="flex justify-end">
-                    <Button type="submit" variant="primary" icon={Truck} disabled={free.processing}>{t('admin.discounts.free.save')}</Button>
+                    <Button type="submit" variant="primary" icon={Truck} disabled={free.processing}>
+                        {t('admin.discounts.free.save')}
+                    </Button>
                 </div>
             </form>
         </section>
@@ -314,7 +419,9 @@ export default function DiscountsIndex({
     const reviewCard = (
         <section className={CARD}>
             <div className="mb-1 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 font-bold"><Gift className="h-4 w-4 text-brand-gold" /> {t('admin.discounts.reviewReward.title')}</h2>
+                <h2 className="flex items-center gap-2 font-bold">
+                    <Gift className="text-brand-gold h-4 w-4" /> {t('admin.discounts.reviewReward.title')}
+                </h2>
                 <StatusPill tone={review.data.enabled ? 'green' : 'neutral'}>
                     {t(review.data.enabled ? 'admin.discounts.reviewReward.status_on' : 'admin.discounts.reviewReward.status_off')}
                 </StatusPill>
@@ -322,7 +429,12 @@ export default function DiscountsIndex({
             <p className="mb-4 text-sm text-neutral-500">{t('admin.discounts.reviewReward.desc')}</p>
             <form onSubmit={saveReview} className="space-y-4">
                 <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={review.data.enabled} onChange={(e) => review.setData('enabled', e.target.checked)} className="h-4 w-4 accent-brand-gold" />
+                    <input
+                        type="checkbox"
+                        checked={review.data.enabled}
+                        onChange={(e) => review.setData('enabled', e.target.checked)}
+                        className="accent-brand-gold h-4 w-4"
+                    />
                     {t('admin.discounts.reviewReward.enable')}
                 </label>
                 {review.data.enabled && (
@@ -331,13 +443,18 @@ export default function DiscountsIndex({
                         <Select
                             value={review.data.percent}
                             onChange={(v) => review.setData('percent', v)}
-                            options={[{ value: '10', label: '10%' }, { value: '20', label: '20%' }]}
+                            options={[
+                                { value: '10', label: '10%' },
+                                { value: '20', label: '20%' },
+                            ]}
                             className="mt-1 w-full"
                         />
                     </label>
                 )}
                 <div className="flex justify-end">
-                    <Button type="submit" variant="primary" icon={Gift} disabled={review.processing}>{t('admin.discounts.reviewReward.save')}</Button>
+                    <Button type="submit" variant="primary" icon={Gift} disabled={review.processing}>
+                        {t('admin.discounts.reviewReward.save')}
+                    </Button>
                 </div>
             </form>
         </section>
@@ -354,7 +471,9 @@ export default function DiscountsIndex({
                 <span className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
                     {t('admin.discounts.summary.discounted', { active: activeNow, total: discounted.length })}
                 </span>
-                <span className={`rounded-lg border px-3 py-2 ${freeStatus === 'off' ? 'border-neutral-200 bg-white text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900' : SUMMARY_TINT[freeStatus === 'active' ? 'active' : 'scheduled'] + ' border-transparent'}`}>
+                <span
+                    className={`rounded-lg border px-3 py-2 ${freeStatus === 'off' ? 'border-neutral-200 bg-white text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900' : SUMMARY_TINT[freeStatus === 'active' ? 'active' : 'scheduled'] + ' border-transparent'}`}
+                >
                     {t(`admin.discounts.summary.free_${freeStatus}`)}
                 </span>
             </div>

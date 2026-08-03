@@ -1,12 +1,12 @@
-import { Head, router } from '@inertiajs/react';
-import { FileText, History, Megaphone, Pencil, Send } from 'lucide-react';
-import { type FormEvent, type ReactNode, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import Pagination, { type Paginator } from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
 import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, router } from '@inertiajs/react';
+import { FileText, History, Megaphone, Pencil, Send } from 'lucide-react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 
 const PLACEHOLDER_RE = /\{\{\s*(\d+)\s*\}\}/g;
 
@@ -40,7 +40,10 @@ function renderTemplate(body: string, values?: string[]): ReactNode {
         const n = Number(m[1]);
         const val = values?.[n - 1]?.trim();
         out.push(
-            <span key={`v${key++}`} className={`rounded px-1 ${val ? 'bg-brand-teal/20 text-brand-teal' : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'}`}>
+            <span
+                key={`v${key++}`}
+                className={`rounded px-1 ${val ? 'bg-brand-teal/20 text-brand-teal' : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'}`}
+            >
                 {val || `{{${n}}}`}
             </span>,
         );
@@ -109,20 +112,21 @@ export default function MarketingIndex({
     const titleText = tr('admin.marketing.title');
     const brandWord = tr('admin.marketing.brandWord');
     const brandIdx = titleText.indexOf(brandWord);
-    const marketingTitle = brandIdx === -1 ? (
-        <span className="inline-flex items-center gap-2">
-            <WhatsappIcon className="h-5 w-5 text-[#25D366]" /> {titleText}
-        </span>
-    ) : (
-        <span className="inline-flex items-center gap-2 text-white">
-            <WhatsappIcon className="h-5 w-5 text-[#25D366]" />
-            <span>
-                {titleText.slice(0, brandIdx)}
-                <span className="text-[#25D366]">{brandWord}</span>
-                {titleText.slice(brandIdx + brandWord.length)}
+    const marketingTitle =
+        brandIdx === -1 ? (
+            <span className="inline-flex items-center gap-2">
+                <WhatsappIcon className="h-5 w-5 text-[#25D366]" /> {titleText}
             </span>
-        </span>
-    );
+        ) : (
+            <span className="inline-flex items-center gap-2 text-white">
+                <WhatsappIcon className="h-5 w-5 text-[#25D366]" />
+                <span>
+                    {titleText.slice(0, brandIdx)}
+                    <span className="text-[#25D366]">{brandWord}</span>
+                    {titleText.slice(brandIdx + brandWord.length)}
+                </span>
+            </span>
+        );
 
     // Template registry form (create or edit-in-place).
     const [editing, setEditing] = useState<number | null>(null);
@@ -141,9 +145,7 @@ export default function MarketingIndex({
     // Template body helpers (live preview + auto variable detection).
     const body = String(tpl.body);
     const detected = detectPlaceholders(body);
-    const bodyExample = i18n.language === 'en'
-        ? 'Ramadan offer: {{1}}% off {{2}}, order now! 🌴'
-        : 'عرض رمضان: خصم {{1}}٪ على {{2}}، اطلب الآن! 🌴';
+    const bodyExample = i18n.language === 'en' ? 'Ramadan offer: {{1}}% off {{2}}, order now! 🌴' : 'عرض رمضان: خصم {{1}}٪ على {{2}}، اطلب الآن! 🌴';
 
     // Disable Add/Update until the template form differs from its baseline
     // (the edited template, or the empty defaults when creating).
@@ -154,7 +156,13 @@ export default function MarketingIndex({
 
     const saveTemplate = (e: FormEvent) => {
         e.preventDefault();
-        const opts = { preserveScroll: true, onSuccess: () => { setEditing(null); setTpl(emptyTemplate); } };
+        const opts = {
+            preserveScroll: true,
+            onSuccess: () => {
+                setEditing(null);
+                setTpl(emptyTemplate);
+            },
+        };
         if (editing) router.put(`/admin/marketing/templates/${editing}`, tpl, opts);
         else router.post('/admin/marketing/templates', tpl, opts);
     };
@@ -162,11 +170,22 @@ export default function MarketingIndex({
     const sendCampaign = (e: FormEvent) => {
         e.preventDefault();
         if (!selected) return;
-        router.post('/admin/marketing/campaigns', {
-            whatsapp_template_id: selected.id,
-            params: params.slice(0, selected.param_count),
-            segment,
-        }, { preserveScroll: true, onSuccess: () => { setTemplateId(''); setParams([]); setSegment('all'); } });
+        router.post(
+            '/admin/marketing/campaigns',
+            {
+                whatsapp_template_id: selected.id,
+                params: params.slice(0, selected.param_count),
+                segment,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setTemplateId('');
+                    setParams([]);
+                    setSegment('all');
+                },
+            },
+        );
     };
 
     return (
@@ -176,16 +195,23 @@ export default function MarketingIndex({
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Templates registry */}
                 <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="mb-1 flex items-center gap-2 font-bold"><FileText className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.templates')}</h2>
+                    <h2 className="mb-1 flex items-center gap-2 font-bold">
+                        <FileText className="text-brand-gold h-4 w-4" /> {tr('admin.marketing.templates')}
+                    </h2>
                     <p className="mb-4 text-sm text-neutral-500">{tr('admin.marketing.templatesDesc')}</p>
 
                     <ul className="mb-5 space-y-2 text-sm">
                         {templates.length === 0 && <li className="text-neutral-400">{tr('admin.marketing.noTemplates')}</li>}
                         {templates.map((t) => (
-                            <li key={t.id} className="flex items-center justify-between rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
+                            <li
+                                key={t.id}
+                                className="flex items-center justify-between rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800"
+                            >
                                 <div>
                                     <span className="font-mono">{t.name}</span>
-                                    <span className="ms-2 text-xs text-neutral-400">{label('lang', t.language)} · {label('categories', t.category)} · {t.param_count} {tr('admin.marketing.vars')}</span>
+                                    <span className="ms-2 text-xs text-neutral-400">
+                                        {label('lang', t.language)} · {label('categories', t.category)} · {t.param_count} {tr('admin.marketing.vars')}
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <StatusPill tone={TEMPLATE_STATUS_TONE[t.status] ?? 'neutral'}>{label('templateStatus', t.status)}</StatusPill>
@@ -193,7 +219,17 @@ export default function MarketingIndex({
                                         size="sm"
                                         variant="ghost"
                                         icon={Pencil}
-                                        onClick={() => { setEditing(t.id); setTpl({ name: t.name, language: t.language, category: t.category, body: t.body, param_count: t.param_count, status: t.status }); }}
+                                        onClick={() => {
+                                            setEditing(t.id);
+                                            setTpl({
+                                                name: t.name,
+                                                language: t.language,
+                                                category: t.category,
+                                                body: t.body,
+                                                param_count: t.param_count,
+                                                status: t.status,
+                                            });
+                                        }}
                                     >
                                         {tr('admin.common.edit')}
                                     </Button>
@@ -207,14 +243,28 @@ export default function MarketingIndex({
                         <div className="grid gap-3 sm:grid-cols-2">
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.metaName')}</span>
-                                <input value={String(tpl.name)} placeholder={tr('admin.marketing.namePlaceholder')} onChange={(e) => setTpl({ ...tpl, name: e.target.value })} className={`${inputCls} font-mono`} />
+                                <input
+                                    value={String(tpl.name)}
+                                    placeholder={tr('admin.marketing.namePlaceholder')}
+                                    onChange={(e) => setTpl({ ...tpl, name: e.target.value })}
+                                    className={`${inputCls} font-mono`}
+                                />
                                 <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.metaName')}</span>
                             </label>
                             <label className="block text-sm">
                                 <span className="text-neutral-500">{tr('admin.marketing.varsCount')}</span>
-                                <input type="number" min={0} max={10} value={Number(tpl.param_count)} onChange={(e) => setTpl({ ...tpl, param_count: Number(e.target.value) })} className={inputCls} />
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={10}
+                                    value={Number(tpl.param_count)}
+                                    onChange={(e) => setTpl({ ...tpl, param_count: Number(e.target.value) })}
+                                    className={inputCls}
+                                />
                                 {Number(tpl.param_count) !== detected.length ? (
-                                    <span className="mt-1 block text-xs text-amber-600 dark:text-amber-400">{tr('admin.marketing.hints.mismatch', { body: detected.length, count: Number(tpl.param_count) })}</span>
+                                    <span className="mt-1 block text-xs text-amber-600 dark:text-amber-400">
+                                        {tr('admin.marketing.hints.mismatch', { body: detected.length, count: Number(tpl.param_count) })}
+                                    </span>
                                 ) : (
                                     <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.varsCount')}</span>
                                 )}
@@ -224,7 +274,10 @@ export default function MarketingIndex({
                                 <Select
                                     value={String(tpl.language)}
                                     onChange={(v) => setTpl({ ...tpl, language: v })}
-                                    options={[{ value: 'ar', label: label('lang', 'ar') }, { value: 'en', label: label('lang', 'en') }]}
+                                    options={[
+                                        { value: 'ar', label: label('lang', 'ar') },
+                                        { value: 'en', label: label('lang', 'en') },
+                                    ]}
                                     className="mt-1 w-full"
                                 />
                                 <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.language')}</span>
@@ -234,7 +287,10 @@ export default function MarketingIndex({
                                 <Select
                                     value={String(tpl.category)}
                                     onChange={(v) => setTpl({ ...tpl, category: v })}
-                                    options={[{ value: 'marketing', label: label('categories', 'marketing') }, { value: 'utility', label: label('categories', 'utility') }]}
+                                    options={[
+                                        { value: 'marketing', label: label('categories', 'marketing') },
+                                        { value: 'utility', label: label('categories', 'utility') },
+                                    ]}
                                     className="mt-1 w-full"
                                 />
                                 <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.category')}</span>
@@ -254,8 +310,10 @@ export default function MarketingIndex({
                         </label>
                         {body.trim() && (
                             <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
-                                <p className="mb-1 text-xs font-medium uppercase text-neutral-400">{tr('admin.marketing.livePreview')}</p>
-                                <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{renderTemplate(body)}</p>
+                                <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{tr('admin.marketing.livePreview')}</p>
+                                <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">
+                                    {renderTemplate(body)}
+                                </p>
                             </div>
                         )}
                         <label className="block text-sm">
@@ -269,9 +327,20 @@ export default function MarketingIndex({
                             <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.status')}</span>
                         </label>
                         <div className="flex gap-2">
-                            <Button type="submit" variant="primary" disabled={!templateDirty}>{editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}</Button>
+                            <Button type="submit" variant="primary" disabled={!templateDirty}>
+                                {editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}
+                            </Button>
                             {editing && (
-                                <Button type="button" variant="secondary" onClick={() => { setEditing(null); setTpl(emptyTemplate); }}>{tr('admin.common.cancel')}</Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={() => {
+                                        setEditing(null);
+                                        setTpl(emptyTemplate);
+                                    }}
+                                >
+                                    {tr('admin.common.cancel')}
+                                </Button>
                             )}
                         </div>
                     </form>
@@ -280,7 +349,9 @@ export default function MarketingIndex({
                 {/* Campaign composer + history */}
                 <div className="space-y-6">
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-1 flex items-center gap-2 font-bold"><Megaphone className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.sendCampaign')}</h2>
+                        <h2 className="mb-1 flex items-center gap-2 font-bold">
+                            <Megaphone className="text-brand-gold h-4 w-4" /> {tr('admin.marketing.sendCampaign')}
+                        </h2>
                         <p className="mb-4 text-sm text-neutral-500">{tr('admin.marketing.audienceNote', { count: audienceCount })}</p>
 
                         <form onSubmit={sendCampaign} className="space-y-3">
@@ -288,10 +359,16 @@ export default function MarketingIndex({
                                 <span className="text-neutral-500">{tr('admin.marketing.template')}</span>
                                 <Select
                                     value={templateId ? String(templateId) : ''}
-                                    onChange={(v) => { const id = Number(v) || ''; setTemplateId(id); setParams([]); }}
+                                    onChange={(v) => {
+                                        const id = Number(v) || '';
+                                        setTemplateId(id);
+                                        setParams([]);
+                                    }}
                                     options={[
                                         { value: '', label: tr('admin.marketing.pickTemplate') },
-                                        ...templates.filter((t) => t.status === 'approved').map((t) => ({ value: String(t.id), label: `${t.name} (${label('lang', t.language)})` })),
+                                        ...templates
+                                            .filter((t) => t.status === 'approved')
+                                            .map((t) => ({ value: String(t.id), label: `${t.name} (${label('lang', t.language)})` })),
                                     ]}
                                     className="mt-1 w-full"
                                 />
@@ -302,39 +379,53 @@ export default function MarketingIndex({
                                 <Select
                                     value={segment}
                                     onChange={(v) => setSegment(v)}
-                                    options={segments.map((s) => ({ value: s, label: `${label('segments', s)} (${tr('admin.marketing.people', { count: segmentCounts[s] ?? 0 })})` }))}
+                                    options={segments.map((s) => ({
+                                        value: s,
+                                        label: `${label('segments', s)} (${tr('admin.marketing.people', { count: segmentCounts[s] ?? 0 })})`,
+                                    }))}
                                     className="mt-1 w-full"
                                 />
                                 <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.segmentHint')}</span>
                             </label>
 
-                            {selected && Array.from({ length: selected.param_count }).map((_, i) => (
-                                <label key={i} className="block text-sm">
-                                    <span className="text-neutral-500">{tr('admin.marketing.variable', { n: i + 1 })}</span>
-                                    <input
-                                        dir="auto"
-                                        value={params[i] ?? ''}
-                                        onChange={(e) => { const next = [...params]; next[i] = e.target.value; setParams(next); }}
-                                        className={inputCls}
-                                    />
-                                </label>
-                            ))}
+                            {selected &&
+                                Array.from({ length: selected.param_count }).map((_, i) => (
+                                    <label key={i} className="block text-sm">
+                                        <span className="text-neutral-500">{tr('admin.marketing.variable', { n: i + 1 })}</span>
+                                        <input
+                                            dir="auto"
+                                            value={params[i] ?? ''}
+                                            onChange={(e) => {
+                                                const next = [...params];
+                                                next[i] = e.target.value;
+                                                setParams(next);
+                                            }}
+                                            className={inputCls}
+                                        />
+                                    </label>
+                                ))}
 
                             {selected && selected.body && (
                                 <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
-                                    <p className="mb-1 text-xs font-medium uppercase text-neutral-400">{tr('admin.marketing.customerPreview')}</p>
+                                    <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{tr('admin.marketing.customerPreview')}</p>
                                     {/* dir="auto" must sit on the message itself, not the wrapper: on the wrapper it
                                         would detect direction from the English label above and force the whole box LTR,
                                         misplacing Arabic punctuation. On the message it mirrors WhatsApp's own
                                         first-strong-character direction detection. */}
-                                    <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">{renderTemplate(selected.body, params)}</p>
+                                    <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">
+                                        {renderTemplate(selected.body, params)}
+                                    </p>
                                 </div>
                             )}
 
                             {audienceCount > 0 && (
                                 <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm dark:border-neutral-800 dark:bg-neutral-950">
-                                    <span className="text-neutral-600 dark:text-neutral-300">{tr('admin.marketing.estCost', { cost: estCost, currency: rateCurrency })}</span>
-                                    <span className="mt-0.5 block text-xs text-neutral-400">{tr('admin.marketing.estCostHint', { count: audienceCount, rate: messageRate, currency: rateCurrency })}</span>
+                                    <span className="text-neutral-600 dark:text-neutral-300">
+                                        {tr('admin.marketing.estCost', { cost: estCost, currency: rateCurrency })}
+                                    </span>
+                                    <span className="mt-0.5 block text-xs text-neutral-400">
+                                        {tr('admin.marketing.estCostHint', { count: audienceCount, rate: messageRate, currency: rateCurrency })}
+                                    </span>
                                 </div>
                             )}
 
@@ -345,13 +436,17 @@ export default function MarketingIndex({
                     </section>
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-3 flex items-center gap-2 font-bold"><History className="h-4 w-4 text-brand-gold" /> {tr('admin.marketing.campaignHistory')}</h2>
+                        <h2 className="mb-3 flex items-center gap-2 font-bold">
+                            <History className="text-brand-gold h-4 w-4" /> {tr('admin.marketing.campaignHistory')}
+                        </h2>
                         <ul className="max-h-96 space-y-2 overflow-y-auto text-sm">
                             {campaigns.data.length === 0 && <li className="text-neutral-400">{tr('admin.marketing.noCampaigns')}</li>}
                             {campaigns.data.map((c) => (
                                 <li key={c.id} className="rounded border border-neutral-100 px-3 py-2 dark:border-neutral-800">
                                     <div className="flex items-center justify-between">
-                                        <span className="font-mono">#{c.id} {c.template}</span>
+                                        <span className="font-mono">
+                                            #{c.id} {c.template}
+                                        </span>
                                         <span className="text-xs text-neutral-400">{c.sent_at ?? label('templateStatus', c.status)}</span>
                                     </div>
                                     <div className="mt-1 text-xs text-neutral-500">

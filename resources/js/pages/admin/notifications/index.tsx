@@ -77,7 +77,9 @@ export default function NotificationsIndex({
             </div>
 
             <div className="divide-y divide-neutral-100 overflow-hidden rounded-lg border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900">
-                {entries.data.length === 0 && <p className="px-4 py-10 text-center text-sm text-neutral-400">{t('admin.notifications.history.empty')}</p>}
+                {entries.data.length === 0 && (
+                    <p className="px-4 py-10 text-center text-sm text-neutral-400">{t('admin.notifications.history.empty')}</p>
+                )}
 
                 {entries.data.map((entry) => {
                     const Icon = iconFor(entry.data.type);
@@ -113,7 +115,10 @@ export default function NotificationsIndex({
                             </span>
 
                             {entry.created_at && (
-                                <span className="shrink-0 text-[11px] whitespace-nowrap text-neutral-400" title={new Date(entry.created_at).toLocaleString()}>
+                                <span
+                                    className="shrink-0 text-[11px] whitespace-nowrap text-neutral-400"
+                                    title={new Date(entry.created_at).toLocaleString()}
+                                >
                                     {relativeTimeFromIso(entry.created_at, i18n.language)}
                                 </span>
                             )}

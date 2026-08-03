@@ -1,11 +1,11 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
-import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, router, useForm } from '@inertiajs/react';
+import { Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 
 const CONFIRM_WORD = 'RESET';
 
@@ -109,22 +109,24 @@ export default function SettingsIndex({
     };
 
     const doReset = () => {
-        router.post('/admin/settings/reset', {}, {
-            preserveScroll: true,
-            onFinish: () => {
-                setConfirming(false);
-                setConfirmText('');
+        router.post(
+            '/admin/settings/reset',
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setConfirming(false);
+                    setConfirmText('');
+                },
             },
-        });
+        );
     };
 
     const renderField = (f: FieldDef): ReactNode => {
         const hint = t(`admin.settings.hints.${f.key}`, { defaultValue: '' });
         return (
             <label key={f.key} id={`field-${f.key}`} className={`block ${f.wide ? 'sm:col-span-2' : ''}`}>
-                <span className="mb-1 block text-sm font-medium text-neutral-600 dark:text-neutral-300">
-                    {t(`admin.settings.fields.${f.key}`)}
-                </span>
+                <span className="mb-1 block text-sm font-medium text-neutral-600 dark:text-neutral-300">{t(`admin.settings.fields.${f.key}`)}</span>
                 <input
                     type={f.type ?? 'text'}
                     step={f.type === 'number' ? '0.01' : undefined}
@@ -142,13 +144,11 @@ export default function SettingsIndex({
 
     const sectionHeader = (Icon: LucideIcon, titleKey: string) => (
         <div className="mb-5 flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-teal/15 text-brand-gold">
+            <div className="bg-brand-teal/15 text-brand-gold flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
                 <Icon className="h-5 w-5" />
             </div>
             <div>
-                <h2 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                    {t(`admin.settings.sections.${titleKey}.title`)}
-                </h2>
+                <h2 className="font-semibold text-neutral-900 dark:text-neutral-100">{t(`admin.settings.sections.${titleKey}.title`)}</h2>
                 <p className="text-sm text-neutral-500">{t(`admin.settings.sections.${titleKey}.desc`)}</p>
             </div>
         </div>
@@ -198,14 +198,17 @@ export default function SettingsIndex({
                                 <span
                                     aria-hidden
                                     className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
-                                    style={{ insetInlineStart: '0.125rem', transform: pulseOn ? `translateX(${rtl ? '-1.25rem' : '1.25rem'})` : 'translateX(0)' }}
+                                    style={{
+                                        insetInlineStart: '0.125rem',
+                                        transform: pulseOn ? `translateX(${rtl ? '-1.25rem' : '1.25rem'})` : 'translateX(0)',
+                                    }}
                                 />
                             </button>
                         </div>
                     </section>
 
                     {canReset && (
-                        <section className="mb-6 break-inside-avoid rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 sm:p-6">
+                        <section className="mb-6 break-inside-avoid rounded-xl border border-red-300 bg-red-50 p-5 shadow-sm sm:p-6 dark:border-red-900/60 dark:bg-red-950/30">
                             <div className="flex items-start gap-3">
                                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-600 dark:text-red-300">
                                     <RotateCcw className="h-5 w-5" />
@@ -233,7 +236,9 @@ export default function SettingsIndex({
                                                 <input
                                                     value={confirmText}
                                                     onChange={(e) => setConfirmText(e.target.value)}
-                                                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') e.preventDefault();
+                                                    }}
                                                     autoFocus
                                                     className="mt-1 w-full max-w-xs rounded-lg border border-red-300 px-3 py-2 text-sm dark:border-red-900 dark:bg-neutral-950"
                                                 />
@@ -242,7 +247,13 @@ export default function SettingsIndex({
                                                 <Button variant="danger" disabled={confirmText !== CONFIRM_WORD} onClick={doReset}>
                                                     {t('admin.settings.reset.confirm')}
                                                 </Button>
-                                                <Button variant="secondary" onClick={() => { setConfirming(false); setConfirmText(''); }}>
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={() => {
+                                                        setConfirming(false);
+                                                        setConfirmText('');
+                                                    }}
+                                                >
                                                     {t('admin.settings.reset.cancel')}
                                                 </Button>
                                             </div>

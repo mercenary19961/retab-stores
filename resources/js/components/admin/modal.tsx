@@ -1,6 +1,6 @@
+import { useAdminT } from '@/i18n/use-admin-t';
 import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
-import { useAdminT } from '@/i18n/use-admin-t';
 
 /**
  * A centered modal dialog for the admin panel. Closes on backdrop click or Esc.

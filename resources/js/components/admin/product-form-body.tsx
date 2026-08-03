@@ -1,10 +1,10 @@
-import { router, useForm } from '@inertiajs/react';
-import { Eye, Image as ImageIcon, Info, Star, Tag, Trash2, Upload } from 'lucide-react';
-import { type FormEvent, useEffect, useMemo } from 'react';
 import Button from '@/components/admin/button';
 import Select from '@/components/admin/select';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
+import { router, useForm } from '@inertiajs/react';
+import { Eye, Image as ImageIcon, Info, Star, Tag, Trash2, Upload } from 'lucide-react';
+import { type FormEvent, useEffect, useMemo } from 'react';
 
 export interface Category {
     id: number;
@@ -103,7 +103,12 @@ export default function ProductFormBody({
             put(`/admin/products/${product.id}`, modal ? { preserveScroll: true, preserveState: true, onSuccess: onSaved } : {});
         } else {
             // Booleans as '1'/'0' so they survive the multipart (FormData) encoding.
-            transform((d) => ({ ...d, is_active: d.is_active ? '1' : '0', is_featured: d.is_featured ? '1' : '0', is_coming_soon: d.is_coming_soon ? '1' : '0' }));
+            transform((d) => ({
+                ...d,
+                is_active: d.is_active ? '1' : '0',
+                is_featured: d.is_featured ? '1' : '0',
+                is_coming_soon: d.is_coming_soon ? '1' : '0',
+            }));
             post('/admin/products', {
                 forceFormData: true,
                 preserveScroll: true,
@@ -154,7 +159,9 @@ export default function ProductFormBody({
         <div className="space-y-6">
             <form onSubmit={submit} className="space-y-6">
                 <section className={CARD}>
-                    <h2 className="flex items-center gap-2 font-bold"><Info className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.details')}</h2>
+                    <h2 className="flex items-center gap-2 font-bold">
+                        <Info className="text-brand-gold h-4 w-4" /> {t('admin.products.form.details')}
+                    </h2>
                     <label className="block" id="field-category_id">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')} *</span>
                         <Select
@@ -172,16 +179,28 @@ export default function ProductFormBody({
                     {text('slug', t('admin.products.form.slug'), { placeholder: t('admin.products.form.slugPlaceholder') })}
                     <label className="block" id="field-description_ar">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descAr')}</span>
-                        <textarea value={data.description_ar} onChange={(e) => setData('description_ar', e.target.value)} rows={3} className={INPUT} />
+                        <textarea
+                            value={data.description_ar}
+                            onChange={(e) => setData('description_ar', e.target.value)}
+                            rows={3}
+                            className={INPUT}
+                        />
                     </label>
                     <label className="block" id="field-description_en">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descEn')}</span>
-                        <textarea value={data.description_en} onChange={(e) => setData('description_en', e.target.value)} rows={3} className={INPUT} />
+                        <textarea
+                            value={data.description_en}
+                            onChange={(e) => setData('description_en', e.target.value)}
+                            rows={3}
+                            className={INPUT}
+                        />
                     </label>
                 </section>
 
                 <section className={CARD}>
-                    <h2 className="flex items-center gap-2 font-bold"><Tag className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.pricingInventory')}</h2>
+                    <h2 className="flex items-center gap-2 font-bold">
+                        <Tag className="text-brand-gold h-4 w-4" /> {t('admin.products.form.pricingInventory')}
+                    </h2>
                     <div className="grid gap-4 sm:grid-cols-2">
                         {text('price', t('admin.products.form.priceSar'), { required: true, type: 'number' })}
                         {text('sale_price', t('admin.products.form.salePriceSar'), { type: 'number' })}
@@ -194,17 +213,34 @@ export default function ProductFormBody({
                 </section>
 
                 <section className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <h2 className="flex items-center gap-2 font-bold"><Eye className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.visibility')}</h2>
+                    <h2 className="flex items-center gap-2 font-bold">
+                        <Eye className="text-brand-gold h-4 w-4" /> {t('admin.products.form.visibility')}
+                    </h2>
                     <label className="flex items-center gap-2 text-sm" id="field-is_active">
-                        <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} className="accent-brand-gold" />
+                        <input
+                            type="checkbox"
+                            checked={data.is_active}
+                            onChange={(e) => setData('is_active', e.target.checked)}
+                            className="accent-brand-gold"
+                        />
                         {t('admin.products.form.activeLabel')}
                     </label>
                     <label className="flex items-center gap-2 text-sm" id="field-is_featured">
-                        <input type="checkbox" checked={data.is_featured} onChange={(e) => setData('is_featured', e.target.checked)} className="accent-brand-gold" />
+                        <input
+                            type="checkbox"
+                            checked={data.is_featured}
+                            onChange={(e) => setData('is_featured', e.target.checked)}
+                            className="accent-brand-gold"
+                        />
                         {t('admin.products.form.featuredLabel')}
                     </label>
                     <label className="flex items-start gap-2 text-sm" id="field-is_coming_soon">
-                        <input type="checkbox" checked={data.is_coming_soon} onChange={(e) => setData('is_coming_soon', e.target.checked)} className="mt-0.5 accent-brand-gold" />
+                        <input
+                            type="checkbox"
+                            checked={data.is_coming_soon}
+                            onChange={(e) => setData('is_coming_soon', e.target.checked)}
+                            className="accent-brand-gold mt-0.5"
+                        />
                         <span>
                             {t('admin.products.form.comingSoonLabel')}
                             <span className="block text-xs text-neutral-400">{t('admin.products.form.comingSoonHint')}</span>
@@ -215,11 +251,19 @@ export default function ProductFormBody({
                 {/* On create, images are chosen here and sent with the product. */}
                 {!editing && (
                     <section className={CARD} id="field-images">
-                        <h2 className="flex items-center gap-2 font-bold"><ImageIcon className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.images')} <span className="text-red-500">*</span></h2>
+                        <h2 className="flex items-center gap-2 font-bold">
+                            <ImageIcon className="text-brand-gold h-4 w-4" /> {t('admin.products.form.images')}{' '}
+                            <span className="text-red-500">*</span>
+                        </h2>
                         {previews.length > 0 && (
                             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                                 {previews.map((url, i) => (
-                                    <img key={i} src={url} alt="" className={`aspect-square w-full rounded-lg border object-cover ${i === 0 ? 'border-brand-gold' : 'border-neutral-200 dark:border-neutral-700'}`} />
+                                    <img
+                                        key={i}
+                                        src={url}
+                                        alt=""
+                                        className={`aspect-square w-full rounded-lg border object-cover ${i === 0 ? 'border-brand-gold' : 'border-neutral-200 dark:border-neutral-700'}`}
+                                    />
                                 ))}
                             </div>
                         )}
@@ -248,12 +292,17 @@ export default function ProductFormBody({
             {/* Existing product images (edit only) — managed via dedicated endpoints. */}
             {editing && (
                 <section className={CARD}>
-                    <h2 className="flex items-center gap-2 font-bold"><ImageIcon className="h-4 w-4 text-brand-gold" /> {t('admin.products.form.images')}</h2>
+                    <h2 className="flex items-center gap-2 font-bold">
+                        <ImageIcon className="text-brand-gold h-4 w-4" /> {t('admin.products.form.images')}
+                    </h2>
 
                     {product.images && product.images.length > 0 ? (
                         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                             {product.images.map((img) => (
-                                <div key={img.id} className={`relative overflow-hidden rounded-lg border ${img.is_primary ? 'border-brand-gold' : 'border-neutral-200 dark:border-neutral-700'}`}>
+                                <div
+                                    key={img.id}
+                                    className={`relative overflow-hidden rounded-lg border ${img.is_primary ? 'border-brand-gold' : 'border-neutral-200 dark:border-neutral-700'}`}
+                                >
                                     {img.url && <img src={img.url} alt="" className="aspect-square w-full object-cover" />}
                                     <div className="flex items-center justify-between gap-1 p-1.5">
                                         {img.is_primary ? (
@@ -261,11 +310,21 @@ export default function ProductFormBody({
                                                 <Star className="h-4 w-4 fill-current" />
                                             </span>
                                         ) : (
-                                            <button type="button" onClick={() => setPrimary(img.id)} title={t('admin.products.form.setPrimary')} className="text-neutral-400 transition-colors hover:text-brand-gold">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPrimary(img.id)}
+                                                title={t('admin.products.form.setPrimary')}
+                                                className="hover:text-brand-gold text-neutral-400 transition-colors"
+                                            >
                                                 <Star className="h-4 w-4" />
                                             </button>
                                         )}
-                                        <button type="button" onClick={() => deleteImage(img.id)} title={t('admin.common.delete')} className="text-neutral-400 transition-colors hover:text-red-500">
+                                        <button
+                                            type="button"
+                                            onClick={() => deleteImage(img.id)}
+                                            title={t('admin.common.delete')}
+                                            className="text-neutral-400 transition-colors hover:text-red-500"
+                                        >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
                                     </div>
@@ -276,7 +335,10 @@ export default function ProductFormBody({
                         <p className="text-sm text-red-500">{t('admin.products.form.imageRequired')}</p>
                     )}
 
-                    <form onSubmit={uploadImages} className="flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                    <form
+                        onSubmit={uploadImages}
+                        className="flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4 dark:border-neutral-800"
+                    >
                         <input
                             type="file"
                             accept="image/jpeg,image/png,image/webp,image/gif"

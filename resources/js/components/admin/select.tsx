@@ -70,14 +70,34 @@ export default function Select({ value, onChange, options, placeholder, classNam
             return;
         }
         switch (e.key) {
-            case 'ArrowDown': e.preventDefault(); setActive((a) => Math.min(options.length - 1, a + 1)); break;
-            case 'ArrowUp': e.preventDefault(); setActive((a) => Math.max(0, a - 1)); break;
-            case 'Home': e.preventDefault(); setActive(0); break;
-            case 'End': e.preventDefault(); setActive(options.length - 1); break;
+            case 'ArrowDown':
+                e.preventDefault();
+                setActive((a) => Math.min(options.length - 1, a + 1));
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setActive((a) => Math.max(0, a - 1));
+                break;
+            case 'Home':
+                e.preventDefault();
+                setActive(0);
+                break;
+            case 'End':
+                e.preventDefault();
+                setActive(options.length - 1);
+                break;
             case 'Enter':
-            case ' ': e.preventDefault(); commit(active); break;
-            case 'Escape': e.preventDefault(); setOpen(false); break;
-            case 'Tab': setOpen(false); break;
+            case ' ':
+                e.preventDefault();
+                commit(active);
+                break;
+            case 'Escape':
+                e.preventDefault();
+                setOpen(false);
+                break;
+            case 'Tab':
+                setOpen(false);
+                break;
         }
     };
 
@@ -91,10 +111,10 @@ export default function Select({ value, onChange, options, placeholder, classNam
                 onKeyDown={onKeyDown}
                 aria-haspopup="listbox"
                 aria-expanded={open}
-                className="flex w-full items-center justify-between gap-2 rounded-lg border border-neutral-300 bg-white py-2 pe-2 ps-3 text-start text-sm text-neutral-800 transition-colors hover:border-neutral-400 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-neutral-600"
+                className="focus:border-brand-gold focus:ring-brand-gold/30 flex w-full items-center justify-between gap-2 rounded-lg border border-neutral-300 bg-white py-2 ps-3 pe-2 text-start text-sm text-neutral-800 transition-colors hover:border-neutral-400 focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-neutral-600"
             >
                 <span className={`truncate ${selected ? '' : 'text-neutral-400'}`}>{selected ? selected.label : placeholder}</span>
-                <ChevronDown className={`h-4 w-4 shrink-0 text-brand-gold transition-transform ${open ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`text-brand-gold h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (
@@ -114,11 +134,7 @@ export default function Select({ value, onChange, options, placeholder, classNam
                                 onMouseEnter={() => setActive(i)}
                                 onClick={() => commit(i)}
                                 className={`flex cursor-pointer items-center justify-between gap-2 rounded px-3 py-1.5 text-sm transition-colors ${
-                                    isSel
-                                        ? 'bg-brand-gold/20 text-brand-gold'
-                                        : isActive
-                                          ? 'bg-neutral-800 text-neutral-100'
-                                          : 'text-neutral-300'
+                                    isSel ? 'bg-brand-gold/20 text-brand-gold' : isActive ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-300'
                                 }`}
                             >
                                 <span className="truncate">{opt.label}</span>

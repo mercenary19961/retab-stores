@@ -17,13 +17,13 @@ class LogGateway implements WhatsAppGateway
     {
         Log::info('WhatsApp (log driver) template', compact('to', 'template', 'language', 'params'));
 
-        return 'log-' . Str::uuid();
+        return 'log-'.Str::uuid();
     }
 
     public function sendText(string $to, string $body): string
     {
         Log::info('WhatsApp (log driver) text', compact('to', 'body'));
 
-        return 'log-' . Str::uuid();
+        return 'log-'.Str::uuid();
     }
 }

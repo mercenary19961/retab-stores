@@ -24,7 +24,7 @@ export default function HintTooltip({
                     <TooltipPrimitive.Content
                         side={side}
                         sideOffset={6}
-                        className="z-50 max-w-[15rem] select-none rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white shadow-lg animate-in fade-in-0 zoom-in-95 dark:bg-neutral-700"
+                        className="animate-in fade-in-0 zoom-in-95 z-50 max-w-[15rem] rounded-md bg-neutral-900 px-2 py-1 text-xs font-medium text-white shadow-lg select-none dark:bg-neutral-700"
                     >
                         {label}
                         <TooltipPrimitive.Arrow className="fill-neutral-900 dark:fill-neutral-700" />

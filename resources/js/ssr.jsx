@@ -5,8 +5,8 @@ createInertiaApp
 import createServer from '@inertiajs/react/server';
 import ReactDOMServer from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
-import i18n from './i18n';
 import { LanguageProvider } from './contexts/LanguageContext';
+import i18n from './i18n';
 
 createServer((page) => {
     // renderToString runs no effects, so LanguageContext can't apply the locale

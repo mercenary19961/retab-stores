@@ -1,6 +1,6 @@
+import StoreLayout from '@/layouts/store-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import StoreLayout from '@/layouts/store-layout';
 
 interface OrderRow {
     order_number: string;
@@ -29,14 +29,7 @@ interface Profile {
     phone: string | null;
 }
 
-export default function AccountDashboard({
-    orders,
-    loyalty,
-}: {
-    profile: Profile;
-    orders: OrderRow[];
-    loyalty: Loyalty;
-}) {
+export default function AccountDashboard({ orders, loyalty }: { profile: Profile; orders: OrderRow[]; loyalty: Loyalty }) {
     const { t } = useTranslation();
     const currency = t('common.currency');
 
@@ -62,10 +55,7 @@ export default function AccountDashboard({
                     <div className="mt-4">
                         <div className="flex gap-1.5">
                             {Array.from({ length: loyalty.milestone }).map((_, i) => (
-                                <div
-                                    key={i}
-                                    className={`h-2.5 flex-1 rounded-full ${i < loyalty.progress ? 'bg-[#2f4f4f]' : 'bg-gray-200'}`}
-                                />
+                                <div key={i} className={`h-2.5 flex-1 rounded-full ${i < loyalty.progress ? 'bg-[#2f4f4f]' : 'bg-gray-200'}`} />
                             ))}
                         </div>
                         <p className="mt-2 text-sm text-gray-600">
@@ -87,8 +77,12 @@ export default function AccountDashboard({
                     )}
 
                     <div className="mt-4 flex flex-col gap-1 text-sm">
-                        <Link href="/account/profile" className="text-[#2f4f4f] underline">{t('account.editProfile')}</Link>
-                        <Link href="/wishlist" className="text-[#2f4f4f] underline">{t('account.wishlist')}</Link>
+                        <Link href="/account/profile" className="text-[#2f4f4f] underline">
+                            {t('account.editProfile')}
+                        </Link>
+                        <Link href="/wishlist" className="text-[#2f4f4f] underline">
+                            {t('account.wishlist')}
+                        </Link>
                     </div>
                 </section>
 
@@ -116,7 +110,9 @@ export default function AccountDashboard({
                                             </Link>
                                         </td>
                                         <td className="py-2">{t(`status.${o.status}`, o.status)}</td>
-                                        <td className="py-2">{o.total} {currency}</td>
+                                        <td className="py-2">
+                                            {o.total} {currency}
+                                        </td>
                                         <td className="py-2 text-gray-500">{o.created_at ?? '—'}</td>
                                     </tr>
                                 ))}

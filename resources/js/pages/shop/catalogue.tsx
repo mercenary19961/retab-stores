@@ -1,12 +1,12 @@
+import CatalogueSearch from '@/components/store/catalogue-search';
+import StorePagination, { type Paginator } from '@/components/store/pagination';
+import ProductCard, { type StoreProduct } from '@/components/store/product-card';
+import StoreSelect from '@/components/store/select';
+import StoreLayout from '@/layouts/store-layout';
+import { useLocalized } from '@/lib/localize';
 import { Head, Link, router } from '@inertiajs/react';
 import { Tag, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
-import StoreLayout from '@/layouts/store-layout';
-import CatalogueSearch from '@/components/store/catalogue-search';
-import ProductCard, { type StoreProduct } from '@/components/store/product-card';
-import StorePagination, { type Paginator } from '@/components/store/pagination';
-import StoreSelect from '@/components/store/select';
 
 interface Category {
     id: number;
@@ -52,9 +52,7 @@ export default function ShopCatalogue({
             on_sale: filters.on_sale ? '1' : undefined,
             ...patch,
         };
-        return Object.fromEntries(
-            Object.entries(merged).filter(([, v]) => v !== undefined && v !== ''),
-        ) as Record<string, string>;
+        return Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== undefined && v !== '')) as Record<string, string>;
     };
 
     const hrefWith = (patch: Record<string, string | undefined>) => {
@@ -80,9 +78,7 @@ export default function ShopCatalogue({
                 <meta name="description" content={t('shop.metaDescription')} />
             </Head>
 
-            <h1 className="mb-6 text-center font-heading font-black text-brand-teal text-[clamp(1.75rem,4vw,2.75rem)]">
-                {t('catalogue.heading')}
-            </h1>
+            <h1 className="font-heading text-brand-teal mb-6 text-center text-[clamp(1.75rem,4vw,2.75rem)] font-black">{t('catalogue.heading')}</h1>
 
             {/* Category chips — real <a> links (crawlable) that visit as partial
                 reloads, prefetched on hover so the click feels instant. */}
@@ -146,7 +142,7 @@ export default function ShopCatalogue({
             </div>
 
             {/* Result count + clear */}
-            <div className="mb-6 flex items-center justify-between gap-3 text-sm text-brand-teal/70">
+            <div className="text-brand-teal/70 mb-6 flex items-center justify-between gap-3 text-sm">
                 <span>{t('catalogue.resultCount', { n: products.total })}</span>
                 {hasFilters && (
                     <Link
@@ -154,7 +150,7 @@ export default function ShopCatalogue({
                         only={FILTER_ONLY}
                         preserveState
                         preserveScroll
-                        className="inline-flex items-center gap-1 text-brand-gold hover:text-brand-teal"
+                        className="text-brand-gold hover:text-brand-teal inline-flex items-center gap-1"
                     >
                         <X className="size-3.5" />
                         {t('catalogue.clearFilters')}
@@ -163,9 +159,7 @@ export default function ShopCatalogue({
             </div>
 
             {products.data.length === 0 ? (
-                <p className="py-16 text-center text-brand-teal/60">
-                    {filters.q ? t('catalogue.noResults') : t('shop.empty')}
-                </p>
+                <p className="text-brand-teal/60 py-16 text-center">{filters.q ? t('catalogue.noResults') : t('shop.empty')}</p>
             ) : (
                 <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
                     {products.data.map((p) => (

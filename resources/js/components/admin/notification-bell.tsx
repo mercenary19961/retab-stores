@@ -1,9 +1,9 @@
-import { router, usePage } from '@inertiajs/react';
-import { Bell, Check, Volume2, VolumeX } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { iconFor, useNotificationText, type NotificationItem } from '@/components/admin/notification-content';
 import { useAdminT } from '@/i18n/use-admin-t';
 import { relativeTimeFromIso } from '@/lib/relative-time';
+import { router, usePage } from '@inertiajs/react';
+import { Bell, Check, Volume2, VolumeX } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface NotificationsProp {
     unread: number;
@@ -165,7 +165,7 @@ export default function NotificationBell() {
             >
                 <Bell className="h-5 w-5" />
                 {unread > 0 && (
-                    <span className="absolute -top-0.5 end-0 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">
+                    <span className="absolute end-0 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] leading-none font-bold text-white">
                         {unread > 9 ? '9+' : unread}
                     </span>
                 )}
@@ -181,7 +181,11 @@ export default function NotificationBell() {
                         <span className="text-sm font-semibold text-neutral-100">{t('admin.notifications.title')}</span>
                         <span className="flex items-center gap-3">
                             {unread > 0 && (
-                                <button type="button" onClick={markAllRead} className="flex items-center gap-1 text-xs text-brand-gold transition-colors hover:underline">
+                                <button
+                                    type="button"
+                                    onClick={markAllRead}
+                                    className="text-brand-gold flex items-center gap-1 text-xs transition-colors hover:underline"
+                                >
                                     <Check className="h-3.5 w-3.5" /> {t('admin.notifications.markAllRead')}
                                 </button>
                             )}
@@ -212,20 +216,24 @@ export default function NotificationBell() {
                                         onClick={() => router.visit(`/admin/notifications/${n.id}`)}
                                         className={`flex w-full items-start gap-3 border-b border-neutral-800/70 px-4 py-3 text-start transition-colors last:border-0 hover:bg-neutral-800 ${n.read ? '' : 'bg-neutral-800/40'}`}
                                     >
-                                        <span className="mt-0.5 shrink-0 rounded-lg bg-neutral-800 p-1.5 text-brand-gold">
+                                        <span className="text-brand-gold mt-0.5 shrink-0 rounded-lg bg-neutral-800 p-1.5">
                                             <Icon className="h-4 w-4" />
                                         </span>
                                         <span className="min-w-0 flex-1">
                                             <span className="flex items-center gap-2">
                                                 <span className="truncate text-sm font-medium text-neutral-100">{titleFor(n.data)}</span>
-                                                {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-brand-gold" />}
+                                                {!n.read && <span className="bg-brand-gold h-2 w-2 shrink-0 rounded-full" />}
                                             </span>
                                             {body && (
                                                 <span className="mt-0.5 block truncate text-xs text-neutral-400" dir="auto">
                                                     {body}
                                                 </span>
                                             )}
-                                            {n.created_at && <span className="mt-1 block text-[11px] text-neutral-500">{relativeTimeFromIso(n.created_at, i18n.language)}</span>}
+                                            {n.created_at && (
+                                                <span className="mt-1 block text-[11px] text-neutral-500">
+                                                    {relativeTimeFromIso(n.created_at, i18n.language)}
+                                                </span>
+                                            )}
                                         </span>
                                     </button>
                                 );

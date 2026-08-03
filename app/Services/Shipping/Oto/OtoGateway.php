@@ -37,7 +37,7 @@ class OtoGateway implements ShippingGateway
                 'name' => $order->customer_name,
                 'email' => $order->customer_email,
                 'mobile' => $order->customer_phone,
-                'address' => trim(($address['building'] ?? '') . ' ' . ($address['street'] ?? '')) ?: ($address['district'] ?? 'N/A'),
+                'address' => trim(($address['building'] ?? '').' '.($address['street'] ?? '')) ?: ($address['district'] ?? 'N/A'),
                 'city' => $address['city'] ?? $this->originCity,
                 'country' => $address['country'] ?? 'SA',
             ],

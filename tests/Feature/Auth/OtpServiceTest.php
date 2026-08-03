@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\OtpVerification;
+use App\Models\WhatsappMessage;
 use App\Services\Auth\OtpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -28,7 +29,7 @@ class OtpServiceTest extends TestCase
 
         // OTP message logged but the code itself is redacted in the ledger.
         $this->assertDatabaseHas('whatsapp_messages', ['purpose' => 'otp', 'recipient' => '966501112222']);
-        $message = \App\Models\WhatsappMessage::where('purpose', 'otp')->firstOrFail();
+        $message = WhatsappMessage::where('purpose', 'otp')->firstOrFail();
         $this->assertSame(['***'], $message->payload['params']);
     }
 

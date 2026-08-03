@@ -27,14 +27,14 @@ class SeoController extends Controller
                     'lastmod' => $p->updated_at?->toAtomString(),
                 ]));
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
-            . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n"
-            . $urls->map(function (array $url) {
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n"
+            .'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n"
+            .$urls->map(function (array $url) {
                 $lastmod = $url['lastmod'] ? "<lastmod>{$url['lastmod']}</lastmod>" : '';
 
-                return '  <url><loc>' . e($url['loc']) . "</loc>{$lastmod}</url>";
+                return '  <url><loc>'.e($url['loc'])."</loc>{$lastmod}</url>";
             })->implode("\n")
-            . "\n</urlset>";
+            ."\n</urlset>";
 
         return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
     }
@@ -52,7 +52,7 @@ class SeoController extends Controller
             'Disallow: /login',
             'Disallow: /register',
             '',
-            'Sitemap: ' . route('seo.sitemap'),
+            'Sitemap: '.route('seo.sitemap'),
         ];
 
         return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain; charset=UTF-8']);

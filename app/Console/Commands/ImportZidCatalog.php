@@ -40,10 +40,10 @@ class ImportZidCatalog extends Command
         }
 
         $withImages = ! $this->option('no-images');
-        $this->info('Importing ' . ($withImages ? 'with images' : 'without images') . ' from ' . basename($path) . ' …');
+        $this->info('Importing '.($withImages ? 'with images' : 'without images').' from '.basename($path).' …');
 
         $result = $importer->import($path, $withImages, function (Product $p) {
-            $this->line('  • ' . $p->name_ar . ($p->is_active ? '' : '  (hidden)'));
+            $this->line('  • '.$p->name_ar.($p->is_active ? '' : '  (hidden)'));
         });
 
         $this->newLine();

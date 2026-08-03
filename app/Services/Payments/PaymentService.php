@@ -169,7 +169,7 @@ class PaymentService
         $refund = Payment::create([
             'order_id' => $order->id,
             'gateway' => 'moyasar',
-            'gateway_transaction_id' => $capture->gateway_transaction_id . '-refund-' . now()->format('YmdHis'),
+            'gateway_transaction_id' => $capture->gateway_transaction_id.'-refund-'.now()->format('YmdHis'),
             'type' => PaymentTransactionType::Refund,
             'amount' => round($amount, 2),
             'currency' => $this->configuredCurrency(),

@@ -20,8 +20,11 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class ActivityLog extends Model
 {
     public const ACTION_CREATED = 'created';
+
     public const ACTION_UPDATED = 'updated';
+
     public const ACTION_DELETED = 'deleted';
+
     public const ACTION_RESTORED = 'restored';
 
     /** Settings entries have no model row — this sentinel fills subject_type. */

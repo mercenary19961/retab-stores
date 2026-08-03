@@ -1,6 +1,6 @@
+import StoreLayout from '@/layouts/store-layout';
 import { Head, Link } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import StoreLayout from '@/layouts/store-layout';
 
 interface Order {
     order_number: string;
@@ -41,17 +41,31 @@ export default function OrderConfirmation({
                 <p className="mt-2 text-gray-600">
                     {t('order.orderNumber')}: <span className="font-mono font-semibold">{order.order_number}</span>
                 </p>
-                <p className="mt-1 text-gray-600">{t('order.total')}: {order.total} {currency}</p>
+                <p className="mt-1 text-gray-600">
+                    {t('order.total')}: {order.total} {currency}
+                </p>
 
                 {bank ? (
                     <div className="mt-6 rounded-lg border border-gray-200 bg-white p-5 text-start">
                         <h2 className="mb-2 font-bold">{t('order.bankHeading')}</h2>
                         <p className="text-sm text-gray-600">{t('order.bankInstructions')}</p>
                         <dl className="mt-3 space-y-1 text-sm">
-                            <div className="flex justify-between"><dt className="text-gray-500">{t('order.bankName')}</dt><dd>{bank.bank_name}</dd></div>
-                            <div className="flex justify-between"><dt className="text-gray-500">{t('order.beneficiary')}</dt><dd>{bank.beneficiary}</dd></div>
-                            <div className="flex justify-between"><dt className="text-gray-500">{t('order.account')}</dt><dd className="font-mono">{bank.account}</dd></div>
-                            <div className="flex justify-between"><dt className="text-gray-500">{t('order.iban')}</dt><dd className="font-mono">{bank.iban}</dd></div>
+                            <div className="flex justify-between">
+                                <dt className="text-gray-500">{t('order.bankName')}</dt>
+                                <dd>{bank.bank_name}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                                <dt className="text-gray-500">{t('order.beneficiary')}</dt>
+                                <dd>{bank.beneficiary}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                                <dt className="text-gray-500">{t('order.account')}</dt>
+                                <dd className="font-mono">{bank.account}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                                <dt className="text-gray-500">{t('order.iban')}</dt>
+                                <dd className="font-mono">{bank.iban}</dd>
+                            </div>
                         </dl>
                     </div>
                 ) : (

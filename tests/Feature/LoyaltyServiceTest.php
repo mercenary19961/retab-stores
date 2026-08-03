@@ -16,7 +16,7 @@ class LoyaltyServiceTest extends TestCase
     private function orderFor(?int $userId): Order
     {
         return Order::create([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'user_id' => $userId,
             'customer_name' => 'Zaid',
             'customer_phone' => '+966500000000',

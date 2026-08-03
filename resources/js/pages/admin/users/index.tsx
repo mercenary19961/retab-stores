@@ -1,10 +1,10 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { ShieldCheck, UserPlus } from 'lucide-react';
-import { useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, router, useForm } from '@inertiajs/react';
+import { ShieldCheck, UserPlus } from 'lucide-react';
+import { useState } from 'react';
 
 type Perms = Record<string, Record<string, boolean>>;
 
@@ -17,14 +17,7 @@ interface Staff {
     permissions: Perms;
 }
 
-export default function UsersIndex({
-    staff,
-    schema,
-}: {
-    staff: Staff[];
-    schema: Record<string, string[]>;
-    defaults: Perms;
-}) {
+export default function UsersIndex({ staff, schema }: { staff: Staff[]; schema: Record<string, string[]>; defaults: Perms }) {
     const { t } = useAdminT();
 
     const [selectedId, setSelectedId] = useState<number | null>(staff[0]?.id ?? null);
@@ -91,7 +84,10 @@ export default function UsersIndex({
             </div>
 
             {adding && (
-                <form onSubmit={submitAdd} className="mb-6 grid max-w-3xl gap-3 rounded-lg border border-neutral-800 bg-neutral-900 p-4 sm:grid-cols-4">
+                <form
+                    onSubmit={submitAdd}
+                    className="mb-6 grid max-w-3xl gap-3 rounded-lg border border-neutral-800 bg-neutral-900 p-4 sm:grid-cols-4"
+                >
                     <label className="block sm:col-span-1">
                         <span className="text-xs text-neutral-400">{t('admin.users.name')}</span>
                         <input
@@ -124,8 +120,12 @@ export default function UsersIndex({
                         {addForm.errors.password && <span className="text-xs text-red-400">{addForm.errors.password}</span>}
                     </label>
                     <div className="flex items-end gap-2 sm:col-span-1">
-                        <Button type="submit" variant="success" disabled={addForm.processing || !addForm.isDirty}>{t('admin.users.create')}</Button>
-                        <Button type="button" variant="secondary" onClick={() => setAdding(false)}>{t('admin.users.cancel')}</Button>
+                        <Button type="submit" variant="success" disabled={addForm.processing || !addForm.isDirty}>
+                            {t('admin.users.create')}
+                        </Button>
+                        <Button type="button" variant="secondary" onClick={() => setAdding(false)}>
+                            {t('admin.users.cancel')}
+                        </Button>
                     </div>
                 </form>
             )}
@@ -148,15 +148,15 @@ export default function UsersIndex({
                                 <span className="truncate font-medium text-neutral-100">{s.name ?? s.email}</span>
                                 <span
                                     className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${
-                                        s.role === 'admin'
-                                            ? 'bg-purple-500/20 text-purple-300'
-                                            : 'bg-neutral-800 text-neutral-400'
+                                        s.role === 'admin' ? 'bg-purple-500/20 text-purple-300' : 'bg-neutral-800 text-neutral-400'
                                     }`}
                                 >
                                     {t(`admin.users.roles.${s.role}`)}
                                 </span>
                             </div>
-                            <div className="mt-0.5 truncate text-xs text-neutral-500" dir="ltr">{s.email}</div>
+                            <div className="mt-0.5 truncate text-xs text-neutral-500" dir="ltr">
+                                {s.email}
+                            </div>
                         </button>
                     ))}
                 </div>
@@ -181,7 +181,9 @@ export default function UsersIndex({
                                     <p className="text-xs text-neutral-500">{t('admin.users.hint')}</p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    <Button size="sm" variant="secondary" onClick={savePerms}>{t('admin.users.save')}</Button>
+                                    <Button size="sm" variant="secondary" onClick={savePerms}>
+                                        {t('admin.users.save')}
+                                    </Button>
                                     <ConfirmDeleteButton
                                         itemName={selected.name ?? selected.email}
                                         label={t('admin.users.remove')}

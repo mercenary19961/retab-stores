@@ -17,6 +17,8 @@ use App\Notifications\ProductRequestedNotification;
 use App\Services\WhatsApp\WhatsAppGateway;
 use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Mail\Mailer;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -67,10 +69,10 @@ class AdminAlertChannelsTest extends TestCase
      */
     private function sentMail(): Collection
     {
-        /** @var \Illuminate\Mail\Mailer $mailer */
+        /** @var Mailer $mailer */
         $mailer = Mail::mailer();
 
-        /** @var \Illuminate\Mail\Transport\ArrayTransport $transport */
+        /** @var ArrayTransport $transport */
         $transport = $mailer->getSymfonyTransport();
 
         return $transport->messages();

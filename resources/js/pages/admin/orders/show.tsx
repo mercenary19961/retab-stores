@@ -1,9 +1,9 @@
+import OrderDetailView, { type OrderCan, type OrderDetailData } from '@/components/admin/order-detail-view';
+import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
-import OrderDetailView, { type OrderCan, type OrderDetailData } from '@/components/admin/order-detail-view';
-import { useAdminT } from '@/i18n/use-admin-t';
 
 export default function OrderShow({ order, can }: { order: OrderDetailData; can: OrderCan }) {
     const { t } = useAdminT();

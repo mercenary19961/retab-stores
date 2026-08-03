@@ -25,7 +25,7 @@ class ReviewWishlistControllerTest extends TestCase
             'name_ar' => 'سكري',
             'slug' => 'sukkari',
             'price' => 50,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => 10,
             'is_active' => true,
         ]);
@@ -34,7 +34,7 @@ class ReviewWishlistControllerTest extends TestCase
     private function buy(User $user, Product $product): void
     {
         $order = Order::create([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'user_id' => $user->id,
             'customer_name' => 'Zaid',
             'customer_phone' => '966500000000',

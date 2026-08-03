@@ -1,6 +1,6 @@
+import ImageLightbox from '@/components/image-lightbox';
 import { type MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ImageLightbox from '@/components/image-lightbox';
 
 interface Props {
     /** Detail-size WebP variants — the main image + hover-magnify. */
@@ -40,7 +40,7 @@ export default function ProductGallery({ images, imagesThumb, imagesFull, name }
     return (
         <div className="space-y-3">
             {/* Main image — hover to magnify, click to open the full-size viewer. */}
-            <div className="overflow-hidden rounded-2xl border border-brand-gold/15 bg-white shadow-sm">
+            <div className="border-brand-gold/15 overflow-hidden rounded-2xl border bg-white shadow-sm">
                 {has && !broken[current] ? (
                     <button
                         type="button"
@@ -64,7 +64,7 @@ export default function ProductGallery({ images, imagesThumb, imagesFull, name }
                         />
                     </button>
                 ) : (
-                    <div className="flex aspect-square items-center justify-center bg-brand-cream text-7xl">🌴</div>
+                    <div className="bg-brand-cream flex aspect-square items-center justify-center text-7xl">🌴</div>
                 )}
             </div>
 
@@ -77,10 +77,10 @@ export default function ProductGallery({ images, imagesThumb, imagesFull, name }
                             type="button"
                             onClick={() => setActive(i)}
                             aria-label={`${name} ${i + 1}`}
-                            className={`overflow-hidden rounded-lg border-2 transition ${i === active ? 'border-brand-teal' : 'border-transparent hover:border-brand-gold/40'}`}
+                            className={`overflow-hidden rounded-lg border-2 transition ${i === active ? 'border-brand-teal' : 'hover:border-brand-gold/40 border-transparent'}`}
                         >
                             {broken[url] ? (
-                                <div className="flex aspect-square w-full items-center justify-center bg-brand-cream text-lg">🌴</div>
+                                <div className="bg-brand-cream flex aspect-square w-full items-center justify-center text-lg">🌴</div>
                             ) : (
                                 <img src={url} alt="" loading="lazy" onError={() => markBroken(url)} className="aspect-square w-full object-cover" />
                             )}

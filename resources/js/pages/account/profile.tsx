@@ -1,7 +1,7 @@
+import StoreLayout from '@/layouts/store-layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import StoreLayout from '@/layouts/store-layout';
 
 interface Profile {
     name: string | null;
@@ -33,13 +33,13 @@ export default function AccountProfile({ profile }: { profile: Profile }) {
             <Head title={t('profile.title')} />
 
             <div className="mx-auto max-w-lg">
-                <Link href="/account" className="text-sm text-gray-500 underline">{t('profile.back')}</Link>
-                <h1 className="mb-6 mt-1 text-2xl font-bold">{t('profile.title')}</h1>
+                <Link href="/account" className="text-sm text-gray-500 underline">
+                    {t('profile.back')}
+                </Link>
+                <h1 className="mt-1 mb-6 text-2xl font-bold">{t('profile.title')}</h1>
 
                 {flash?.success && (
-                    <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                        {flash.success}
-                    </div>
+                    <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{flash.success}</div>
                 )}
 
                 <form onSubmit={submit} className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
@@ -51,9 +51,7 @@ export default function AccountProfile({ profile }: { profile: Profile }) {
                             disabled
                             className="mt-1 w-full rounded border border-gray-200 bg-gray-50 px-3 py-2 text-start text-gray-500"
                         />
-                        <span className="text-xs text-gray-400">
-                            {profile.phone_verified ? t('profile.verified') : t('profile.unverified')}
-                        </span>
+                        <span className="text-xs text-gray-400">{profile.phone_verified ? t('profile.verified') : t('profile.unverified')}</span>
                     </label>
 
                     <label className="block">
@@ -88,11 +86,7 @@ export default function AccountProfile({ profile }: { profile: Profile }) {
                     </label>
 
                     <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={data.whatsapp_opt_in}
-                            onChange={(e) => setData('whatsapp_opt_in', e.target.checked)}
-                        />
+                        <input type="checkbox" checked={data.whatsapp_opt_in} onChange={(e) => setData('whatsapp_opt_in', e.target.checked)} />
                         {t('profile.whatsappOptIn')}
                     </label>
 

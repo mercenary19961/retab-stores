@@ -82,12 +82,13 @@ export default function ImageLightbox({
     };
 
     const ctrl = 'flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20';
-    const nav = 'absolute top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20';
+    const nav =
+        'absolute top-1/2 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20';
 
     return (
         <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
             <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/90 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+                <DialogPrimitive.Overlay className="data-[state=open]:animate-in data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/90" />
                 <DialogPrimitive.Content
                     aria-describedby={undefined}
                     onOpenAutoFocus={(e) => e.preventDefault()}
@@ -136,7 +137,7 @@ export default function ImageLightbox({
                                 onMouseMove={pan}
                                 onWheel={(e) => zoom(e.deltaY < 0 ? 0.4 : -0.4)}
                                 style={{ transform: `scale(${scale})`, transformOrigin: origin }}
-                                className={`max-h-full max-w-full select-none object-contain transition-transform duration-100 ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+                                className={`max-h-full max-w-full object-contain transition-transform duration-100 select-none ${zoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
                             />
                         )}
 

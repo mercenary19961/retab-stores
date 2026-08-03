@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import ProductCarousel, { type CarouselProduct } from '@/components/store/product-carousel';
+import { useTranslation } from 'react-i18next';
 
 /** "الأكثر مبيعاً" homepage strip — ranked by real sales (see ShopController). */
 export default function BestSellers({ products }: { products: CarouselProduct[] }) {

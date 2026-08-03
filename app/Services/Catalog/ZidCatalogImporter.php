@@ -61,7 +61,7 @@ class ZidCatalogImporter
      */
     public function import(string $csvPath, bool $withImages = true, ?callable $onProgress = null): ZidImportResult
     {
-        $result = new ZidImportResult();
+        $result = new ZidImportResult;
         $rows = $this->parseCsv($csvPath);
         $categories = $this->ensureCategories();
 
@@ -76,10 +76,10 @@ class ZidCatalogImporter
             $map = self::CATEGORY_MAP[$catName] ?? self::CATEGORY_MAP[self::DEFAULT_CATEGORY];
             $categoryId = $categories[$map[0]]->id;
 
-            $slug = $this->dedupe(trim($row['old_zid_slug']) ?: 'product-' . $row['row_ref'], $usedSlug);
+            $slug = $this->dedupe(trim($row['old_zid_slug']) ?: 'product-'.$row['row_ref'], $usedSlug);
             // Our own product code (RTB-0001…), assigned in sheet order. The Zid SKU
             // (Z.30547.*) is junk, unrelated to SMACC, so it is NOT stored at all.
-            $sku = 'RTB-' . str_pad((string) ++$skuSeq, 4, '0', STR_PAD_LEFT);
+            $sku = 'RTB-'.str_pad((string) ++$skuSeq, 4, '0', STR_PAD_LEFT);
 
             // smacc_sku is a nullable UNIQUE key: keep only the first occurrence.
             $smacc = trim($row['smacc_sku']);
@@ -181,7 +181,7 @@ class ZidCatalogImporter
 
             try {
                 // Runs through the Media layer's extension + MIME validation.
-                return Media::storeImageFromFile($tmp, 'image.' . $ext, "products/{$productId}");
+                return Media::storeImageFromFile($tmp, 'image.'.$ext, "products/{$productId}");
             } finally {
                 @unlink($tmp);
             }
@@ -214,7 +214,7 @@ class ZidCatalogImporter
                     'name_ar' => $nameAr,
                     'name_en' => $nameEn,
                     'parent_id' => $parents[$parentKey]->id,
-                    'image' => $image ? '/images/categories/' . $image : null,
+                    'image' => $image ? '/images/categories/'.$image : null,
                     'sort_order' => $j++,
                     'is_active' => true,
                 ],
@@ -267,7 +267,7 @@ class ZidCatalogImporter
         $n = 1;
         while (isset($used[$candidate])) {
             $n++;
-            $candidate = $value . '-' . $n;
+            $candidate = $value.'-'.$n;
         }
         $used[$candidate] = true;
 

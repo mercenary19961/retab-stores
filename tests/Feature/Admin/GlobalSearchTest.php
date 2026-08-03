@@ -27,9 +27,9 @@ class GlobalSearchTest extends TestCase
         return Product::create(array_merge([
             'category_id' => $cat->id,
             'name_ar' => 'سكري',
-            'slug' => 'p-' . uniqid(),
+            'slug' => 'p-'.uniqid(),
             'price' => 50,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => 10,
         ], $overrides));
     }
@@ -37,7 +37,7 @@ class GlobalSearchTest extends TestCase
     private function order(array $overrides = []): Order
     {
         return Order::create(array_merge([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'customer_name' => 'زيد',
             'customer_phone' => '+966500000000',
             'shipping_address' => ['country' => 'SA'],

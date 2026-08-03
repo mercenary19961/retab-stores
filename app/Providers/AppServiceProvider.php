@@ -11,7 +11,10 @@ use App\Services\Shipping\ShippingGateway;
 use App\Services\WhatsApp\CloudApiGateway;
 use App\Services\WhatsApp\LogGateway;
 use App\Services\WhatsApp\WhatsAppGateway;
+use App\Ssr\TimeoutHttpGateway;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Ssr\Gateway;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,8 +43,8 @@ class AppServiceProvider extends ServiceProvider
             baseUrl: rtrim((string) config('services.moyasar.base_url'), '/'),
             currency: (string) config('services.moyasar.currency', 'SAR'),
             webhookToken: (string) config('services.moyasar.webhook_secret'),
-            successUrl: rtrim((string) config('app.url'), '/') . '/checkout/success',
-            callbackUrl: rtrim((string) config('app.url'), '/') . '/webhooks/moyasar',
+            successUrl: rtrim((string) config('app.url'), '/').'/checkout/success',
+            callbackUrl: rtrim((string) config('app.url'), '/').'/webhooks/moyasar',
         ));
 
         // Tamara BNPL — authorize at checkout, capture at admin confirmation.
@@ -62,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
                 );
             }
 
-            return new LogGateway();
+            return new LogGateway;
         });
     }
 
@@ -74,7 +77,7 @@ class AppServiceProvider extends ServiceProvider
         // Behind Cloudflare + Railway's proxy every generated URL must be https;
         // pairs with the locked trustProxies CIDRs in bootstrap/app.php.
         if ($this->app->environment('production')) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+            URL::forceScheme('https');
         }
 
         // Override Inertia's SSR gateway with one that applies connect/response
@@ -82,6 +85,6 @@ class AppServiceProvider extends ServiceProvider
         // rendering instead of 502ing the site. Bound in boot() (not register())
         // so it wins over Inertia's own register()-time binding regardless of
         // provider order (Sky Amman pattern).
-        $this->app->bind(\Inertia\Ssr\Gateway::class, \App\Ssr\TimeoutHttpGateway::class);
+        $this->app->bind(Gateway::class, TimeoutHttpGateway::class);
     }
 }

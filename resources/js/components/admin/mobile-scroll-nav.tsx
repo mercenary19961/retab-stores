@@ -50,7 +50,7 @@ export default function MobileScrollNav({ scrollRef }: { scrollRef: RefObject<HT
 
     return (
         <div
-            className={`fixed bottom-4 start-4 z-20 flex flex-col gap-2 transition-opacity duration-300 md:hidden ${
+            className={`fixed start-4 bottom-4 z-20 flex flex-col gap-2 transition-opacity duration-300 md:hidden ${
                 visible ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
         >

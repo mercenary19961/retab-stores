@@ -27,9 +27,9 @@ class CheckoutControllerTest extends TestCase
         $product = Product::create([
             'category_id' => $category->id,
             'name_ar' => 'سكري',
-            'slug' => 'sukkari-' . uniqid(),
+            'slug' => 'sukkari-'.uniqid(),
             'price' => 50,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => 10,
             'is_active' => true,
         ]);

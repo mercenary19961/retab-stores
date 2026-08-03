@@ -11,10 +11,15 @@ use App\Models\ActivityLog;
 final readonly class RevertResult
 {
     public const REASON_ALREADY_REVERTED = 'already_reverted';
+
     public const REASON_NOT_REVERTABLE = 'not_revertable';
+
     public const REASON_SUBJECT_MISSING = 'subject_missing';
+
     public const REASON_STATE_CHANGED = 'state_changed';
+
     public const REASON_CONFLICT = 'conflict';
+
     public const REASON_FAILED = 'failed';
 
     /**

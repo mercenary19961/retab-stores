@@ -28,7 +28,7 @@ export default function FooterBanner() {
 
             {/* Headline — sits in the cream space above the baked-in divider line */}
             <h2
-                className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-heading font-black leading-none text-brand-gold text-[clamp(0.85rem,3.4vw,2.6rem)]"
+                className="font-heading text-brand-gold absolute -translate-x-1/2 -translate-y-1/2 text-[clamp(0.85rem,3.4vw,2.6rem)] leading-none font-black whitespace-nowrap"
                 style={{ left: '24%', top: '23%' }}
             >
                 {t('footerBanner.headline')}
@@ -36,7 +36,7 @@ export default function FooterBanner() {
 
             {/* Brand wordmark — between the two floral ornaments on the right */}
             <span
-                className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-heading font-black leading-none text-brand-gold text-[clamp(0.8rem,3vw,2.3rem)]"
+                className="font-heading text-brand-gold absolute -translate-x-1/2 -translate-y-1/2 text-[clamp(0.8rem,3vw,2.3rem)] leading-none font-black whitespace-nowrap"
                 style={{ left: '73%', top: '50%' }}
             >
                 {t('footerBanner.brand')}
@@ -46,7 +46,7 @@ export default function FooterBanner() {
             {BADGES.map((b) => (
                 <span
                     key={b.key}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-center font-heading font-medium leading-none text-brand-gold text-[clamp(0.4rem,1.35vw,1rem)]"
+                    className="font-heading text-brand-gold absolute -translate-x-1/2 -translate-y-1/2 text-center text-[clamp(0.4rem,1.35vw,1rem)] leading-none font-medium whitespace-nowrap"
                     style={{ left: `${b.left}%`, top: LABELS_TOP }}
                 >
                     {t(`footerBanner.badges.${b.key}`)}

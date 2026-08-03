@@ -12,7 +12,10 @@ use App\Services\CheckoutService;
 use App\Services\CustomerMailer;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\Tamara\TamaraService;
+use App\Services\ReturnService;
+use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Http\Request;
+use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
@@ -25,7 +28,7 @@ class CheckoutController
     public function __construct(
         protected CartService $cart,
         protected CheckoutService $checkout,
-        protected \App\Services\WhatsApp\WhatsAppService $whatsapp,
+        protected WhatsAppService $whatsapp,
         protected CustomerMailer $mailer,
     ) {}
 
@@ -53,7 +56,7 @@ class CheckoutController
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['nullable', 'email', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:20'],
-            'country' => ['required', 'in:' . implode(',', self::GCC)],
+            'country' => ['required', 'in:'.implode(',', self::GCC)],
             'city' => ['required', 'string', 'max:255'],
             'district' => ['nullable', 'string', 'max:255'],
             'street' => ['nullable', 'string', 'max:255'],
@@ -86,7 +89,7 @@ class CheckoutController
         }
 
         $this->cart->clear($cart);
-        /** @var \Illuminate\Session\Store $session — push() lives on Store, not the Session contract the docblock advertises */
+        /** @var Store $session — push() lives on Store, not the Session contract the docblock advertises */
         $session = $request->session();
         $session->push('placed_orders', $order->order_number);
 
@@ -161,7 +164,7 @@ class CheckoutController
             // while the order is delivered + inside the 3-day window.
             'canReturn' => $request->user()
                 && $order->user_id === $request->user()->id
-                && app(\App\Services\ReturnService::class)->canRequest($order),
+                && app(ReturnService::class)->canRequest($order),
             'orderReturn' => $latestReturn ? ['status' => $latestReturn->status->value] : null,
         ]);
     }

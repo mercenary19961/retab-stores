@@ -1,9 +1,9 @@
+import ReturnDetailView, { type RefundPreview, type ReturnDetail, type ReturnOrderSummary } from '@/components/admin/return-detail-view';
+import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
-import ReturnDetailView, { type RefundPreview, type ReturnDetail, type ReturnOrderSummary } from '@/components/admin/return-detail-view';
-import { useAdminT } from '@/i18n/use-admin-t';
 
 export default function ReturnShow({
     orderReturn,

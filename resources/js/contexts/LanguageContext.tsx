@@ -54,11 +54,7 @@ export function LanguageProvider({ children, initialLocale }: { children: ReactN
         syncLocale(lang);
     };
 
-    return (
-        <LanguageContext.Provider value={{ language, isRTL, toggleLanguage, setLanguage }}>
-            {children}
-        </LanguageContext.Provider>
-    );
+    return <LanguageContext.Provider value={{ language, isRTL, toggleLanguage, setLanguage }}>{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() {

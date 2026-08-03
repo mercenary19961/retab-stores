@@ -63,7 +63,9 @@ export default function CopyText({
             aria-label={`${copyLabel}: ${value}`}
             className={`group inline-flex max-w-full items-center gap-1 ${className}`}
         >
-            <span dir="ltr" className="truncate">{display ?? value}</span>
+            <span dir="ltr" className="truncate">
+                {display ?? value}
+            </span>
             {copied ? (
                 <Check className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
             ) : (

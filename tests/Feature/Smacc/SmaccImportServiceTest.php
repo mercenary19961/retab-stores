@@ -25,9 +25,9 @@ class SmaccImportServiceTest extends TestCase
         return Product::create([
             'category_id' => $category->id,
             'name_ar' => 'منتج',
-            'slug' => 'p-' . uniqid(),
+            'slug' => 'p-'.uniqid(),
             'price' => 50,
-            'sku' => 'SKU-' . uniqid(),
+            'sku' => 'SKU-'.uniqid(),
             'smacc_sku' => $smaccSku,
             'barcode' => $barcode,
             'stock' => $stock,
@@ -37,7 +37,7 @@ class SmaccImportServiceTest extends TestCase
     /** Write CSV content to a temp file and return the path. */
     private function csv(string $content): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'smacc') . '.csv';
+        $path = tempnam(sys_get_temp_dir(), 'smacc').'.csv';
         file_put_contents($path, $content);
 
         return $path;

@@ -90,7 +90,7 @@ export default function StoreNavbar() {
 
     return (
         <header
-            className={`sticky top-0 z-40 border-b border-brand-gold/10 bg-white transition-all duration-700 ${
+            className={`border-brand-gold/10 sticky top-0 z-40 border-b bg-white transition-all duration-700 ${
                 show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
             } ${scrolled ? 'shadow-md' : ''}`}
         >
@@ -101,7 +101,7 @@ export default function StoreNavbar() {
                     src="/images/brand/navbar-pattern.png"
                     alt=""
                     aria-hidden
-                    className="absolute top-0 end-0 h-full w-auto select-none opacity-70"
+                    className="absolute end-0 top-0 h-full w-auto opacity-70 select-none"
                 />
             </div>
 
@@ -115,7 +115,7 @@ export default function StoreNavbar() {
                             type="button"
                             onClick={() => setMobileOpen(true)}
                             aria-label={t('nav.menu')}
-                            className="text-brand-gold transition-colors hover:text-brand-teal md:hidden"
+                            className="text-brand-gold hover:text-brand-teal transition-colors md:hidden"
                         >
                             <Menu className="size-6" />
                         </button>
@@ -123,25 +123,25 @@ export default function StoreNavbar() {
                         <Link
                             href="/shop"
                             aria-label={t('nav.search')}
-                            className="hidden text-brand-gold transition-colors hover:text-brand-teal md:inline-flex"
+                            className="text-brand-gold hover:text-brand-teal hidden transition-colors md:inline-flex"
                         >
                             <Search className="size-5" />
                         </Link>
                         <Link
                             href={accountHref}
                             aria-label={t('common.myAccount')}
-                            className="hidden text-brand-gold transition-colors hover:text-brand-teal md:inline-flex"
+                            className="text-brand-gold hover:text-brand-teal hidden transition-colors md:inline-flex"
                         >
                             <User className="size-5" />
                         </Link>
                         <Link
                             href="/cart"
                             aria-label={t('common.cart')}
-                            className="relative hidden text-brand-gold transition-colors hover:text-brand-teal md:inline-flex"
+                            className="text-brand-gold hover:text-brand-teal relative hidden transition-colors md:inline-flex"
                         >
                             <ShoppingBag className="size-5" />
                             {cartCount > 0 && (
-                                <span className="absolute -end-2 -top-2 flex size-4 items-center justify-center rounded-full bg-brand-teal text-[10px] font-bold text-white">
+                                <span className="bg-brand-teal absolute -end-2 -top-2 flex size-4 items-center justify-center rounded-full text-[10px] font-bold text-white">
                                     {cartCount}
                                 </span>
                             )}
@@ -158,11 +158,11 @@ export default function StoreNavbar() {
                         <Link
                             href="/cart"
                             aria-label={t('common.cart')}
-                            className="relative text-brand-gold transition-colors hover:text-brand-teal md:hidden"
+                            className="text-brand-gold hover:text-brand-teal relative transition-colors md:hidden"
                         >
                             <ShoppingBag className="size-6" />
                             {cartCount > 0 && (
-                                <span className="absolute -end-2 -top-2 flex size-4 items-center justify-center rounded-full bg-brand-teal text-[10px] font-bold text-white">
+                                <span className="bg-brand-teal absolute -end-2 -top-2 flex size-4 items-center justify-center rounded-full text-[10px] font-bold text-white">
                                     {cartCount}
                                 </span>
                             )}
@@ -171,7 +171,7 @@ export default function StoreNavbar() {
                             type="button"
                             data-testid="lang-toggle"
                             onClick={toggleLanguage}
-                            className="rounded-full border border-brand-gold/40 px-3 py-1 text-sm text-brand-gold transition-colors hover:bg-brand-gold/10"
+                            className="border-brand-gold/40 text-brand-gold hover:bg-brand-gold/10 rounded-full border px-3 py-1 text-sm transition-colors"
                         >
                             {t('common.switchLanguage')}
                         </button>
@@ -179,7 +179,9 @@ export default function StoreNavbar() {
                 </div>
 
                 {/* Row 2 — primary nav links (desktop). Padding collapses when scrolled. */}
-                <nav className={`hidden items-center justify-between border-t border-brand-gold/10 transition-[padding] duration-300 md:flex ${scrolled ? 'py-0' : 'py-2'}`}>
+                <nav
+                    className={`border-brand-gold/10 hidden items-center justify-between border-t transition-[padding] duration-300 md:flex ${scrolled ? 'py-0' : 'py-2'}`}
+                >
                     <Link href="/" className={`${linkBase} ${isActive('/') ? linkActive : linkIdle}`}>
                         {t('nav.home')}
                     </Link>
@@ -187,14 +189,11 @@ export default function StoreNavbar() {
                     {navCategories.map((cat) =>
                         cat.children.length > 0 ? (
                             <div key={cat.id} className="group relative">
-                                <Link
-                                    href="/"
-                                    className={`${linkBase} ${linkIdle} inline-flex items-center gap-1.5`}
-                                >
+                                <Link href="/" className={`${linkBase} ${linkIdle} inline-flex items-center gap-1.5`}>
                                     {localized(cat, 'name')}
                                     <Caret />
                                 </Link>
-                                <div className="invisible absolute top-full start-0 z-20 min-w-48 -translate-y-1 rounded-xl border border-brand-gold/15 bg-white p-2 opacity-0 shadow-lg transition-all group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                                <div className="border-brand-gold/15 invisible absolute start-0 top-full z-20 min-w-48 -translate-y-1 rounded-xl border bg-white p-2 opacity-0 shadow-lg transition-all group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
                                     {cat.children.map((child) => (
                                         <Link
                                             key={child.id}
@@ -222,20 +221,14 @@ export default function StoreNavbar() {
                     )}
 
                     {hasOffers && (
-                        <Link
-                            href="/shop?on_sale=1"
-                            className={`${linkBase} ${url.includes('on_sale=1') ? linkActive : linkIdle}`}
-                        >
+                        <Link href="/shop?on_sale=1" className={`${linkBase} ${url.includes('on_sale=1') ? linkActive : linkIdle}`}>
                             {t('nav.offers')}
                         </Link>
                     )}
                     <Link href="/pages/about" className={`${linkBase} ${isActive('/pages/about') ? linkActive : linkIdle}`}>
                         {t('nav.about')}
                     </Link>
-                    <Link
-                        href="/pages/contact"
-                        className={`${linkBase} ${isActive('/pages/contact') ? linkActive : linkIdle}`}
-                    >
+                    <Link href="/pages/contact" className={`${linkBase} ${isActive('/pages/contact') ? linkActive : linkIdle}`}>
                         {t('nav.contact')}
                     </Link>
                 </nav>
@@ -258,21 +251,19 @@ export default function StoreNavbar() {
                             </button>
                         </div>
 
-                        <Link href="/" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
+                        <Link href="/" className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2" onClick={() => setMobileOpen(false)}>
                             {t('nav.home')}
                         </Link>
 
                         {navCategories.map((cat) => (
                             <div key={cat.id} className="py-1">
-                                <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-teal">
-                                    {localized(cat, 'name')}
-                                </p>
+                                <p className="text-brand-teal px-3 py-1 text-xs font-semibold tracking-wide uppercase">{localized(cat, 'name')}</p>
                                 {cat.children.length > 0 ? (
                                     cat.children.map((child) => (
                                         <Link
                                             key={child.id}
                                             href={`/shop?category=${child.slug}`}
-                                            className="block rounded-lg px-5 py-2 text-sm text-brand-gold hover:bg-brand-cream hover:text-brand-teal"
+                                            className="text-brand-gold hover:bg-brand-cream hover:text-brand-teal block rounded-lg px-5 py-2 text-sm"
                                             onClick={() => setMobileOpen(false)}
                                         >
                                             {localized(child, 'name')}
@@ -281,7 +272,7 @@ export default function StoreNavbar() {
                                 ) : (
                                     <Link
                                         href={`/shop?category=${cat.slug}`}
-                                        className="block rounded-lg px-5 py-2 text-sm text-brand-gold hover:bg-brand-cream"
+                                        className="text-brand-gold hover:bg-brand-cream block rounded-lg px-5 py-2 text-sm"
                                         onClick={() => setMobileOpen(false)}
                                     >
                                         {localized(cat, 'name')}
@@ -291,19 +282,35 @@ export default function StoreNavbar() {
                         ))}
 
                         {hasOffers && (
-                            <Link href="/shop?on_sale=1" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
+                            <Link
+                                href="/shop?on_sale=1"
+                                className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2"
+                                onClick={() => setMobileOpen(false)}
+                            >
                                 {t('nav.offers')}
                             </Link>
                         )}
-                        <Link href="/pages/about" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
+                        <Link
+                            href="/pages/about"
+                            className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2"
+                            onClick={() => setMobileOpen(false)}
+                        >
                             {t('nav.about')}
                         </Link>
-                        <Link href="/pages/contact" className="rounded-lg px-3 py-2 text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
+                        <Link
+                            href="/pages/contact"
+                            className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2"
+                            onClick={() => setMobileOpen(false)}
+                        >
                             {t('nav.contact')}
                         </Link>
 
-                        <div className="mt-3 flex items-center gap-3 border-t border-brand-gold/15 pt-3">
-                            <Link href={accountHref} className="flex-1 rounded-lg px-3 py-2 text-sm text-brand-gold hover:bg-brand-cream" onClick={() => setMobileOpen(false)}>
+                        <div className="border-brand-gold/15 mt-3 flex items-center gap-3 border-t pt-3">
+                            <Link
+                                href={accountHref}
+                                className="text-brand-gold hover:bg-brand-cream flex-1 rounded-lg px-3 py-2 text-sm"
+                                onClick={() => setMobileOpen(false)}
+                            >
                                 {t('common.myAccount')}
                             </Link>
                             <button
@@ -312,7 +319,7 @@ export default function StoreNavbar() {
                                     toggleLanguage();
                                     setMobileOpen(false);
                                 }}
-                                className="rounded-full border border-brand-gold/40 px-3 py-1 text-sm text-brand-gold hover:bg-brand-gold/10"
+                                className="border-brand-gold/40 text-brand-gold hover:bg-brand-gold/10 rounded-full border px-3 py-1 text-sm"
                             >
                                 {t('common.switchLanguage')}
                             </button>

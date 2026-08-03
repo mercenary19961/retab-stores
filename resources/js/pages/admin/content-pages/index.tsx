@@ -1,12 +1,12 @@
+import Button from '@/components/admin/button';
+import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
+import StatusPill from '@/components/status-pill';
+import { useHighlightFields } from '@/hooks/use-highlight-fields';
+import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, useForm } from '@inertiajs/react';
 import { FileText } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
-import Button from '@/components/admin/button';
-import StatusPill from '@/components/status-pill';
-import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
-import { useHighlightFields } from '@/hooks/use-highlight-fields';
-import { useAdminT } from '@/i18n/use-admin-t';
 
 interface PageItem {
     id: number;
@@ -51,11 +51,14 @@ function PageEditor({ page }: { page: PageItem }) {
     );
 
     return (
-        <form onSubmit={submit} className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-6">
+        <form
+            onSubmit={submit}
+            className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6 dark:border-neutral-800 dark:bg-neutral-900"
+        >
             <div className="mb-5 flex items-start justify-between gap-3 border-b border-neutral-100 pb-4 dark:border-neutral-800">
                 <div className="min-w-0">
                     <h2 className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-neutral-100">
-                        <FileText className="h-4 w-4 shrink-0 text-brand-gold" />
+                        <FileText className="text-brand-gold h-4 w-4 shrink-0" />
                         <span className="truncate">{data.title_en || data.title_ar}</span>
                     </h2>
                     <p className="mt-1 text-xs text-neutral-400">
@@ -70,32 +73,47 @@ function PageEditor({ page }: { page: PageItem }) {
             </div>
 
             <div className="space-y-4">
-                {field('slug', t('admin.contentPages.form.slug'), (
-                    <input value={data.slug} onChange={(e) => setData('slug', e.target.value)} className={`${INPUT} font-mono`} />
-                ), errors.slug)}
+                {field(
+                    'slug',
+                    t('admin.contentPages.form.slug'),
+                    <input value={data.slug} onChange={(e) => setData('slug', e.target.value)} className={`${INPUT} font-mono`} />,
+                    errors.slug,
+                )}
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {field('title_ar', t('admin.contentPages.form.titleAr'), (
-                        <input dir="rtl" value={data.title_ar} onChange={(e) => setData('title_ar', e.target.value)} className={INPUT} />
-                    ), errors.title_ar)}
-                    {field('title_en', t('admin.contentPages.form.titleEn'), (
-                        <input value={data.title_en} onChange={(e) => setData('title_en', e.target.value)} className={INPUT} />
-                    ), errors.title_en)}
+                    {field(
+                        'title_ar',
+                        t('admin.contentPages.form.titleAr'),
+                        <input dir="rtl" value={data.title_ar} onChange={(e) => setData('title_ar', e.target.value)} className={INPUT} />,
+                        errors.title_ar,
+                    )}
+                    {field(
+                        'title_en',
+                        t('admin.contentPages.form.titleEn'),
+                        <input value={data.title_en} onChange={(e) => setData('title_en', e.target.value)} className={INPUT} />,
+                        errors.title_en,
+                    )}
                 </div>
 
-                {field('body_ar', t('admin.contentPages.form.bodyAr'), (
-                    <textarea dir="rtl" rows={10} value={data.body_ar} onChange={(e) => setData('body_ar', e.target.value)} className={INPUT} />
-                ), errors.body_ar)}
-                {field('body_en', t('admin.contentPages.form.bodyEn'), (
-                    <textarea rows={10} value={data.body_en} onChange={(e) => setData('body_en', e.target.value)} className={INPUT} />
-                ), errors.body_en)}
+                {field(
+                    'body_ar',
+                    t('admin.contentPages.form.bodyAr'),
+                    <textarea dir="rtl" rows={10} value={data.body_ar} onChange={(e) => setData('body_ar', e.target.value)} className={INPUT} />,
+                    errors.body_ar,
+                )}
+                {field(
+                    'body_en',
+                    t('admin.contentPages.form.bodyEn'),
+                    <textarea rows={10} value={data.body_en} onChange={(e) => setData('body_en', e.target.value)} className={INPUT} />,
+                    errors.body_en,
+                )}
 
                 <label className="flex items-center gap-2 text-sm" id="field-is_published">
                     <input
                         type="checkbox"
                         checked={data.is_published}
                         onChange={(e) => setData('is_published', e.target.checked)}
-                        className="h-4 w-4 accent-brand-gold"
+                        className="accent-brand-gold h-4 w-4"
                     />
                     {t('admin.contentPages.form.publishedLabel')}
                 </label>
@@ -111,9 +129,7 @@ function PageEditor({ page }: { page: PageItem }) {
 export default function ContentPagesIndex({ pages, undoMeta = null }: { pages: PageItem[]; undoMeta?: UndoMeta | null }) {
     const { t } = useAdminT();
     // Default to the About page, falling back to the first available page.
-    const [selectedId, setSelectedId] = useState<number | null>(
-        () => pages.find((p) => p.slug === 'about')?.id ?? pages[0]?.id ?? null,
-    );
+    const [selectedId, setSelectedId] = useState<number | null>(() => pages.find((p) => p.slug === 'about')?.id ?? pages[0]?.id ?? null);
     const selected = pages.find((p) => p.id === selectedId) ?? null;
 
     return (
@@ -151,7 +167,10 @@ export default function ContentPagesIndex({ pages, undoMeta = null }: { pages: P
                                         <span className="block truncate font-mono text-xs text-neutral-400">{p.slug}</span>
                                     </span>
                                     {!p.is_published && (
-                                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" title={t('admin.contentPages.draftBadge')} />
+                                        <span
+                                            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
+                                            title={t('admin.contentPages.draftBadge')}
+                                        />
                                     )}
                                 </button>
                             );

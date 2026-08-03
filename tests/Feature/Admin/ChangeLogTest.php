@@ -36,9 +36,9 @@ class ChangeLogTest extends TestCase
         $product = Product::create(array_merge([
             'category_id' => $category->id,
             'name_ar' => 'منتج',
-            'slug' => 'p-' . uniqid(),
+            'slug' => 'p-'.uniqid(),
             'price' => 50,
-            'sku' => 'SKU-' . uniqid(),
+            'sku' => 'SKU-'.uniqid(),
             'stock' => 10,
         ], $overrides));
 

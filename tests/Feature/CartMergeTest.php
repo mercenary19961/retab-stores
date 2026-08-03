@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Cart;
 use App\Models\Category;
 use App\Models\OtpVerification;
 use App\Models\Product;
@@ -21,7 +22,7 @@ class CartMergeTest extends TestCase
         return Product::create([
             'category_id' => $category->id,
             'name_ar' => 'منتج',
-            'slug' => 'p-' . $sku,
+            'slug' => 'p-'.$sku,
             'price' => 50,
             'sku' => $sku,
             'stock' => 50,
@@ -42,7 +43,7 @@ class CartMergeTest extends TestCase
 
         // A returning user who already has the shared product in their cart.
         $user = User::factory()->create(['phone' => '966500000000', 'role' => 'customer']);
-        \App\Models\Cart::create(['user_id' => $user->id])
+        Cart::create(['user_id' => $user->id])
             ->items()->create(['product_id' => $shared->id, 'quantity' => 3, 'unit_price' => 50]);
 
         OtpVerification::create([
@@ -55,7 +56,7 @@ class CartMergeTest extends TestCase
         $this->post('/login/whatsapp/verify', ['phone' => '966500000000', 'code' => '123456'])
             ->assertRedirect(route('account.dashboard'));
 
-        $cart = \App\Models\Cart::where('user_id', $user->id)->firstOrFail();
+        $cart = Cart::where('user_id', $user->id)->firstOrFail();
 
         // Shared product: 3 (existing) + 2 (guest) = 5; guest-only product adopted.
         $this->assertSame(5, (int) $cart->items()->where('product_id', $shared->id)->value('quantity'));

@@ -66,7 +66,7 @@ class TableExport
     private static function xlsx(string $filename, array $columns, iterable $rows, callable $project): Response
     {
         $temp = tempnam(sys_get_temp_dir(), 'retab_export_');
-        $writer = new Writer();
+        $writer = new Writer;
         $writer->openToFile($temp);
         $writer->addRow(Row::fromValues($columns));
         foreach ($rows as $row) {

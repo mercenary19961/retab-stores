@@ -39,10 +39,16 @@ export default function ConfirmDialog({
     return (
         <Modal open={open} onClose={onClose} size="sm" title={title}>
             <div className="space-y-4">
-                <p className="text-sm text-neutral-700 dark:text-neutral-200" dir="auto">{message}</p>
+                <p className="text-sm text-neutral-700 dark:text-neutral-200" dir="auto">
+                    {message}
+                </p>
                 <div className="flex justify-end gap-2 pt-1">
-                    <Button variant="secondary" onClick={onClose}>{t('admin.common.cancel')}</Button>
-                    <Button variant={confirmVariant} icon={icon} onClick={confirm}>{confirmLabel ?? t('admin.common.confirm')}</Button>
+                    <Button variant="secondary" onClick={onClose}>
+                        {t('admin.common.cancel')}
+                    </Button>
+                    <Button variant={confirmVariant} icon={icon} onClick={confirm}>
+                        {confirmLabel ?? t('admin.common.confirm')}
+                    </Button>
                 </div>
             </div>
         </Modal>

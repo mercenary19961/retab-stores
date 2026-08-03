@@ -32,10 +32,10 @@ export default function UndoToast() {
     };
 
     return (
-        <div className="fixed bottom-6 end-6 z-50 flex items-center gap-3 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-neutral-200 shadow-xl">
-            <History className="h-4 w-4 shrink-0 text-brand-gold" />
+        <div className="fixed end-6 bottom-6 z-50 flex items-center gap-3 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-neutral-200 shadow-xl">
+            <History className="text-brand-gold h-4 w-4 shrink-0" />
             <span dir="auto">{t('admin.undo.saved', { label: undo.label })}</span>
-            <button type="button" onClick={revert} className="font-semibold text-brand-gold hover:underline">
+            <button type="button" onClick={revert} className="text-brand-gold font-semibold hover:underline">
                 {t('admin.undo.button')}
             </button>
             <button

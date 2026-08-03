@@ -1,7 +1,7 @@
+import ProductImage from '@/components/store/product-image';
+import { useLocalized } from '@/lib/localize';
 import { Link } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
-import ProductImage from '@/components/store/product-image';
 
 export interface StoreProduct {
     id: number;
@@ -28,8 +28,7 @@ export default function ProductCard({ product: p }: { product: StoreProduct }) {
     const localized = useLocalized();
     const currency = t('common.currency');
 
-    const salePercent =
-        p.on_sale && p.price > 0 ? Math.round((1 - p.effective_price / p.price) * 100) : 0;
+    const salePercent = p.on_sale && p.price > 0 ? Math.round((1 - p.effective_price / p.price) * 100) : 0;
 
     return (
         <Link href={`/products/${p.slug}`} className="group block">
@@ -37,30 +36,28 @@ export default function ProductCard({ product: p }: { product: StoreProduct }) {
                 <ProductImage src={p.image} alt={localized(p, 'name')} />
 
                 {p.coming_soon ? (
-                    <span className="absolute start-3 top-3 z-10 rounded-full bg-brand-teal px-2.5 py-1 font-heading text-xs font-bold text-white shadow-sm">
+                    <span className="bg-brand-teal font-heading absolute start-3 top-3 z-10 rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-sm">
                         {t('catalogue.comingSoon')}
                     </span>
                 ) : (
                     salePercent > 0 && (
-                        <span className="absolute end-3 top-3 z-10 rounded-full bg-brand-gold px-2.5 py-1 font-heading text-xs font-bold text-white shadow-sm">
+                        <span className="bg-brand-gold font-heading absolute end-3 top-3 z-10 rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-sm">
                             {t('catalogue.saleBadge', { percent: salePercent })}
                         </span>
                     )
                 )}
             </div>
 
-            <h3 className="mt-4 line-clamp-1 text-center font-heading text-brand-gold text-[clamp(1rem,2vw,1.35rem)]">
-                {localized(p, 'name')}
-            </h3>
-            <div className="mt-1 text-center font-heading text-brand-teal">
+            <h3 className="font-heading text-brand-gold mt-4 line-clamp-1 text-center text-[clamp(1rem,2vw,1.35rem)]">{localized(p, 'name')}</h3>
+            <div className="font-heading text-brand-teal mt-1 text-center">
                 {p.coming_soon ? (
-                    <span className="text-sm font-semibold text-brand-teal/70">{t('catalogue.requestCta')}</span>
+                    <span className="text-brand-teal/70 text-sm font-semibold">{t('catalogue.requestCta')}</span>
                 ) : p.on_sale ? (
                     <span className="inline-flex items-center gap-2">
                         <span className="font-bold">
                             {p.effective_price.toFixed(2)} {currency}
                         </span>
-                        <span className="text-sm text-brand-teal/50 line-through">
+                        <span className="text-brand-teal/50 text-sm line-through">
                             {p.price.toFixed(2)} {currency}
                         </span>
                     </span>

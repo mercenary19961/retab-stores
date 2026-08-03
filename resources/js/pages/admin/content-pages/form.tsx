@@ -1,10 +1,10 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
-import { type FormEvent } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft } from 'lucide-react';
+import { type FormEvent } from 'react';
 
 interface PageData {
     id: number;
@@ -57,26 +57,44 @@ export default function ContentPageForm({ page }: { page: PageData | null }) {
                 </Link>
             </div>
 
-            <form onSubmit={submit} className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                {field('slug', t('admin.contentPages.form.slug'), (
-                    <input value={data.slug} onChange={(e) => setData('slug', e.target.value)} className={`${inputCls} font-mono`} />
-                ), errors.slug)}
+            <form
+                onSubmit={submit}
+                className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+            >
+                {field(
+                    'slug',
+                    t('admin.contentPages.form.slug'),
+                    <input value={data.slug} onChange={(e) => setData('slug', e.target.value)} className={`${inputCls} font-mono`} />,
+                    errors.slug,
+                )}
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {field('title_ar', t('admin.contentPages.form.titleAr'), (
-                        <input dir="rtl" value={data.title_ar} onChange={(e) => setData('title_ar', e.target.value)} className={inputCls} />
-                    ), errors.title_ar)}
-                    {field('title_en', t('admin.contentPages.form.titleEn'), (
-                        <input value={data.title_en} onChange={(e) => setData('title_en', e.target.value)} className={inputCls} />
-                    ), errors.title_en)}
+                    {field(
+                        'title_ar',
+                        t('admin.contentPages.form.titleAr'),
+                        <input dir="rtl" value={data.title_ar} onChange={(e) => setData('title_ar', e.target.value)} className={inputCls} />,
+                        errors.title_ar,
+                    )}
+                    {field(
+                        'title_en',
+                        t('admin.contentPages.form.titleEn'),
+                        <input value={data.title_en} onChange={(e) => setData('title_en', e.target.value)} className={inputCls} />,
+                        errors.title_en,
+                    )}
                 </div>
 
-                {field('body_ar', t('admin.contentPages.form.bodyAr'), (
-                    <textarea dir="rtl" rows={10} value={data.body_ar} onChange={(e) => setData('body_ar', e.target.value)} className={inputCls} />
-                ), errors.body_ar)}
-                {field('body_en', t('admin.contentPages.form.bodyEn'), (
-                    <textarea rows={10} value={data.body_en} onChange={(e) => setData('body_en', e.target.value)} className={inputCls} />
-                ), errors.body_en)}
+                {field(
+                    'body_ar',
+                    t('admin.contentPages.form.bodyAr'),
+                    <textarea dir="rtl" rows={10} value={data.body_ar} onChange={(e) => setData('body_ar', e.target.value)} className={inputCls} />,
+                    errors.body_ar,
+                )}
+                {field(
+                    'body_en',
+                    t('admin.contentPages.form.bodyEn'),
+                    <textarea rows={10} value={data.body_en} onChange={(e) => setData('body_en', e.target.value)} className={inputCls} />,
+                    errors.body_en,
+                )}
 
                 <label className="flex items-center gap-2 text-sm" id="field-is_published">
                     <input type="checkbox" checked={data.is_published} onChange={(e) => setData('is_published', e.target.checked)} />

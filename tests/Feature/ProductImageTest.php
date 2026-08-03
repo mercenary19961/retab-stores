@@ -31,7 +31,7 @@ class ProductImageTest extends TestCase
             'name_ar' => 'سكري',
             'slug' => 'sukkari',
             'price' => 50,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => 10,
             'is_active' => true,
         ]);

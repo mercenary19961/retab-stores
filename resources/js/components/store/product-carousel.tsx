@@ -1,7 +1,7 @@
+import { useLocalized } from '@/lib/localize';
 import { Link } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
 
 export interface CarouselProduct {
     id: number;
@@ -24,14 +24,7 @@ const GAP = 24;
 /** Rounded-triangle arrow (from Polygon 2.svg), teal. Points right by default. */
 function Arrow({ flip }: { flip?: boolean }) {
     return (
-        <svg
-            width="26"
-            height="27"
-            viewBox="0 0 24 25"
-            fill="none"
-            aria-hidden
-            className={flip ? '-scale-x-100' : undefined}
-        >
+        <svg width="26" height="27" viewBox="0 0 24 25" fill="none" aria-hidden className={flip ? '-scale-x-100' : undefined}>
             <path
                 d="M19.9167 6.95319C24.0648 9.34813 24.0648 15.3355 19.9167 17.7304L9.33334 23.8407C5.18519 26.2356 0 23.242 0 18.4521V6.23151C0 1.44165 5.18519 -1.55203 9.33333 0.842905L19.9167 6.95319Z"
                 fill="#1b4e53"
@@ -127,15 +120,13 @@ export default function ProductCarousel({
                 src="/images/best-sellers/pattern.png"
                 alt=""
                 aria-hidden
-                className={`pointer-events-none absolute bottom-0 h-full w-auto select-none opacity-70 ${
+                className={`pointer-events-none absolute bottom-0 h-full w-auto opacity-70 select-none ${
                     mirrorPattern ? 'right-0 -scale-x-100' : 'left-0'
                 }`}
             />
 
             <div className="relative mx-auto max-w-[1600px] px-6 lg:px-12">
-                <h2 className="mb-8 text-center font-heading font-black text-brand-teal text-[clamp(1.75rem,4vw,2.75rem)]">
-                    {title}
-                </h2>
+                <h2 className="font-heading text-brand-teal mb-8 text-center text-[clamp(1.75rem,4vw,2.75rem)] font-black">{title}</h2>
 
                 <div className="relative">
                     {/* Prev (left) arrow — sits in the left gutter, clear of the cards.
@@ -158,7 +149,7 @@ export default function ProductCarousel({
                         the arrows have room. Cards exactly fill it — no partial peek. */}
                     <div
                         ref={trackRef}
-                        className={`flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth sm:mx-14 lg:mx-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                        className={`flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth [scrollbar-width:none] sm:mx-14 lg:mx-16 [&::-webkit-scrollbar]:hidden ${
                             scrollable ? '' : 'justify-center'
                         }`}
                     >
@@ -166,7 +157,7 @@ export default function ProductCarousel({
                             <Link
                                 key={p.id}
                                 href={`/products/${p.slug}`}
-                                className="group relative shrink-0 snap-start basis-[calc((100%_-_1.5rem)_/_2)] md:basis-[calc((100%_-_3rem)_/_3)] lg:basis-[calc((100%_-_4.5rem)_/_4)]"
+                                className="group relative shrink-0 basis-[calc((100%_-_1.5rem)_/_2)] snap-start md:basis-[calc((100%_-_3rem)_/_3)] lg:basis-[calc((100%_-_4.5rem)_/_4)]"
                             >
                                 {p.image ? (
                                     <img
@@ -175,27 +166,27 @@ export default function ProductCarousel({
                                         className="aspect-square w-full rounded-[23%] object-cover shadow-sm transition group-hover:shadow-md"
                                     />
                                 ) : (
-                                    <div className="flex aspect-square w-full items-center justify-center rounded-[23%] bg-brand-cream text-5xl shadow-sm">
+                                    <div className="bg-brand-cream flex aspect-square w-full items-center justify-center rounded-[23%] text-5xl shadow-sm">
                                         🌴
                                     </div>
                                 )}
 
                                 {badgeLabel && (
-                                    <span className="absolute left-3 top-3 z-10 rounded-full bg-brand-gold px-3 py-1 font-heading text-xs font-bold text-white shadow-sm">
+                                    <span className="bg-brand-gold font-heading absolute top-3 left-3 z-10 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm">
                                         {badgeLabel}
                                     </span>
                                 )}
 
-                                <h3 className="mt-4 text-center font-heading text-brand-gold text-[clamp(1rem,2vw,1.35rem)]">
+                                <h3 className="font-heading text-brand-gold mt-4 text-center text-[clamp(1rem,2vw,1.35rem)]">
                                     {localized(p, 'name')}
                                 </h3>
-                                <div className="mt-1 text-center font-heading text-brand-teal">
+                                <div className="font-heading text-brand-teal mt-1 text-center">
                                     {p.on_sale ? (
                                         <span className="inline-flex items-center gap-2">
                                             <span className="font-bold">
                                                 {p.effective_price.toFixed(2)} {currency}
                                             </span>
-                                            <span className="text-sm text-brand-teal/50 line-through">
+                                            <span className="text-brand-teal/50 text-sm line-through">
                                                 {p.price.toFixed(2)} {currency}
                                             </span>
                                         </span>

@@ -1,11 +1,11 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Check, ExternalLink, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
 import Button from '@/components/admin/button';
 import ConfirmDialog from '@/components/admin/confirm-dialog';
 import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { Head, Link, router } from '@inertiajs/react';
+import { Check, ExternalLink, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface FieldChange {
     label: string;
@@ -70,7 +70,7 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                     <p className="p-6 text-sm text-neutral-400">{t('admin.changeLog.empty')}</p>
                 ) : (
                     <table className="w-full text-sm">
-                        <thead className="bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
+                        <thead className="bg-neutral-50 text-left text-xs tracking-wide text-neutral-600 uppercase dark:bg-neutral-800/50 dark:text-neutral-300">
                             <tr className="border-b border-neutral-100 dark:border-neutral-800">
                                 <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.when')}</th>
                                 <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.section')}</th>
@@ -88,13 +88,13 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                                     id={`log-${row.id}`}
                                     className={`border-b border-neutral-100 align-top transition-colors duration-1000 last:border-b-0 dark:border-neutral-800 ${
                                         flagged === row.id
-                                            ? 'bg-amber-500/15 ring-2 ring-inset ring-amber-500/60'
+                                            ? 'bg-amber-500/15 ring-2 ring-amber-500/60 ring-inset'
                                             : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30'
                                     }`}
                                 >
-                                    <td className="whitespace-nowrap px-4 py-3 text-neutral-500">{row.created_at}</td>
-                                    <td className="whitespace-nowrap px-4 py-3">{row.section}</td>
-                                    <td className="whitespace-nowrap px-4 py-3">
+                                    <td className="px-4 py-3 whitespace-nowrap text-neutral-500">{row.created_at}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap">{row.section}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap">
                                         <StatusPill tone={ACTION_TONE[row.action] ?? 'neutral'}>
                                             {t(`admin.changeLog.actions.${row.action}`, { defaultValue: row.action.replace(/_/g, ' ') })}
                                         </StatusPill>
@@ -124,8 +124,8 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                                             </ul>
                                         )}
                                     </td>
-                                    <td className="whitespace-nowrap px-4 py-3">{row.user ?? '—'}</td>
-                                    <td className="whitespace-nowrap px-4 py-3">
+                                    <td className="px-4 py-3 whitespace-nowrap">{row.user ?? '—'}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap">
                                         <div className="flex items-center justify-end gap-2">
                                             {row.edit_url && (
                                                 <Button
@@ -140,7 +140,10 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                                             {row.reverted_at ? (
                                                 <span
                                                     className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-                                                    title={t('admin.changeLog.revertedTooltip', { user: row.reverted_by ?? '—', at: row.reverted_at })}
+                                                    title={t('admin.changeLog.revertedTooltip', {
+                                                        user: row.reverted_by ?? '—',
+                                                        at: row.reverted_at,
+                                                    })}
                                                 >
                                                     <Check className="h-3 w-3" /> {t('admin.changeLog.reverted')}
                                                 </span>

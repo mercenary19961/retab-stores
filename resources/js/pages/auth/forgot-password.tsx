@@ -39,8 +39,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </Form>
 
                 <div className="text-center text-sm text-neutral-500">
-                    {t('auth.forgot.remembered')}{' '}
-                    <TextLink href={route('login')}>{t('auth.forgot.loginLink')}</TextLink>
+                    {t('auth.forgot.remembered')} <TextLink href={route('login')}>{t('auth.forgot.loginLink')}</TextLink>
                 </div>
             </div>
         </AuthLayout>

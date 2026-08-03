@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import ProductCarousel, { type CarouselProduct } from '@/components/store/product-carousel';
+import { useTranslation } from 'react-i18next';
 
 /** "العروض" homepage strip — active discounted products (see ShopController).
  *  Self-hides when there are no offers (the carousel renders nothing when empty). */

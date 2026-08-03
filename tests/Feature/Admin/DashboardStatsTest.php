@@ -25,7 +25,7 @@ class DashboardStatsTest extends TestCase
     private function paidOrder(float $total, OrderStatus $status): Order
     {
         return Order::create([
-            'order_number' => 'RTB-' . uniqid(),
+            'order_number' => 'RTB-'.uniqid(),
             'customer_name' => 'زيد',
             'customer_phone' => '+966500000000',
             'shipping_address' => ['country' => 'SA'],
@@ -39,10 +39,10 @@ class DashboardStatsTest extends TestCase
 
     public function test_dashboard_computes_kpis_tasks_inventory_and_insights(): void
     {
-        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-' . uniqid()]);
+        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-'.uniqid()]);
         $mk = fn (string $name, int $stock) => Product::create([
-            'category_id' => $cat->id, 'name_ar' => $name, 'slug' => 'p-' . uniqid(),
-            'price' => 20, 'sku' => 'SK-' . uniqid(), 'stock' => $stock, 'is_active' => true,
+            'category_id' => $cat->id, 'name_ar' => $name, 'slug' => 'p-'.uniqid(),
+            'price' => 20, 'sku' => 'SK-'.uniqid(), 'stock' => $stock, 'is_active' => true,
         ]);
 
         $normal = $mk('عادي', 100);
@@ -61,7 +61,7 @@ class DashboardStatsTest extends TestCase
 
         // A bank transfer awaiting manual verification (pending, not paid).
         Order::create([
-            'order_number' => 'RTB-' . uniqid(), 'customer_name' => 'خالد', 'customer_phone' => '+966500000001',
+            'order_number' => 'RTB-'.uniqid(), 'customer_name' => 'خالد', 'customer_phone' => '+966500000001',
             'shipping_address' => ['country' => 'SA'], 'status' => OrderStatus::PendingPayment,
             'payment_status' => PaymentStatus::Pending, 'payment_method' => PaymentMethod::BankTransfer,
             'subtotal' => 40, 'total' => 40,

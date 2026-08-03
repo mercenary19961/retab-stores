@@ -1,6 +1,6 @@
+import { useAdminT } from '@/i18n/use-admin-t';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { type MouseEvent, type ReactNode } from 'react';
-import { useAdminT } from '@/i18n/use-admin-t';
 
 interface ResizeProps {
     onMouseDown?: (e: MouseEvent) => void;
@@ -60,13 +60,11 @@ export default function ResizableTh({
             <span
                 {...resizeProps}
                 title={t('admin.common.dragTooltip')}
-                className="group/grip absolute inset-y-0 end-0 z-10 flex w-3 cursor-col-resize touch-none select-none items-stretch justify-center"
+                className="group/grip absolute inset-y-0 end-0 z-10 flex w-3 cursor-col-resize touch-none items-stretch justify-center select-none"
             >
                 <span
                     className={`my-2.5 rounded-full transition-all ${
-                        resizing
-                            ? 'w-0.5 bg-brand-gold'
-                            : 'w-px bg-neutral-600 group-hover/grip:w-0.5 group-hover/grip:bg-brand-gold'
+                        resizing ? 'bg-brand-gold w-0.5' : 'group-hover/grip:bg-brand-gold w-px bg-neutral-600 group-hover/grip:w-0.5'
                     }`}
                 />
             </span>

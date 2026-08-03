@@ -1,9 +1,9 @@
+import Button from '@/components/admin/button';
+import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Upload } from 'lucide-react';
 import { type FormEvent } from 'react';
-import AdminLayout from '@/layouts/admin-layout';
-import Button from '@/components/admin/button';
-import { useAdminT } from '@/i18n/use-admin-t';
 
 const EXAMPLE = `Mohammad Ahmad | 5 | Great variety of Saudi dates, very fresh.
 Sarah Al-Otaibi | 5 | Beautiful packaging and fast delivery.
@@ -28,7 +28,10 @@ export default function ClientReviewsImport() {
                 </Link>
             </div>
 
-            <form onSubmit={submit} className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+            <form
+                onSubmit={submit}
+                className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+            >
                 <div className="rounded-md bg-neutral-50 p-4 text-sm text-neutral-600 dark:bg-neutral-950 dark:text-neutral-300">
                     <p className="font-semibold">{t('admin.reviews.import.formatIntro')}</p>
                     <p className="mt-1 font-mono text-xs">{t('admin.reviews.import.formatLine')}</p>

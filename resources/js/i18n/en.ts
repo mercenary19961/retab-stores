@@ -262,7 +262,8 @@ const en = {
         orderNumber: 'Order number',
         total: 'Total',
         bankHeading: 'Pay by bank transfer',
-        bankInstructions: 'Transfer the amount to the account below and include your order number in the transfer note. Your order is confirmed once the transfer is verified.',
+        bankInstructions:
+            'Transfer the amount to the account below and include your order number in the transfer note. Your order is confirmed once the transfer is verified.',
         bankName: 'Bank',
         beneficiary: 'Beneficiary',
         account: 'Account number',
@@ -1251,7 +1252,8 @@ const en = {
             exportTitle: 'Export current website stock',
             exportDesc: 'Today’s stock snapshot to reconcile against SMACC before the next export.',
             uploadTitle: 'Upload SMACC export',
-            uploadDesc: 'Export inventory from SMACC, Save As CSV, and upload it here. Rows are matched by SMACC SKU (or barcode). You’ll review the changes before anything is applied.',
+            uploadDesc:
+                'Export inventory from SMACC, Save As CSV, and upload it here. Rows are matched by SMACC SKU (or barcode). You’ll review the changes before anything is applied.',
             previewChanges: 'Preview changes',
             recentImports: 'Recent imports',
             noImports: 'No imports yet.',

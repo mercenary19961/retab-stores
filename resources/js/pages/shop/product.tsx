@@ -1,12 +1,12 @@
+import CopyText from '@/components/copy-text';
+import ProductGallery from '@/components/store/product-gallery';
+import { Turnstile } from '@/components/turnstile';
+import StoreLayout from '@/layouts/store-layout';
+import { useLocalized } from '@/lib/localize';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Check, Gift, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
-import StoreLayout from '@/layouts/store-layout';
-import ProductGallery from '@/components/store/product-gallery';
-import CopyText from '@/components/copy-text';
-import { Turnstile } from '@/components/turnstile';
 
 interface Product {
     id: number;
@@ -114,11 +114,13 @@ export default function ShopProduct({
                 <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
             </Head>
 
-            <nav className="mb-6 text-sm text-brand-teal/60">
-                <Link href="/" className="hover:text-brand-teal">{t('common.home')}</Link>
+            <nav className="text-brand-teal/60 mb-6 text-sm">
+                <Link href="/" className="hover:text-brand-teal">
+                    {t('common.home')}
+                </Link>
                 {product.category && (
                     <>
-                        <span className="mx-1.5 text-brand-teal/30">/</span>
+                        <span className="text-brand-teal/30 mx-1.5">/</span>
                         <Link href={`/shop?category=${product.category.slug}`} className="hover:text-brand-teal">
                             {localized(product.category, 'name')}
                         </Link>
@@ -138,7 +140,7 @@ export default function ShopProduct({
                 {/* Details */}
                 <div>
                     <div className="flex items-start justify-between gap-3">
-                        <h1 className="font-heading text-2xl font-bold text-brand-teal sm:text-3xl">{name}</h1>
+                        <h1 className="font-heading text-brand-teal text-2xl font-bold sm:text-3xl">{name}</h1>
                         {authed && (
                             <button
                                 type="button"
@@ -152,13 +154,13 @@ export default function ShopProduct({
                     </div>
 
                     {product.coming_soon && (
-                        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-teal/10 px-3 py-1 text-sm font-semibold text-brand-teal">
+                        <span className="bg-brand-teal/10 text-brand-teal mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold">
                             <Sparkles className="size-4" />
                             {t('product.comingSoon')}
                         </span>
                     )}
 
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-brand-teal/70">
+                    <div className="text-brand-teal/70 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                         <button
                             type="button"
                             onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
@@ -167,11 +169,11 @@ export default function ShopProduct({
                             className="inline-flex items-center gap-1.5 rounded transition-opacity hover:opacity-75"
                         >
                             <Stars value={reviews.summary.average} />
-                            {reviews.summary.count > 0 && <span className="font-medium text-brand-teal">{reviews.summary.average}</span>}
+                            {reviews.summary.count > 0 && <span className="text-brand-teal font-medium">{reviews.summary.average}</span>}
                             <span className="text-brand-teal/50">{t('product.ratingsLabel', { n: reviews.summary.count })}</span>
                         </button>
                         {product.purchase_count > 0 && (
-                            <span className="inline-flex items-center gap-1.5 text-brand-teal/50">
+                            <span className="text-brand-teal/50 inline-flex items-center gap-1.5">
                                 <ShoppingBag className="size-4" />
                                 {t('product.timesBought', { n: product.purchase_count })}
                             </span>
@@ -179,53 +181,63 @@ export default function ShopProduct({
                     </div>
 
                     {!product.coming_soon && (
-                        <div className="mt-4 flex items-center gap-3 font-heading">
+                        <div className="font-heading mt-4 flex items-center gap-3">
                             {product.on_sale ? (
                                 <>
-                                    <span className="text-3xl font-bold text-brand-teal">{product.effective_price.toFixed(2)} {currency}</span>
-                                    <span className="text-lg text-brand-teal/40 line-through">{product.price.toFixed(2)} {currency}</span>
+                                    <span className="text-brand-teal text-3xl font-bold">
+                                        {product.effective_price.toFixed(2)} {currency}
+                                    </span>
+                                    <span className="text-brand-teal/40 text-lg line-through">
+                                        {product.price.toFixed(2)} {currency}
+                                    </span>
                                 </>
                             ) : (
-                                <span className="text-3xl font-bold text-brand-teal">{product.price.toFixed(2)} {currency}</span>
+                                <span className="text-brand-teal text-3xl font-bold">
+                                    {product.price.toFixed(2)} {currency}
+                                </span>
                             )}
                         </div>
                     )}
 
                     {/* Tamara installments (marketing estimate — no SDK) */}
                     {!product.coming_soon && product.in_stock && (
-                        <div className="mt-4 rounded-xl border border-brand-gold/25 bg-brand-cream/40 p-3">
-                            <span className="flex flex-wrap items-center gap-2 text-sm text-brand-teal">
-                                <span className="rounded-md bg-brand-teal px-2 py-0.5 text-xs font-bold lowercase tracking-wide text-white">tamara</span>
+                        <div className="border-brand-gold/25 bg-brand-cream/40 mt-4 rounded-xl border p-3">
+                            <span className="text-brand-teal flex flex-wrap items-center gap-2 text-sm">
+                                <span className="bg-brand-teal rounded-md px-2 py-0.5 text-xs font-bold tracking-wide text-white lowercase">
+                                    tamara
+                                </span>
                                 {t('product.tamaraSplit', { amount: installment.toFixed(2), currency })}
                             </span>
-                            <p className="mt-1 text-xs text-brand-teal/60">{t('product.tamaraNote')}</p>
+                            <p className="text-brand-teal/60 mt-1 text-xs">{t('product.tamaraNote')}</p>
                         </div>
                     )}
 
-                    {description && <p className="mt-5 leading-relaxed text-brand-teal/80">{description}</p>}
+                    {description && <p className="text-brand-teal/80 mt-5 leading-relaxed">{description}</p>}
 
                     {/* Buy — or, for Coming-Soon products, register interest instead */}
                     {product.coming_soon ? (
                         <RequestSection slug={product.slug} authed={authed} />
                     ) : product.in_stock ? (
                         <div className="mt-6 flex flex-wrap items-center gap-4">
-                            <div className="inline-flex items-center rounded-full border border-brand-gold/30 bg-white">
+                            <div className="border-brand-gold/30 inline-flex items-center rounded-full border bg-white">
                                 <button
                                     type="button"
                                     onClick={() => setQty((q) => Math.max(1, q - 1))}
                                     disabled={qty <= 1}
                                     aria-label={t('product.decreaseQty')}
-                                    className="flex size-10 items-center justify-center text-brand-teal disabled:opacity-30"
+                                    className="text-brand-teal flex size-10 items-center justify-center disabled:opacity-30"
                                 >
                                     <Minus className="size-4" />
                                 </button>
-                                <span className="w-10 text-center font-heading font-bold text-brand-teal" aria-live="polite">{qty}</span>
+                                <span className="font-heading text-brand-teal w-10 text-center font-bold" aria-live="polite">
+                                    {qty}
+                                </span>
                                 <button
                                     type="button"
                                     onClick={() => setQty((q) => Math.min(99, q + 1))}
                                     disabled={qty >= 99}
                                     aria-label={t('product.increaseQty')}
-                                    className="flex size-10 items-center justify-center text-brand-teal disabled:opacity-30"
+                                    className="text-brand-teal flex size-10 items-center justify-center disabled:opacity-30"
                                 >
                                     <Plus className="size-4" />
                                 </button>
@@ -234,7 +246,7 @@ export default function ShopProduct({
                                 type="button"
                                 data-testid="add-to-cart"
                                 onClick={() => router.post('/cart', { product_id: product.id, quantity: qty }, { preserveScroll: true })}
-                                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-brand-teal px-8 py-3 font-semibold text-white transition-colors hover:bg-brand-teal/90"
+                                className="bg-brand-teal hover:bg-brand-teal/90 inline-flex flex-1 items-center justify-center gap-2 rounded-full px-8 py-3 font-semibold text-white transition-colors"
                             >
                                 <ShoppingBag className="size-5" />
                                 {t('product.addToCart')}
@@ -242,18 +254,20 @@ export default function ShopProduct({
                         </div>
                     ) : (
                         <div className="mt-6">
-                            <span className="inline-block rounded-full bg-brand-cream px-6 py-3 font-semibold text-brand-teal/50">{t('product.outOfStock')}</span>
+                            <span className="bg-brand-cream text-brand-teal/50 inline-block rounded-full px-6 py-3 font-semibold">
+                                {t('product.outOfStock')}
+                            </span>
                         </div>
                     )}
 
                     {product.sku && (
-                        <p className="mt-6 flex items-center gap-1.5 text-sm text-brand-teal/60">
-                            <span className="font-medium text-brand-teal/80">{t('product.sku')}:</span>
+                        <p className="text-brand-teal/60 mt-6 flex items-center gap-1.5 text-sm">
+                            <span className="text-brand-teal/80 font-medium">{t('product.sku')}:</span>
                             <CopyText
                                 value={product.sku}
                                 copyLabel={t('product.copySku')}
                                 copiedLabel={t('product.skuCopied')}
-                                className="text-brand-teal transition-colors hover:text-brand-gold"
+                                className="text-brand-teal hover:text-brand-gold transition-colors"
                             />
                         </p>
                     )}
@@ -264,51 +278,58 @@ export default function ShopProduct({
 
             {/* Reviews */}
             <section id="reviews" className="mt-14 scroll-mt-24">
-                <h2 className="mb-4 font-heading text-xl font-bold text-brand-teal">{t('product.reviewsHeading')}</h2>
+                <h2 className="font-heading text-brand-teal mb-4 text-xl font-bold">{t('product.reviewsHeading')}</h2>
 
                 {reviewReward.available && (
-                    <div className="mb-4 flex items-start gap-3 rounded-xl border border-brand-gold/30 bg-brand-cream/50 p-4">
-                        <Gift className="mt-0.5 size-5 shrink-0 text-brand-gold" />
-                        <p className="text-sm font-medium text-brand-teal">{t('product.reviewReward', { percent: reviewReward.percent })}</p>
+                    <div className="border-brand-gold/30 bg-brand-cream/50 mb-4 flex items-start gap-3 rounded-xl border p-4">
+                        <Gift className="text-brand-gold mt-0.5 size-5 shrink-0" />
+                        <p className="text-brand-teal text-sm font-medium">{t('product.reviewReward', { percent: reviewReward.percent })}</p>
                     </div>
                 )}
 
                 {reviews.can_review && <ReviewForm slug={product.slug} />}
 
                 {!authed && (
-                    <p className="mb-6 text-sm text-brand-teal/60">
-                        <Link href="/login/whatsapp" className="text-brand-gold underline hover:text-brand-teal">{t('product.signInLink')}</Link> {t('product.signInPrompt')}
+                    <p className="text-brand-teal/60 mb-6 text-sm">
+                        <Link href="/login/whatsapp" className="text-brand-gold hover:text-brand-teal underline">
+                            {t('product.signInLink')}
+                        </Link>{' '}
+                        {t('product.signInPrompt')}
                     </p>
                 )}
 
                 {reviews.items.length === 0 ? (
-                    <p className="text-sm text-brand-teal/50">{t('product.noReviews')}</p>
+                    <p className="text-brand-teal/50 text-sm">{t('product.noReviews')}</p>
                 ) : (
                     <ul className="space-y-4">
                         {reviews.items.map((r) => (
-                            <li key={r.id} className="rounded-xl border border-brand-gold/15 bg-white p-4">
+                            <li key={r.id} className="border-brand-gold/15 rounded-xl border bg-white p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Stars value={r.rating} />
-                                        <span className="text-sm font-semibold text-brand-teal">{r.author}</span>
-                                        {r.is_mine && <span className="rounded bg-brand-cream px-1.5 py-0.5 text-xs text-brand-teal/70">{t('product.yourReview')}</span>}
+                                        <span className="text-brand-teal text-sm font-semibold">{r.author}</span>
+                                        {r.is_mine && (
+                                            <span className="bg-brand-cream text-brand-teal/70 rounded px-1.5 py-0.5 text-xs">
+                                                {t('product.yourReview')}
+                                            </span>
+                                        )}
                                     </div>
-                                    <span className="text-xs text-brand-teal/40">{r.date}</span>
+                                    <span className="text-brand-teal/40 text-xs">{r.date}</span>
                                 </div>
-                                {r.title && <p className="mt-2 font-semibold text-brand-teal">{r.title}</p>}
-                                {r.body && <p className="mt-1 text-sm leading-relaxed text-brand-teal/70">{r.body}</p>}
+                                {r.title && <p className="text-brand-teal mt-2 font-semibold">{r.title}</p>}
+                                {r.body && <p className="text-brand-teal/70 mt-1 text-sm leading-relaxed">{r.body}</p>}
 
                                 {authed && !r.is_mine && (
                                     <button
                                         type="button"
                                         onClick={() => router.post(`/reviews/${r.id}/helpful`, {}, { preserveScroll: true })}
-                                        className={`mt-3 text-xs ${r.voted ? 'font-semibold text-brand-teal' : 'text-brand-teal/50'}`}
+                                        className={`mt-3 text-xs ${r.voted ? 'text-brand-teal font-semibold' : 'text-brand-teal/50'}`}
                                     >
                                         {t('product.helpful', { n: r.helpful_count })}
                                     </button>
                                 )}
                                 {(!authed || r.is_mine) && r.helpful_count > 0 && (
-                                    <span className="mt-3 block text-xs text-brand-teal/40">{t('product.helpful', { n: r.helpful_count })}</span>
+                                    <span className="text-brand-teal/40 mt-3 block text-xs">{t('product.helpful', { n: r.helpful_count })}</span>
                                 )}
                             </li>
                         ))}
@@ -337,8 +358,8 @@ function RequestSection({ slug, authed }: { slug: string; authed: boolean }) {
 
     if (done) {
         return (
-            <div className="mt-6 flex items-center gap-2 rounded-xl border border-brand-teal/20 bg-brand-cream/50 p-4 text-sm font-medium text-brand-teal">
-                <Check className="size-5 shrink-0 text-brand-teal" />
+            <div className="border-brand-teal/20 bg-brand-cream/50 text-brand-teal mt-6 flex items-center gap-2 rounded-xl border p-4 text-sm font-medium">
+                <Check className="text-brand-teal size-5 shrink-0" />
                 {t('product.requestThanks')}
             </div>
         );
@@ -350,7 +371,7 @@ function RequestSection({ slug, authed }: { slug: string; authed: boolean }) {
                 type="button"
                 onClick={() => submit()}
                 disabled={processing}
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-brand-teal px-8 py-3 font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-60"
+                className="bg-brand-teal hover:bg-brand-teal/90 mt-6 inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 font-semibold text-white transition-colors disabled:opacity-60"
             >
                 <Sparkles className="size-5" />
                 {t('product.requestButton')}
@@ -359,22 +380,22 @@ function RequestSection({ slug, authed }: { slug: string; authed: boolean }) {
     }
 
     return (
-        <form onSubmit={submit} className="mt-6 space-y-3 rounded-xl border border-brand-gold/25 bg-white p-4">
-            <p className="text-sm text-brand-teal/80">{t('product.requestPrompt')}</p>
+        <form onSubmit={submit} className="border-brand-gold/25 mt-6 space-y-3 rounded-xl border bg-white p-4">
+            <p className="text-brand-teal/80 text-sm">{t('product.requestPrompt')}</p>
             <input
                 value={data.phone}
                 onChange={(e) => setData('phone', e.target.value)}
                 inputMode="tel"
                 dir="ltr"
                 placeholder={t('product.phonePlaceholder')}
-                className="w-full rounded-lg border border-brand-gold/30 px-3 py-2 text-start text-sm text-brand-teal focus:border-brand-teal focus:outline-none"
+                className="border-brand-gold/30 text-brand-teal focus:border-brand-teal w-full rounded-lg border px-3 py-2 text-start text-sm focus:outline-none"
             />
             {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
             <Turnstile onVerify={(token) => setData('cf-turnstile-response', token)} />
             <button
                 type="submit"
                 disabled={processing}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-teal px-6 py-2.5 font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-60"
+                className="bg-brand-teal hover:bg-brand-teal/90 inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 font-semibold text-white transition-colors disabled:opacity-60"
             >
                 <Sparkles className="size-5" />
                 {t('product.requestButton')}
@@ -406,8 +427,8 @@ function ShareRow({ url, name }: { url: string; name: string }) {
     const btn = 'flex size-9 items-center justify-center rounded-full bg-brand-cream text-brand-teal transition-colors hover:bg-brand-gold/20';
 
     return (
-        <div className="mt-6 flex items-center gap-3 border-t border-brand-gold/15 pt-5">
-            <span className="text-sm font-medium text-brand-teal/70">{t('product.share')}</span>
+        <div className="border-brand-gold/15 mt-6 flex items-center gap-3 border-t pt-5">
+            <span className="text-brand-teal/70 text-sm font-medium">{t('product.share')}</span>
             <div className="flex items-center gap-2">
                 {links.map((l) => (
                     <a key={l.key} href={l.href} target="_blank" rel="noopener noreferrer" aria-label={l.key} className={btn}>
@@ -415,10 +436,10 @@ function ShareRow({ url, name }: { url: string; name: string }) {
                     </a>
                 ))}
                 <button type="button" onClick={copy} aria-label={t('product.copyLink')} className={btn}>
-                    {copied ? <Check className="size-4 text-brand-teal" /> : <Link2 className="size-4" />}
+                    {copied ? <Check className="text-brand-teal size-4" /> : <Link2 className="size-4" />}
                 </button>
             </div>
-            {copied && <span className="text-xs text-brand-teal/60">{t('product.linkCopied')}</span>}
+            {copied && <span className="text-brand-teal/60 text-xs">{t('product.linkCopied')}</span>}
         </div>
     );
 }
@@ -452,8 +473,8 @@ function ReviewForm({ slug }: { slug: string }) {
     };
 
     return (
-        <form onSubmit={submit} className="mb-6 rounded-xl border border-brand-gold/15 bg-white p-4">
-            <p className="mb-2 text-sm font-semibold text-brand-teal">{t('product.addYourReview')}</p>
+        <form onSubmit={submit} className="border-brand-gold/15 mb-6 rounded-xl border bg-white p-4">
+            <p className="text-brand-teal mb-2 text-sm font-semibold">{t('product.addYourReview')}</p>
             <div className="mb-3 flex gap-1" dir="ltr">
                 {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -474,19 +495,19 @@ function ReviewForm({ slug }: { slug: string }) {
                 value={data.title}
                 onChange={(e) => setData('title', e.target.value)}
                 placeholder={t('product.titlePlaceholder')}
-                className="mb-2 w-full rounded-lg border border-brand-gold/30 px-3 py-2 text-sm text-brand-teal focus:border-brand-teal focus:outline-none"
+                className="border-brand-gold/30 text-brand-teal focus:border-brand-teal mb-2 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
             />
             <textarea
                 value={data.body}
                 onChange={(e) => setData('body', e.target.value)}
                 placeholder={t('product.bodyPlaceholder')}
                 rows={3}
-                className="w-full rounded-lg border border-brand-gold/30 px-3 py-2 text-sm text-brand-teal focus:border-brand-teal focus:outline-none"
+                className="border-brand-gold/30 text-brand-teal focus:border-brand-teal w-full rounded-lg border px-3 py-2 text-sm focus:outline-none"
             />
             <button
                 type="submit"
                 disabled={processing}
-                className="mt-3 rounded-full bg-brand-teal px-5 py-2 text-sm font-semibold text-white hover:bg-brand-teal/90 disabled:opacity-60"
+                className="bg-brand-teal hover:bg-brand-teal/90 mt-3 rounded-full px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
                 {t('product.publish')}
             </button>

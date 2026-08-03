@@ -25,13 +25,13 @@ class AdminSortTest extends TestCase
 
     private function seedData(): void
     {
-        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-' . uniqid()]);
+        $cat = Category::create(['name_ar' => 'تمور', 'slug' => 'c-'.uniqid()]);
         Product::create([
-            'category_id' => $cat->id, 'name_ar' => 'سكري', 'slug' => 'p-' . uniqid(),
-            'price' => 50, 'sku' => 'SK-' . uniqid(), 'smacc_sku' => 'SM-1', 'stock' => 10,
+            'category_id' => $cat->id, 'name_ar' => 'سكري', 'slug' => 'p-'.uniqid(),
+            'price' => 50, 'sku' => 'SK-'.uniqid(), 'smacc_sku' => 'SM-1', 'stock' => 10,
         ]);
         $order = Order::create([
-            'order_number' => 'RTB-' . uniqid(), 'customer_name' => 'زيد', 'customer_phone' => '+966500000000',
+            'order_number' => 'RTB-'.uniqid(), 'customer_name' => 'زيد', 'customer_phone' => '+966500000000',
             'shipping_address' => ['country' => 'SA'], 'status' => OrderStatus::AwaitingConfirmation,
             'payment_status' => PaymentStatus::Paid, 'subtotal' => 50, 'total' => 50,
         ]);
@@ -65,8 +65,8 @@ class AdminSortTest extends TestCase
     /** The virtual 'category' sort orders products by the joined category name. */
     public function test_products_sort_by_category_name(): void
     {
-        $catFirst = Category::create(['name_ar' => 'أجود التمور', 'slug' => 'a-' . uniqid()]);  // أ
-        $catSecond = Category::create(['name_ar' => 'بلح فاخر', 'slug' => 'b-' . uniqid()]);      // ب
+        $catFirst = Category::create(['name_ar' => 'أجود التمور', 'slug' => 'a-'.uniqid()]);  // أ
+        $catSecond = Category::create(['name_ar' => 'بلح فاخر', 'slug' => 'b-'.uniqid()]);      // ب
         Product::create(['category_id' => $catSecond->id, 'name_ar' => 'ب', 'slug' => 'pb', 'price' => 10, 'sku' => 'PB', 'stock' => 1]);
         Product::create(['category_id' => $catFirst->id, 'name_ar' => 'أ', 'slug' => 'pa', 'price' => 10, 'sku' => 'PA', 'stock' => 1]);
 

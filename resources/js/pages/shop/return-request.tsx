@@ -1,8 +1,8 @@
+import StoreLayout from '@/layouts/store-layout';
+import { useLocalized } from '@/lib/localize';
 import { Head, router } from '@inertiajs/react';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
-import StoreLayout from '@/layouts/store-layout';
 
 interface ReturnableItem {
     order_item_id: number;
@@ -66,7 +66,10 @@ export default function ReturnRequest({
                         <p className="mb-2 text-sm font-semibold">{t('returns.itemsHeading')}</p>
                         <div className="space-y-2">
                             {items.map((item) => (
-                                <div key={item.order_item_id} className="flex items-center justify-between gap-3 rounded border border-gray-100 px-3 py-2">
+                                <div
+                                    key={item.order_item_id}
+                                    className="flex items-center justify-between gap-3 rounded border border-gray-100 px-3 py-2"
+                                >
                                     <span className="text-sm">{localized(item, 'name')}</span>
                                     <label className="flex items-center gap-2 text-xs text-gray-500">
                                         {t('returns.qty')}

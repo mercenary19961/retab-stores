@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Category;
 use App\Models\CartItem;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -20,9 +20,9 @@ class CartControllerTest extends TestCase
         return Product::create([
             'category_id' => $category->id,
             'name_ar' => 'سكري',
-            'slug' => 'sukkari-' . uniqid(),
+            'slug' => 'sukkari-'.uniqid(),
             'price' => 50,
-            'sku' => 'SK-' . uniqid(),
+            'sku' => 'SK-'.uniqid(),
             'stock' => 10,
             'is_active' => true,
         ]);

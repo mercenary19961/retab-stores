@@ -1,11 +1,17 @@
 <?php
 
+use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequirePermission;
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SetAdminLocale;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Symfony\Component\HttpFoundation\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,23 +34,23 @@ return Application::configure(basePath: dirname(__DIR__))
             '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32',
             '2405:b500::/32', '2405:8100::/32', '2a06:98c0::/29',
             '2c0f:f248::/32',
-        ], headers: \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_FOR
-            | \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_HOST
-            | \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_PORT
-            | \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_PROTO);
+        ], headers: Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO);
 
         $middleware->web(append: [
             SetLocale::class,
-            \App\Http\Middleware\SecurityHeaders::class,
+            SecurityHeaders::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         $middleware->alias([
-            'staff' => \App\Http\Middleware\EnsureUserIsStaff::class,
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
-            'permission' => \App\Http\Middleware\RequirePermission::class,
-            'admin.locale' => \App\Http\Middleware\SetAdminLocale::class,
+            'staff' => EnsureUserIsStaff::class,
+            'admin' => EnsureUserIsAdmin::class,
+            'permission' => RequirePermission::class,
+            'admin.locale' => SetAdminLocale::class,
         ]);
 
         // Language cookies are read as plaintext, so they must be excluded from

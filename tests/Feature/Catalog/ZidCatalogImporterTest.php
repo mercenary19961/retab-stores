@@ -23,8 +23,8 @@ class ZidCatalogImporterTest extends TestCase
             '4,simple,RETAB001,ZID004,منتج متنوع,,منتجات متنوعة,40,,,,,,,0,,assorted-test,yes,',
         ];
 
-        $path = tempnam(sys_get_temp_dir(), 'zidcsv') . '.csv';
-        file_put_contents($path, $header . "\n" . implode("\n", $rows) . "\n");
+        $path = tempnam(sys_get_temp_dir(), 'zidcsv').'.csv';
+        file_put_contents($path, $header."\n".implode("\n", $rows)."\n");
 
         return $path;
     }

@@ -1,7 +1,7 @@
+import { OPEN_CONSENT_EVENT } from '@/components/store/cookie-consent';
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { OPEN_CONSENT_EVENT } from '@/components/store/cookie-consent';
 
 /**
  * Store footer (from the Figma design). The background artwork is effectively a
@@ -53,32 +53,30 @@ export default function StoreFooter() {
             <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 px-6 py-14 md:flex-row md:items-start md:justify-between md:gap-8">
                 {/* Brand logo — rightmost in RTL, leftmost in LTR */}
                 <div className="shrink-0">
-                    <img
-                        src="/images/footer/logo.png"
-                        alt={t('footer.companyName')}
-                        className="h-auto w-40 md:w-48"
-                    />
+                    <img src="/images/footer/logo.png" alt={t('footer.companyName')} className="h-auto w-40 md:w-48" />
                 </div>
 
                 {/* Company / contact block (centre) */}
                 <div className="flex flex-col items-center gap-6 text-center">
-                    <h3 className="font-heading text-xl font-bold text-brand-teal md:text-2xl">
-                        {t('footer.companyName')}
-                    </h3>
+                    <h3 className="font-heading text-brand-teal text-xl font-bold md:text-2xl">{t('footer.companyName')}</h3>
 
                     {/* Official badges: commercial registration + VAT */}
                     <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
                         <div className="flex items-center gap-2">
                             <div className="text-start leading-tight">
-                                <div className="text-sm font-bold text-brand-teal">{t('footer.commercialReg')}</div>
-                                <div dir="ltr" className="text-xs font-semibold tracking-wide text-brand-teal">{footer.commercial_registration}</div>
+                                <div className="text-brand-teal text-sm font-bold">{t('footer.commercialReg')}</div>
+                                <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide">
+                                    {footer.commercial_registration}
+                                </div>
                             </div>
                             <img src="/images/footer/badge-commerce.png" alt={t('footer.commercialReg')} className="h-12 w-12 object-contain" />
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="text-start leading-tight">
-                                <div className="text-sm font-bold text-brand-teal">{t('footer.vatNumber')}</div>
-                                <div dir="ltr" className="text-xs font-semibold tracking-wide text-brand-teal">{footer.vat_number}</div>
+                                <div className="text-brand-teal text-sm font-bold">{t('footer.vatNumber')}</div>
+                                <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide">
+                                    {footer.vat_number}
+                                </div>
                             </div>
                             <img src="/images/footer/badge-vat.png" alt={t('footer.vatNumber')} className="h-12 w-12 object-contain" />
                         </div>
@@ -86,11 +84,17 @@ export default function StoreFooter() {
 
                     {/* Contact (LTR content) */}
                     <div dir="ltr" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
-                        <a href={`tel:${footer.contact_phone.replace(/\s/g, '')}`} className="flex items-center gap-2 text-brand-teal transition-opacity hover:opacity-75">
+                        <a
+                            href={`tel:${footer.contact_phone.replace(/\s/g, '')}`}
+                            className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75"
+                        >
                             <img src="/images/footer/icon-phone.png" alt="" className="h-7 w-7" />
                             <span className="font-semibold">{footer.contact_phone}</span>
                         </a>
-                        <a href={`mailto:${footer.contact_email}`} className="flex items-center gap-2 text-brand-teal transition-opacity hover:opacity-75">
+                        <a
+                            href={`mailto:${footer.contact_email}`}
+                            className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75"
+                        >
                             <img src="/images/footer/icon-email.png" alt="" className="h-7 w-7" />
                             <span className="font-semibold">{footer.contact_email}</span>
                         </a>
@@ -99,21 +103,30 @@ export default function StoreFooter() {
                     {/* Social icons (fixed visual order) */}
                     <div dir="ltr" className="flex items-center justify-center gap-3">
                         {socials.map((s) => (
-                            <a key={s.key} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.key} className="transition-opacity hover:opacity-75">
+                            <a
+                                key={s.key}
+                                href={s.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={s.key}
+                                className="transition-opacity hover:opacity-75"
+                            >
                                 <img src={`/images/footer/${s.icon}.png`} alt={s.key} className="h-9 w-9" />
                             </a>
                         ))}
                     </div>
-                    <span dir="ltr" className="text-sm font-bold tracking-wide text-brand-gold">{HANDLE}</span>
+                    <span dir="ltr" className="text-brand-gold text-sm font-bold tracking-wide">
+                        {HANDLE}
+                    </span>
                 </div>
 
                 {/* Quick links (leftmost in RTL) + back-to-top */}
                 <div className="flex flex-col items-center gap-4 md:items-start">
-                    <h3 className="font-heading text-xl font-bold text-brand-teal md:text-2xl">{t('footer.quickLinks')}</h3>
+                    <h3 className="font-heading text-brand-teal text-xl font-bold md:text-2xl">{t('footer.quickLinks')}</h3>
                     <ul className="flex flex-col items-center gap-3 md:items-start">
                         {QUICK_LINKS.map((l) => (
                             <li key={l.key}>
-                                <Link href={l.href} className="font-heading text-brand-gold transition-colors hover:text-brand-teal">
+                                <Link href={l.href} className="font-heading text-brand-gold hover:text-brand-teal transition-colors">
                                     {t(`footer.links.${l.key}`)}
                                 </Link>
                             </li>
@@ -123,7 +136,7 @@ export default function StoreFooter() {
                             <button
                                 type="button"
                                 onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
-                                className="font-heading text-brand-gold transition-colors hover:text-brand-teal"
+                                className="font-heading text-brand-gold hover:text-brand-teal transition-colors"
                             >
                                 {t('consent.settings')}
                             </button>
@@ -133,7 +146,7 @@ export default function StoreFooter() {
                         type="button"
                         onClick={scrollTop}
                         aria-label={t('footer.backToTop')}
-                        className="mt-2 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold text-white shadow-md transition-colors hover:bg-brand-teal"
+                        className="bg-brand-gold hover:bg-brand-teal mt-2 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-md transition-colors"
                     >
                         <ArrowUp className="h-6 w-6" />
                     </button>

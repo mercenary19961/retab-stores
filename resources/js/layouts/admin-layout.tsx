@@ -1,3 +1,11 @@
+import AdminToasts from '@/components/admin/admin-toasts';
+import AdminContextMenu from '@/components/admin/context-menu';
+import GlobalSearch from '@/components/admin/global-search';
+import MobileScrollNav from '@/components/admin/mobile-scroll-nav';
+import NotificationBell from '@/components/admin/notification-bell';
+import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
+import UndoToast from '@/components/admin/undo-toast';
+import adminI18n from '@/i18n/admin';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     BadgePercent,
@@ -24,14 +32,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState, type PropsWithChildren, type ReactNode } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
-import adminI18n from '@/i18n/admin';
-import AdminContextMenu from '@/components/admin/context-menu';
-import AdminToasts from '@/components/admin/admin-toasts';
-import GlobalSearch from '@/components/admin/global-search';
-import MobileScrollNav from '@/components/admin/mobile-scroll-nav';
-import NotificationBell from '@/components/admin/notification-bell';
-import UndoToast from '@/components/admin/undo-toast';
-import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
 
 type AdminLocale = 'en' | 'ar';
 const STORAGE_KEY = 'retab_admin_locale';
@@ -48,9 +48,7 @@ type NavItem = { key: string; href: string; icon: LucideIcon; perm?: string; adm
 type HelpContent = { intro?: string; steps?: string[]; rules?: string[] };
 
 // The dashboard sits alone above the grouped sections.
-const NAV_TOP: NavItem[] = [
-    { key: 'dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-];
+const NAV_TOP: NavItem[] = [{ key: 'dashboard', href: '/admin/dashboard', icon: LayoutDashboard }];
 
 // Related sections grouped under a header (label = `admin.navGroups.<key>`) so
 // the sidebar scans at a glance. A group with no visible items is hidden whole.
@@ -126,9 +124,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
         return Boolean(permissions?.[item.perm]?.view);
     };
     const navTop = NAV_TOP.filter(canSee);
-    const navGroups = NAV_GROUPS
-        .map((group) => ({ key: group.key, items: group.items.filter(canSee) }))
-        .filter((group) => group.items.length > 0);
+    const navGroups = NAV_GROUPS.map((group) => ({ key: group.key, items: group.items.filter(canSee) })).filter((group) => group.items.length > 0);
     const navBottom = NAV_BOTTOM.filter(canSee);
 
     // The current section's sidebar icon, to prefix the header title (string
@@ -158,9 +154,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
     };
 
     const renderNavItem = (item: NavItem) => {
-        const active =
-            currentPath === item.href ||
-            (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href));
+        const active = currentPath === item.href || (item.href !== '/admin/dashboard' && currentPath.startsWith(item.href));
         const Icon = item.icon;
         return (
             <Link
@@ -168,7 +162,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                 href={item.href}
                 className={
                     active
-                        ? 'flex items-center gap-3 rounded-lg bg-brand-teal/25 px-3 py-2 text-sm font-semibold text-brand-gold'
+                        ? 'bg-brand-teal/25 text-brand-gold flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold'
                         : 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100'
                 }
             >
@@ -243,7 +237,11 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
     };
 
     return (
-        <div dir={isRTL ? 'rtl' : 'ltr'} lang={locale} className="admin-shell dark flex h-dvh overflow-hidden bg-neutral-950 font-sans text-neutral-100">
+        <div
+            dir={isRTL ? 'rtl' : 'ltr'}
+            lang={locale}
+            className="admin-shell dark flex h-dvh overflow-hidden bg-neutral-950 font-sans text-neutral-100"
+        >
             {/* Backdrop (mobile only, when the drawer is open) */}
             {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
@@ -261,13 +259,18 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
             >
                 <div className="flex h-full w-60 shrink-0 flex-col">
                     <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-neutral-800 px-5">
-                        <Link href="/admin/dashboard" className="flex min-w-0 items-center gap-2 text-lg font-bold text-brand-gold">
+                        <Link href="/admin/dashboard" className="text-brand-gold flex min-w-0 items-center gap-2 text-lg font-bold">
                             <ShieldCheck className="h-5 w-5 shrink-0" />
                             <span className="truncate">{t('admin.brand')}</span>
                         </Link>
                         <div className="flex shrink-0 items-center gap-2">
                             <img src="/images/brand/logo.png" alt="Retab" className="h-9 w-auto" />
-                            <button type="button" onClick={() => setSidebarOpen(false)} aria-label={t('admin.common.closeMenu')} className="text-neutral-400 hover:text-white lg:hidden">
+                            <button
+                                type="button"
+                                onClick={() => setSidebarOpen(false)}
+                                aria-label={t('admin.common.closeMenu')}
+                                className="text-neutral-400 hover:text-white lg:hidden"
+                            >
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
@@ -304,7 +307,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                     <h1 className="hidden shrink-0 items-center gap-2 truncate text-lg font-semibold lg:flex">
                         {typeof title === 'string' ? (
                             <>
-                                {TitleIcon && <TitleIcon className="h-5 w-5 shrink-0 text-brand-gold" />}
+                                {TitleIcon && <TitleIcon className="text-brand-gold h-5 w-5 shrink-0" />}
                                 <span className="truncate">{title}</span>
                             </>
                         ) : (
@@ -315,11 +318,11 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                         <button
                             type="button"
                             onClick={openHelp}
-                            className={`flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 py-1.5 text-xs font-medium text-neutral-300 transition-colors hover:border-brand-gold hover:text-brand-gold ${
+                            className={`hover:border-brand-gold hover:text-brand-gold flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-700 px-2.5 py-1.5 text-xs font-medium text-neutral-300 transition-colors ${
                                 helpPulseEnabled && mounted && !helpSeen && !helpOpen ? 'help-beam' : ''
                             }`}
                         >
-                            <Info className="h-4 w-4 text-brand-gold" />
+                            <Info className="text-brand-gold h-4 w-4" />
                             <span className="hidden sm:inline">{t('admin.help.button')}</span>
                         </button>
                     )}
@@ -378,7 +381,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                     >
                         <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-800 px-5">
                             <h2 className="flex items-center gap-2 font-bold text-neutral-100">
-                                <Info className="h-5 w-5 text-brand-gold" /> {t('admin.help.button')}
+                                <Info className="text-brand-gold h-5 w-5" /> {t('admin.help.button')}
                             </h2>
                             <button
                                 type="button"
@@ -395,7 +398,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                                 <ol className="space-y-3">
                                     {help.steps.map((step, i) => (
                                         <li key={i} className="flex gap-3 text-sm text-neutral-200">
-                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-teal/25 text-xs font-bold text-brand-gold">
+                                            <span className="bg-brand-teal/25 text-brand-gold flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                                                 {i + 1}
                                             </span>
                                             <span dir="auto">{step}</span>
@@ -405,7 +408,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                             )}
                             {help.rules && help.rules.length > 0 && (
                                 <>
-                                    <p className="mt-6 mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                                    <p className="mt-6 mb-2 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
                                         {t('admin.help.rulesTitle')}
                                     </p>
                                     <ul className="space-y-2">
@@ -422,7 +425,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                                 <Link
                                     href="/admin/settings#help-pulse"
                                     onClick={() => setHelpOpen(false)}
-                                    className="mt-6 flex items-center gap-1.5 border-t border-neutral-800 pt-4 text-xs text-neutral-400 transition-colors hover:text-brand-gold"
+                                    className="hover:text-brand-gold mt-6 flex items-center gap-1.5 border-t border-neutral-800 pt-4 text-xs text-neutral-400 transition-colors"
                                 >
                                     <Settings className="h-3.5 w-3.5 shrink-0" /> {t('admin.help.turnOffPulse')}
                                 </Link>

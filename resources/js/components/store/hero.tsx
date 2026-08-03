@@ -14,14 +14,7 @@ interface Slide {
 /** Rounded-triangle carousel arrow (from Polygon 2.svg). Points right by default. */
 function Arrow({ flip }: { flip?: boolean }) {
     return (
-        <svg
-            width="22"
-            height="23"
-            viewBox="0 0 24 25"
-            fill="none"
-            aria-hidden
-            className={flip ? '-scale-x-100' : undefined}
-        >
+        <svg width="22" height="23" viewBox="0 0 24 25" fill="none" aria-hidden className={flip ? '-scale-x-100' : undefined}>
             <path
                 d="M19.9167 6.95319C24.0648 9.34813 24.0648 15.3355 19.9167 17.7304L9.33334 23.8407C5.18519 26.2356 0 23.242 0 18.4521V6.23151C0 1.44165 5.18519 -1.55203 9.33333 0.842905L19.9167 6.95319Z"
                 fill="white"
@@ -61,11 +54,11 @@ export default function StoreHero() {
 
             {/* Content block — physically anchored to the left (the product sits
                 baked into the right of the image), text aligned per reading dir. */}
-            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pl-[5%] pr-4 max-sm:min-w-0">
+            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:min-w-0">
                 <div className="w-full text-start">
                     {/* Below 732px the kashida-elongated headline overflows the
                         narrow text column, so step the size down there and smaller. */}
-                    <h1 className="font-heading font-black leading-[1.08] text-brand-teal text-[clamp(2.25rem,6.2vw,5.5rem)] max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-[480px]:text-[clamp(0.85rem,4.5vw,1.35rem)]">
+                    <h1 className="font-heading text-brand-teal text-[clamp(2.25rem,6.2vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-[480px]:text-[clamp(0.85rem,4.5vw,1.35rem)]">
                         <span className="block">{slide.line1}</span>
                         <span className="block">{slide.line2}</span>
                     </h1>
@@ -77,17 +70,17 @@ export default function StoreHero() {
                         <div className="flex items-center gap-3">
                             {/* Flanking lines — first child sits on the start side
                                 (right in RTL), the last on the end side (left). */}
-                            <span className="hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full bg-brand-teal min-[733px]:block" />
+                            <span className="bg-brand-teal hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full min-[733px]:block" />
                             <p className="font-heading text-brand-teal text-[clamp(0.95rem,1.9vw,1.63rem)] max-[732px]:text-[0.8rem] max-[480px]:max-w-[10rem] max-[480px]:text-[0.7rem]">
                                 {slide.subtext}
                             </p>
-                            <span className="hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full bg-brand-teal min-[733px]:block" />
+                            <span className="bg-brand-teal hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full min-[733px]:block" />
                         </div>
 
                         <div className="mt-7 text-center max-[480px]:mt-2">
                             <Link
                                 href={slide.ctaHref}
-                                className="inline-block rounded-full bg-brand-teal px-10 py-4 font-heading font-black text-white transition-colors hover:bg-brand-teal/90 text-[clamp(1.15rem,2.6vw,2.5rem)] max-[732px]:px-6 max-[732px]:py-2.5 max-[732px]:text-[0.9rem] max-[480px]:px-4 max-[480px]:py-2 max-[480px]:text-[0.72rem]"
+                                className="bg-brand-teal font-heading hover:bg-brand-teal/90 inline-block rounded-full px-10 py-4 text-[clamp(1.15rem,2.6vw,2.5rem)] font-black text-white transition-colors max-[732px]:px-6 max-[732px]:py-2.5 max-[732px]:text-[0.9rem] max-[480px]:px-4 max-[480px]:py-2 max-[480px]:text-[0.72rem]"
                             >
                                 <span className="cta-shimmer">{slide.ctaLabel}</span>
                             </Link>

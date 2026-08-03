@@ -21,6 +21,7 @@ use App\Models\WhatsappTemplate;
 use App\Services\Smacc\SmaccImportService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * DEMO data for previewing the admin (dashboard + all pages). NOT wired into
@@ -79,7 +80,7 @@ class DemoSeeder extends Seeder
         WhatsappCampaign::query()->delete();
         WhatsappTemplate::query()->delete();
         Order::query()->delete();
-        User::where('role', 'customer')->where('email', 'like', '%' . self::DEMO_DOMAIN)->forceDelete();
+        User::where('role', 'customer')->where('email', 'like', '%'.self::DEMO_DOMAIN)->forceDelete();
     }
 
     private function setStock($products, string $slug, int $stock): void
@@ -87,7 +88,7 @@ class DemoSeeder extends Seeder
         $products->firstWhere('slug', $slug)?->update(['stock' => $stock]);
     }
 
-    /** @return \Illuminate\Support\Collection<int, User> */
+    /** @return Collection<int, User> */
     private function makeCustomers()
     {
         $names = [
@@ -106,9 +107,9 @@ class DemoSeeder extends Seeder
 
             $user = new User([
                 'name' => $name,
-                'email' => 'demo' . ($i + 1) . self::DEMO_DOMAIN,
+                'email' => 'demo'.($i + 1).self::DEMO_DOMAIN,
                 'password' => 'password', // 'hashed' cast hashes it
-                'phone' => '+96650' . str_pad((string) (1000000 + $i), 7, '0', STR_PAD_LEFT),
+                'phone' => '+96650'.str_pad((string) (1000000 + $i), 7, '0', STR_PAD_LEFT),
                 'role' => 'customer',
                 'city' => $cities[$i % count($cities)],
                 'locale' => 'ar',
@@ -182,7 +183,7 @@ class DemoSeeder extends Seeder
         $subtotal = 0.0;
 
         $order = new Order([
-            'order_number' => 'RTB-2026-' . $seq,
+            'order_number' => 'RTB-2026-'.$seq,
             'user_id' => $customer->id,
             'customer_name' => $customer->name,
             'customer_email' => $customer->email,
@@ -200,7 +201,7 @@ class DemoSeeder extends Seeder
             'confirmed_at' => in_array($status, [OrderStatus::Confirmed, OrderStatus::Shipped, OrderStatus::Delivered], true) ? $placed->copy()->addHours(random_int(2, 20)) : null,
             'confirmed_by' => in_array($status, [OrderStatus::Confirmed, OrderStatus::Shipped, OrderStatus::Delivered], true) ? $adminId : null,
             'delivered_at' => $status === OrderStatus::Delivered ? $placed->copy()->addDays(random_int(1, 4)) : null,
-            'tracking_number' => in_array($status, [OrderStatus::Shipped, OrderStatus::Delivered], true) ? 'OTO' . random_int(100000, 999999) : null,
+            'tracking_number' => in_array($status, [OrderStatus::Shipped, OrderStatus::Delivered], true) ? 'OTO'.random_int(100000, 999999) : null,
             'carrier' => in_array($status, [OrderStatus::Shipped, OrderStatus::Delivered], true) ? 'SMSA' : null,
         ]);
         $order->timestamps = false;
@@ -232,7 +233,7 @@ class DemoSeeder extends Seeder
 
         $this->logActivity($order, 'status_change', null, OrderStatus::PendingPayment->value, $placed, null);
         if ($payStatus === PaymentStatus::Paid || $payStatus === PaymentStatus::Authorized) {
-            $this->logActivity($order, 'payment', null, null, $placed->copy()->addMinutes(2), null, 'Payment ' . $payStatus->value);
+            $this->logActivity($order, 'payment', null, null, $placed->copy()->addMinutes(2), null, 'Payment '.$payStatus->value);
         }
         foreach ([OrderStatus::AwaitingConfirmation, OrderStatus::Confirmed, OrderStatus::Shipped, OrderStatus::Delivered] as $step) {
             if ($this->reached($status, $step)) {
@@ -324,7 +325,7 @@ class DemoSeeder extends Seeder
      * "Wanted but unavailable" analytics — clustered on the out-of-stock product
      * plus a couple of others, spread over the last two months.
      *
-     * @param list<Order> $orders
+     * @param  list<Order>  $orders
      */
     private function makeDemand($products, array $orders): void
     {
@@ -336,7 +337,7 @@ class DemoSeeder extends Seeder
             $when = now()->subDays(random_int(1, 55));
             $event = new DemandEvent([
                 'product_id' => $product->id,
-                'customer_phone' => '+96650' . random_int(1000000, 9999999),
+                'customer_phone' => '+96650'.random_int(1000000, 9999999),
                 'action' => ['apologized', 'suggested_alternatives'][random_int(0, 1)],
                 'occurred_at' => $when,
             ]);

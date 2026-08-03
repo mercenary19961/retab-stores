@@ -75,7 +75,7 @@ class WhatsAppWebhookController
         }
 
         $signature = (string) $request->header('X-Hub-Signature-256');
-        $expected = 'sha256=' . hash_hmac('sha256', $request->getContent(), $secret);
+        $expected = 'sha256='.hash_hmac('sha256', $request->getContent(), $secret);
 
         return $signature !== '' && hash_equals($expected, $signature);
     }

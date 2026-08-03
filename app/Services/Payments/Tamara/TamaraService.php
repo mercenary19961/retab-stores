@@ -158,7 +158,7 @@ class TamaraService
             ]);
         }
 
-        $this->recordTransaction($order, PaymentTransactionType::Capture, 'succeeded', $order->gateway_reference . '-capture', $remote);
+        $this->recordTransaction($order, PaymentTransactionType::Capture, 'succeeded', $order->gateway_reference.'-capture', $remote);
 
         if ($order->payment_status !== PaymentStatus::Paid) {
             $order->forceFill(['payment_status' => PaymentStatus::Paid, 'paid_at' => now()])->save();
@@ -186,7 +186,7 @@ class TamaraService
             Log::warning('Tamara cancel failed', ['order_id' => $order->id, 'error' => $e->getMessage()]);
         }
 
-        $this->recordTransaction($order, PaymentTransactionType::Void, 'voided', $order->gateway_reference . '-void', []);
+        $this->recordTransaction($order, PaymentTransactionType::Void, 'voided', $order->gateway_reference.'-void', []);
         $order->forceFill(['payment_status' => PaymentStatus::Voided])->save();
     }
 
@@ -213,7 +213,7 @@ class TamaraService
         Payment::create([
             'order_id' => $order->id,
             'gateway' => 'tamara',
-            'gateway_transaction_id' => $order->gateway_reference . '-refund-' . now()->format('YmdHis'),
+            'gateway_transaction_id' => $order->gateway_reference.'-refund-'.now()->format('YmdHis'),
             'type' => PaymentTransactionType::Refund,
             'amount' => round($amount, 2),
             'currency' => $this->currency(),
@@ -273,7 +273,7 @@ class TamaraService
     {
         [$firstName, $lastName] = $this->splitName($order->customer_name);
         $address = is_array($order->shipping_address) ? $order->shipping_address : [];
-        $line1 = trim(($address['building'] ?? '') . ' ' . ($address['street'] ?? '')) ?: ($address['district'] ?? 'N/A');
+        $line1 = trim(($address['building'] ?? '').' '.($address['street'] ?? '')) ?: ($address['district'] ?? 'N/A');
         $city = $address['city'] ?? 'Riyadh';
         $country = (string) config('services.tamara.country', 'SA');
         $base = rtrim((string) config('app.url'), '/');
@@ -290,7 +290,7 @@ class TamaraService
                 'reference_id' => (string) ($item->product_id ?? $item->id),
                 'type' => 'physical',
                 'name' => $item->product_name_ar,
-                'sku' => $item->smacc_sku ?: ($item->sku ?: ('SKU-' . ($item->product_id ?? $item->id))),
+                'sku' => $item->smacc_sku ?: ($item->sku ?: ('SKU-'.($item->product_id ?? $item->id))),
                 'quantity' => $item->quantity,
                 'unit_price' => $this->money((float) $item->unit_price),
                 'total_amount' => $this->money((float) $item->line_total),
@@ -301,7 +301,7 @@ class TamaraService
                 'first_name' => $firstName,
                 'last_name' => $lastName,
                 'phone_number' => $order->customer_phone ?: '500000000',
-                'email' => $order->customer_email ?: ('customer+' . $order->id . '@retab.com.sa'),
+                'email' => $order->customer_email ?: ('customer+'.$order->id.'@retab.com.sa'),
             ],
             'shipping_address' => [
                 'first_name' => $firstName,
@@ -318,9 +318,9 @@ class TamaraService
                 'amount' => $this->money((float) $order->discount_total),
             ] : null,
             'merchant_url' => [
-                'success' => $base . '/checkout/result?status=success',
-                'failure' => $base . '/checkout/result?status=failure',
-                'cancel' => $base . '/checkout/result?status=cancel',
+                'success' => $base.'/checkout/result?status=success',
+                'failure' => $base.'/checkout/result?status=failure',
+                'cancel' => $base.'/checkout/result?status=cancel',
                 'notification' => route('webhooks.tamara'),
             ],
         ];

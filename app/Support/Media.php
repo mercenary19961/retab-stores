@@ -37,7 +37,7 @@ class Media
         self::assertImage($file);
 
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
-        $name = Str::uuid() . '.' . $extension;
+        $name = Str::uuid().'.'.$extension;
 
         $path = $file->storeAs(trim($dir, '/'), $name, ['disk' => self::disk(), 'visibility' => 'public']);
 

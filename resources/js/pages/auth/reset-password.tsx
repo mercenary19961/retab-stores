@@ -27,19 +27,42 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
 
                         <div className="grid gap-2">
                             <Label htmlFor="email">{t('auth.email')}</Label>
-                            <Input id="email" name="email" type="email" defaultValue={email} readOnly autoComplete="email" className="mt-1 block w-full" />
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                defaultValue={email}
+                                readOnly
+                                autoComplete="email"
+                                className="mt-1 block w-full"
+                            />
                             <InputError message={errors.email} className="mt-2" />
                         </div>
 
                         <div className="grid gap-2">
                             <Label htmlFor="password">{t('auth.password')}</Label>
-                            <Input id="password" name="password" type="password" autoComplete="new-password" autoFocus placeholder={t('auth.passwordPlaceholder')} className="mt-1 block w-full" />
+                            <Input
+                                id="password"
+                                name="password"
+                                type="password"
+                                autoComplete="new-password"
+                                autoFocus
+                                placeholder={t('auth.passwordPlaceholder')}
+                                className="mt-1 block w-full"
+                            />
                             <InputError message={errors.password} />
                         </div>
 
                         <div className="grid gap-2">
                             <Label htmlFor="password_confirmation">{t('auth.confirmPassword')}</Label>
-                            <Input id="password_confirmation" name="password_confirmation" type="password" autoComplete="new-password" placeholder={t('auth.confirmPasswordPlaceholder')} className="mt-1 block w-full" />
+                            <Input
+                                id="password_confirmation"
+                                name="password_confirmation"
+                                type="password"
+                                autoComplete="new-password"
+                                placeholder={t('auth.confirmPasswordPlaceholder')}
+                                className="mt-1 block w-full"
+                            />
                             <InputError message={errors.password_confirmation} className="mt-2" />
                         </div>
 

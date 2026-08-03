@@ -410,7 +410,7 @@ class ChangeLogService
      * long we drop the link and offer a direct-edit URL instead.
      *
      * @param  list<string>  $conflicts  humanized labels
-     * @param  list<string>  $keys       raw field keys
+     * @param  list<string>  $keys  raw field keys
      */
     private function conflict(ActivityLog $log, array $conflicts, array $keys): RevertResult
     {
@@ -546,7 +546,7 @@ class ChangeLogService
             return '—';
         }
 
-        return mb_strlen($value) <= 80 ? $value : mb_substr($value, 0, 80) . '…';
+        return mb_strlen($value) <= 80 ? $value : mb_substr($value, 0, 80).'…';
     }
 
     private function humanize(string $key): string

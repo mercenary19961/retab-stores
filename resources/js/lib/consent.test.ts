@@ -1,20 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import {
-    CONSENT_COOKIE,
-    POLICY_VERSION,
-    choiceForAction,
-    consentModePayload,
-    needsConsent,
-    parseConsent,
-    readCookie,
-} from './consent';
+import { CONSENT_COOKIE, POLICY_VERSION, choiceForAction, consentModePayload, needsConsent, parseConsent, readCookie } from './consent';
 
 const cookie = (v: unknown) => `${CONSENT_COOKIE}=${encodeURIComponent(JSON.stringify(v))}`;
 
 describe('parseConsent', () => {
     it('reads a valid current-version choice', () => {
-        expect(parseConsent(encodeURIComponent(JSON.stringify({ analytics: true, marketing: false, v: POLICY_VERSION }))))
-            .toEqual({ analytics: true, marketing: false, v: POLICY_VERSION });
+        expect(parseConsent(encodeURIComponent(JSON.stringify({ analytics: true, marketing: false, v: POLICY_VERSION })))).toEqual({
+            analytics: true,
+            marketing: false,
+            v: POLICY_VERSION,
+        });
     });
 
     it.each([
@@ -82,8 +77,7 @@ describe('choiceForAction', () => {
     });
 
     it('custom uses the panel toggles', () => {
-        expect(choiceForAction('custom', { analytics: true, marketing: false }))
-            .toEqual({ analytics: true, marketing: false });
+        expect(choiceForAction('custom', { analytics: true, marketing: false })).toEqual({ analytics: true, marketing: false });
     });
 
     it('custom defaults to denied when the panel is missing', () => {

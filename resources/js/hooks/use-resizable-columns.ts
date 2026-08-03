@@ -16,15 +16,7 @@ type Widths = Record<string, number>;
  * `tablePrefs` prop. RTL-aware (the grip sits on the column's inline-end).
  * Double-click a grip to reset that column; `resetAll()` restores defaults.
  */
-export function useResizableColumns({
-    tableKey,
-    columns,
-    enabled = true,
-}: {
-    tableKey: string;
-    columns: ColumnDef[];
-    enabled?: boolean;
-}) {
+export function useResizableColumns({ tableKey, columns, enabled = true }: { tableKey: string; columns: ColumnDef[]; enabled?: boolean }) {
     const saved = ((usePage().props as { tablePrefs?: Record<string, Widths> }).tablePrefs ?? {})[tableKey];
 
     const defaults = useMemo(

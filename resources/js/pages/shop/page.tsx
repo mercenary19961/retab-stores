@@ -1,6 +1,6 @@
-import { Head } from '@inertiajs/react';
-import { useLocalized } from '@/lib/localize';
 import StoreLayout from '@/layouts/store-layout';
+import { useLocalized } from '@/lib/localize';
+import { Head } from '@inertiajs/react';
 
 interface Page {
     slug: string;
@@ -19,9 +19,7 @@ export default function ContentPage({ page }: { page: Page }) {
 
             <div className="mx-auto max-w-2xl">
                 <h1 className="mb-6 text-2xl font-bold">{localized(page, 'title')}</h1>
-                <div className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                    {localized(page, 'body')}
-                </div>
+                <div className="leading-relaxed whitespace-pre-wrap text-gray-700">{localized(page, 'body')}</div>
             </div>
         </StoreLayout>
     );

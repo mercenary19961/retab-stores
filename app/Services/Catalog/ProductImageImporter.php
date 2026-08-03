@@ -39,7 +39,7 @@ class ProductImageImporter
             file_put_contents($tmp, $bytes);
 
             try {
-                $path = Media::storeImageFromFile($tmp, 'image.' . $ext, "products/{$product->id}");
+                $path = Media::storeImageFromFile($tmp, 'image.'.$ext, "products/{$product->id}");
             } finally {
                 @unlink($tmp);
             }

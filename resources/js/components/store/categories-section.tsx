@@ -1,6 +1,6 @@
+import { useLocalized } from '@/lib/localize';
 import { Link } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
-import { useLocalized } from '@/lib/localize';
 
 interface Category {
     id: number;
@@ -39,7 +39,7 @@ export default function CategoriesSection({ categories }: { categories: Category
             />
 
             <div className="relative z-10 mx-auto max-w-[1600px] px-6 lg:px-12">
-                <h2 className="mb-10 text-center font-heading font-black text-brand-gold text-[clamp(1.75rem,4vw,2.75rem)]">
+                <h2 className="font-heading text-brand-gold mb-10 text-center text-[clamp(1.75rem,4vw,2.75rem)] font-black">
                     {t('categoriesSection.title')}
                 </h2>
 
@@ -58,7 +58,7 @@ export default function CategoriesSection({ categories }: { categories: Category
                                     <span className="text-5xl">🌴</span>
                                 )}
                             </div>
-                            <h3 className="mt-4 text-center font-heading font-bold text-brand-teal text-[clamp(0.95rem,1.8vw,1.25rem)]">
+                            <h3 className="font-heading text-brand-teal mt-4 text-center text-[clamp(0.95rem,1.8vw,1.25rem)] font-bold">
                                 {localized(c, 'name')}
                             </h3>
                         </Link>
