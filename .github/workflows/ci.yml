@@ -60,10 +60,14 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    # Report-only for now (like the Lighthouse pattern): the browser suite is new,
-    # so a flake must never red-gate a merge until it's proven stable. Promote to a
-    # hard gate once it's had a few clean runs.
-    continue-on-error: true
+    # HARD GATE since 2026-08-03. It ran report-only (continue-on-error) while the
+    # suite proved itself — but on 2026-07-29 that masked a real P1: the blank
+    # product page (a camelCase Inertia prop mismatch) failed this suite and CI
+    # still reported green. An Inertia prop-name mismatch is invisible to both tsc
+    # and PHPUnit status assertions, so this job is the ONLY thing that catches
+    # that class of bug. It must be allowed to fail the run.
+    # Flake mitigation lives in playwright.config.ts (retries: 1 under CI).
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
