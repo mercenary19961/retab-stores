@@ -20,6 +20,7 @@ class Order extends Model
         'customer_name',
         'customer_email',
         'customer_phone',
+        'locale',
         'shipping_address',
         'status',
         'payment_status',

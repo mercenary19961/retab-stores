@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\NewOrderNotification;
 use App\Services\CartService;
 use App\Services\CheckoutService;
+use App\Services\CustomerMailer;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\Tamara\TamaraService;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class CheckoutController
         protected CartService $cart,
         protected CheckoutService $checkout,
         protected \App\Services\WhatsApp\WhatsAppService $whatsapp,
+        protected CustomerMailer $mailer,
     ) {}
 
     public function show()
@@ -111,6 +113,17 @@ class CheckoutController
 
         // Bank transfer — no gateway; the order page shows the IBAN to transfer to.
         $order->update(['payment_method' => PaymentMethod::BankTransfer]);
+
+        // Email the transfer instructions NOW. This is the one payment method with
+        // no gateway receipt of its own, and the IBAN + the order number the
+        // customer must quote as the reference otherwise live on a single page
+        // view that's gone the moment they close the tab.
+        //
+        // ⚠️ Must come AFTER the update above: the mail decides whether to render
+        // the bank block from `payment_method`, which is only set on this line.
+        // Card/Tamara receipts are sent on payment confirmation instead, so an
+        // abandoned gateway checkout never produces a receipt (see PaymentService).
+        $this->mailer->orderPlaced($order->refresh());
 
         return redirect()->route('orders.show', $order->order_number);
     }

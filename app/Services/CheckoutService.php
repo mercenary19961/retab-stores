@@ -87,6 +87,9 @@ class CheckoutService
                 'customer_name' => $customer['name'] ?? '',
                 'customer_email' => $customer['email'] ?? null,
                 'customer_phone' => $customer['phone'] ?? '',
+                // Snapshot the checkout language: customer emails are queued, so the
+                // worker's locale (AR) would otherwise decide what an EN shopper reads.
+                'locale' => app()->getLocale(),
                 'shipping_address' => $shippingAddress,
                 'status' => OrderStatus::PendingPayment,
                 'payment_status' => PaymentStatus::Pending,

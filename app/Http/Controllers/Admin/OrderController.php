@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\CustomerMailer;
 use App\Services\OrderConfirmationService;
 use App\Services\Shipping\ShippingService;
 use App\Services\WhatsApp\WhatsAppService;
@@ -24,6 +25,7 @@ class OrderController extends Controller
         protected OrderConfirmationService $confirmation,
         protected ShippingService $shipping,
         protected WhatsAppService $whatsapp,
+        protected CustomerMailer $mailer,
     ) {}
 
     /** Whitelisted sort columns for the table/export. */
@@ -183,6 +185,7 @@ class OrderController extends Controller
 
         // Best-effort notifications (never block the confirmation).
         $this->whatsapp->notifyOrderConfirmed($order);
+        $this->mailer->orderConfirmed($order);
         if ($this->confirmation->issuedReward) {
             $this->whatsapp->notifyLoyaltyReward($order, $this->confirmation->issuedReward);
         }
@@ -216,6 +219,7 @@ class OrderController extends Controller
         }
 
         $this->whatsapp->notifyOrderShipped($order->refresh());
+        $this->mailer->orderShipped($order);
 
         return back()->with('success', __('messages.admin.shipment_created'));
     }

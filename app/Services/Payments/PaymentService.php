@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\PaymentTransactionType;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\CustomerMailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -211,6 +212,12 @@ class PaymentService
                 : $order->status,
             'paid_at' => now(),
         ])->save();
+
+        // The customer's receipt waits for real money. Sending it at checkout would
+        // promise an order to anyone who merely reached the hosted card page and
+        // then abandoned it. The early return above makes a repeated webhook a
+        // no-op, so this can't double-send.
+        app(CustomerMailer::class)->orderPlaced($order);
     }
 
     private function recordTransaction(Order $order, PaymentTransactionType $type, string $status, NormalizedPayment $payment): Payment

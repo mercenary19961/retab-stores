@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\PaymentTransactionType;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\CustomerMailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -234,13 +235,22 @@ class TamaraService
 
     private function markAuthorized(Order $order): void
     {
+        // ⚠️ Unlike PaymentService::markOrderPaid this method has no early return,
+        // so it re-runs on every repeated webhook. Capture the first transition
+        // explicitly — otherwise the customer gets a receipt per delivery attempt.
+        $firstAuthorization = $order->status === OrderStatus::PendingPayment;
+
         $order->forceFill([
             'payment_status' => PaymentStatus::Authorized,
             'payment_method' => PaymentMethod::Tamara,
-            'status' => $order->status === OrderStatus::PendingPayment
+            'status' => $firstAuthorization
                 ? OrderStatus::AwaitingConfirmation
                 : $order->status,
         ])->save();
+
+        if ($firstAuthorization) {
+            app(CustomerMailer::class)->orderPlaced($order);
+        }
     }
 
     private function recordTransaction(Order $order, PaymentTransactionType $type, string $status, string $transactionId, array $remote): Payment
