@@ -53,14 +53,21 @@ export default function StoreHero() {
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/45 via-white/10 to-transparent" />
 
             {/* Content block — physically anchored to the left (the product sits
-                baked into the right of the image), text aligned per reading dir. */}
-            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:min-w-0">
+                baked into the right of the image), text aligned per reading dir.
+                `lg:-translate-x-4 lg:-translate-y-6` nudges the whole block up and
+                left on laptop+ screens (≥1024px) without touching the centering/
+                positioning logic below — retune by adjusting those two values
+                (Tailwind spacing scale: 4 = 1rem/16px, 6 = 1.5rem/24px). */}
+            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:min-w-0 lg:-translate-x-4 lg:-translate-y-6">
                 <div className="w-full text-start">
                     {/* Below 732px the kashida-elongated headline overflows the
-                        narrow text column, so step the size down there and smaller. */}
-                    <h1 className="font-heading text-brand-teal text-[clamp(2.25rem,6.2vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-[480px]:text-[clamp(0.85rem,4.5vw,1.35rem)]">
-                        <span className="block">{slide.line1}</span>
-                        <span className="block">{slide.line2}</span>
+                        narrow text column, so step the size down there and smaller.
+                        line1 stays brand-teal (reads against the light sand); line2
+                        is white per the two-tone treatment — see the shadow note
+                        below on the subtext for why it carries a text-shadow. */}
+                    <h1 className="font-heading text-[clamp(2.25rem,6.2vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-[480px]:text-[clamp(0.85rem,4.5vw,1.35rem)]">
+                        <span className="text-brand-teal block">{slide.line1}</span>
+                        <span className="block text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)]">{slide.line2}</span>
                     </h1>
 
                     {/* Subtext + CTA share a shrink-to-fit column sized to the subtext;
@@ -69,9 +76,20 @@ export default function StoreHero() {
                     <div className="mt-5 inline-block max-w-full">
                         <div className="flex items-center gap-3">
                             {/* Flanking lines — first child sits on the start side
-                                (right in RTL), the last on the end side (left). */}
+                                (right in RTL), the last on the end side (left).
+                                Left teal on purpose: they're decorative rules, not
+                                text, and read fine against either headline color. */}
                             <span className="bg-brand-teal hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full min-[733px]:block" />
-                            <p className="font-heading text-brand-teal text-[clamp(0.95rem,1.9vw,1.63rem)] max-[732px]:text-[0.8rem] max-[480px]:max-w-[10rem] max-[480px]:text-[0.7rem]">
+                            {/* White per the request. The source photo is uniformly
+                                light sand behind this whole column (no dark area to
+                                sit white text on) and the existing scrim below
+                                (`from-white/45`) was tuned to lighten the photo FOR
+                                the old dark-teal text — which works against white
+                                text. A two-layer text-shadow (tight dark edge + a
+                                soft wide falloff) compensates without touching the
+                                scrim, which line1 and the CTA still rely on. Remove
+                                the [text-shadow:...] utility to see the raw contrast. */}
+                            <p className="font-heading text-[clamp(0.95rem,1.9vw,1.63rem)] text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)] max-[732px]:text-[0.8rem] max-[480px]:max-w-[10rem] max-[480px]:text-[0.7rem]">
                                 {slide.subtext}
                             </p>
                             <span className="bg-brand-teal hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full min-[733px]:block" />
