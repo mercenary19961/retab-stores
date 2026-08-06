@@ -13,6 +13,7 @@ use App\Models\Wishlist;
 use App\Services\ReviewRewardService;
 use App\Services\ReviewService;
 use App\Support\Media;
+use App\Support\ProductCards;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -173,28 +174,7 @@ class ShopController
      */
     private function bestSellers(): array
     {
-        $soldStatuses = [
-            OrderStatus::Confirmed->value,
-            OrderStatus::Shipped->value,
-            OrderStatus::Delivered->value,
-        ];
-
-        return Product::where('is_active', true)
-            ->with(['category:id,name_ar,name_en,slug', 'images'])
-            ->withSum(
-                ['orderItems as units_sold' => fn ($q) => $q->whereHas(
-                    'order',
-                    fn ($o) => $o->whereIn('status', $soldStatuses)
-                )],
-                'quantity'
-            )
-            ->orderByDesc('units_sold')
-            ->orderByDesc('is_featured')
-            ->latest()
-            ->limit(10)
-            ->get()
-            ->map(fn (Product $p) => $this->card($p))
-            ->all();
+        return ProductCards::bestSellers(10);
     }
 
     public function show(Request $request, Product $product, ReviewService $reviewService, ReviewRewardService $reviewReward): Response
@@ -299,19 +279,6 @@ class ShopController
      */
     private function card(Product $product): array
     {
-        return [
-            'id' => $product->id,
-            'name_ar' => $product->name_ar,
-            'name_en' => $product->name_en,
-            'slug' => $product->slug,
-            'price' => (float) $product->price,
-            'sale_price' => $product->sale_price !== null ? (float) $product->sale_price : null,
-            'effective_price' => $product->effectivePrice(),
-            'on_sale' => $product->isOnSale(),
-            'is_featured' => (bool) $product->is_featured,
-            'coming_soon' => $product->isComingSoon(),
-            'image' => Media::url($product->primaryImage()?->path, 'card'),
-            'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
-        ];
+        return ProductCards::card($product);
     }
 }

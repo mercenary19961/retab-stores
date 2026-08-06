@@ -10,6 +10,18 @@ return [
     'cart' => [
         'added' => 'Added to cart',
         'empty' => 'Your cart is empty.',
+        'coupon_applied' => 'Coupon applied.',
+        'coupon_removed' => 'Coupon removed.',
+    ],
+
+    /*
+     * Coupon errors are shown to the SHOPPER (cart page + checkout), so they must
+     * be localized — they were hard-coded English literals until 2026-08-06.
+     */
+    'checkout' => [
+        'coupon_invalid' => 'This coupon code is invalid or has expired.',
+        'coupon_not_yours' => 'This coupon is not available for your account.',
+        'coupon_used_up' => 'You have already used this coupon the maximum number of times.',
     ],
 
     'review' => [

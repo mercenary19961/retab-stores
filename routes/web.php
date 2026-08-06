@@ -21,10 +21,27 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+/*
+ * ⚠️ Every `throttle:` below carries a PREFIX (the 3rd argument), and it is not
+ * decoration — it is required for correctness.
+ *
+ * Laravel's unnamed throttle keys its counter on `sha1(domain|IP)` via
+ * ThrottleRequests::resolveRequestSignature() — the route URI is NOT part of the
+ * key. So without a prefix, every rate-limited route shares ONE bucket per
+ * visitor while each compares that shared count against its own limit, and the
+ * strictest route starts rejecting once the visitor's COMBINED requests pass it.
+ *
+ * That was a live revenue bug: a shopper who added ~11 items to their cart
+ * (allowed, limit 60) then clicked checkout (limit 10) got a 429 and could not
+ * pay. Found 2026-08-06 when new cart tests pushed the shared counter over.
+ * The prefix gives each group its own counter, which is what the numbers here
+ * were always meant to express.
+ */
+
 // Locale toggle — fetch POST from LanguageContext, persists to session (no Inertia visit).
 Route::post('/locale/{locale}', [LocaleController::class, 'set'])
     ->whereIn('locale', ['ar', 'en'])
-    ->middleware('throttle:30,1')
+    ->middleware('throttle:30,1,locale')
     ->name('locale.set');
 
 // Crawler endpoints (routes, not static files — absolute URLs per environment).
@@ -36,7 +53,7 @@ Route::get('/', [ShopController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'catalogue'])->name('shop.catalogue');
 // Catalogue search index (JSON): the whole small, cached catalogue, fetched once
 // so the typeahead filters in-memory (zero DB hits / round-trips per keystroke).
-Route::get('/shop/search-index', [ShopController::class, 'searchIndex'])->middleware('throttle:60,1')->name('shop.search-index');
+Route::get('/shop/search-index', [ShopController::class, 'searchIndex'])->middleware('throttle:60,1,search')->name('shop.search-index');
 // Physical shops (map + directions). Registered before the CMS catch-all so the
 // footer's /pages/branches link resolves here, not to a content page.
 Route::get('/pages/branches', [BranchController::class, 'index'])->name('branches');
@@ -48,18 +65,22 @@ Route::get('/products/{product:slug}', [ShopController::class, 'show'])
 // "I want this" demand signal for Coming-Soon products (guests allowed → guests
 // supply a phone + pass the Turnstile bot gate; signed-in users are one click).
 Route::post('/products/{product:slug}/request', [ProductRequestController::class, 'store'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:5,1,product-request')
     ->name('shop.product.request');
 
 // Cart (public POSTs — rate-limited against scripted abuse).
 Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
-Route::post('/cart', [CartController::class, 'add'])->middleware('throttle:60,1')->name('cart.add');
-Route::patch('/cart/items/{item}', [CartController::class, 'update'])->middleware('throttle:60,1')->name('cart.update');
-Route::delete('/cart/items/{item}', [CartController::class, 'remove'])->middleware('throttle:60,1')->name('cart.remove');
+Route::post('/cart', [CartController::class, 'add'])->middleware('throttle:60,1,cart')->name('cart.add');
+Route::patch('/cart/items/{item}', [CartController::class, 'update'])->middleware('throttle:60,1,cart')->name('cart.update');
+Route::delete('/cart/items/{item}', [CartController::class, 'remove'])->middleware('throttle:60,1,cart')->name('cart.remove');
+// Coupon apply is a code-guessing surface, so it gets a tighter limit than the
+// cart mutations above — it only previews (nothing is redeemed until checkout).
+Route::post('/cart/coupon', [CartController::class, 'applyCoupon'])->middleware('throttle:10,1,coupon')->name('cart.coupon.apply');
+Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->middleware('throttle:30,1,coupon')->name('cart.coupon.remove');
 
 // Checkout.
 Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
-Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
+Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1,checkout')->name('checkout.store');
 Route::get('/orders/{order:order_number}', [CheckoutController::class, 'confirmation'])->name('orders.show');
 
 // Server-to-server webhooks (CSRF-exempt via the webhooks/* rule).
@@ -81,16 +102,16 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
 
     // Reviews (verified-purchase) + helpful votes.
-    Route::post('products/{product:slug}/reviews', [ReviewController::class, 'store'])->middleware('throttle:10,1')->name('reviews.store');
-    Route::post('reviews/{review}/helpful', [ReviewController::class, 'helpful'])->middleware('throttle:30,1')->name('reviews.helpful');
+    Route::post('products/{product:slug}/reviews', [ReviewController::class, 'store'])->middleware('throttle:10,1,reviews')->name('reviews.store');
+    Route::post('reviews/{review}/helpful', [ReviewController::class, 'helpful'])->middleware('throttle:30,1,reviews-vote')->name('reviews.helpful');
 
     // Wishlist.
     Route::get('wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('wishlist/{product:slug}/toggle', [WishlistController::class, 'toggle'])->middleware('throttle:30,1')->name('wishlist.toggle');
+    Route::post('wishlist/{product:slug}/toggle', [WishlistController::class, 'toggle'])->middleware('throttle:30,1,wishlist')->name('wishlist.toggle');
 
     // Returns (defect/damage only, within 3 days of delivery, with photos).
     Route::get('orders/{order:order_number}/return', [ReturnController::class, 'create'])->name('returns.create');
-    Route::post('orders/{order:order_number}/return', [ReturnController::class, 'store'])->middleware('throttle:5,1')->name('returns.store');
+    Route::post('orders/{order:order_number}/return', [ReturnController::class, 'store'])->middleware('throttle:5,1,returns')->name('returns.store');
 });
 
 require __DIR__.'/admin.php';

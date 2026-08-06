@@ -235,6 +235,39 @@ const en = {
         total: 'Total',
         shippingNote: 'Shipping added at checkout',
         checkout: 'Proceed to checkout',
+
+        // Empty state
+        emptyTitle: 'Your cart is empty',
+        emptyBody: 'Start browsing our premium dates and add what you like to your cart.',
+        emptyBrowse: 'Browse dates',
+        emptyOffers: 'Offers',
+        emptyBestSellers: 'Best sellers',
+
+        // Items
+        itemsTitle: 'Items',
+        unitPrice: 'Unit price',
+        lineTotal: 'Total',
+        increaseQty: 'Increase quantity',
+        decreaseQty: 'Decrease quantity',
+        removeItem: 'Remove item',
+        continueShopping: 'Continue shopping',
+
+        // Summary
+        summaryTitle: 'Order summary',
+        subtotal: 'Subtotal',
+        shipping: 'Shipping',
+        shippingFlatNote: 'Flat rate across all GCC countries',
+        shippingFree: 'Free',
+        discount: 'Discount',
+        grandTotal: 'Total',
+        vatNote: 'Prices include VAT',
+
+        // Coupon
+        couponTitle: 'Discount coupon',
+        couponPlaceholder: 'Enter coupon code',
+        couponApply: 'Apply',
+        couponRemove: 'Remove',
+        couponFreeShipping: 'Free shipping',
     },
     checkout: {
         title: 'Checkout',

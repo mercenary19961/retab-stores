@@ -239,6 +239,39 @@ const ar = {
         total: 'المجموع',
         shippingNote: 'يُضاف الشحن عند الدفع',
         checkout: 'متابعة الدفع',
+
+        // Empty state
+        emptyTitle: 'سلتك فارغة',
+        emptyBody: 'ابدأ بتصفّح تمورنا الفاخرة وأضف ما يعجبك إلى سلتك.',
+        emptyBrowse: 'تصفّح التمور',
+        emptyOffers: 'العروض',
+        emptyBestSellers: 'الأكثر مبيعاً',
+
+        // Items
+        itemsTitle: 'المنتجات',
+        unitPrice: 'سعر الحبة',
+        lineTotal: 'الإجمالي',
+        increaseQty: 'زيادة الكمية',
+        decreaseQty: 'إنقاص الكمية',
+        removeItem: 'إزالة المنتج',
+        continueShopping: 'متابعة التسوّق',
+
+        // Summary
+        summaryTitle: 'ملخّص الطلب',
+        subtotal: 'المجموع الفرعي',
+        shipping: 'الشحن',
+        shippingFlatNote: 'سعر شحن ثابت لجميع دول الخليج',
+        shippingFree: 'مجاني',
+        discount: 'الخصم',
+        grandTotal: 'الإجمالي',
+        vatNote: 'الأسعار تشمل ضريبة القيمة المضافة',
+
+        // Coupon
+        couponTitle: 'كوبون الخصم',
+        couponPlaceholder: 'أدخل رمز الكوبون',
+        couponApply: 'تطبيق',
+        couponRemove: 'إزالة',
+        couponFreeShipping: 'شحن مجاني',
     },
     checkout: {
         title: 'إتمام الطلب',

@@ -32,7 +32,7 @@ class CheckoutController
         protected CustomerMailer $mailer,
     ) {}
 
-    public function show()
+    public function show(Request $request)
     {
         $summary = $this->cart->summary();
 
@@ -46,6 +46,10 @@ class CheckoutController
             // Effective fee: 0 during an automatic free-shipping window.
             'shippingFee' => $this->checkout->shippingFee(),
             'freeShipping' => $this->checkout->freeShippingActive(),
+            // Pre-fill a coupon already applied on the cart page so the shopper
+            // doesn't have to type it twice (the form still submits it, and
+            // placeOrder re-validates it under lock — this is only convenience).
+            'appliedCoupon' => $request->session()->get(CartController::COUPON_SESSION_KEY),
             'countries' => self::GCC,
         ]);
     }
@@ -92,6 +96,9 @@ class CheckoutController
         /** @var Store $session — push() lives on Store, not the Session contract the docblock advertises */
         $session = $request->session();
         $session->push('placed_orders', $order->order_number);
+        // The coupon is spent now (placeOrder recorded its redemption), so drop the
+        // cart-page copy — otherwise it would silently reappear on the next order.
+        $session->forget(CartController::COUPON_SESSION_KEY);
 
         // Alert staff that a new order needs attention (verify transfer / check stock)
         // across all three channels: WhatsApp + the in-panel notification bell.

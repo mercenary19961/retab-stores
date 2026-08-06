@@ -168,22 +168,65 @@ class CheckoutService
         // used_count increment can't interleave with a concurrent checkout and
         // over-redeem a usage-capped coupon. (placeOrder wraps this in a txn.)
         $coupon = Coupon::where('code', $couponCode)->lockForUpdate()->first();
+
+        $this->assertCouponUsable($coupon, $subtotal, $userId);
+
+        return [$coupon, $coupon->discountFor($subtotal)];
+    }
+
+    /**
+     * Validate a coupon WITHOUT redeeming or locking it, for the cart page's
+     * "apply coupon" preview.
+     *
+     * 🔑 Deliberately shares `assertCouponUsable()` with the real checkout path
+     * above rather than re-implementing the rules. A second copy of this logic is
+     * exactly how a cart ends up promising a discount that checkout then refuses —
+     * the two can now only ever agree.
+     *
+     * No `lockForUpdate` here on purpose: this is a read-only preview, and taking
+     * a row lock outside a transaction on every keystroke-ish request would be
+     * pointless contention. The authoritative check still happens under lock in
+     * placeOrder, so a coupon exhausted between preview and checkout is caught
+     * there — the preview is a courtesy, never the gate.
+     *
+     * @return array{0: Coupon, 1: float} the coupon and its discount
+     *
+     * @throws \RuntimeException with a localized, user-facing message
+     */
+    public function previewCoupon(string $couponCode, float $subtotal, ?int $userId): array
+    {
+        $coupon = Coupon::where('code', $couponCode)->first();
+
+        $this->assertCouponUsable($coupon, $subtotal, $userId);
+
+        return [$coupon, $coupon->discountFor($subtotal)];
+    }
+
+    /**
+     * The single source of truth for "may this customer use this coupon on this
+     * subtotal?". Messages are localized because they surface straight to the
+     * shopper as a flash / inline error.
+     *
+     * @phpstan-assert !null $coupon
+     *
+     * @throws \RuntimeException
+     */
+    private function assertCouponUsable(?Coupon $coupon, float $subtotal, ?int $userId): void
+    {
         if (! $coupon || ! $coupon->isValid($subtotal)) {
-            throw new \RuntimeException('Invalid or expired coupon.');
+            throw new \RuntimeException(__('messages.checkout.coupon_invalid'));
         }
 
         // A user-bound coupon (e.g. a loyalty reward) is only valid for its owner.
         if ($coupon->user_id !== null && $coupon->user_id !== $userId) {
-            throw new \RuntimeException('This coupon is not available for your account.');
+            throw new \RuntimeException(__('messages.checkout.coupon_not_yours'));
         }
 
         // Per-user usage cap (only enforceable for signed-in customers).
         if ($coupon->per_user_limit !== null && $userId !== null
             && $coupon->redemptions()->where('user_id', $userId)->count() >= $coupon->per_user_limit) {
-            throw new \RuntimeException('You have already used this coupon the maximum number of times.');
+            throw new \RuntimeException(__('messages.checkout.coupon_used_up'));
         }
-
-        return [$coupon, $coupon->discountFor($subtotal)];
     }
 
     private function generateOrderNumber(): string

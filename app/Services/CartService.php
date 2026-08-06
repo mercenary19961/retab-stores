@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\Media;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -122,7 +123,9 @@ class CartService
             return ['items' => collect(), 'count' => 0, 'subtotal' => 0.0];
         }
 
-        $cart->load('items.product');
+        // `images` is eager-loaded because primaryImage() reads the relation —
+        // without it this would be a query per line item.
+        $cart->load('items.product.images');
 
         $items = $cart->items->map(fn (CartItem $i) => [
             'id' => $i->id,
@@ -130,6 +133,9 @@ class CartService
             'name_ar' => $i->product?->name_ar,
             'name_en' => $i->product?->name_en,
             'slug' => $i->product?->slug,
+            // `card` variant (~15 KB WebP), not the full-res original — see
+            // Architecture → File Storage → responsive variants.
+            'image' => Media::url($i->product?->primaryImage()?->path, 'card'),
             'unit_price' => (float) $i->unit_price,
             'quantity' => $i->quantity,
             'line_total' => round((float) $i->unit_price * $i->quantity, 2),

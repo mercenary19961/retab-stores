@@ -16,7 +16,7 @@ Route::middleware('guest')->group(function () {
         ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store'])
-        ->middleware('throttle:10,1');
+        ->middleware('throttle:10,1,register');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
@@ -24,27 +24,27 @@ Route::middleware('guest')->group(function () {
     // LoginRequest already limits to 5 attempts per email+IP; this adds a global
     // per-IP cap so credential-stuffing across many emails from one IP is bounded.
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:20,1');
+        ->middleware('throttle:20,1,login');
 
     // WhatsApp OTP sign-in / sign-up (the decided primary method for customers).
     Route::get('login/whatsapp', [OtpAuthController::class, 'create'])->name('login.whatsapp');
     Route::post('login/whatsapp/send', [OtpAuthController::class, 'send'])
-        ->middleware('throttle:6,1')->name('login.whatsapp.send');
+        ->middleware('throttle:6,1,otp-send')->name('login.whatsapp.send');
     Route::post('login/whatsapp/verify', [OtpAuthController::class, 'verify'])
-        ->middleware('throttle:6,1')->name('login.whatsapp.verify');
+        ->middleware('throttle:6,1,otp-verify')->name('login.whatsapp.verify');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->middleware('throttle:6,1')
+        ->middleware('throttle:6,1,password-email')
         ->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
-        ->middleware('throttle:6,1')
+        ->middleware('throttle:6,1,password-reset')
         ->name('password.store');
 });
 
@@ -53,11 +53,11 @@ Route::middleware('auth')->group(function () {
         ->name('verification.notice');
 
     Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
+        ->middleware(['signed', 'throttle:6,1,verify-email'])
         ->name('verification.verify');
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-        ->middleware('throttle:6,1')
+        ->middleware('throttle:6,1,verify-send')
         ->name('verification.send');
 
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])

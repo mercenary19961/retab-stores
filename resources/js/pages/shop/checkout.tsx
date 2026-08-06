@@ -20,11 +20,13 @@ export default function Checkout({
     subtotal,
     shippingFee,
     countries,
+    appliedCoupon,
 }: {
     items: Item[];
     subtotal: number;
     shippingFee: number;
     countries: string[];
+    appliedCoupon?: string | null;
 }) {
     const { t } = useTranslation();
     const localized = useLocalized();
@@ -40,7 +42,9 @@ export default function Checkout({
         street: '',
         building: '',
         payment_method: 'bank_transfer',
-        coupon_code: '',
+        // Carried over from the cart page so the shopper doesn't retype it. The
+        // form still submits it and placeOrder re-validates under lock.
+        coupon_code: appliedCoupon ?? '',
     });
 
     const total = subtotal + shippingFee;
