@@ -54,11 +54,20 @@ export default function StoreHero() {
 
             {/* Content block — physically anchored to the left (the product sits
                 baked into the right of the image), text aligned per reading dir.
-                `lg:-translate-x-4 lg:-translate-y-6` nudges the whole block up and
-                left on laptop+ screens (≥1024px) without touching the centering/
-                positioning logic below — retune by adjusting those two values
-                (Tailwind spacing scale: 4 = 1rem/16px, 6 = 1.5rem/24px). */}
-            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:min-w-0 lg:-translate-x-4 lg:-translate-y-6">
+                `lg:-translate-x-4` nudges the block slightly left on laptop+
+                screens (≥1024px), a small enough fixed offset (16px) that it's
+                harmless at any width.
+                The vertical nudge is `lg:-translate-y-[6.5vw]`, NOT a fixed value
+                — the image is aspect-locked (`w-full h-auto`, no max-width), so
+                its rendered height scales linearly with viewport width (≈1067px
+                tall at 1920px wide, but only ≈759px at 1366px). A fixed px/rem
+                shift is a small fraction of the image at 1920px+ but eats a much
+                bigger share of it on a narrower laptop, which clips the headline
+                against the section's top edge (overflow-hidden crops rather than
+                reflows). `vw` keeps the shift exactly proportional to the image's
+                own height at every width, so retune by adjusting the vw number,
+                not by switching back to a fixed unit. */}
+            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:min-w-0 lg:-translate-x-4 lg:-translate-y-[6.5vw]">
                 <div className="w-full text-start">
                     {/* Below 732px the kashida-elongated headline overflows the
                         narrow text column, so step the size down there and smaller.

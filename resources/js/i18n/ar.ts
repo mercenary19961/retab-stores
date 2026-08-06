@@ -85,8 +85,8 @@ const ar = {
         // "طيب" elongated with kashida (tatweel ـ) so both headline lines reach
         // the subtext width and their start edges align. Tune the tatweel count
         // to match the subtext line exactly.
-        headlineLine1: 'من طيـــــب الأرض',
-        headlineLine2: 'لطيـــــب جمعتكـم',
+        headlineLine1: 'مــن طيـــــب الأرض',
+        headlineLine2: 'لطيـــــب جمعتكـــم',
         subtext: 'تمر سكري فاخر يكمّل ضيافتكم ويحلّي كل جمعة',
         cta: 'تسوّق الآن',
         prevSlide: 'الشريحة السابقة',
