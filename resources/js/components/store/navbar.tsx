@@ -59,7 +59,22 @@ export default function StoreNavbar() {
         let ticking = false;
         const update = () => {
             const y = window.scrollY;
-            setScrolled(y > 8);
+            // Hysteresis, not a single threshold: collapsing the header shrinks
+            // its own height by ~35px (both rows' padding at once), and since the
+            // header is `sticky` (in normal flow), that shortens the whole page —
+            // which the browser's scroll anchoring compensates for by nudging
+            // `scrollY` down to keep the same content in view. That compensation
+            // is itself ~35px, comfortably enough to cross back below a single
+            // low threshold (was 8px), which un-collapses the header, which grows
+            // the page back, which lets scrollY recover, which crosses the
+            // threshold again — a real feedback loop (measured: 40+ scroll events
+            // firing over ~1s from one static scroll target). A threshold smaller
+            // than the effect it triggers can never be stable. The fix is two
+            // thresholds with a dead zone wider than that ~35px swing: entering
+            // compact mode takes a deliberate scroll (48px), leaving it takes a
+            // real return toward the top (8px) — so the collapse's own knock-on
+            // scroll adjustment can never re-cross either boundary by itself.
+            setScrolled((prev) => (prev ? y > 8 : y > 48));
             if (y < 80) {
                 setShow(true); // always visible near the top
             } else if (y > lastY + 4) {
