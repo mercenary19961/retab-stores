@@ -3,7 +3,8 @@ import ProductGallery from '@/components/store/product-gallery';
 import { Turnstile } from '@/components/turnstile';
 import StoreLayout from '@/layouts/store-layout';
 import { useLocalized } from '@/lib/localize';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Check, Gift, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -79,6 +80,7 @@ export default function ShopProduct({
 }) {
     const { t } = useTranslation();
     const localized = useLocalized();
+    const { ogImage } = usePage<SharedData>().props;
     const currency = t('common.currency');
     const name = localized(product, 'name');
     const description = localized(product, 'description');
@@ -110,7 +112,10 @@ export default function ShopProduct({
                 <meta property="og:title" content={name} />
                 <meta property="og:type" content="product" />
                 <meta property="og:url" content={product.url} />
-                {product.images[0] && <meta property="og:image" content={product.images[0]} />}
+                {/* Coming-soon drafts can have no photo yet — fall back to the brand
+                    card so a shared link never previews without an image. */}
+                <meta property="og:image" content={product.images[0] ?? ogImage} />
+                <meta name="twitter:card" content="summary_large_image" />
                 <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
             </Head>
 

@@ -52,6 +52,18 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
+        {{-- Favicons. The .ico carries both 16px and 32px, so the separate PNGs
+             browsers used to need are redundant. Safari/iOS uses the touch icon;
+             Chrome/Firefox prefer the SVG. Deliberately NO og:image here — a tag
+             in this layout renders BEFORE @inertiaHead, and crawlers treat the
+             first og:image as the primary one, so it would override the product
+             page's own image. Page-level <Head> owns social tags instead. --}}
+        <link rel="icon" href="/favicon.ico" sizes="32x32">
+        <link rel="icon" href="/icon.svg" type="image/svg+xml">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="manifest" href="/site.webmanifest">
+        <meta name="theme-color" content="#1b4e53">
+
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 

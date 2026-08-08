@@ -25,6 +25,8 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    /** Absolute URL of the default social-share card, built from APP_URL server-side. */
+    ogImage: string;
     [key: string]: unknown;
 }
 

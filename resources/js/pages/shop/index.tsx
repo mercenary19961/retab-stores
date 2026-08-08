@@ -7,7 +7,8 @@ import NewArrivals from '@/components/store/new-arrivals';
 import Offers from '@/components/store/offers';
 import PrimaryBanner from '@/components/store/primary-banner';
 import StoreLayout from '@/layouts/store-layout';
-import { Head } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Head, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
 interface ProductCard {
@@ -53,13 +54,22 @@ export default function ShopIndex({
     reviews?: ReviewItem[];
 }) {
     const { t } = useTranslation();
+    const { ogImage } = usePage<SharedData>().props;
 
     return (
         <StoreLayout bare>
+            {/* The home page is the link customers actually share on WhatsApp, so
+                it carries the brand share card. Declaring the dimensions lets a
+                crawler lay the preview out before the image finishes downloading. */}
             <Head title={t('shop.headTitle')}>
                 <meta name="description" content={t('shop.metaDescription')} />
                 <meta property="og:title" content={t('shop.headTitle')} />
+                <meta property="og:description" content={t('shop.metaDescription')} />
                 <meta property="og:type" content="website" />
+                <meta property="og:image" content={ogImage} />
+                <meta property="og:image:width" content="1200" />
+                <meta property="og:image:height" content="630" />
+                <meta name="twitter:card" content="summary_large_image" />
             </Head>
 
             <StoreHero />

@@ -63,6 +63,12 @@ class HandleInertiaRequests extends Middleware
                 : null,
             // Null while unset → the Turnstile widget renders nothing (dev).
             'turnstileSiteKey' => config('services.turnstile.site_key'),
+            // Default social-share card. Shared rather than hardcoded client-side
+            // because og:image MUST be absolute — crawlers do not resolve relative
+            // paths — so it has to be built from APP_URL on the server. JPEG, not
+            // the WebP twin: WhatsApp's link-preview crawler is unreliable with
+            // WebP, and WhatsApp is this store's main channel.
+            'ogImage' => url('/og-image.jpg'),
             // Storefront nav tree (parents + active children) for the navbar.
             // Closure → only resolved for Inertia responses, not every request.
             'navCategories' => fn () => Category::query()

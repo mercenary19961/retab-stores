@@ -4,7 +4,8 @@ import ProductCard, { type StoreProduct } from '@/components/store/product-card'
 import StoreSelect from '@/components/store/select';
 import StoreLayout from '@/layouts/store-layout';
 import { useLocalized } from '@/lib/localize';
-import { Head, Link, router } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Tag, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -40,6 +41,7 @@ export default function ShopCatalogue({
 }) {
     const { t } = useTranslation();
     const localized = useLocalized();
+    const { ogImage } = usePage<SharedData>().props;
 
     // Merge the current filters with a patch, dropping empties, and produce the
     // query object. Category filters are real links (crawlable); the search / sort
@@ -76,6 +78,12 @@ export default function ShopCatalogue({
         <StoreLayout>
             <Head title={t('catalogue.headTitle')}>
                 <meta name="description" content={t('shop.metaDescription')} />
+                <meta property="og:title" content={t('catalogue.headTitle')} />
+                <meta property="og:type" content="website" />
+                <meta property="og:image" content={ogImage} />
+                <meta property="og:image:width" content="1200" />
+                <meta property="og:image:height" content="630" />
+                <meta name="twitter:card" content="summary_large_image" />
             </Head>
 
             <h1 className="font-heading text-brand-teal mb-6 text-center text-[clamp(1.75rem,4vw,2.75rem)] font-black">{t('catalogue.heading')}</h1>
