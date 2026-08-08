@@ -157,6 +157,17 @@ const ar = {
         searchViewAll: 'عرض كل النتائج',
         clearFilters: 'إعادة الضبط',
     },
+    about: {
+        headTitle: 'من نحن | رطاب للتمور',
+        metaDescription: 'رطاب علامة سعودية متخصصة في تقديم التمور الفاخرة ومشتقاتها، تجمع بين الجودة العالية والذوق العصري وأصالة الضيافة السعودية.',
+        banner: {
+            // Kashida elongation matches the Figma; tune the ـ runs by hand if the
+            // designer adjusts the lockup (same as hero.headlineLine1).
+            line1: 'مـن قلـب النخلة',
+            line2: 'إلى مائدتكم',
+        },
+    },
+
     branches: {
         headTitle: 'فروعنا | رطاب للتمور',
         metaDescription: 'زوروا رطاب للتمور في الرياض: الملقا والعزيزية. احصلوا على الاتجاهات وأوقات العمل.',

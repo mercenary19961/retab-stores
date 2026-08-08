@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CartController;
@@ -57,6 +58,9 @@ Route::get('/shop/search-index', [ShopController::class, 'searchIndex'])->middle
 // Physical shops (map + directions). Registered before the CMS catch-all so the
 // footer's /pages/branches link resolves here, not to a content page.
 Route::get('/pages/branches', [BranchController::class, 'index'])->name('branches');
+// Designed About page — same story as branches: declared before the catch-all so
+// this slug renders the custom layout instead of the `about` content_pages row.
+Route::get('/pages/about', [AboutController::class, 'index'])->name('about');
 Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 // On a slug miss, consult the 301 redirect map (old Zid URLs) before 404-ing.
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])

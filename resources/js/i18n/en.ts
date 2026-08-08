@@ -153,6 +153,16 @@ const en = {
         searchViewAll: 'See all results',
         clearFilters: 'Clear filters',
     },
+    about: {
+        headTitle: 'About Us | Retab Dates',
+        metaDescription:
+            'Retab is a Saudi brand specialising in premium dates and their products, bringing together high quality, modern taste and authentic Saudi hospitality.',
+        banner: {
+            line1: 'From the heart of the palm',
+            line2: 'to your table',
+        },
+    },
+
     branches: {
         headTitle: 'Our Branches | Retab Dates',
         metaDescription: 'Visit Retab Dates in Riyadh: Al Malqa and Al Aziziyah. Get directions and store hours.',
