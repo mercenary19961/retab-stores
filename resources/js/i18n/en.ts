@@ -161,6 +161,15 @@ const en = {
             line1: 'From the heart of the palm',
             line2: 'to your table',
         },
+        whoWeAre: {
+            badge: 'Who we are',
+            // An array: the card renders one <p> per entry, so copy can grow or
+            // shrink without touching the component.
+            paragraphs: [
+                'Retab is a Saudi brand specialising in premium dates and their products, bringing together high quality, modern taste, and the authenticity of Saudi hospitality. We believe dates are not merely a food product, but an experience that expresses generosity, identity, and the care behind every choice.',
+                'Through our products we set out to deliver a complete experience. It begins with selecting the finest fruit, continues through refined packaging, and ends with delivery to our customers in the best possible condition.',
+            ],
+        },
     },
 
     branches: {

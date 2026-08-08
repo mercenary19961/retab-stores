@@ -1,4 +1,5 @@
 import AboutBanner from '@/components/store/about-banner';
+import AboutWhoWeAre from '@/components/store/about-who-we-are';
 import StoreLayout from '@/layouts/store-layout';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -26,6 +27,7 @@ export default function About() {
             </Head>
 
             <AboutBanner />
+            <AboutWhoWeAre />
         </StoreLayout>
     );
 }
