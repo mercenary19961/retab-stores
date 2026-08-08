@@ -2,7 +2,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useLocalized } from '@/lib/localize';
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface NavCategory {
@@ -54,9 +54,21 @@ function Caret() {
  *
  * SHADOW_AT needs no hysteresis for the same reason: a shadow does not affect
  * layout, so it cannot feed back into scroll position.
+ *
+ * 🔴 WHY THE HEADER STAYS PINNED FOR ITS OWN HEIGHT: being `sticky` it keeps its
+ * box in normal flow, and a transform does not remove that box. So translating it
+ * away while the viewport is still inside that box just exposes the box — a blank
+ * strip of page background above the content (measured: at y=60 the element at the
+ * viewport top was the page wrapper, not the hero). Past its own height the box has
+ * scrolled away and hiding reveals real content. Hence the pinned band is the
+ * header's MEASURED height, not a constant: the desktop header is ~130px (two rows)
+ * while mobile drops row 2 and is roughly half that, so a fixed number would either
+ * leave a gap on desktop or over-pin on mobile.
  */
-const PINNED_BAND = 24;
 const SHADOW_AT = 8;
+
+/** Floor for the pinned band, in case the height measurement is unavailable. */
+const MIN_PINNED_BAND = 24;
 
 /** Minimum scroll delta before a direction change counts, to ignore jitter. */
 const DIRECTION_DELTA = 4;
@@ -82,15 +94,25 @@ export default function StoreNavbar() {
     // now drives ONLY the drop shadow — see the note above the constants.
     const [show, setShow] = useState(true);
     const [scrolled, setScrolled] = useState(false);
+    const headerRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         let lastY = window.scrollY;
         let ticking = false;
+        // Cached, not read per frame: reading offsetHeight inside the scroll
+        // handler would force a layout flush on every tick. The height is constant
+        // now, so it only needs re-measuring when the breakpoint changes.
+        let pinnedBand = MIN_PINNED_BAND;
+        const measure = () => {
+            pinnedBand = Math.max(headerRef.current?.offsetHeight ?? 0, MIN_PINNED_BAND);
+        };
+        measure();
+
         const update = () => {
             const y = window.scrollY;
             setScrolled(y > SHADOW_AT);
-            if (y < PINNED_BAND) {
-                setShow(true); // pinned open at the very top
+            if (y < pinnedBand) {
+                setShow(true); // still inside the header's own box — hiding would expose it
             } else if (y > lastY + DIRECTION_DELTA) {
                 setShow(false); // scrolling down → hide
             } else if (y < lastY - DIRECTION_DELTA) {
@@ -106,7 +128,11 @@ export default function StoreNavbar() {
             }
         };
         window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
+        window.addEventListener('resize', measure);
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            window.removeEventListener('resize', measure);
+        };
     }, []);
 
     const isActive = (href: string) => (href === '/' ? url === '/' : url.startsWith(href));
@@ -119,6 +145,7 @@ export default function StoreNavbar() {
 
     return (
         <header
+            ref={headerRef}
             className={`border-brand-gold/10 sticky top-0 z-40 border-b bg-white transition-all duration-700 ${
                 show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
             } ${scrolled ? 'shadow-md' : ''}`}
