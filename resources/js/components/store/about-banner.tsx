@@ -20,9 +20,10 @@ export default function AboutBanner() {
         <section className="relative w-full overflow-hidden">
             <img src="/images/about/banner.webp" alt="" width={1440} height={800} className="block h-auto w-full" fetchPriority="high" />
 
-            {/* The left of the photo is bright sky and sand, so the teal first line
-                needs the same lift the homepage hero uses. */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/45 via-white/10 to-transparent" />
+            {/* No scrim over the photo, deliberately. The homepage hero carries a
+                white gradient for text contrast, but here the headline is dark teal
+                on bright sand, which already reads, and the wash visibly lightened
+                the artwork. Do not re-add one without checking the photo first. */}
 
             {/* Width is the Figma's teal rectangle: 727 of a 1440 banner ≈ 50.5%.
                 That number is doing real work — the dates box starts at about 52%

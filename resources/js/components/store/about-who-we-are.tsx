@@ -24,7 +24,13 @@ export default function AboutWhoWeAre() {
 
     return (
         <section className="relative w-full overflow-hidden py-[clamp(1.75rem,5.2vw,5rem)]">
-            <img src="/images/about/who-we-are.webp" alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+            {/* 🔑 `object-top`, not the default centre crop. This texture is composed
+                to continue the ground from the banner above, so its TOP row is the
+                edge that has to meet that section. Centre-cropping trims the top and
+                bottom evenly, which put a different part of the texture at the seam
+                and made the join obvious. Anchoring to the top pins the join and
+                takes the crop off the bottom instead, where the next section covers it. */}
+            <img src="/images/about/who-we-are.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
 
             {/* 1190 of a 1440 frame ≈ 82.6%, capped at the artwork's own width so
                 the card never outgrows the design on very wide screens. */}
