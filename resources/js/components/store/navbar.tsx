@@ -33,6 +33,34 @@ function Caret() {
     );
 }
 
+/*
+ * Header scroll behaviour: pinned open at the very top, hidden by one downward
+ * scroll, revealed again by scrolling up. Two states only, no intermediate.
+ *
+ * 🔴 The header's HEIGHT IS NOW CONSTANT, and that is load-bearing, not a style
+ * choice. It used to collapse its padding (~40px) once scrolled, and because the
+ * header is `sticky` (still in normal flow) that shortened the whole page, which
+ * the browser's scroll anchoring compensated for by *reducing* scrollY by about
+ * the same amount. The direction detector below then read that synthetic jump as
+ * a genuine scroll UP and re-revealed the header — which is why one wheel notch
+ * used to land on "compact and visible" instead of "hidden", and why a second
+ * notch was needed to actually hide it. Measured: from y=0, one 120px notch ended
+ * at y=80 with the header re-shown.
+ *
+ * So a height change cannot coexist with direction-based hide/reveal while the
+ * header is in flow. Anything reintroducing a collapse, a growing announcement
+ * bar, or any other in-flow height change here will bring the artifact back;
+ * animate colour/shadow/opacity instead, which are layout-neutral.
+ *
+ * SHADOW_AT needs no hysteresis for the same reason: a shadow does not affect
+ * layout, so it cannot feed back into scroll position.
+ */
+const PINNED_BAND = 24;
+const SHADOW_AT = 8;
+
+/** Minimum scroll delta before a direction change counts, to ignore jitter. */
+const DIRECTION_DELTA = 4;
+
 export default function StoreNavbar() {
     const { t } = useTranslation();
     const { toggleLanguage } = useLanguage();
@@ -49,8 +77,9 @@ export default function StoreNavbar() {
 
     const [mobileOpen, setMobileOpen] = useState(false);
 
-    // Reveal-on-scroll-up navbar: hide when scrolling down, fade + slide back in
-    // when scrolling up (or near the top) so navigation is always a flick away.
+    // Reveal-on-scroll-up navbar: one scroll down hides it outright, scrolling up
+    // slides it straight back in, so navigation is always a flick away. `scrolled`
+    // now drives ONLY the drop shadow — see the note above the constants.
     const [show, setShow] = useState(true);
     const [scrolled, setScrolled] = useState(false);
 
@@ -59,27 +88,12 @@ export default function StoreNavbar() {
         let ticking = false;
         const update = () => {
             const y = window.scrollY;
-            // Hysteresis, not a single threshold: collapsing the header shrinks
-            // its own height by ~35px (both rows' padding at once), and since the
-            // header is `sticky` (in normal flow), that shortens the whole page —
-            // which the browser's scroll anchoring compensates for by nudging
-            // `scrollY` down to keep the same content in view. That compensation
-            // is itself ~35px, comfortably enough to cross back below a single
-            // low threshold (was 8px), which un-collapses the header, which grows
-            // the page back, which lets scrollY recover, which crosses the
-            // threshold again — a real feedback loop (measured: 40+ scroll events
-            // firing over ~1s from one static scroll target). A threshold smaller
-            // than the effect it triggers can never be stable. The fix is two
-            // thresholds with a dead zone wider than that ~35px swing: entering
-            // compact mode takes a deliberate scroll (48px), leaving it takes a
-            // real return toward the top (8px) — so the collapse's own knock-on
-            // scroll adjustment can never re-cross either boundary by itself.
-            setScrolled((prev) => (prev ? y > 8 : y > 48));
-            if (y < 80) {
-                setShow(true); // always visible near the top
-            } else if (y > lastY + 4) {
+            setScrolled(y > SHADOW_AT);
+            if (y < PINNED_BAND) {
+                setShow(true); // pinned open at the very top
+            } else if (y > lastY + DIRECTION_DELTA) {
                 setShow(false); // scrolling down → hide
-            } else if (y < lastY - 4) {
+            } else if (y < lastY - DIRECTION_DELTA) {
                 setShow(true); // scrolling up → reveal
             }
             lastY = y;
@@ -121,9 +135,9 @@ export default function StoreNavbar() {
             </div>
 
             <div className="relative mx-auto max-w-[1600px] px-6 lg:px-12">
-                {/* Row 1 — utility icons · logo · language. Padding collapses once
-                    scrolled so the floating navbar is vertically compact; full at top. */}
-                <div className={`grid grid-cols-3 items-center transition-[padding] duration-300 ${scrolled ? 'py-0' : 'py-3'}`}>
+                {/* Row 1 — utility icons · logo · language. Padding is FIXED on
+                    purpose; see the constants note about in-flow height changes. */}
+                <div className="grid grid-cols-3 items-center py-3">
                     {/* Start: utility icons (desktop) / hamburger (mobile) */}
                     <div className="flex items-center gap-4 justify-self-start">
                         <button
@@ -193,10 +207,8 @@ export default function StoreNavbar() {
                     </div>
                 </div>
 
-                {/* Row 2 — primary nav links (desktop). Padding collapses when scrolled. */}
-                <nav
-                    className={`border-brand-gold/10 hidden items-center justify-between border-t transition-[padding] duration-300 md:flex ${scrolled ? 'py-0' : 'py-2'}`}
-                >
+                {/* Row 2 — primary nav links (desktop). Padding fixed, as above. */}
+                <nav className="border-brand-gold/10 hidden items-center justify-between border-t py-2 md:flex">
                     <Link href="/" className={`${linkBase} ${isActive('/') ? linkActive : linkIdle}`}>
                         {t('nav.home')}
                     </Link>
