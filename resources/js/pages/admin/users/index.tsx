@@ -1,8 +1,10 @@
 import Button from '@/components/admin/button';
+import ChangePasswordForm from '@/components/admin/change-password-form';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ShieldCheck, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -27,6 +29,11 @@ export default function UsersIndex({ staff, schema }: { staff: Staff[]; schema: 
 
     const selected = staff.find((s) => s.id === selectedId) ?? null;
     const addForm = useForm({ name: '', email: '', password: '' });
+
+    // The password section only appears on your OWN row: changing it requires the
+    // current password, which is by definition nobody else's to supply.
+    const { auth } = usePage<SharedData>().props;
+    const isMe = selected !== null && selected.id === auth.user?.id;
 
     const permsFor = (s: Staff): Perms => edits[s.id] ?? s.permissions;
 
@@ -168,49 +175,63 @@ export default function UsersIndex({ staff, schema }: { staff: Staff[]; schema: 
                             {t('admin.users.noEditors')}
                         </p>
                     ) : selected.role === 'admin' ? (
-                        <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-8 text-center">
-                            <ShieldCheck className="mx-auto mb-3 h-9 w-9 text-purple-400" />
-                            <p className="font-medium text-neutral-200">{selected.name}</p>
-                            <p className="mt-1 text-sm text-neutral-500">{t('admin.users.adminFullAccess')}</p>
+                        <div className="space-y-6">
+                            <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-8 text-center">
+                                <ShieldCheck className="mx-auto mb-3 h-9 w-9 text-purple-400" />
+                                <p className="font-medium text-neutral-200">{selected.name}</p>
+                                <p className="mt-1 text-sm text-neutral-500">{t('admin.users.adminFullAccess')}</p>
+                            </div>
+                            {isMe && (
+                                <div className="rounded-lg border border-neutral-800 bg-neutral-900">
+                                    <ChangePasswordForm />
+                                </div>
+                            )}
                         </div>
                     ) : (
-                        <div className="rounded-lg border border-neutral-800 bg-neutral-900">
-                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 px-5 py-3">
-                                <div className="min-w-0">
-                                    <h2 className="truncate font-semibold text-neutral-100">{selected.name}</h2>
-                                    <p className="text-xs text-neutral-500">{t('admin.users.hint')}</p>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    <Button size="sm" variant="secondary" onClick={savePerms}>
-                                        {t('admin.users.save')}
-                                    </Button>
-                                    <ConfirmDeleteButton
-                                        itemName={selected.name ?? selected.email}
-                                        label={t('admin.users.remove')}
-                                        onConfirm={() => removeEditor(selected)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="divide-y divide-neutral-800">
-                                {Object.entries(schema).map(([section, actions]) => (
-                                    <div key={section} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-                                        <span className="font-medium text-neutral-200">{t(`admin.users.sections.${section}`)}</span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {actions.map((action) => (
-                                                <button
-                                                    key={action}
-                                                    type="button"
-                                                    onClick={() => toggle(section, action)}
-                                                    className={chip(!!permsFor(selected)[section]?.[action])}
-                                                >
-                                                    {t(`admin.users.actions.${action}`)}
-                                                </button>
-                                            ))}
-                                        </div>
+                        <div className="space-y-6">
+                            <div className="rounded-lg border border-neutral-800 bg-neutral-900">
+                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 px-5 py-3">
+                                    <div className="min-w-0">
+                                        <h2 className="truncate font-semibold text-neutral-100">{selected.name}</h2>
+                                        <p className="text-xs text-neutral-500">{t('admin.users.hint')}</p>
                                     </div>
-                                ))}
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button size="sm" variant="secondary" onClick={savePerms}>
+                                            {t('admin.users.save')}
+                                        </Button>
+                                        <ConfirmDeleteButton
+                                            itemName={selected.name ?? selected.email}
+                                            label={t('admin.users.remove')}
+                                            onConfirm={() => removeEditor(selected)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="divide-y divide-neutral-800">
+                                    {Object.entries(schema).map(([section, actions]) => (
+                                        <div key={section} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                                            <span className="font-medium text-neutral-200">{t(`admin.users.sections.${section}`)}</span>
+                                            <div className="flex flex-wrap gap-2">
+                                                {actions.map((action) => (
+                                                    <button
+                                                        key={action}
+                                                        type="button"
+                                                        onClick={() => toggle(section, action)}
+                                                        className={chip(!!permsFor(selected)[section]?.[action])}
+                                                    >
+                                                        {t(`admin.users.actions.${action}`)}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
+                            {isMe && (
+                                <div className="rounded-lg border border-neutral-800 bg-neutral-900">
+                                    <ChangePasswordForm />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

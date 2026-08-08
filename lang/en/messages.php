@@ -38,6 +38,7 @@ return [
 
     'profile' => [
         'updated' => 'Your details have been updated.',
+        'password_updated' => 'Your password has been changed.',
     ],
 
     'security' => [

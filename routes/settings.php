@@ -13,7 +13,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
-    Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
+    // Throttled: the `current_password` rule makes this a credential-guessing
+    // oracle for anyone who gets hold of a session. The third argument is the
+    // bucket prefix — a bare `throttle:10,1` would share one counter with every
+    // other rate-limited route (see the gotcha in CLAUDE.md → Security hardening).
+    Route::put('settings/password', [PasswordController::class, 'update'])
+        ->middleware('throttle:10,1,password-update')
+        ->name('password.update');
 
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/appearance');

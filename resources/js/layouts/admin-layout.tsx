@@ -1,7 +1,9 @@
 import AdminToasts from '@/components/admin/admin-toasts';
+import ChangePasswordForm from '@/components/admin/change-password-form';
 import AdminContextMenu from '@/components/admin/context-menu';
 import GlobalSearch from '@/components/admin/global-search';
 import MobileScrollNav from '@/components/admin/mobile-scroll-nav';
+import Modal from '@/components/admin/modal';
 import NotificationBell from '@/components/admin/notification-bell';
 import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
 import UndoToast from '@/components/admin/undo-toast';
@@ -13,6 +15,7 @@ import {
     FileText,
     History,
     Info,
+    KeyRound,
     Languages,
     LayoutDashboard,
     LogOut,
@@ -203,6 +206,10 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
     // on desktop (collapsed). The one header button adapts to the breakpoint.
     // `mounted` gates the slide transition so it never fires on first paint /
     // Inertia remount (only on an actual user toggle).
+    // Own-account password change. Lives in the top bar because EDITORS cannot
+    // reach /admin/users (it is admin-only), so the Staff page alone would leave
+    // them with no way to change their own password.
+    const [accountOpen, setAccountOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -340,6 +347,17 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                             <span>{locale === 'en' ? 'العربية' : 'English'}</span>
                         </button>
                         {user && <span className="hidden text-neutral-400 sm:inline">{user.name ?? user.email}</span>}
+                        {user && (
+                            <button
+                                type="button"
+                                onClick={() => setAccountOpen(true)}
+                                aria-label={t('admin.account.changePassword')}
+                                title={t('admin.account.changePassword')}
+                                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-white"
+                            >
+                                <KeyRound className="h-4 w-4" />
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={() => router.post('/logout')}
@@ -361,6 +379,14 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
             <UndoToast />
             <AdminContextMenu />
             <MobileScrollNav scrollRef={mainRef} />
+
+            {/* Reachable from every admin page, so editors have a route to their
+                own password even though the Staff page is admin-only. */}
+            <Modal open={accountOpen} onClose={() => setAccountOpen(false)} title={t('admin.account.title')} size="md">
+                <div className="px-5 py-4">
+                    <ChangePasswordForm compact />
+                </div>
+            </Modal>
 
             {/* Per-page "How it works" drawer. Slides from the reading-end side
                 (right in LTR, left in RTL). Physical transform, so RTL is handled

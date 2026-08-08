@@ -3,6 +3,7 @@ import { LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import InputError from '@/components/input-error';
+import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -54,14 +55,16 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                         </TextLink>
                                     )}
                                 </div>
-                                <Input
+                                {/* Stays uncontrolled — see the <Form> note above. */}
+                                <PasswordInput
                                     id="password"
                                     name="password"
-                                    type="password"
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder={t('auth.passwordPlaceholder')}
+                                    showLabel={t('auth.showPassword')}
+                                    hideLabel={t('auth.hidePassword')}
                                 />
                                 <InputError message={errors.password} />
                             </div>

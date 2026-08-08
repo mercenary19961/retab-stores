@@ -25,7 +25,10 @@ class PasswordController extends Controller
     }
 
     /**
-     * Update the user's password.
+     * Update the user's password. Shared by the storefront settings page and the
+     * admin panel's own-account section, so it stays the single place password
+     * changes happen. Returns back() rather than a fixed redirect precisely so
+     * both callers land where they started.
      */
     public function update(Request $request): RedirectResponse
     {
@@ -38,6 +41,8 @@ class PasswordController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        return back();
+        // Flashed so the admin panel's toast layer reports it; the storefront page
+        // shows its own inline "Saved" via useForm's recentlySuccessful.
+        return back()->with('success', __('messages.profile.password_updated'));
     }
 }

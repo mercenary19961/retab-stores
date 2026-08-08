@@ -38,6 +38,7 @@ return [
 
     'profile' => [
         'updated' => 'تم تحديث بياناتك.',
+        'password_updated' => 'تم تغيير كلمة المرور.',
     ],
 
     'security' => [

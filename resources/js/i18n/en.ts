@@ -26,6 +26,8 @@ const en = {
         emailPlaceholder: 'email@example.com',
         password: 'Password',
         passwordPlaceholder: 'Password',
+        showPassword: 'Show password',
+        hidePassword: 'Hide password',
         confirmPassword: 'Confirm password',
         confirmPasswordPlaceholder: 'Confirm password',
         name: 'Name',
@@ -349,6 +351,18 @@ const en = {
     },
     admin: {
         brand: 'Retab Admin',
+        account: {
+            title: 'My account',
+            changePassword: 'Change password',
+            passwordHint: 'At least 8 characters. You need your current password to confirm the change.',
+            currentPassword: 'Current password',
+            newPassword: 'New password',
+            confirmPassword: 'Confirm new password',
+            savePassword: 'Update password',
+            showPassword: 'Show password',
+            hidePassword: 'Hide password',
+            yourAccount: 'This is your account',
+        },
         nav: {
             dashboard: 'Dashboard',
             orders: 'Orders',

@@ -27,6 +27,8 @@ const ar = {
         emailPlaceholder: 'email@example.com',
         password: 'كلمة المرور',
         passwordPlaceholder: 'كلمة المرور',
+        showPassword: 'إظهار كلمة المرور',
+        hidePassword: 'إخفاء كلمة المرور',
         confirmPassword: 'تأكيد كلمة المرور',
         confirmPasswordPlaceholder: 'تأكيد كلمة المرور',
         name: 'الاسم',
@@ -352,6 +354,18 @@ const ar = {
     },
     admin: {
         brand: 'إدارة رطاب',
+        account: {
+            title: 'حسابي',
+            changePassword: 'تغيير كلمة المرور',
+            passwordHint: 'ثمانية أحرف على الأقل. تحتاج كلمة المرور الحالية لتأكيد التغيير.',
+            currentPassword: 'كلمة المرور الحالية',
+            newPassword: 'كلمة المرور الجديدة',
+            confirmPassword: 'تأكيد كلمة المرور الجديدة',
+            savePassword: 'تحديث كلمة المرور',
+            showPassword: 'إظهار كلمة المرور',
+            hidePassword: 'إخفاء كلمة المرور',
+            yourAccount: 'هذا حسابك',
+        },
         nav: {
             dashboard: 'لوحة التحكم',
             orders: 'الطلبات',
