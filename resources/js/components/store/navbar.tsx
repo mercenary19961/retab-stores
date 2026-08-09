@@ -34,8 +34,8 @@ function Caret() {
 }
 
 /*
- * Header scroll behaviour: pinned open at the very top, hidden by one downward
- * scroll, revealed again by scrolling up. Two states only, no intermediate.
+ * Header scroll behaviour: it slides away with the page from the first pixel of
+ * downward scroll, and any upward scroll brings it straight back.
  *
  * 🔴 The header's HEIGHT IS NOW CONSTANT, and that is load-bearing, not a style
  * choice. It used to collapse its padding (~40px) once scrolled, and because the
@@ -55,20 +55,44 @@ function Caret() {
  * SHADOW_AT needs no hysteresis for the same reason: a shadow does not affect
  * layout, so it cannot feed back into scroll position.
  *
- * 🔴 WHY THE HEADER STAYS PINNED FOR ITS OWN HEIGHT: being `sticky` it keeps its
- * box in normal flow, and a transform does not remove that box. So translating it
- * away while the viewport is still inside that box just exposes the box — a blank
- * strip of page background above the content (measured: at y=60 the element at the
- * viewport top was the page wrapper, not the hero). Past its own height the box has
- * scrolled away and hiding reveals real content. Hence the pinned band is the
- * header's MEASURED height, not a constant: the desktop header is ~130px (two rows)
- * while mobile drops row 2 and is roughly half that, so a fixed number would either
- * leave a gap on desktop or over-pin on mobile.
+ * 🔴 WHY IT TRAVELS WITH THE SCROLL INSTEAD OF STAYING PINNED: being `sticky` the
+ * header keeps its box in normal flow, and a transform does not remove that box. So
+ * translating it away while the viewport is still inside that box just exposes the
+ * box — a blank strip of page background above the content (measured: at y=60 the
+ * element at the viewport top was the page wrapper, not the hero).
+ *
+ * That used to be handled by PINNING the header open for its own height (~130px on
+ * desktop), which is why hiding it took an unnaturally long scroll: a 120px wheel
+ * notch from the top did nothing at all.
+ *
+ * It now translates by exactly `-scrollY` while inside that band. Its box sits at
+ * page 0..H, i.e. viewport -y..H-y, and the header offset by -y lands on precisely
+ * the same rectangle, so it COVERS its own box at every position instead of
+ * revealing it. Visually that is just a normal header scrolling away, and it starts
+ * on the first pixel. Past H the offset caps and it is simply gone, so the handoff
+ * to the hidden state is continuous rather than a jump.
+ *
+ * ⚠️ The offset is written straight to the node in the rAF callback, NOT held in
+ * React state: a per-pixel value in state would re-render the whole header on every
+ * scroll frame. React still owns `scrolled` (the shadow), which flips rarely.
+ *
+ * ⚠️ The transition is skipped ONLY while tracking, because a transition there
+ * makes the header lag the page and feel rubbery. Every other move — the reveal, and
+ * a re-hide from a revealed state mid-band — is a jump and must be animated or it
+ * visibly snaps.
+ *
+ * 🔴 The continuity test compares the current offset against where tracking WOULD
+ * have put it last frame, NOT against the scroll delta. The delta version was the
+ * first attempt and is subtly wrong: a fast flick has a large delta, so a reveal
+ * (offset 130 → 0) measures as "smaller than the scroll" and is treated as tracking,
+ * skipping the transition. The symptom is that the header appears instantly, and
+ * gets worse the faster you scroll up — a slow scroll animates fine, which is what
+ * makes it easy to miss in testing.
  */
 const SHADOW_AT = 8;
 
-/** Floor for the pinned band, in case the height measurement is unavailable. */
-const MIN_PINNED_BAND = 24;
+/** Floor for the travel band, in case the height measurement is unavailable. */
+const MIN_TRAVEL_BAND = 24;
 
 /** Minimum scroll delta before a direction change counts, to ignore jitter. */
 const DIRECTION_DELTA = 4;
@@ -92,32 +116,64 @@ export default function StoreNavbar() {
     // Reveal-on-scroll-up navbar: one scroll down hides it outright, scrolling up
     // slides it straight back in, so navigation is always a flick away. `scrolled`
     // now drives ONLY the drop shadow — see the note above the constants.
-    const [show, setShow] = useState(true);
     const [scrolled, setScrolled] = useState(false);
     const headerRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
+        const header = headerRef.current;
+        if (!header) return;
+
         let lastY = window.scrollY;
         let ticking = false;
+        let revealed = true;
+        let offset = 0;
         // Cached, not read per frame: reading offsetHeight inside the scroll
         // handler would force a layout flush on every tick. The height is constant
         // now, so it only needs re-measuring when the breakpoint changes.
-        let pinnedBand = MIN_PINNED_BAND;
+        let band = MIN_TRAVEL_BAND;
         const measure = () => {
-            pinnedBand = Math.max(headerRef.current?.offsetHeight ?? 0, MIN_PINNED_BAND);
+            band = Math.max(header.offsetHeight, MIN_TRAVEL_BAND);
         };
         measure();
 
         const update = () => {
             const y = window.scrollY;
             setScrolled(y > SHADOW_AT);
-            if (y < pinnedBand) {
-                setShow(true); // still inside the header's own box — hiding would expose it
-            } else if (y > lastY + DIRECTION_DELTA) {
-                setShow(false); // scrolling down → hide
+
+            if (y > lastY + DIRECTION_DELTA) {
+                revealed = false; // scrolling down → let it go
             } else if (y < lastY - DIRECTION_DELTA) {
-                setShow(true); // scrolling up → reveal
+                revealed = true; // scrolling up → bring it back
             }
+
+            // Capped at the band: past its own height the header is fully gone, and
+            // clamping here is what makes the tracking phase hand over to the hidden
+            // state without a visible step.
+            const next = revealed ? 0 : Math.min(y, band);
+
+            // Instant ONLY while following the page down 1:1 from wherever the
+            // previous frame already left us. The test compares against where
+            // tracking would have put us last frame — deliberately NOT against the
+            // scroll delta, which was the first attempt and is wrong: a fast flick
+            // has a large delta, so a reveal (offset 130 → 0) reads as "smaller
+            // than the scroll" and gets no transition. The faster you scrolled up,
+            // the harder the header snapped in.
+            const continuous = !revealed && Math.abs(offset - Math.min(lastY, band)) <= 1;
+
+            header.style.transition = continuous
+                ? 'box-shadow 300ms ease'
+                : 'transform 400ms ease-out, opacity 400ms ease-out, box-shadow 300ms ease';
+            header.style.transform = `translate3d(0, ${-next}px, 0)`;
+            // Fades only on the discontinuous moves. During tracking it must stay
+            // fully opaque or it would dissolve while scrolling, which reads as a
+            // glitch rather than as a header leaving the page; by the time this
+            // hits 0 while tracking, the element is already off-screen anyway.
+            header.style.opacity = next >= band ? '0' : '1';
+            // Only unreachable once it is entirely off-screen; while it is mid-travel
+            // it is still partly visible and must stay clickable.
+            header.style.pointerEvents = next >= band ? 'none' : '';
+
+            offset = next;
             lastY = y;
             ticking = false;
         };
@@ -144,12 +200,7 @@ export default function StoreNavbar() {
     const linkActive = 'bg-[#d9d9d9]/25 text-brand-teal';
 
     return (
-        <header
-            ref={headerRef}
-            className={`border-brand-gold/10 sticky top-0 z-40 border-b bg-white transition-all duration-700 ${
-                show ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-full opacity-0'
-            } ${scrolled ? 'shadow-md' : ''}`}
-        >
+        <header ref={headerRef} className={`border-brand-gold/10 sticky top-0 z-40 border-b bg-white ${scrolled ? 'shadow-md' : ''}`}>
             {/* Faint knot watermark (LOGO 2), clipped to the header via its own
                 overflow-hidden wrapper so it never clips the nav dropdowns. */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
