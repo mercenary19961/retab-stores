@@ -23,14 +23,36 @@ export default function AboutWhoWeAre() {
     const paragraphs = Array.isArray(raw) ? (raw as string[]) : [];
 
     return (
-        <section className="relative w-full overflow-hidden py-[clamp(1.75rem,5.2vw,5rem)]">
-            {/* 🔑 `object-top`, not the default centre crop. This texture is composed
-                to continue the ground from the banner above, so its TOP row is the
-                edge that has to meet that section. Centre-cropping trims the top and
-                bottom evenly, which put a different part of the texture at the seam
-                and made the join obvious. Anchoring to the top pins the join and
-                takes the crop off the bottom instead, where the next section covers it. */}
-            <img src="/images/about/who-we-are.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-top" loading="lazy" />
+        <section className="relative w-full py-[clamp(1.75rem,5.2vw,5rem)]">
+            {/* 🔑 The seam with the banner above is CROSS-FADED, not butted.
+                These are two different photographs — the banner is a wide scene shot
+                at distance, this is a macro close-up of ground — so their edges do
+                not share tone or grain. Measured at the join, the average colour
+                differs by 22/29/10/23 across four horizontal bands: uneven, which is
+                what gives it away as different source images rather than a scale
+                mismatch (both render 1:1 at 1440).
+
+                So the image is bled UPWARDS over the banner by the fade distance and
+                masked from transparent to opaque, which blends real pixels from both
+                photos instead of butting two mismatched edges together. `object-top`
+                still anchors the crop to the top so the bottom is what gets trimmed.
+
+                ⚠️ The section must NOT be `overflow-hidden` or the upward bleed is
+                clipped away and the hard line comes back.
+
+                ⚠️ The height is stated explicitly as `calc(100% + bleed)`. Setting
+                `top` and `bottom` alone does NOT stretch an <img>: a replaced
+                element with height:auto resolves its height from the intrinsic
+                aspect ratio, so it rendered 217px tall inside a 357px section and
+                left the bottom of the section with no background. Desktop masked
+                the bug because the auto height happened to exceed the section
+                there — it only showed on mobile. */}
+            <img
+                src="/images/about/who-we-are.webp"
+                alt=""
+                className="absolute inset-x-0 -top-[10vw] h-[calc(100%+10vw)] w-full object-cover object-top [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,#000_10vw)] [mask-image:linear-gradient(to_bottom,transparent_0,#000_10vw)]"
+                loading="lazy"
+            />
 
             {/* 1190 of a 1440 frame ≈ 82.6%, capped at the artwork's own width so
                 the card never outgrows the design on very wide screens. */}
