@@ -74,10 +74,28 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Behind Cloudflare + Railway's proxy every generated URL must be https;
-        // pairs with the locked trustProxies CIDRs in bootstrap/app.php.
+        // Behind Railway's proxy every generated URL must be https; pairs with
+        // the trustProxies configuration in bootstrap/app.php.
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
+
+            // Pin every generated URL to the canonical host, not the host the
+            // request happened to arrive on.
+            //
+            // Laravel builds url()/route() from the REQUEST, so the app stays
+            // reachable at retab-website-production.up.railway.app and would
+            // serve <link rel="canonical">, og:url, robots.txt's Sitemap: line
+            // and a sitemap of all 87 products all pointing at ITSELF — a
+            // complete self-canonicalising duplicate of the store. That is bad
+            // at any time and actively harmful during an SEO migration off Zid,
+            // where the whole point is consolidating ranking onto one host.
+            // forceScheme alone does not help: it fixes the scheme, not the host.
+            //
+            // ⚠️ A staging environment must NOT run with APP_ENV=production, or
+            // every link it generates will point at the live site.
+            if ($root = config('app.url')) {
+                URL::forceRootUrl($root);
+            }
         }
 
         // Override Inertia's SSR gateway with one that applies connect/response

@@ -22,6 +22,15 @@ class SecurityHeaders
             $response->headers->set('Content-Security-Policy', $this->buildCsp());
         }
 
+        // Pre-launch kill switch (SITE_INDEXABLE=false). Sent as a HEADER rather
+        // than a <meta> tag so it also covers responses React never renders —
+        // the sitemap, robots.txt itself, redirects — and needs no frontend
+        // change. This, not robots.txt, is what actually keeps pages out of the
+        // index; see SeoController::robots() for why crawling stays allowed.
+        if (! config('retab.indexable')) {
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
         return $response;
     }
 

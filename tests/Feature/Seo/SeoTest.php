@@ -5,6 +5,7 @@ namespace Tests\Feature\Seo;
 use App\Models\Category;
 use App\Models\ContentPage;
 use App\Models\Product;
+use App\Providers\AppServiceProvider;
 use App\Ssr\TimeoutHttpGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Ssr\Gateway;
@@ -60,6 +61,54 @@ class SeoTest extends TestCase
     public function test_ssr_gateway_binding_resolves_to_timeout_gateway(): void
     {
         $this->assertInstanceOf(TimeoutHttpGateway::class, app(Gateway::class));
+    }
+
+    public function test_an_indexable_site_sends_no_robots_header(): void
+    {
+        config(['retab.indexable' => true]);
+
+        $this->get('/robots.txt')->assertOk()->assertHeaderMissing('X-Robots-Tag');
+    }
+
+    public function test_a_non_indexable_site_sends_noindex_on_every_response(): void
+    {
+        config(['retab.indexable' => false]);
+
+        $this->get('/robots.txt')->assertOk()->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+        $this->get('/sitemap.xml')->assertOk()->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+    }
+
+    /**
+     * The noindex mode must NOT block crawling. robots.txt governs FETCHING and
+     * noindex governs INDEXING, so a blanket `Disallow: /` would stop Google
+     * ever reading the noindex header and a linked URL could still be listed.
+     */
+    public function test_non_indexable_robots_still_allows_crawling_but_drops_the_sitemap(): void
+    {
+        config(['retab.indexable' => false]);
+
+        $body = $this->get('/robots.txt')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('Disallow: /'."\n", $body);
+        $this->assertStringNotContainsString('Sitemap:', $body);
+        $this->assertStringContainsString('Disallow: /admin', $body);
+    }
+
+    /**
+     * Pins AppServiceProvider's production branch. Without forceRootUrl, Laravel
+     * builds every URL from the REQUEST host, so the site would keep serving
+     * canonical tags, og:url and a full sitemap on the Railway hostname — a
+     * self-canonicalising duplicate of the store competing with the real domain.
+     */
+    public function test_production_pins_generated_urls_to_the_canonical_host(): void
+    {
+        config(['app.url' => 'https://www.retab.com.sa']);
+        $this->app['env'] = 'production';
+
+        (new AppServiceProvider($this->app))->boot();
+
+        $this->assertStringStartsWith('https://www.retab.com.sa/', route('seo.sitemap'));
+        $this->assertStringStartsWith('https://www.retab.com.sa', route('home'));
     }
 
     public function test_product_payload_carries_absolute_url_for_json_ld(): void

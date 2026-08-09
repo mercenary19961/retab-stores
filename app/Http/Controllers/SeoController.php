@@ -51,9 +51,26 @@ class SeoController extends Controller
             'Disallow: /wishlist',
             'Disallow: /login',
             'Disallow: /register',
-            '',
-            'Sitemap: '.route('seo.sitemap'),
         ];
+
+        // 🔑 When the site is set to noindex (SITE_INDEXABLE=false) it stays
+        // CRAWLABLE on purpose — we deliberately do NOT emit `Disallow: /`.
+        //
+        // The two directives work at different layers and fight each other:
+        // robots.txt controls FETCHING, noindex controls INDEXING. A crawler
+        // blocked from fetching a page can never read its noindex header, so
+        // Google may still list a URL it discovered through a link (as a bare,
+        // snippet-less result) and is then slow to drop it. Letting the crawler
+        // in to READ the noindex is what actually keeps the store out.
+        //
+        // The Sitemap: line is dropped though — no reason to hand over 87
+        // product URLs we are asking not to be indexed.
+        if (config('retab.indexable')) {
+            $lines[] = '';
+            $lines[] = 'Sitemap: '.route('seo.sitemap');
+        } else {
+            array_unshift($lines, '# Pre-launch: every response sends X-Robots-Tag: noindex.');
+        }
 
         return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
