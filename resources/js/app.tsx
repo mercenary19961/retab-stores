@@ -14,10 +14,16 @@ declare global {
     const route: typeof routeFn;
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    // 🔑 There is deliberately NO `title` callback. The scaffold's
+    // `${title} - ${appName}` template was removed and must not come back:
+    // each page's own `headTitle` already carries the brand in the right
+    // language ('من نحن | رطاب للتمور'), `ssr.jsx` never had a title callback
+    // so a client-side suffix made SSR and CSR disagree on hydration, and it
+    // depended on `VITE_APP_NAME` — a BUILD-time variable that was unset in the
+    // Railway build, so the `|| 'Laravel'` fallback won and every production
+    // tab read "… - Laravel". A page wanting a brand puts it in its headTitle.
+
     // Inertia v3 dropped the auto-unwrap of the page module's default export,
     // so resolvePageComponent's Promise<{ default: Component }> must be
     // unwrapped to the component with .then((m) => m.default).
