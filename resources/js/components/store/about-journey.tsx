@@ -23,11 +23,11 @@ interface Step {
  * i.e. exactly card width but shorter than the card, so anything other than cover
  * would leave a strip of empty card at the bottom.
  *
- * ⚠️ `journey-develop.webp` is a FLAT BRAND-TEAL PLACEHOLDER, not artwork. The
- * designer supplied three of the four plates; the production-line photo for
- * التطوير is missing and cannot be recovered from the composite because the title
- * and body text are baked into every card there. Dropping the real 295×531 file
- * over it is the only change needed.
+ * All four plates are the designer's own 295×531 WebP files, copied in
+ * byte-for-byte rather than re-encoded — a second lossy pass over an already-lossy
+ * WebP buys ~40 KB at the cost of visible quality, and 174 KB across four
+ * lazy-loaded cards is not worth optimising. (The first pass shipped a flat teal
+ * placeholder for `develop`, since that photo arrived later.)
  */
 export default function AboutJourney() {
     const { t } = useTranslation();
@@ -53,9 +53,12 @@ export default function AboutJourney() {
             />
 
             <div className="relative mx-auto w-[94.02%] max-w-[1354px]">
-                {/* Right-aligned in the design because it is Arabic; `text-end`
-                    keeps it on the reading-direction side so it moves left in EN. */}
-                <h2 className="text-brand-teal font-heading text-end text-[clamp(1.6rem,4.7vw,4.25rem)] leading-[1.15] font-black">
+                {/* ⚠️ `text-start`, NOT `text-end`. These are logical properties
+                    resolved against the READING direction, so `end` means left in
+                    Arabic and right in English — the exact inverse of what is
+                    wanted, in both locales at once. The heading must sit on the
+                    side the text begins on: right in AR, left in EN. */}
+                <h2 className="text-brand-teal font-heading text-start text-[clamp(1.6rem,4.7vw,4.25rem)] leading-[1.15] font-black">
                     {t('about.journey.heading')}
                 </h2>
 
@@ -80,7 +83,10 @@ export default function AboutJourney() {
                                 headline would flatten the middle of the image. */}
                             <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/10 to-black/65" />
 
-                            <div className="absolute inset-0 flex flex-col justify-between p-[clamp(0.6rem,1.5vw,1.4rem)] text-end">
+                            {/* `text-start` for the same reason as the heading: the
+                                card copy begins on the right in Arabic and on the
+                                left in English. */}
+                            <div className="absolute inset-0 flex flex-col justify-between p-[clamp(0.6rem,1.5vw,1.4rem)] text-start">
                                 <h3 className="font-heading text-[clamp(0.95rem,2vw,1.85rem)] leading-tight font-black text-white">{step.title}</h3>
 
                                 <div>
