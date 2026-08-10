@@ -35,7 +35,9 @@ function Caret() {
 
 /*
  * Header scroll behaviour: it slides away with the page from the first pixel of
- * downward scroll, and any upward scroll brings it straight back.
+ * downward scroll. Coming back is deliberately harder than going away — it takes
+ * REVEAL_AFTER px of sustained upward scrolling and then waits REVEAL_DELAY_MS
+ * before it starts moving, so it cannot flicker in and out during ordinary reading.
  *
  * 🔴 The header's HEIGHT IS NOW CONSTANT, and that is load-bearing, not a style
  * choice. It used to collapse its padding (~40px) once scrolled, and because the
@@ -97,6 +99,29 @@ const MIN_TRAVEL_BAND = 24;
 /** Minimum scroll delta before a direction change counts, to ignore jitter. */
 const DIRECTION_DELTA = 4;
 
+/**
+ * Cumulative UPWARD distance required before the header comes back, in px.
+ *
+ * A single wheel notch is ~100-120px in Chrome, so one notch used to be enough and
+ * the header reappeared on the smallest correction. 240px is deliberately about two
+ * notches: the reveal now needs a clear intent to go back up, not a nudge.
+ *
+ * It has to be an ACCUMULATOR rather than a bigger DIRECTION_DELTA. A per-event
+ * threshold would break trackpads, which emit a stream of small deltas — a long
+ * two-finger swipe would never produce one event over 240px and the header could
+ * never come back at all. Summing consecutive upward movement treats a fast wheel
+ * flick and a slow trackpad drag the same.
+ */
+const REVEAL_AFTER = 240;
+
+/**
+ * Delay before the reveal starts moving. Applied as a CSS transition-delay on the
+ * reveal only (never on the hide, which must feel immediate), so a brief scroll-up
+ * mid-gesture does not flash the header: if the direction flips back down inside
+ * the delay, the target changes before the element has moved at all.
+ */
+const REVEAL_DELAY_MS = 1000;
+
 export default function StoreNavbar() {
     const { t } = useTranslation();
     const { toggleLanguage } = useLanguage();
@@ -127,6 +152,9 @@ export default function StoreNavbar() {
         let ticking = false;
         let revealed = true;
         let offset = 0;
+        // Running total of consecutive upward movement, reset the moment the user
+        // scrolls down again so slow jitter can never creep up to the threshold.
+        let upward = 0;
         // Cached, not read per frame: reading offsetHeight inside the scroll
         // handler would force a layout flush on every tick. The height is constant
         // now, so it only needs re-measuring when the breakpoint changes.
@@ -142,8 +170,12 @@ export default function StoreNavbar() {
 
             if (y > lastY + DIRECTION_DELTA) {
                 revealed = false; // scrolling down → let it go
+                upward = 0;
             } else if (y < lastY - DIRECTION_DELTA) {
-                revealed = true; // scrolling up → bring it back
+                // Reveal is earned, not immediate: it takes REVEAL_AFTER px of
+                // sustained upward scrolling, roughly two wheel notches.
+                upward += lastY - y;
+                if (upward >= REVEAL_AFTER) revealed = true;
             }
 
             // Capped at the band: past its own height the header is fully gone, and
@@ -160,9 +192,13 @@ export default function StoreNavbar() {
             // the harder the header snapped in.
             const continuous = !revealed && Math.abs(offset - Math.min(lastY, band)) <= 1;
 
+            // The delay is on the REVEAL only. A hide has to feel immediate, and
+            // delaying it would leave the header sitting over content the user has
+            // already scrolled past.
+            const delay = revealed ? ` ${REVEAL_DELAY_MS}ms` : '';
             header.style.transition = continuous
                 ? 'box-shadow 300ms ease'
-                : 'transform 400ms ease-out, opacity 400ms ease-out, box-shadow 300ms ease';
+                : `transform 400ms ease-out${delay}, opacity 400ms ease-out${delay}, box-shadow 300ms ease`;
             header.style.transform = `translate3d(0, ${-next}px, 0)`;
             // Fades only on the discontinuous moves. During tracking it must stay
             // fully opaque or it would dissolve while scrolling, which reads as a
