@@ -206,6 +206,51 @@ html[dir='rtl'] .cta-shimmer {
 }
 
 /*
+ * Spotlight card — a soft glow that follows the cursor inside the card and fades in
+ * on hover. Add `spotlight-card` plus `data-spotlight` to each card and wire the
+ * container to `lib/spotlight.ts`; tune with `--spot-color` and `--spot-size`.
+ *
+ * Drawn on `::after` rather than an extra overlay div, so it costs no DOM per card.
+ * `border-radius: inherit` keeps it inside rounded corners, and `inset: 0` resolves
+ * against the padding box, so a 1px border stays crisp instead of being washed out.
+ *
+ * ⚠️ Gated behind `hover: hover`. On touch, `:hover` can stick after a tap, which
+ * would leave a glow burnt into whichever card was last touched — and the effect is
+ * meaningless without a pointer anyway.
+ *
+ * Also dropped under reduced motion: it is not motion in the vestibular sense, but
+ * a light that chases the cursor is exactly the kind of restless movement that
+ * setting asks to be spared.
+ */
+.spotlight-card {
+    position: relative;
+}
+.spotlight-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 400ms ease;
+    background: radial-gradient(
+        var(--spot-size, 220px) circle at var(--spot-x, 50%) var(--spot-y, 50%),
+        var(--spot-color, rgb(255 255 255 / 0.12)),
+        transparent 70%
+    );
+}
+@media (hover: hover) {
+    .spotlight-card:hover::after {
+        opacity: 1;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .spotlight-card::after {
+        display: none;
+    }
+}
+
+/*
  * Rotating gradient border — the whole outline is a conic gradient that turns, so
  * two highlights sweep round it like light on metal. Opt in with `gradient-border`
  * and set `--gb-fill` to the element's own fill colour.

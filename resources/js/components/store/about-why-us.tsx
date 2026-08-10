@@ -1,3 +1,4 @@
+import { onSpotlightLeave, onSpotlightMove } from '@/lib/spotlight';
 import { useTranslation } from 'react-i18next';
 
 interface Reason {
@@ -101,10 +102,17 @@ export default function AboutWhyUs() {
                 {/* 165/1303 of the container. One column below `sm`: four cards side
                     by side is unreadable on a phone, and unlike the values pills a
                     full-width card is a perfectly normal shape. */}
-                <ul className="mt-[clamp(1rem,3.33vw,3rem)] grid grid-cols-1 gap-x-[12.66%] gap-y-[clamp(1rem,2.36vw,2.125rem)] sm:grid-cols-2">
+                {/* One delegated pair of handlers covers all four cards — see
+                    lib/spotlight.ts for why this is a module rather than a hook. */}
+                <ul
+                    className="mt-[clamp(1rem,3.33vw,3rem)] grid grid-cols-1 gap-x-[12.66%] gap-y-[clamp(1rem,2.36vw,2.125rem)] sm:grid-cols-2"
+                    onMouseMove={onSpotlightMove}
+                    onMouseLeave={onSpotlightLeave}
+                >
                     {reasons.map((reason) => (
                         <li
                             key={reason.key}
+                            data-spotlight
                             /* Border and fill are both measured, not guessed. The
                                border resolves to roughly white at 22-25% over the
                                plate. The fill is almost nothing: comparing the
@@ -113,8 +121,13 @@ export default function AboutWhyUs() {
                                each card's top edge to ~4% at its bottom — hence a
                                gradient rather than a flat tint. No backdrop-blur:
                                the plate is a smooth gradient, so blurring it would
-                               produce no visible difference for real cost. */
-                            className="flex flex-col items-center rounded-[clamp(0.75rem,1.67vw,1.5rem)] border border-white/25 bg-gradient-to-b from-white/0 to-white/[0.04] pt-[clamp(1.1rem,4.17vw,3.75rem)] pb-[clamp(0.9rem,3.13vw,2.8rem)] text-center"
+                               produce no visible difference for real cost.
+
+                               The spotlight is tinted with the brand cream rather
+                               than plain white so the glow reads warm against the
+                               teal plate, and the border brightens alongside it so
+                               hover registers even where the glow has not reached. */
+                            className="spotlight-card flex flex-col items-center rounded-[clamp(0.75rem,1.67vw,1.5rem)] border border-white/25 bg-gradient-to-b from-white/0 to-white/[0.04] pt-[clamp(1.1rem,4.17vw,3.75rem)] pb-[clamp(0.9rem,3.13vw,2.8rem)] text-center transition-colors duration-500 [--spot-color:rgb(245_241_234_/_0.13)] [--spot-size:260px] hover:border-white/45"
                         >
                             {/* Title and body are the SAME size — that is what the
                                 composite measures, with weight and colour carrying
