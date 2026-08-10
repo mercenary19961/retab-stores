@@ -166,6 +166,17 @@ const ar = {
             line1: 'مـن قلـب النخلة',
             line2: 'إلى مائدتكم',
         },
+        journey: {
+            heading: 'كيف بدأت رحلتنا',
+            // One entry per card, in READING order (البداية first). The component
+            // maps over this, so a fifth stage is a copy change, not a code change.
+            steps: [
+                { key: 'start', title: 'البدايـة', lead: 'اختيار', body: 'أفضل المـزارع السعوديـة' },
+                { key: 'develop', title: 'التطويـر', lead: 'ابتكار', body: 'منتجـات متنوعة تناسـب جميع المناسبات' },
+                { key: 'quality', title: 'الجودة', lead: 'اعتمـاد', body: 'أعـلى معاييـر التعبئة والحفـظ لمنتجـاتنا' },
+                { key: 'today', title: 'اليـوم', lead: 'خدمــة', body: 'آلاف العمـلاء داخل المملكـة وخارجهـا' },
+            ],
+        },
         whoWeAre: {
             badge: 'مــن نحن',
             // An array: the card renders one <p> per entry, so copy can grow or

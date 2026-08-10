@@ -161,6 +161,17 @@ const en = {
             line1: 'From the heart of the palm',
             line2: 'to your table',
         },
+        journey: {
+            heading: 'How our journey began',
+            // One entry per card, in READING order. The component maps over this,
+            // so a fifth stage is a copy change, not a code change.
+            steps: [
+                { key: 'start', title: 'The beginning', lead: 'Selection', body: 'The finest farms in Saudi Arabia' },
+                { key: 'develop', title: 'Development', lead: 'Innovation', body: 'A varied range to suit every occasion' },
+                { key: 'quality', title: 'Quality', lead: 'Standards', body: 'The highest packing and preservation standards for our products' },
+                { key: 'today', title: 'Today', lead: 'Service', body: 'Thousands of customers inside the Kingdom and beyond' },
+            ],
+        },
         whoWeAre: {
             badge: 'Who we are',
             // An array: the card renders one <p> per entry, so copy can grow or

@@ -1,4 +1,5 @@
 import AboutHero from '@/components/store/about-hero';
+import AboutJourney from '@/components/store/about-journey';
 import StoreLayout from '@/layouts/store-layout';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -26,6 +27,7 @@ export default function About() {
             </Head>
 
             <AboutHero />
+            <AboutJourney />
         </StoreLayout>
     );
 }
