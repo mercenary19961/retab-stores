@@ -181,6 +181,20 @@ const en = {
                 'Through our products we set out to deliver a complete experience. It begins with selecting the finest fruit, continues through refined packaging, and ends with delivery to our customers in the best possible condition.',
             ],
         },
+        values: {
+            // No kashida here — elongation is an Arabic-script device.
+            heading: 'Our Values',
+            // ⚠️ Keep these SHORT. The pill is a fixed width and its label does not
+            // wrap, and the descriptions are meant to read as one line each, so a
+            // full sentence here breaks the row's rhythm. Match the Arabic's
+            // brevity rather than translating it literally.
+            items: [
+                { key: 'quality', label: 'Quality', body: 'Nothing but the best' },
+                { key: 'authenticity', label: 'Authenticity', body: 'True to our identity' },
+                { key: 'innovation', label: 'Innovation', body: 'Always improving' },
+                { key: 'customer', label: 'Customer Care', body: 'Our priority, always' },
+            ],
+        },
     },
 
     branches: {

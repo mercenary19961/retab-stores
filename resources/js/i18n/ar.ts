@@ -186,6 +186,20 @@ const ar = {
                 'ومن خلال منتجاتنا، نسعى لتقديم تجربة متكاملة تبدأ من اختيار أجود الثمار، مرورًا بالتعبئة الراقية، وحتى وصولها إلى عملائنا بأفضل صورة',
             ],
         },
+        values: {
+            // Kashida runs are hand-tuned to the Figma's outlined type: measured
+            // against the composite, this renders 373px of ink where the design
+            // has 376px, at the design's exact 132px ink height.
+            heading: 'قيــــــمنا',
+            // One entry per value, in READING order — RTL puts الجودة top-right,
+            // so the grid fills right→left then wraps, matching the composite.
+            items: [
+                { key: 'quality', label: 'الجـــودة', body: 'لا نقبل إلا بالأفضل' },
+                { key: 'authenticity', label: 'الأصــالة', body: 'نحافظ على هويتنا' },
+                { key: 'innovation', label: 'الابتكـــار', body: 'نطوّر منتجاتنا باسـتمـرار' },
+                { key: 'customer', label: 'رضا العميل', body: 'أولويتنا في كل خطوة' },
+            ],
+        },
     },
 
     branches: {
