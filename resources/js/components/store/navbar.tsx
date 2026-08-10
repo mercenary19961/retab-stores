@@ -258,9 +258,12 @@ export default function StoreNavbar() {
             </div>
 
             <div className="relative mx-auto max-w-[1600px] px-6 lg:px-12">
-                {/* Row 1 — utility icons · logo · language. Padding is FIXED on
-                    purpose; see the constants note about in-flow height changes. */}
-                <div className="grid grid-cols-3 items-center py-3">
+                {/* Row 1 — utility icons · logo · language. The padding is a FIXED
+                    value on purpose, never a scroll-dependent one; see the constants
+                    note about in-flow height changes. Trimming the static number is
+                    fine, and it shortens the travel band too (the band IS the
+                    header's measured height), so the header also hides sooner. */}
+                <div className="grid grid-cols-3 items-center py-2.5">
                     {/* Start: utility icons (desktop) / hamburger (mobile) */}
                     <div className="flex items-center gap-4 justify-self-start">
                         <button
@@ -302,7 +305,7 @@ export default function StoreNavbar() {
 
                     {/* Center: logo */}
                     <Link href="/" className="justify-self-center" aria-label={t('brand')}>
-                        <img src="/images/brand/logo.png" alt={t('brand')} className="h-14 w-auto" />
+                        <img src="/images/brand/logo.png" alt={t('brand')} className="h-12 w-auto" />
                     </Link>
 
                     {/* End: language toggle (desktop) / cart (mobile) */}
@@ -331,7 +334,7 @@ export default function StoreNavbar() {
                 </div>
 
                 {/* Row 2 — primary nav links (desktop). Padding fixed, as above. */}
-                <nav className="border-brand-gold/10 hidden items-center justify-between border-t py-2 md:flex">
+                <nav className="border-brand-gold/10 hidden items-center justify-between border-t py-1.5 md:flex">
                     <Link href="/" className={`${linkBase} ${isActive('/') ? linkActive : linkIdle}`}>
                         {t('nav.home')}
                     </Link>

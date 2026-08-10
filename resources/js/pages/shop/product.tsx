@@ -282,7 +282,12 @@ export default function ShopProduct({
             </div>
 
             {/* Reviews */}
-            <section id="reviews" className="mt-14 scroll-mt-24">
+            {/* The scroll offset has to clear the sticky header, because the
+                post-delivery WhatsApp nudge (SendReviewReminder) deep-links straight
+                to #reviews. Two values because the header is two rows on desktop
+                (~114px) and one on mobile (~57px); a single number either hides the
+                heading on desktop or leaves a large gap on mobile. */}
+            <section id="reviews" className="mt-14 scroll-mt-24 md:scroll-mt-32">
                 <h2 className="font-heading text-brand-teal mb-4 text-xl font-bold">{t('product.reviewsHeading')}</h2>
 
                 {reviewReward.available && (
