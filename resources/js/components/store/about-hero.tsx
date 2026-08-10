@@ -113,7 +113,24 @@ export default function AboutHero() {
                             follows the reading direction and moves to the left in
                             English. */}
                         <div className="ps-[0.6vw] text-start">
-                            <span className="bg-brand-teal font-heading inline-block rounded-full px-[clamp(1.1rem,3.6vw,3.4rem)] py-[clamp(0.3rem,1.2vw,1rem)] text-[clamp(1.05rem,3.75vw,3.4rem)] leading-tight font-black text-white">
+                            {/* ⚠️ The vertical padding is ASYMMETRIC on purpose, and
+                                the amount differs per direction.
+                                Symmetric padding centres the font's EM BOX, not the
+                                ink, and Thmanyah Sans reserves a lot of ascent for
+                                stacked diacritics that these labels never use — so
+                                the glyphs land low in the pill. Measured with an
+                                alpha-weighted centroid of the rendered label (the
+                                optical centre, which the font-metric bounding box
+                                understates by more than half): the Arabic sat
+                                10.8px low at a 54px size, i.e. 0.200em, while the
+                                English sat only 3.5px = 0.065em low because "Who we
+                                are" has ascenders pulling its mass up. One shared
+                                correction would over-shoot English by ~7px, hence
+                                the `ltr:` override.
+                                `--nudge` is subtracted from the top and added to the
+                                bottom, so the pill's height is unchanged and only
+                                the text moves. */}
+                            <span className="bg-brand-teal font-heading inline-block rounded-full px-[clamp(1.1rem,3.6vw,3.4rem)] pt-[calc(var(--pad)-var(--nudge))] pb-[calc(var(--pad)+var(--nudge))] text-[clamp(1.05rem,3.75vw,3.4rem)] leading-tight font-black text-white [--nudge:0.2em] [--pad:clamp(0.3rem,1.2vw,1rem)] ltr:[--nudge:0.065em]">
                                 {t('about.whoWeAre.badge')}
                             </span>
                         </div>

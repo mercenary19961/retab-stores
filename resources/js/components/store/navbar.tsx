@@ -106,16 +106,16 @@ const DIRECTION_DELTA = 4;
  * Cumulative UPWARD distance required before the header comes back, in px.
  *
  * A single wheel notch is ~100-120px in Chrome, so one notch used to be enough and
- * the header reappeared on the smallest correction. 240px is deliberately about two
- * notches: the reveal now needs a clear intent to go back up, not a nudge.
+ * the header reappeared on the smallest correction. 180px is deliberately about one
+ * and a half notches: enough to require intent to go back up, not a nudge.
  *
  * It has to be an ACCUMULATOR rather than a bigger DIRECTION_DELTA. A per-event
  * threshold would break trackpads, which emit a stream of small deltas — a long
- * two-finger swipe would never produce one event over 240px and the header could
- * never come back at all. Summing consecutive upward movement treats a fast wheel
- * flick and a slow trackpad drag the same.
+ * two-finger swipe would never produce one event past the threshold and the header
+ * could never come back at all. Summing consecutive upward movement treats a fast
+ * wheel flick and a slow trackpad drag the same.
  */
-const REVEAL_AFTER = 240;
+const REVEAL_AFTER = 180;
 
 /**
  * Delay before the reveal starts moving. Applied as a CSS transition-delay on the
@@ -123,7 +123,7 @@ const REVEAL_AFTER = 240;
  * mid-gesture does not flash the header: if the direction flips back down inside
  * the delay, the target changes before the element has moved at all.
  */
-const REVEAL_DELAY_MS = 1000;
+const REVEAL_DELAY_MS = 750;
 
 export default function StoreNavbar() {
     const { t } = useTranslation();
