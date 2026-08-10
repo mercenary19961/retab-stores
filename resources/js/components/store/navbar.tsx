@@ -87,6 +87,11 @@ function Caret() {
  *   2. Skipping the transition for the whole tracking phase. That made every hide
  *      from the top a rigid 1:1 follow with no easing, which reads as the header
  *      vanishing instantly while animating properly further down the page.
+ *   3. Comparing against the last TARGET rather than the element's rendered
+ *      position. Correct as a rule, applied to the wrong quantity: during the
+ *      reveal's 750ms delay the target and the render disagree by the full band, so
+ *      a fast scrollbar drag from far down the page left the header parked
+ *      off-screen while the scroll position fell inside the band. See `rendered`.
  *
  * The actual rule: animating is safe whenever the header moves FURTHER OUT of view,
  * because the destination is clamped to `min(y, band)` and y only grows while
@@ -186,6 +191,23 @@ export default function StoreNavbar() {
             // state without a visible step.
             const next = revealed ? 0 : Math.min(y, band);
 
+            // 🔴 The element's ACTUAL translate, which is NOT the same as the last
+            // target we asked for — and conflating the two is what exposed the strip
+            // on a fast scrollbar drag. A drag up from far down the page fires its
+            // first event outside the band, which flips `revealed`, sets the target to
+            // 0 and starts the reveal's 750ms DELAY. The element has not moved at all
+            // yet, but `offset` already said 0, so the guard below could never fire
+            // again — and the header sat parked at -band while the scroll position
+            // fell inside the band. Measured before the fix: 54px of page background
+            // at y=60, 94px at y=20, for the remainder of the delay.
+            //
+            // ⚠️ Reading this forces a layout flush, so it is read ONLY where it can
+            // matter. Once y >= band the rendered value is capped at band <= y, so no
+            // amount of transition lag can violate the invariant below and the cached
+            // target is a fine stand-in. That keeps the read inside the first ~114px
+            // of the page.
+            const rendered = y < band ? -header.getBoundingClientRect().top : offset;
+
             // 🔑 The ONE condition that has to hold, from which everything else
             // follows: the header may never be translated further up than the page
             // has scrolled. Its `sticky` box sits at page 0..H, so at scroll y the
@@ -201,7 +223,13 @@ export default function StoreNavbar() {
             // already above the scroll position (the page scrolled up inside the
             // band). There the eased value would sit above y for the duration of the
             // animation and expose the strip, so that move snaps instead.
-            const instant = next < offset && offset > y;
+            //
+            // Against the RENDERED value this is now provably complete rather than
+            // merely careful: `next` is always <= y (it is `0` or `min(y, band)`), so
+            // whenever the invariant is violated — rendered > y — it follows that
+            // next <= y < rendered, which is exactly this condition. Any violation is
+            // therefore corrected in the same frame it is detected.
+            const instant = next < rendered && rendered > y;
 
             // The delay is on the REVEAL only. A hide has to feel immediate, and
             // delaying it would leave the header sitting over content the user has
