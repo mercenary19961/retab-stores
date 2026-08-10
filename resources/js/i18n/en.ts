@@ -195,6 +195,17 @@ const en = {
                 { key: 'customer', label: 'Customer Care', body: 'Our priority, always' },
             ],
         },
+        whyUs: {
+            heading: 'Why Retab',
+            // Two lines per card, authored rather than wrapped — keep each one
+            // short so the pair stays balanced at the design's type size.
+            items: [
+                { key: 'packaging', title: 'Elegant Packaging', lines: ['Refined designs', 'made for gifting'] },
+                { key: 'dates', title: 'The Finest Saudi Dates', lines: ['Chosen with care from', 'the very best farms'] },
+                { key: 'delivery', title: 'Fast Delivery', lines: ['Wide coverage', 'across the Kingdom'] },
+                { key: 'quality', title: 'Guaranteed Quality', lines: ['Exacting standards at', 'every stage of production'] },
+            ],
+        },
     },
 
     branches: {

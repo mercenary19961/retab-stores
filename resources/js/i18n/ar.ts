@@ -200,6 +200,21 @@ const ar = {
                 { key: 'customer', label: 'رضا العميل', body: 'أولويتنا في كل خطوة' },
             ],
         },
+        whyUs: {
+            // Kashida tuned to the composite: 563px of ink against the design's
+            // 566, at its exact 116px ink height.
+            heading: 'ليــش رطــــاب',
+            // READING order — RTL fills the grid from the top RIGHT, so this
+            // sequence reproduces the composite's positions exactly. `lines` is an
+            // array because the two-line break is authored in the design, not a
+            // consequence of wrapping.
+            items: [
+                { key: 'packaging', title: 'تغليـف فاخـر', lines: ['تصاميـم أنيقة', 'تناسب الإهـداء'] },
+                { key: 'dates', title: 'أجود التمور السعودية', lines: ['مختارة بعنايـة مـن', 'أفضـل الـمـزارع'] },
+                { key: 'delivery', title: 'توصيـل سريــع', lines: ['تغطيــة واسعــة', 'داخـل المملكـة'] },
+                { key: 'quality', title: 'جودة مـضمـونة', lines: ['معايير دقيقـة في', 'جميع مراحل الإنتاج'] },
+            ],
+        },
     },
 
     branches: {
