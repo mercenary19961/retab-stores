@@ -1,4 +1,4 @@
-import BorderLight from '@/components/store/border-light';
+import { type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Value {
@@ -103,23 +103,33 @@ export default function AboutValues() {
                                 `inset-0` overlay inside the pill would instead be
                                 positioned against its PADDING box and sit inside
                                 the border. */}
-                            {/* Teal, NOT the component's cream default: these pills
-                                are white, so a pale light is invisible and reads as
-                                the border breaking up rather than lighting up. Teal
-                                is the brand's dark tone and already the label
-                                colour, so the travelling point reads as a bead
-                                running the gold outline. Only the core is set — the
-                                halo follows it. */}
-                            <div className="relative w-[42%] [--light-core:var(--color-brand-teal)] sm:w-[51.6%]">
-                                <p className="border-brand-gold text-brand-teal font-heading w-full rounded-full border-[clamp(2px,0.28vw,4px)] bg-white pt-[calc(var(--pad)-var(--nudge))] pb-[calc(var(--pad)+var(--nudge))] text-center text-[clamp(1.35rem,3.48vw,3.13rem)] leading-[1.2] font-black whitespace-nowrap shadow-[inset_3px_4px_14px_rgba(0,0,0,0.05)] [--nudge:0.11em] [--pad:0.349em] ltr:text-[clamp(1.1rem,2.7vw,2.45rem)] ltr:[--nudge:0.02em]">
+                            {/* The gold outline is a rotating conic gradient rather
+                                than a flat border, so two highlights sweep round it
+                                like light on metal (see `.gradient-border`).
+
+                                The three gradient stops stay in the gold family and
+                                include a DARK one, which is what keeps it visible on
+                                a white pill — the earlier attempt at a single pale
+                                travelling light failed precisely because nothing can
+                                be brighter than a white background, so it read as
+                                the border washing out. `--gb-mid` is the brand gold,
+                                i.e. the design's resting border colour, so the pill
+                                still looks like the Figma between highlights.
+
+                                `--gb-fill` must match the pill's own fill: the
+                                technique paints that fill as a background layer
+                                clipped to the padding box, and `bg-white` stays as a
+                                fallback underneath. `--gb-index` offsets each pill's
+                                phase so the group shimmers as a wave rather than in
+                                lockstep — from the array order, which is reading
+                                order, so it needs no direction-specific code. */}
+                            <div className="relative w-[42%] sm:w-[51.6%]">
+                                <p
+                                    className="gradient-border text-brand-teal font-heading w-full rounded-full bg-white pt-[calc(var(--pad)-var(--nudge))] pb-[calc(var(--pad)+var(--nudge))] text-center text-[clamp(1.35rem,3.48vw,3.13rem)] leading-[1.2] font-black whitespace-nowrap shadow-[inset_3px_4px_14px_rgba(0,0,0,0.05)] [--gb-bright:#e3c98c] [--gb-deep:#6f5a30] [--gb-mid:var(--color-brand-gold)] [--gb-width:clamp(2px,0.28vw,4px)] [--nudge:0.11em] [--pad:0.349em] ltr:text-[clamp(1.1rem,2.7vw,2.45rem)] ltr:[--nudge:0.02em]"
+                                    style={{ '--gb-index': i } as CSSProperties}
+                                >
                                     {value.label}
                                 </p>
-
-                                {/* Index drives the stagger, so the relay follows
-                                    the array order — which is reading order, hence
-                                    top-right first in Arabic and top-left in
-                                    English, with no direction-specific code. */}
-                                <BorderLight index={i} />
                             </div>
 
                             {/* ⚠️ `text-center`, and the pill above is centred too,
