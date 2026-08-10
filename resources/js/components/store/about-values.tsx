@@ -1,3 +1,4 @@
+import BorderLight from '@/components/store/border-light';
 import { useTranslation } from 'react-i18next';
 
 interface Value {
@@ -62,7 +63,7 @@ export default function AboutValues() {
                     Collapses to one column below `sm`, where two 26%-wide pills
                     would be far too narrow to read. */}
                 <ul className="mt-[clamp(1rem,3.9vw,3.5rem)] grid grid-cols-1 gap-x-[6.2%] gap-y-[clamp(1.5rem,6.6vw,6rem)] sm:grid-cols-2">
-                    {values.map((value) => (
+                    {values.map((value, i) => (
                         <li key={value.key} className="flex flex-col items-center">
                             {/* 376/620 of the column on desktop, reproducing the
                                 design's fixed-width pill: all four are the same
@@ -94,9 +95,32 @@ export default function AboutValues() {
                                 given a smaller size because Latin words are much
                                 longer than these Arabic labels and the widest one
                                 has to fit the same pill. */}
-                            <p className="border-brand-gold text-brand-teal font-heading w-[42%] rounded-full border-[clamp(2px,0.28vw,4px)] bg-white pt-[calc(var(--pad)-var(--nudge))] pb-[calc(var(--pad)+var(--nudge))] text-center text-[clamp(1.35rem,3.48vw,3.13rem)] leading-[1.2] font-black whitespace-nowrap shadow-[inset_3px_4px_14px_rgba(0,0,0,0.05)] [--nudge:0.11em] [--pad:0.349em] sm:w-[51.6%] ltr:text-[clamp(1.1rem,2.7vw,2.45rem)] ltr:[--nudge:0.02em]">
-                                {value.label}
-                            </p>
+                            {/* The width moved from the pill onto this wrapper so
+                                the overlay can be positioned against it. With no
+                                padding or border of its own, its content box is
+                                exactly the pill's border box, which is what glues
+                                the travelling light to the gold outline — an
+                                `inset-0` overlay inside the pill would instead be
+                                positioned against its PADDING box and sit inside
+                                the border. */}
+                            {/* Teal, NOT the component's cream default: these pills
+                                are white, so a pale light is invisible and reads as
+                                the border breaking up rather than lighting up. Teal
+                                is the brand's dark tone and already the label
+                                colour, so the travelling point reads as a bead
+                                running the gold outline. Only the core is set — the
+                                halo follows it. */}
+                            <div className="relative w-[42%] [--light-core:var(--color-brand-teal)] sm:w-[51.6%]">
+                                <p className="border-brand-gold text-brand-teal font-heading w-full rounded-full border-[clamp(2px,0.28vw,4px)] bg-white pt-[calc(var(--pad)-var(--nudge))] pb-[calc(var(--pad)+var(--nudge))] text-center text-[clamp(1.35rem,3.48vw,3.13rem)] leading-[1.2] font-black whitespace-nowrap shadow-[inset_3px_4px_14px_rgba(0,0,0,0.05)] [--nudge:0.11em] [--pad:0.349em] ltr:text-[clamp(1.1rem,2.7vw,2.45rem)] ltr:[--nudge:0.02em]">
+                                    {value.label}
+                                </p>
+
+                                {/* Index drives the stagger, so the relay follows
+                                    the array order — which is reading order, hence
+                                    top-right first in Arabic and top-left in
+                                    English, with no direction-specific code. */}
+                                <BorderLight index={i} />
+                            </div>
 
                             {/* ⚠️ `text-center`, and the pill above is centred too,
                                 because these are physically centred in the design

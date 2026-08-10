@@ -206,6 +206,74 @@ html[dir='rtl'] .cta-shimmer {
 }
 
 /*
+ * Border light — a soft cream arc that runs an element's outline once, then hands
+ * off to the next one in the group (see components/store/border-light.tsx).
+ *
+ * 🔑 The motion is `stroke-dashoffset` on an SVG path, NOT a rotating
+ * conic-gradient. A conic gradient sweeps by ANGLE FROM THE CENTRE, so on the
+ * values pills (about 3.1:1) the ends sit ~160px from the centre while the long
+ * edges sit ~51px — the light would cover roughly 3x more pixels per degree at the
+ * caps, whipping around the rounded ends and crawling along the top and bottom.
+ * A dash offset moves by ARC LENGTH, so the speed is genuinely constant. It looks
+ * identical to the conic trick on a square or a circle and quite broken on a pill.
+ *
+ * One 8s cycle covers the whole group: each element travels for its own 2s quarter
+ * and is transparent for the rest, staggered by `--light-index`. That reads as a
+ * single light moving through the group without having to animate anything across
+ * the empty space between cards, which looks odd.
+ *
+ * `stroke-dashoffset` and `stroke-dasharray` are INHERITED SVG properties, so
+ * animating them on the <svg> reaches both the halo and core paths; `opacity` is
+ * not inherited but applies to the whole element as a group, which is exactly the
+ * gate we want.
+ */
+@keyframes border-light-lap {
+    0% {
+        stroke-dashoffset: 0;
+        opacity: 0;
+    }
+    2% {
+        opacity: 1;
+    }
+    23% {
+        opacity: 1;
+    }
+    /* 25% of 8s = the 2s lap. Offset then holds so the remaining 6s is idle. */
+    25% {
+        stroke-dashoffset: -100;
+        opacity: 0;
+    }
+    100% {
+        stroke-dashoffset: -100;
+        opacity: 0;
+    }
+}
+
+.border-light {
+    /* pathLength="100" on each path makes the dash units percentages of the
+       perimeter, so this is size-independent — no measuring, no ResizeObserver. */
+    stroke-dasharray: 7 93;
+    animation: border-light-lap 8s linear infinite;
+    animation-delay: calc(var(--light-index, 0) * 2s);
+    /* ⚠️ `backwards` is required, not tidiness. During its delay an element shows
+       its own un-animated style, which here is opacity 1 — so on first paint all
+       four pills displayed a STATIONARY light parked at the start of the border,
+       which reads as a rendering fault. `backwards` applies the 0% keyframe
+       (opacity 0) through the delay, so each light simply does not exist until its
+       turn. Verified by sampling: 1 light visible at every point in the cycle. */
+    animation-fill-mode: backwards;
+}
+
+/* A permanently looping decoration has to be switchable off. Hidden rather than
+   parked: a light frozen somewhere on the border reads as a rendering bug. */
+@media (prefers-reduced-motion: reduce) {
+    .border-light {
+        animation: none;
+        opacity: 0;
+    }
+}
+
+/*
  * Admin field highlight — a fading amber ring pulsed on a form field when the
  * admin arrives from a change-log "Go to item" link (see use-highlight-fields).
  */
