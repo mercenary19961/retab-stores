@@ -1462,6 +1462,10 @@ const en = {
         commercialReg: 'Commercial Registration',
         vatNumber: 'VAT Number',
         backToTop: 'Back to top',
+        privacyPolicy: 'Privacy Policy',
+        // Separated by a middot, not a full stop: the EN company name already ends in
+        // "Co." and a sentence period after it renders as "Co.. All rights reserved."
+        copyright: '© {{year}} {{company}} · All rights reserved',
         links: {
             returnPolicy: 'Return & Exchange Policy',
             contact: 'Contact Us',

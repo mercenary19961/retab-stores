@@ -1,6 +1,6 @@
 import { OPEN_CONSENT_EVENT } from '@/components/store/cookie-consent';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Cookie } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -51,10 +51,13 @@ export default function StoreFooter() {
     return (
         <footer className="bg-gradient-to-b from-[#f6e8d4] via-[#f2e3cd] to-[#efdcc4]">
             <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 px-6 py-14 md:flex-row md:items-start md:justify-between md:gap-8">
-                {/* Brand logo — rightmost in RTL, leftmost in LTR */}
-                <div className="shrink-0">
+                {/* Brand logo — rightmost in RTL, leftmost in LTR. Links home, same
+                    as the navbar logo: a footer logo is somewhere people expect to be
+                    able to click, and it is the only way back to the homepage from
+                    down here (the quick links cover everything except home). */}
+                <Link href="/" className="shrink-0 transition-opacity hover:opacity-75" aria-label={t('brand')}>
                     <img src="/images/footer/logo.png" alt={t('footer.companyName')} className="h-auto w-40 md:w-48" />
-                </div>
+                </Link>
 
                 {/* Company / contact block (centre) */}
                 <div className="flex flex-col items-center gap-6 text-center">
@@ -115,9 +118,6 @@ export default function StoreFooter() {
                             </a>
                         ))}
                     </div>
-                    <span dir="ltr" className="text-brand-gold text-sm font-bold tracking-wide">
-                        {HANDLE}
-                    </span>
                 </div>
 
                 {/* Quick links (leftmost in RTL) + back-to-top */}
@@ -131,16 +131,6 @@ export default function StoreFooter() {
                                 </Link>
                             </li>
                         ))}
-                        <li>
-                            {/* Lets visitors change their cookie choice at any time (re-opens the banner). */}
-                            <button
-                                type="button"
-                                onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
-                                className="font-heading text-brand-gold hover:text-brand-teal transition-colors"
-                            >
-                                {t('consent.settings')}
-                            </button>
-                        </li>
                     </ul>
                     <button
                         type="button"
@@ -150,6 +140,53 @@ export default function StoreFooter() {
                     >
                         <ArrowUp className="h-6 w-6" />
                     </button>
+                </div>
+            </div>
+
+            {/* Legal bar, modelled on Cloudflare's: one thin rule-separated row of
+                small, low-contrast items that are not part of the site's navigation —
+                copyright, the legal page, the cookie control, and the social handle.
+                The handle lived under the social icons as bold gold text, which read
+                as a heading for the block below it rather than as a byline; at bar
+                scale it is clearly an aside.
+
+                The cookie control MOVED here from the quick links rather than being
+                duplicated. It is not a page, and a footer that offers the same button
+                twice makes the reader look for the difference. */}
+            <div className="border-brand-gold/25 border-t">
+                <div className="text-brand-teal/70 mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-6 py-5 text-xs sm:flex-row sm:justify-between">
+                    {/* Resolved on the client so it can never go stale, which a
+                        hardcoded or build-time year would. ⚠️ The SSR sidecar renders
+                        in the container's timezone and the visitor's browser in theirs,
+                        so for a few hours around New Year the two can disagree by one
+                        year and React will patch the text on hydration. Cosmetic, and
+                        the alternative (shipping the server's year as a prop) would
+                        show a KSA visitor the wrong year for those same hours. */}
+                    <p>{t('footer.copyright', { year: new Date().getFullYear(), company: t('footer.companyName') })}</p>
+
+                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+                        <Link href="/pages/privacy-policy" className="hover:text-brand-teal transition-colors">
+                            {t('footer.privacyPolicy')}
+                        </Link>
+
+                        {/* Re-opens the consent banner so a visitor can change their
+                            choice at any time. Deliberately a button, not a link: it
+                            navigates nowhere. */}
+                        <button
+                            type="button"
+                            onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
+                            className="hover:text-brand-teal flex items-center gap-1.5 transition-colors"
+                        >
+                            <Cookie className="h-4 w-4" aria-hidden />
+                            {t('consent.settings')}
+                        </button>
+
+                        {/* The handle is the same on every network, so it points at
+                            nothing in particular and stays plain text. */}
+                        <span dir="ltr" className="tracking-wide">
+                            {HANDLE}
+                        </span>
+                    </div>
                 </div>
             </div>
         </footer>

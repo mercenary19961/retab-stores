@@ -1449,6 +1449,8 @@ const ar = {
         commercialReg: 'السجل التجاري',
         vatNumber: 'الرقم الضريبي',
         backToTop: 'العودة للأعلى',
+        privacyPolicy: 'سياسة الخصوصية',
+        copyright: '© {{year}} {{company}} · جميع الحقوق محفوظة',
         links: {
             returnPolicy: 'سياسة الاستبدال و الاسترجاع',
             contact: 'تواصل معنا',
