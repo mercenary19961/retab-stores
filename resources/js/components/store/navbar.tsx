@@ -78,18 +78,21 @@ function Caret() {
  * React state: a per-pixel value in state would re-render the whole header on every
  * scroll frame. React still owns `scrolled` (the shadow), which flips rarely.
  *
- * ⚠️ The transition is skipped ONLY while tracking, because a transition there
- * makes the header lag the page and feel rubbery. Every other move — the reveal, and
- * a re-hide from a revealed state mid-band — is a jump and must be animated or it
- * visibly snaps.
+ * ⚠️ Two earlier attempts at deciding when to animate were both wrong, so the rule
+ * below is derived from the constraint rather than guessed at:
  *
- * 🔴 The continuity test compares the current offset against where tracking WOULD
- * have put it last frame, NOT against the scroll delta. The delta version was the
- * first attempt and is subtly wrong: a fast flick has a large delta, so a reveal
- * (offset 130 → 0) measures as "smaller than the scroll" and is treated as tracking,
- * skipping the transition. The symptom is that the header appears instantly, and
- * gets worse the faster you scroll up — a slow scroll animates fine, which is what
- * makes it easy to miss in testing.
+ *   1. Comparing the offset delta against the SCROLL delta. A fast flick has a big
+ *      delta, so a reveal measured as "smaller than the scroll", was treated as
+ *      tracking, and snapped in with no animation — worse the faster you scrolled.
+ *   2. Skipping the transition for the whole tracking phase. That made every hide
+ *      from the top a rigid 1:1 follow with no easing, which reads as the header
+ *      vanishing instantly while animating properly further down the page.
+ *
+ * The actual rule: animating is safe whenever the header moves FURTHER OUT of view,
+ * because the destination is clamped to `min(y, band)` and y only grows while
+ * scrolling down, so the eased value trails the target which trails the scroll and
+ * `T <= y` holds throughout. It is unsafe only when the header must come back DOWN
+ * while already above the scroll position, which is the one case that snaps.
  */
 const SHADOW_AT = 8;
 
@@ -183,27 +186,33 @@ export default function StoreNavbar() {
             // state without a visible step.
             const next = revealed ? 0 : Math.min(y, band);
 
-            // Instant ONLY while following the page down 1:1 from wherever the
-            // previous frame already left us. The test compares against where
-            // tracking would have put us last frame — deliberately NOT against the
-            // scroll delta, which was the first attempt and is wrong: a fast flick
-            // has a large delta, so a reveal (offset 130 → 0) reads as "smaller
-            // than the scroll" and gets no transition. The faster you scrolled up,
-            // the harder the header snapped in.
-            const continuous = !revealed && Math.abs(offset - Math.min(lastY, band)) <= 1;
+            // 🔑 The ONE condition that has to hold, from which everything else
+            // follows: the header may never be translated further up than the page
+            // has scrolled. Its `sticky` box sits at page 0..H, so at scroll y the
+            // still-visible part of that box is viewport 0..(H-y); a translate of T
+            // covers 0..(H-T), which leaves a blank strip exactly when T > y.
+            //
+            // Animating is therefore SAFE whenever the header is moving further out
+            // of view, because the destination is already clamped to `min(y, band)`
+            // and y only grows while scrolling down — so the eased value trails the
+            // target, which trails the scroll.
+            //
+            // It is UNSAFE only when the header has to come back DOWN while it is
+            // already above the scroll position (the page scrolled up inside the
+            // band). There the eased value would sit above y for the duration of the
+            // animation and expose the strip, so that move snaps instead.
+            const instant = next < offset && offset > y;
 
             // The delay is on the REVEAL only. A hide has to feel immediate, and
             // delaying it would leave the header sitting over content the user has
-            // already scrolled past.
+            // already scrolled past. The hide is also quicker than the reveal, so it
+            // keeps up with the page instead of appearing to float behind it.
+            const duration = revealed ? 400 : 260;
             const delay = revealed ? ` ${REVEAL_DELAY_MS}ms` : '';
-            header.style.transition = continuous
+            header.style.transition = instant
                 ? 'box-shadow 300ms ease'
-                : `transform 400ms ease-out${delay}, opacity 400ms ease-out${delay}, box-shadow 300ms ease`;
+                : `transform ${duration}ms ease-out${delay}, opacity ${duration}ms ease-out${delay}, box-shadow 300ms ease`;
             header.style.transform = `translate3d(0, ${-next}px, 0)`;
-            // Fades only on the discontinuous moves. During tracking it must stay
-            // fully opaque or it would dissolve while scrolling, which reads as a
-            // glitch rather than as a header leaving the page; by the time this
-            // hits 0 while tracking, the element is already off-screen anyway.
             header.style.opacity = next >= band ? '0' : '1';
             // Only unreachable once it is entirely off-screen; while it is mid-travel
             // it is still partly visible and must stay clickable.
