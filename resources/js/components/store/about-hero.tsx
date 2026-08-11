@@ -152,7 +152,21 @@ export default function AboutHero() {
                             body copy on small screens. */}
                         <div className="mt-[clamp(1rem,3.6vw,3rem)] space-y-[clamp(0.5rem,1.4vw,1.2rem)] px-[clamp(1rem,3.5vw,3.2rem)] text-center">
                             {paragraphs.map((paragraph, i) => (
-                                <p key={i} className="text-[clamp(0.95rem,2.1vw,2rem)] leading-[1.75] text-white">
+                                <p
+                                    key={i}
+                                    /* ⚠️ Second paragraph only, phone only: on
+                                       request, the card drops the "ومن خلال
+                                       منتجاتنا" / "Through our products" paragraph
+                                       below `sm` (640px) so the card is shorter on
+                                       a phone, while tablet and desktop keep both
+                                       paragraphs unchanged. Hardcoded to index 1
+                                       rather than a generic "truncate on mobile"
+                                       rule, since this is a deliberate content
+                                       choice for THIS card, not a general pattern —
+                                       a third paragraph added later would still
+                                       show on phone unless this is revisited. */
+                                    className={`text-[clamp(0.95rem,2.1vw,2rem)] leading-[1.75] text-white ${i === 1 ? 'max-sm:hidden' : ''}`}
+                                >
                                     {paragraph}
                                 </p>
                             ))}
