@@ -1,6 +1,7 @@
 import Button from '@/components/admin/button';
 import Pagination from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
+import CopyText from '@/components/copy-text';
 import StatusPill, { type StatusTone } from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -119,8 +120,16 @@ export default function ContactMessagesIndex({
                                                 <span className="block font-medium" dir="auto">
                                                     {m.name}
                                                 </span>
-                                                <span className="block text-xs text-neutral-500" dir="ltr">
-                                                    {m.email}
+                                                {/* Click-to-copy, and it swallows its own click so copying
+                                                    the address doesn't also expand the row. This is the
+                                                    RELIABLE way to reply: the mailto: button below depends
+                                                    on the machine having a working mail handler. */}
+                                                <span className="block text-xs text-neutral-500" onClick={(e) => e.stopPropagation()}>
+                                                    <CopyText
+                                                        value={m.email}
+                                                        copyLabel={t('admin.common.copy')}
+                                                        copiedLabel={t('admin.common.copied')}
+                                                    />
                                                 </span>
                                             </span>
                                         </div>
@@ -177,8 +186,12 @@ export default function ContactMessagesIndex({
                                                 >
                                                     <MessageCircle className="h-3.5 w-3.5" /> {t('admin.contactMessages.replyWhatsapp')}
                                                 </a>
-                                                <span className="font-mono text-xs text-neutral-500" dir="ltr">
-                                                    {m.phone}
+                                                <span className="font-mono text-xs text-neutral-500">
+                                                    <CopyText
+                                                        value={m.phone}
+                                                        copyLabel={t('admin.common.copy')}
+                                                        copiedLabel={t('admin.common.copied')}
+                                                    />
                                                 </span>
                                             </div>
                                         </td>
