@@ -187,6 +187,10 @@ return [
         'body' => 'النص',
         'quantity' => 'الكمية',
         'product_id' => 'المنتج',
+        'first_name' => 'الاسم الأول',
+        'last_name' => 'الاسم الثاني',
+        'inquiry_type' => 'نوع الإستفسار',
+        'message' => 'الرسالة',
     ],
 
 ];

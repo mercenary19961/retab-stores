@@ -1,4 +1,4 @@
-import { Bell, RotateCcw, ShoppingBag, Sparkles, type LucideIcon } from 'lucide-react';
+import { Bell, Mail, RotateCcw, ShoppingBag, Sparkles, type LucideIcon } from 'lucide-react';
 
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -10,6 +10,7 @@ export interface NotificationData {
     reason?: string;
     product_name?: string | null;
     contact?: string | null;
+    name?: string | null;
     url?: string;
 }
 
@@ -21,12 +22,13 @@ export interface NotificationItem {
 }
 
 /** Every notification `type` the server can store, for the history page's filter. */
-export const NOTIFICATION_TYPES = ['new_order', 'return_requested', 'product_requested'] as const;
+export const NOTIFICATION_TYPES = ['new_order', 'return_requested', 'product_requested', 'contact_message_received'] as const;
 
 const ICONS: Record<string, LucideIcon> = {
     new_order: ShoppingBag,
     return_requested: RotateCcw,
     product_requested: Sparkles,
+    contact_message_received: Mail,
 };
 
 /** Leading icon for a type; a plain bell for anything unrecognised. */
@@ -51,6 +53,7 @@ export function useNotificationText() {
         if (d.type === 'new_order') return t('admin.notifications.items.newOrder.title', { order: d.order_number ?? '' });
         if (d.type === 'return_requested') return t('admin.notifications.items.returnRequested.title', { order: d.order_number ?? '' });
         if (d.type === 'product_requested') return t('admin.notifications.items.productRequested.title');
+        if (d.type === 'contact_message_received') return t('admin.notifications.items.contactMessage.title', { name: d.name ?? '' });
         return t('admin.notifications.items.generic.title');
     };
 
@@ -58,6 +61,7 @@ export function useNotificationText() {
         if (d.type === 'new_order') return t('admin.notifications.items.newOrder.body', { total: d.total ?? '', currency: d.currency ?? '' });
         if (d.type === 'return_requested') return d.reason || t('admin.notifications.items.returnRequested.body');
         if (d.type === 'product_requested') return t('admin.notifications.items.productRequested.body', { product: d.product_name ?? '' });
+        if (d.type === 'contact_message_received') return t('admin.notifications.items.contactMessage.body');
         return '';
     };
 

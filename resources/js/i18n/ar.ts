@@ -239,6 +239,32 @@ const ar = {
                 { key: 'hours', title: 'ساعات العمــــل', lines: ['السبت - الخميس', '9 صباحًا - 10 مساءً'] },
             ],
         },
+        form: {
+            // Figma: "contact-us-submit". Field labels double as the placeholder text
+            // inside each field (the composite draws the same string twice — once
+            // above the field, once inside it), so both roles read from one key.
+            heading: 'أرسل رسالتك',
+            firstName: 'الاسم الاول',
+            lastName: 'الاسم الثاني',
+            email: 'البريـد الإلكتروني',
+            phone: 'رقـم الهاتف',
+            inquiryType: 'نـوع الإستفسار',
+            message: 'الرسالة',
+            // Not in the composite (a native <select> has no design-time options) —
+            // invented to fit a dates e-commerce contact form. Keys are stored in
+            // contact_messages.inquiry_type; keep in step with
+            // ContactMessageController::INQUIRY_TYPES.
+            inquiryTypes: {
+                order: 'استفسار عن طلب',
+                product: 'استفسار عن منتج',
+                complaint: 'شكوى',
+                partnership: 'شراكة أو تعاون',
+                other: 'أخرى',
+            },
+            submit: 'إرسال الرسالة',
+            sending: 'جارٍ الإرسال...',
+            thanks: 'شكراً لتواصلك معنا! وصلتنا رسالتك وسنرد عليك قريباً.',
+        },
     },
 
     branches: {
@@ -663,6 +689,7 @@ const ar = {
                 new_order: 'الطلبات الجديدة',
                 return_requested: 'طلبات الإرجاع',
                 product_requested: 'طلبات المنتجات',
+                contact_message_received: 'رسائل التواصل',
             },
             history: {
                 title: 'التنبيهات',
@@ -686,6 +713,10 @@ const ar = {
                 productRequested: {
                     title: 'طلب على منتج',
                     body: 'أحد العملاء يريد «{{product}}»',
+                },
+                contactMessage: {
+                    title: 'رسالة تواصل من {{name}}',
+                    body: 'وصلت رسالة جديدة عبر نموذج تواصل معنا',
                 },
                 generic: {
                     title: 'تنبيه جديد',

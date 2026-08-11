@@ -227,6 +227,25 @@ const en = {
                 { key: 'hours', title: 'Opening Hours', lines: ['Saturday to Thursday', '9 AM to 10 PM'] },
             ],
         },
+        form: {
+            heading: 'Send Your Message',
+            firstName: 'First Name',
+            lastName: 'Last Name',
+            email: 'Email Address',
+            phone: 'Phone Number',
+            inquiryType: 'Inquiry Type',
+            message: 'Message',
+            inquiryTypes: {
+                order: 'Order inquiry',
+                product: 'Product inquiry',
+                complaint: 'Complaint',
+                partnership: 'Partnership or collaboration',
+                other: 'Other',
+            },
+            submit: 'Send Message',
+            sending: 'Sending…',
+            thanks: 'Thanks for reaching out! Your message has arrived and we’ll get back to you soon.',
+        },
     },
 
     branches: {
@@ -652,6 +671,7 @@ const en = {
                 new_order: 'New orders',
                 return_requested: 'Return requests',
                 product_requested: 'Product requests',
+                contact_message_received: 'Contact messages',
             },
             history: {
                 title: 'Notifications',
@@ -675,6 +695,10 @@ const en = {
                 productRequested: {
                     title: 'Product requested',
                     body: 'A customer wants “{{product}}”',
+                },
+                contactMessage: {
+                    title: 'Contact message from {{name}}',
+                    body: 'A new message arrived through the Contact Us form',
                 },
                 generic: {
                     title: 'New notification',

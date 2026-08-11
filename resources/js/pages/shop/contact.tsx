@@ -1,4 +1,5 @@
 import ContactInfo from '@/components/store/contact-info';
+import ContactSubmit from '@/components/store/contact-submit';
 import StoreLayout from '@/layouts/store-layout';
 import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -26,6 +27,7 @@ export default function Contact() {
             </Head>
 
             <ContactInfo />
+            <ContactSubmit />
         </StoreLayout>
     );
 }

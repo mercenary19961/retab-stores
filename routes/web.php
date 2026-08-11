@@ -6,6 +6,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductRequestController;
@@ -65,6 +66,11 @@ Route::get('/pages/about', [AboutController::class, 'index'])->name('about');
 // Designed Contact page — same story again: before the catch-all so this slug renders
 // the custom layout instead of the `contact` content_pages row.
 Route::get('/pages/contact', [ContactController::class, 'index'])->name('contact');
+// Contact Us form submission — guests allowed (guests pass the Turnstile bot gate,
+// signed-in visitors skip it, mirroring the product-request convention above).
+Route::post('/contact', [ContactMessageController::class, 'store'])
+    ->middleware('throttle:5,1,contact-submit')
+    ->name('contact.submit');
 Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 // On a slug miss, consult the 301 redirect map (old Zid URLs) before 404-ing.
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])

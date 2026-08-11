@@ -54,6 +54,10 @@ return [
         'received' => 'Thanks! We’ve noted your interest and will let you know as soon as it’s available.',
     ],
 
+    'contact' => [
+        'received' => 'Thanks for reaching out! Your message has arrived and we’ll get back to you soon.',
+    ],
+
     'returns' => [
         'filed' => 'Your return request was received. We will review it and get back to you soon.',
         'not_yours' => 'This order does not belong to you.',
