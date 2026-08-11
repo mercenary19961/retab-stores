@@ -7,6 +7,7 @@ use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetAdminLocale;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\TrustProxiedClientIp;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,25 +21,22 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Trust all proxies. This USED to be a Cloudflare CIDR allowlist, which
-        // was correct while the plan was to sit behind Cloudflare — but the
-        // production domain is a DIRECT Railway CNAME (www.retab.com.sa; the
-        // zone lives on Bluvalt, not Cloudflare), so Railway's edge IP matches
-        // nothing in that list and Laravel silently ignores every X-Forwarded-*
-        // header: it sees plain http and reports the proxy's IP as the client.
-        //
-        // Sky Amman hit exactly this during its own domain switchover. The
-        // stakes are higher here, because EVERY `throttle:` bucket in this app
-        // keys on the client IP — with the header ignored, all visitors share
-        // one identity and the rate limits collapse into a single global bucket
-        // (see the throttle-prefix gotcha in CLAUDE.md for how that fails). It
-        // also breaks the IPs recorded on product requests and audit logs.
-        //
-        // '*' is safe here specifically because the container is ONLY reachable
-        // through Railway's edge; there is no public route to it that would let
-        // an external client forge X-Forwarded-For. ⚠️ If Cloudflare is ever put
-        // back in front, this can return to an allowlist (CF ranges +
-        // Railway's hop), but do not narrow it while the CNAME is direct.
+        // Resolve the real visitor IP before TrustProxies reads the headers.
+        // On this stack (Cloudflare → Railway edge → container) the visitor's
+        // address is NOT in X-Forwarded-For — Railway overwrites that header
+        // with its own hop chain — so trusting X-Forwarded-For alone made every
+        // visitor resolve to a Railway edge IP, collapsing every `throttle:`
+        // bucket. Full measurements + why X-Real-IP is the trustworthy source
+        // are in the middleware's docblock. Must stay ahead of TrustProxies.
+        $middleware->prepend(TrustProxiedClientIp::class);
+
+        // Trust the calling proxy. '*' does NOT mean "trust anything": Laravel
+        // maps it to the immediate caller only (REMOTE_ADDR — always Railway's
+        // private 100.64.x.x hop here), which is exactly the one hop in front of
+        // us. Narrowing it to a CIDR allowlist is pointless on Railway, whose
+        // edge IPs are neither published nor stable, and would silently drop
+        // X-Forwarded-Proto — leaving Laravel to think a real HTTPS request was
+        // plain http. The client IP is handled above, not by widening this.
         $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR
             | Request::HEADER_X_FORWARDED_HOST
             | Request::HEADER_X_FORWARDED_PORT
