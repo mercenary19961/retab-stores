@@ -208,6 +208,27 @@ const en = {
         },
     },
 
+    contact: {
+        headTitle: 'Contact Us | Retab Dates',
+        metaDescription: 'Get in touch with Retab Dates: phone, email, opening hours, and delivery coverage across the Kingdom and the GCC.',
+        info: {
+            // No kashida here: elongation is an Arabic typographic device with no Latin
+            // equivalent. English carries the same hierarchy through weight and colour.
+            heading: 'Contact Information',
+            items: [
+                { key: 'phone', title: 'Phone Number', lines: [] },
+                { key: 'email', title: 'Email Address', lines: [] },
+                // ⚠️ Keep every line under the card's inner width or it wraps and the
+                // whole grid grows by a line (auto-rows-fr keeps all four in step).
+                // Budget at 1440: 520px of inner width. "Everywhere in the Kingdom"
+                // measured 545px and did exactly that, taking the section from 797px
+                // to 910px, so this is shorter rather than a literal translation.
+                { key: 'areas', title: 'Delivery Areas', lines: ['Across the Kingdom', 'and the Gulf states'] },
+                { key: 'hours', title: 'Opening Hours', lines: ['Saturday to Thursday', '9 AM to 10 PM'] },
+            ],
+        },
+    },
+
     branches: {
         headTitle: 'Our Branches | Retab Dates',
         metaDescription: 'Visit Retab Dates in Riyadh: Al Malqa and Al Aziziyah. Get directions and store hours.',

@@ -5,6 +5,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProductRequestController;
@@ -61,6 +62,9 @@ Route::get('/pages/branches', [BranchController::class, 'index'])->name('branche
 // Designed About page — same story as branches: declared before the catch-all so
 // this slug renders the custom layout instead of the `about` content_pages row.
 Route::get('/pages/about', [AboutController::class, 'index'])->name('about');
+// Designed Contact page — same story again: before the catch-all so this slug renders
+// the custom layout instead of the `contact` content_pages row.
+Route::get('/pages/contact', [ContactController::class, 'index'])->name('contact');
 Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 // On a slug miss, consult the 301 redirect map (old Zid URLs) before 404-ing.
 Route::get('/products/{product:slug}', [ShopController::class, 'show'])

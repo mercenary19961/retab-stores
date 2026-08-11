@@ -217,6 +217,28 @@ const ar = {
         },
     },
 
+    contact: {
+        headTitle: 'تواصل معنا | رطاب للتمور',
+        metaDescription: 'تواصل مع رطاب للتمور: رقم الهاتف والبريد الإلكتروني وساعات العمل ومناطق التوصيل داخل المملكة ودول الخليج.',
+        info: {
+            // Kashida (ـ U+0640) runs are hand-tuned to the outlined type in the
+            // composite: each run's length was solved so the rendered ink width matches
+            // the design's measured ink width, to within ~2px on a 936px heading.
+            // ⚠️ Elongated copy breaks string matching — 'معلومــــات'.includes('معلومات')
+            // is FALSE — so never select on or assert against these strings.
+            heading: 'معلومــــات الإتصال',
+            // The phone and email BODIES are deliberately absent: they are rendered from
+            // the admin-editable footer settings, not from here (the composite's
+            // "info@retabstore.com" is the old Zid domain and already wrong).
+            items: [
+                { key: 'phone', title: 'رقم الهـــــاتف', lines: [] },
+                { key: 'email', title: 'البريد الإلكتــــروني', lines: [] },
+                { key: 'areas', title: 'مناطق التوصيــــل', lines: ['جميع أنحاء المملكة', 'و دول الخليج'] },
+                { key: 'hours', title: 'ساعات العمــــل', lines: ['السبت - الخميس', '9 صباحًا - 10 مساءً'] },
+            ],
+        },
+    },
+
     branches: {
         headTitle: 'فروعنا | رطاب للتمور',
         metaDescription: 'زوروا رطاب للتمور في الرياض: الملقا والعزيزية. احصلوا على الاتجاهات وأوقات العمل.',
