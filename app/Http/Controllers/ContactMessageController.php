@@ -23,7 +23,8 @@ class ContactMessageController extends Controller
      * generated from one shared source (there is no server-driven copy on this
      * page otherwise, unlike e.g. return reasons).
      */
-    private const INQUIRY_TYPES = ['order', 'product', 'complaint', 'partnership', 'other'];
+    /** Public so the admin inbox filters on the same list this validates against. */
+    public const INQUIRY_TYPES = ['order', 'product', 'complaint', 'partnership', 'other'];
 
     public function store(Request $request, TurnstileVerifier $turnstile): RedirectResponse
     {

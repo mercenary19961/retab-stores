@@ -111,6 +111,7 @@ return [
         'product_activated' => 'Product is now visible on the store.',
         'product_deactivated' => 'Product hidden from the store.',
         'product_needs_image' => 'A product must have at least one image.',
+        'message_handled' => 'Message marked as handled.',
         'request_handled' => 'Request marked as handled.',
         'import_expired' => 'The import file has expired. Please upload it again.',
         'import_applied' => 'Stock updated: :count products.',

@@ -26,6 +26,7 @@ class Permission
         'discounts' => ['view', 'manage'],
         'reviews' => ['view', 'manage'],
         'content_pages' => ['view', 'edit'],
+        'contact_messages' => ['view', 'manage'],
         'settings' => ['view', 'edit'],
         'change_log' => ['view', 'revert'],
     ];
@@ -47,6 +48,7 @@ class Permission
         'discounts' => ['view' => true, 'manage' => false],
         'reviews' => ['view' => true, 'manage' => true],
         'content_pages' => ['view' => true, 'edit' => true],
+        'contact_messages' => ['view' => true, 'manage' => true],
         'settings' => ['view' => false, 'edit' => false],
         'change_log' => ['view' => true, 'revert' => false],
     ];

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ChangeLogController;
 use App\Http\Controllers\Admin\ClientReviewController;
+use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\ContentPageController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -119,6 +120,10 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
         ->only(['index', 'edit', 'update'])
         ->middleware('permission:content_pages.view')
         ->parameters(['content-pages' => 'contentPage']);
+
+    // Inbox for the storefront Contact Us form.
+    Route::get('contact-messages', [ContactMessageController::class, 'index'])->middleware('permission:contact_messages.view')->name('contact-messages.index');
+    Route::post('contact-messages/{contactMessage}/handle', [ContactMessageController::class, 'markHandled'])->middleware('permission:contact_messages.manage')->name('contact-messages.handle');
 
     // Staff & access control — admin only.
     Route::middleware('admin')->group(function () {

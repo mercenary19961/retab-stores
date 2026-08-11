@@ -111,6 +111,7 @@ return [
         'product_activated' => 'المنتج ظاهر الآن في المتجر.',
         'product_deactivated' => 'تم إخفاء المنتج من المتجر.',
         'product_needs_image' => 'يجب أن يحتوي المنتج على صورة واحدة على الأقل.',
+        'message_handled' => 'تم تعليم الرسالة كمُعالَجة.',
         'request_handled' => 'تم تعليم الطلب كمُعالَج.',
         'import_expired' => 'انتهت صلاحية ملف الاستيراد. يُرجى رفعه من جديد.',
         'import_applied' => 'تم تحديث المخزون: :count منتج.',
