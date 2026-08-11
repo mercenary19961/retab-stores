@@ -300,9 +300,15 @@ export default function ContactSubmit() {
                         accountable session, matching the Coming-Soon "I want this"
                         convention. Renders nothing until a site key is configured, so
                         dev/staging stays frictionless. */}
+                    {/* theme="dark", not the component's "light" default and not
+                        "auto": this section's teal is fixed regardless of the OS
+                        colour scheme, so "auto" would hand a light-mode visitor a
+                        white widget box on dark teal. The product page and the
+                        WhatsApp login keep the light default — their forms sit on
+                        light cards. */}
                     {!authed && (
                         <div className="flex justify-center">
-                            <Turnstile ref={turnstileRef} onVerify={(token) => setData('cf-turnstile-response', token)} />
+                            <Turnstile ref={turnstileRef} theme="dark" onVerify={(token) => setData('cf-turnstile-response', token)} />
                         </div>
                     )}
 
