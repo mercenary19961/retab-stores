@@ -6,6 +6,7 @@ use App\Models\ContactMessage;
 use App\Models\User;
 use App\Notifications\ContactMessageReceivedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -97,6 +98,23 @@ class ContactMessageTest extends TestCase
         $this->assertNotNull($route);
         $throttle = collect($route->middleware())->first(fn ($m) => str_starts_with($m, 'throttle:'));
         $this->assertSame('throttle:5,1,contact-submit', $throttle);
+    }
+
+    /**
+     * Pins the fix for a real bug: the Turnstile-failure error must NOT land under
+     * 'message' (the message textarea's own error slot), or a bot-check failure
+     * would render as if the customer's message text were invalid.
+     */
+    public function test_a_failed_turnstile_check_is_keyed_turnstile_not_message(): void
+    {
+        config(['services.turnstile.secret_key' => 'fake-secret-for-test']);
+        Http::fake(['*/turnstile/v0/siteverify' => Http::response(['success' => false], 200)]);
+
+        $response = $this->from('/pages/contact')->post('/contact', $this->payload);
+
+        $response->assertSessionHasErrors('turnstile');
+        $response->assertSessionDoesntHaveErrors('message');
+        $this->assertDatabaseCount('contact_messages', 0);
     }
 
     public function test_staff_without_an_email_only_get_the_bell_row(): void

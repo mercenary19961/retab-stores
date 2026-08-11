@@ -30,8 +30,15 @@ class ContactMessageController extends Controller
         // Bot gate for guests only, same convention as the Coming-Soon "I want
         // this" form: a signed-in visitor already carries an accountable session,
         // an anonymous one does not.
+        //
+        // ⚠️ Keyed 'turnstile', NOT a real field name. ProductRequestController
+        // reuses 'phone' for this because phone is its only field — copying that
+        // here onto 'message' would attach a bot-check failure to the message
+        // textarea's own error slot, so a perfectly valid message would show a
+        // "couldn't verify you're not a robot" error under it. The frontend
+        // renders `errors.turnstile` as its own form-level banner instead.
         if (! $request->user() && ! $turnstile->verify($request->input('cf-turnstile-response'), $request->ip())) {
-            return back()->withErrors(['message' => __('messages.security.verify_failed')]);
+            return back()->withErrors(['turnstile' => __('messages.security.verify_failed')]);
         }
 
         $data = $request->validate([

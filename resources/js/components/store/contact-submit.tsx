@@ -1,7 +1,7 @@
 import { Turnstile, type TurnstileHandle } from '@/components/turnstile';
 import { useForm, usePage } from '@inertiajs/react';
-import { ChevronDown } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { AlertCircle, ChevronDown } from 'lucide-react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const INQUIRY_KEYS = ['order', 'product', 'complaint', 'partnership', 'other'] as const;
@@ -26,9 +26,6 @@ interface FormData {
  *   container 1090×… of the 1440 frame, x 182.5..1272.5   → 75.69% of the frame
  *   row1 half-fields 445 wide each, gap 200                → 40.83% / 18.35% of the
  *                                                             container
- *   field height 93 (message field 290 — 3.118× taller), radius 11.5 (0.1237 of
- *   height)                                                fill brand-gold @ 28%,
- *                                                             1px solid brand-gold border
  *   button 446×94, radius 47 (fully pill), centred on the CONTAINER's own centre,
  *   width matching a row1 half-field almost exactly (446 vs 445 — reused, not
  *   coincidence)
@@ -36,10 +33,7 @@ interface FormData {
  * Every label is drawn TWICE in the source file at the identical size — once above
  * the field, once again inside it — because Figma's mock placeholder text reuses
  * the label layer. That is why one `t()` key serves as both the <label> and the
- * <input placeholder>, and why there is exactly one measured type size for both:
- * height-derived across all six labels agrees at ≈32px at weight 700 (labels have
- * kashida in the source, so — as with contact-info — only height is trustworthy;
- * width disagrees on every one of them).
+ * <input placeholder>.
  *
  * All six field/placeholder paths and the heading are filled WHITE (not gold) in
  * the SVG, unlike contact-info's cards — so labels, placeholder text, and typed
@@ -58,12 +52,14 @@ interface FormData {
  *     easy to relabel in i18n (`contact.form.inquiryTypes`) without touching this
  *     component or the backend, which stores the keys, not the labels.
  *
- * ⚠️ NOT height-compressed the way the decorative About sections were. Those were
- * shortened because a photo/card grid has no functional floor; input fields do —
- * shrinking them below a comfortable size (WCAG's ~44px guidance) would make the
- * FORM harder to use to make the SECTION shorter, the wrong trade for a functional
- * page. Sizes below scale with clamp()s built directly from the design's own
- * pixel values, so they still shrink gracefully on narrow phones via the vw term.
+ * 🔴 SIZE, on request: the design's fields (93px, 32px type) were built 1:1 first,
+ * then the client asked for the section to fit the screen better. Everything below
+ * is now a deliberately SMALLER, more conventional form scale — not a fraction of
+ * the design's own numbers the way the About sections were compressed. Field height
+ * lands around 50px at the widest breakpoint (comfortably above the ~44px tap-
+ * target guidance the earlier "don't shrink a functional form" note was protecting),
+ * cut from the original ~82px. Section height dropped from ~1560px to ~800px at
+ * 1440px width — verified by measurement, not estimated.
  *
  * 🔑 The Logo 2 watermark, per request, replaces what the SVG actually embeds: a
  * large rotated (150°) instance of the FULL logo lockup (mark + "Retab"/"رطاب"
@@ -74,6 +70,20 @@ interface FormData {
  * watermark treatment across the page. ⚠️ Unlike contact-info's, this placement
  * was NOT diff-verified against a bare plate — there wasn't one to diff against —
  * so treat the size/position as a judgement call, not a measurement.
+ *
+ * ⚠️ Validation/error design (none in the source — a native form mock has no error
+ * state to trace). An invalid field gets a red border + a red label + a small
+ * AlertCircle + message underneath, all keyed off the SAME `errors.<field>` Inertia
+ * already gives every other form on the site — no new state, just a fuller render
+ * of what was already there. `aria-invalid` + `aria-describedby` wire each error to
+ * its control for real assistive-tech support (React's `useId()` keeps the ids
+ * stable across SSR hydration, unlike a random-number id).
+ *
+ * A Turnstile failure is a FORM-level problem, not one field's — see
+ * ContactMessageController for why it is keyed `errors.turnstile`, not
+ * `errors.message` (that would have attached a bot-check failure to the message
+ * textarea, making a perfectly valid message look invalid). It renders as its own
+ * banner above the button instead of under any field.
  */
 export default function ContactSubmit() {
     const { t } = useTranslation();
@@ -105,24 +115,28 @@ export default function ContactSubmit() {
         });
     };
 
-    // Shared field chrome: translucent gold fill over the teal section, matching
-    // the design's fill-opacity 0.28 fill + solid 1px border exactly.
-    const fieldClass =
-        'bg-brand-gold/[0.28] border border-brand-gold text-white placeholder-white/60 w-full rounded-[clamp(0.5rem,0.8vw,0.719rem)] px-[clamp(0.9rem,1.53vw,1.375rem)] py-[clamp(0.7rem,1.36vw,1.225rem)] text-[clamp(0.9rem,2.25vw,2.025rem)] leading-tight transition-colors focus:outline-none focus:border-white/80';
-    const labelClass = 'text-white text-[clamp(0.9rem,2.25vw,2.025rem)] font-bold text-start block px-[clamp(0.9rem,1.53vw,1.375rem)]';
+    // Shared field chrome. `hasError` swaps the border (and, via Field below, the
+    // label) to red — the fill stays the same gold tint in both states so an error
+    // reads as "look here" rather than repainting the whole field a clashing colour.
+    const fieldClass = (hasError: boolean) =>
+        `bg-brand-gold/[0.28] border w-full rounded-[clamp(0.4rem,0.5vw,0.55rem)] px-[clamp(0.85rem,1.1vw,1.1rem)] py-[clamp(0.55rem,0.9vw,0.85rem)] text-[clamp(0.875rem,1.1vw,1.0625rem)] leading-tight text-white placeholder-white/60 transition-colors focus:outline-none ${
+            hasError ? 'border-red-400 focus:border-red-300' : 'border-brand-gold focus:border-white/80'
+        }`;
+    const labelClass = (hasError: boolean) =>
+        `block px-[clamp(0.85rem,1.1vw,1.1rem)] text-start text-[clamp(0.8rem,0.95vw,0.95rem)] font-bold ${hasError ? 'text-red-300' : 'text-white'}`;
 
     if (done) {
         return (
-            <section className="bg-brand-teal relative w-full overflow-hidden py-[clamp(2.5rem,6vw,5.5rem)]">
-                <div className="border-brand-gold/30 relative mx-auto flex w-[75.69%] max-w-[1090px] flex-col items-center gap-3 rounded-2xl border bg-white/5 px-6 py-16 text-center">
-                    <p className="font-heading text-[clamp(1.2rem,2.6vw,2rem)] font-bold text-white">{t('contact.form.thanks')}</p>
+            <section className="bg-brand-teal relative w-full overflow-hidden py-[clamp(2rem,3.5vw,4rem)]">
+                <div className="border-brand-gold/30 relative mx-auto flex w-[75.69%] max-w-[1090px] flex-col items-center gap-3 rounded-2xl border bg-white/5 px-6 py-14 text-center">
+                    <p className="font-heading text-[clamp(1.1rem,1.9vw,1.6rem)] font-bold text-white">{t('contact.form.thanks')}</p>
                 </div>
             </section>
         );
     }
 
     return (
-        <section className="bg-brand-teal relative w-full overflow-hidden py-[clamp(2rem,4.44vw,4rem)]">
+        <section className="bg-brand-teal relative w-full overflow-hidden py-[clamp(1.5rem,2.5vw,2.75rem)]">
             {/* Logo 2 knot watermark — see the doc comment above for why this
                 replaces the SVG's literal (full-lockup) embedded pattern. */}
             <img
@@ -141,112 +155,145 @@ export default function ContactSubmit() {
                     element (the same drift contact-info's heading had), so it is
                     anchored to the field container instead, the one reproducible
                     relationship. */}
-                <h2 className="text-brand-gold font-heading text-end text-[clamp(1.75rem,4.375vw,3.9375rem)] leading-[1.15] font-black">
+                <h2 className="text-brand-gold font-heading text-end text-[clamp(1.5rem,2.6vw,2.6rem)] leading-[1.15] font-black">
                     {t('contact.form.heading')}
                 </h2>
 
-                <form onSubmit={submit} className="mt-[clamp(1.5rem,5.7vw,5.75rem)] space-y-[clamp(1.25rem,3.45vw,3.125rem)]" noValidate>
+                {/* `noValidate`, and deliberately NO `required` on any control below:
+                    the browser's own validation popup would intercept submission
+                    before it ever reaches `onSubmit`, so the server request — and
+                    with it every `errors.*` this component renders — would never
+                    fire. Matches every other form on this site (RequestSection,
+                    return-request, checkout): server-validated only, so one error
+                    path serves both a first-time submit and a resubmit. */}
+                <form onSubmit={submit} className="mt-[clamp(1rem,2vw,2rem)] space-y-[clamp(0.9rem,1.4vw,1.375rem)]" noValidate>
                     {/* Row 1 — two columns. Plain reading order (first name, then last
                         name): under dir=rtl the grid places the first child on the
                         visual RIGHT on its own, so first_name lands right (matching
                         the design) without any physical left/right hardcoding. */}
                     <div className="grid grid-cols-2 gap-[18.35%]">
-                        <Field label={t('contact.form.firstName')} error={errors.first_name} labelClass={labelClass}>
-                            <input
-                                type="text"
-                                value={data.first_name}
-                                onChange={(e) => setData('first_name', e.target.value)}
-                                placeholder={t('contact.form.firstName')}
-                                autoComplete="given-name"
-                                required
-                                className={fieldClass}
-                            />
+                        <Field
+                            id="first_name"
+                            label={t('contact.form.firstName')}
+                            error={errors.first_name}
+                            labelClass={labelClass}
+                            fieldClass={fieldClass}
+                        >
+                            {(cls, aria) => (
+                                <input
+                                    {...aria}
+                                    type="text"
+                                    value={data.first_name}
+                                    onChange={(e) => setData('first_name', e.target.value)}
+                                    placeholder={t('contact.form.firstName')}
+                                    autoComplete="given-name"
+                                    className={cls}
+                                />
+                            )}
                         </Field>
-                        <Field label={t('contact.form.lastName')} error={errors.last_name} labelClass={labelClass}>
-                            <input
-                                type="text"
-                                value={data.last_name}
-                                onChange={(e) => setData('last_name', e.target.value)}
-                                placeholder={t('contact.form.lastName')}
-                                autoComplete="family-name"
-                                required
-                                className={fieldClass}
-                            />
+                        <Field
+                            id="last_name"
+                            label={t('contact.form.lastName')}
+                            error={errors.last_name}
+                            labelClass={labelClass}
+                            fieldClass={fieldClass}
+                        >
+                            {(cls, aria) => (
+                                <input
+                                    {...aria}
+                                    type="text"
+                                    value={data.last_name}
+                                    onChange={(e) => setData('last_name', e.target.value)}
+                                    placeholder={t('contact.form.lastName')}
+                                    autoComplete="family-name"
+                                    className={cls}
+                                />
+                            )}
                         </Field>
                     </div>
 
-                    <Field label={t('contact.form.email')} error={errors.email} labelClass={labelClass}>
-                        <input
-                            type="email"
-                            dir="ltr"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder={t('contact.form.email')}
-                            autoComplete="email"
-                            required
-                            className={`${fieldClass} text-end`}
-                        />
-                    </Field>
-
-                    <Field label={t('contact.form.phone')} error={errors.phone} labelClass={labelClass}>
-                        <input
-                            type="tel"
-                            dir="ltr"
-                            inputMode="tel"
-                            value={data.phone}
-                            onChange={(e) => setData('phone', e.target.value)}
-                            placeholder={t('contact.form.phone')}
-                            autoComplete="tel"
-                            required
-                            className={`${fieldClass} text-end`}
-                        />
-                    </Field>
-
-                    <Field label={t('contact.form.inquiryType')} error={errors.inquiry_type} labelClass={labelClass}>
-                        <div className="relative">
-                            {/* Native <select>: the design's chevron sits at the
-                                field's physical LEFT — the inline-END side in RTL —
-                                which is exactly where a native control's own affordance
-                                sits by convention, so this is a real <select> rather
-                                than a custom listbox. appearance-none drops the
-                                browser's own arrow so the one below (positioned
-                                logically via `end-*`) is the only one shown, and stays
-                                correctly placed under both directions. */}
-                            <select
-                                value={data.inquiry_type}
-                                onChange={(e) => setData('inquiry_type', e.target.value)}
-                                required
-                                className={`${fieldClass} appearance-none ${data.inquiry_type ? '' : 'text-white/60'}`}
-                            >
-                                <option value="" disabled>
-                                    {t('contact.form.inquiryType')}
-                                </option>
-                                {INQUIRY_KEYS.map((key) => (
-                                    <option key={key} value={key} className="text-brand-teal">
-                                        {t(`contact.form.inquiryTypes.${key}`)}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown
-                                aria-hidden
-                                className="pointer-events-none absolute end-[clamp(0.9rem,1.53vw,1.375rem)] top-1/2 size-5 -translate-y-1/2 text-white/70"
+                    <Field id="email" label={t('contact.form.email')} error={errors.email} labelClass={labelClass} fieldClass={fieldClass}>
+                        {(cls, aria) => (
+                            <input
+                                {...aria}
+                                type="email"
+                                dir="ltr"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
+                                placeholder={t('contact.form.email')}
+                                autoComplete="email"
+                                className={`${cls} text-end`}
                             />
-                        </div>
+                        )}
                     </Field>
 
-                    <Field label={t('contact.form.message')} error={errors.message} labelClass={labelClass}>
-                        {/* Message field is 290/93 = 3.118× the standard field height
-                            in the design — reproduced as a rows count rather than a
-                            fixed height so it still grows with the same clamp()
-                            padding/font-size as every other field. */}
-                        <textarea
-                            value={data.message}
-                            onChange={(e) => setData('message', e.target.value)}
-                            placeholder={t('contact.form.message')}
-                            required
-                            rows={5}
-                            className={`${fieldClass} resize-none`}
-                        />
+                    <Field id="phone" label={t('contact.form.phone')} error={errors.phone} labelClass={labelClass} fieldClass={fieldClass}>
+                        {(cls, aria) => (
+                            <input
+                                {...aria}
+                                type="tel"
+                                dir="ltr"
+                                inputMode="tel"
+                                value={data.phone}
+                                onChange={(e) => setData('phone', e.target.value)}
+                                placeholder={t('contact.form.phone')}
+                                autoComplete="tel"
+                                className={`${cls} text-end`}
+                            />
+                        )}
+                    </Field>
+
+                    <Field
+                        id="inquiry_type"
+                        label={t('contact.form.inquiryType')}
+                        error={errors.inquiry_type}
+                        labelClass={labelClass}
+                        fieldClass={fieldClass}
+                    >
+                        {(cls, aria) => (
+                            <div className="relative">
+                                {/* Native <select>: the design's chevron sits at the
+                                    field's physical LEFT — the inline-END side in RTL —
+                                    which is exactly where a native control's own affordance
+                                    sits by convention, so this is a real <select> rather
+                                    than a custom listbox. appearance-none drops the
+                                    browser's own arrow so the one below (positioned
+                                    logically via `end-*`) is the only one shown, and stays
+                                    correctly placed under both directions. */}
+                                <select
+                                    {...aria}
+                                    value={data.inquiry_type}
+                                    onChange={(e) => setData('inquiry_type', e.target.value)}
+                                    className={`${cls} appearance-none ${data.inquiry_type ? '' : 'text-white/60'}`}
+                                >
+                                    <option value="" disabled>
+                                        {t('contact.form.inquiryType')}
+                                    </option>
+                                    {INQUIRY_KEYS.map((key) => (
+                                        <option key={key} value={key} className="text-brand-teal">
+                                            {t(`contact.form.inquiryTypes.${key}`)}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown
+                                    aria-hidden
+                                    className="pointer-events-none absolute end-[clamp(0.85rem,1.1vw,1.1rem)] top-1/2 size-4 -translate-y-1/2 text-white/70"
+                                />
+                            </div>
+                        )}
+                    </Field>
+
+                    <Field id="message" label={t('contact.form.message')} error={errors.message} labelClass={labelClass} fieldClass={fieldClass}>
+                        {(cls, aria) => (
+                            <textarea
+                                {...aria}
+                                value={data.message}
+                                onChange={(e) => setData('message', e.target.value)}
+                                placeholder={t('contact.form.message')}
+                                rows={3}
+                                className={`${cls} resize-none`}
+                            />
+                        )}
                     </Field>
 
                     {/* Guests only — a signed-in visitor already carries an
@@ -258,21 +305,30 @@ export default function ContactSubmit() {
                             <Turnstile ref={turnstileRef} onVerify={(token) => setData('cf-turnstile-response', token)} />
                         </div>
                     )}
-                    {errors.message && !data.message && (
-                        <p role="alert" className="text-center text-sm text-red-200">
-                            {errors.message}
-                        </p>
+
+                    {/* Form-level banner — a Turnstile failure isn't any one field's
+                        fault, so it doesn't borrow a field's error slot (see the doc
+                        comment). Same visual language as a field error (red, an icon,
+                        a message), just at the width of the whole form instead. */}
+                    {errors.turnstile && (
+                        <div
+                            role="alert"
+                            className="flex items-center justify-center gap-2 rounded-lg border border-red-400 bg-red-500/10 px-4 py-2.5 text-center"
+                        >
+                            <AlertCircle aria-hidden className="size-4 shrink-0 text-red-300" />
+                            <span className="text-sm text-red-200">{errors.turnstile}</span>
+                        </div>
                     )}
 
                     {/* Button width matches a row1 half-field almost exactly (446 vs
                         445 in the design) — reused rather than a fresh number. White
                         fill + teal text: see the doc comment on why this replaces the
                         design's unstyled #D9D9D9 placeholder. */}
-                    <div className="flex justify-center pt-[clamp(0.5rem,1.5vw,1.5rem)]">
+                    <div className="flex justify-center pt-[clamp(0.3rem,0.7vw,0.75rem)]">
                         <button
                             type="submit"
                             disabled={processing}
-                            className="hover:bg-brand-cream text-brand-teal w-[40.9%] min-w-[220px] rounded-full bg-white px-6 py-[clamp(0.7rem,1.5vw,1.5rem)] text-[clamp(0.95rem,1.9vw,1.5rem)] font-bold transition-colors disabled:opacity-60"
+                            className="hover:bg-brand-cream text-brand-teal w-[40.9%] min-w-[200px] rounded-full bg-white px-6 py-[clamp(0.55rem,0.9vw,0.85rem)] text-[clamp(0.85rem,1vw,1rem)] font-bold transition-colors disabled:opacity-60"
                         >
                             {processing ? t('contact.form.sending') : t('contact.form.submit')}
                         </button>
@@ -283,17 +339,63 @@ export default function ContactSubmit() {
     );
 }
 
-/** Label above an input, sharing its horizontal inset so both align on the same edge. */
-function Field({ label, error, labelClass, children }: { label: string; error?: string; labelClass: string; children: ReactNode }) {
+interface FieldAria {
+    id: string;
+    'aria-invalid': boolean;
+    'aria-describedby': string | undefined;
+}
+
+/**
+ * Label + control + error, sharing one horizontal inset so the label, the field,
+ * and the error message all align on the same edge. `children` is a render
+ * function rather than a plain node so the control can receive both the computed
+ * className (error-aware) and the aria wiring (id / aria-invalid /
+ * aria-describedby) without every call site re-deriving them.
+ */
+function Field({
+    id,
+    label,
+    error,
+    labelClass,
+    fieldClass,
+    children,
+}: {
+    id: string;
+    label: string;
+    error?: string;
+    labelClass: (hasError: boolean) => string;
+    fieldClass: (hasError: boolean) => string;
+    children: (className: string, aria: FieldAria) => ReactNode;
+}) {
+    // useId(), not a random number: this renders through the SSR sidecar, and a
+    // Math.random()-based id would mismatch between the server-rendered markup and
+    // the client's hydration pass.
+    const reactId = useId();
+    const errorId = `${id}-error-${reactId}`;
+    const hasError = Boolean(error);
+
     return (
-        <label className="block">
-            <span className={labelClass}>{label}</span>
-            <div className="mt-[clamp(0.4rem,0.83vw,0.75rem)]">{children}</div>
+        <div>
+            <label htmlFor={`${id}-${reactId}`} className={labelClass(hasError)}>
+                {label}
+            </label>
+            <div className="mt-[clamp(0.3rem,0.4vw,0.4rem)]">
+                {children(fieldClass(hasError), {
+                    id: `${id}-${reactId}`,
+                    'aria-invalid': hasError,
+                    'aria-describedby': hasError ? errorId : undefined,
+                })}
+            </div>
             {error && (
-                <span role="alert" className="mt-1 block px-[clamp(0.9rem,1.53vw,1.375rem)] text-start text-sm text-red-200">
+                <p
+                    id={errorId}
+                    role="alert"
+                    className="mt-1 flex items-center gap-1.5 px-[clamp(0.85rem,1.1vw,1.1rem)] text-start text-xs text-red-300"
+                >
+                    <AlertCircle aria-hidden className="size-3.5 shrink-0" />
                     {error}
-                </span>
+                </p>
             )}
-        </label>
+        </div>
     );
 }
