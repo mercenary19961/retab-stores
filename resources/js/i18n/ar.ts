@@ -164,7 +164,7 @@ const ar = {
             // Kashida elongation matches the Figma; tune the ـ runs by hand if the
             // designer adjusts the lockup (same as hero.headlineLine1).
             line1: 'مـن قلـب النخلة',
-            line2: 'إلى مائدتكم',
+            line2: 'إلى مـائدتكـــــم',
         },
         journey: {
             heading: 'كيف بدأت رحلتنا',

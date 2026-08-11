@@ -88,8 +88,19 @@ export default function AboutHero() {
                             <span className="bg-brand-teal mt-[1.2vw] -ml-[100vw] block py-[clamp(0.35rem,1.85vw,2.2rem)] pl-[100vw] text-white">
                                 {/* `ps-`, not `pe-`: text-start puts the text on
                                     the START side, so the start side is the one
-                                    that needs the inset. */}
-                                <span className="block ps-[1.4vw]">{t('about.banner.line2')}</span>
+                                    that needs the inset.
+
+                                    ⚠️ line2 is bumped ~1.15x above line1/the h1
+                                    base, in BOTH locales — "إلى مائدتكم" and "to
+                                    your table" alike. (First scoped to `rtl:`
+                                    only per the initial ask, then widened to both
+                                    per follow-up.) Both the base and the <732px
+                                    override are scaled by the same factor so the
+                                    curve stays smooth across breakpoints rather
+                                    than jumping at the mobile cutoff. */}
+                                <span className="block ps-[1.4vw] text-[clamp(1.55rem,5.29vw,6.325rem)] max-[732px]:text-[clamp(1.09rem,4.14vw,1.725rem)]">
+                                    {t('about.banner.line2')}
+                                </span>
                             </span>
                         </h1>
                     </div>
