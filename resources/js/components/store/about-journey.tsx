@@ -28,6 +28,12 @@ interface Step {
  * WebP buys ~40 KB at the cost of visible quality, and 174 KB across four
  * lazy-loaded cards is not worth optimising. (The first pass shipped a flat teal
  * placeholder for `develop`, since that photo arrived later.)
+ *
+ * ⚠️ All four text sizes (heading, title, lead, body) are 1.2x the original
+ * clamp()s, on request. Verified this doesn't overflow a card at any width in
+ * either locale — the risk case is `start`, whose body was WIDENED from 3 words
+ * to 5 in the same change (matching the other three cards' rhythm), so it is
+ * carrying both more text and a larger size at once.
  */
 export default function AboutJourney() {
     const { t } = useTranslation();
@@ -58,7 +64,7 @@ export default function AboutJourney() {
                     Arabic and right in English — the exact inverse of what is
                     wanted, in both locales at once. The heading must sit on the
                     side the text begins on: right in AR, left in EN. */}
-                <h2 className="text-brand-teal font-heading text-start text-[clamp(1.6rem,4.7vw,4.25rem)] leading-[1.15] font-black">
+                <h2 className="text-brand-teal font-heading text-start text-[clamp(1.92rem,5.64vw,5.1rem)] leading-[1.15] font-black">
                     {t('about.journey.heading')}
                 </h2>
 
@@ -87,11 +93,13 @@ export default function AboutJourney() {
                                 card copy begins on the right in Arabic and on the
                                 left in English. */}
                             <div className="absolute inset-0 flex flex-col justify-between p-[clamp(0.6rem,1.5vw,1.4rem)] text-start">
-                                <h3 className="font-heading text-[clamp(0.95rem,2vw,1.85rem)] leading-tight font-black text-white">{step.title}</h3>
+                                <h3 className="font-heading text-[clamp(1.14rem,2.4vw,2.22rem)] leading-tight font-black text-white">{step.title}</h3>
 
                                 <div>
-                                    <p className="font-heading text-[clamp(0.85rem,1.6vw,1.5rem)] leading-tight font-black text-white">{step.lead}</p>
-                                    <p className="mt-[0.35em] text-[clamp(0.7rem,1.25vw,1.15rem)] leading-[1.5] text-white/90">{step.body}</p>
+                                    <p className="font-heading text-[clamp(1.02rem,1.92vw,1.8rem)] leading-tight font-black text-white">
+                                        {step.lead}
+                                    </p>
+                                    <p className="mt-[0.35em] text-[clamp(0.84rem,1.5vw,1.38rem)] leading-[1.5] text-white/90">{step.body}</p>
                                 </div>
                             </div>
                         </li>

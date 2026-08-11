@@ -171,7 +171,9 @@ const ar = {
             // One entry per card, in READING order (البداية first). The component
             // maps over this, so a fifth stage is a copy change, not a code change.
             steps: [
-                { key: 'start', title: 'البدايـة', lead: 'اختيار', body: 'أفضل المـزارع السعوديـة' },
+                // 'start' body widened from 3 words to 5 to match the other three
+                // cards' rhythm (develop/quality/today are all already 5 words).
+                { key: 'start', title: 'البدايـة', lead: 'اختيار', body: 'أفضل المـزارع السعوديـة المختـارة بعنـاية' },
                 { key: 'develop', title: 'التطويـر', lead: 'ابتكار', body: 'منتجـات متنوعة تناسـب جميع المناسبات' },
                 { key: 'quality', title: 'الجودة', lead: 'اعتمـاد', body: 'أعـلى معاييـر التعبئة والحفـظ لمنتجـاتنا' },
                 { key: 'today', title: 'اليـوم', lead: 'خدمــة', body: 'آلاف العمـلاء داخل المملكـة وخارجهـا' },
