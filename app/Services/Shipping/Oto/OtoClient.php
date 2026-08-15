@@ -2,7 +2,10 @@
 
 namespace App\Services\Shipping\Oto;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -18,6 +21,15 @@ class OtoClient
 {
     private const TOKEN_CACHE_KEY = 'oto_access_token';
 
+    /**
+     * Seconds shaved off the reported lifetime so a token can't expire while a
+     * request is still in flight.
+     */
+    private const EXPIRY_MARGIN = 300;
+
+    /** Used only when OTO omits expires_in; deliberately shorter than the real hour. */
+    private const FALLBACK_LIFETIME = 1800;
+
     public function __construct(
         protected string $refreshToken,
         protected string $baseUrl,
@@ -25,25 +37,31 @@ class OtoClient
 
     public function accessToken(): string
     {
-        return Cache::remember(self::TOKEN_CACHE_KEY, $this->tokenTtl(), function () {
-            $response = Http::acceptJson()
-                ->timeout(20)
-                ->post($this->baseUrl.'/refreshToken', [
-                    'refresh_token' => $this->refreshToken,
-                ]);
+        $cached = Cache::get(self::TOKEN_CACHE_KEY);
 
-            if (! $response->successful()) {
-                throw new RuntimeException('OTO token refresh failed: '.$response->status().' '.$response->body());
-            }
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
 
-            $token = $response->json('access_token') ?? $response->json('token');
+        $response = Http::acceptJson()
+            ->timeout(20)
+            ->post($this->baseUrl.'/refreshToken', [
+                'refresh_token' => $this->refreshToken,
+            ]);
 
-            if (! $token) {
-                throw new RuntimeException('OTO token refresh response missing access token.');
-            }
+        if (! $response->successful()) {
+            throw new RuntimeException('OTO token refresh failed: '.$response->status().' '.$response->body());
+        }
 
-            return $token;
-        });
+        $token = $response->json('access_token') ?? $response->json('token');
+
+        if (! $token) {
+            throw new RuntimeException('OTO token refresh response missing access token.');
+        }
+
+        Cache::put(self::TOKEN_CACHE_KEY, $token, $this->tokenTtl($response->json('expires_in')));
+
+        return $token;
     }
 
     private function client(): PendingRequest
@@ -52,8 +70,23 @@ class OtoClient
             ->acceptJson()
             ->asJson()
             ->timeout(25)
-            ->retry(2, 200, throw: false)
+            // Retry TRANSIENT faults only. The bare retry(2) this replaces fired
+            // on any failed response, including a 401 — re-sending the very same
+            // stale token, which cannot succeed and burns the attempt that
+            // send() needs to retry with a *fresh* one.
+            ->retry(2, 200, fn (\Throwable $e) => $this->isTransient($e), throw: false)
             ->baseUrl($this->baseUrl);
+    }
+
+    /** Worth another attempt with the same token: network blips, 5xx, throttling. */
+    private function isTransient(\Throwable $e): bool
+    {
+        if ($e instanceof ConnectionException) {
+            return true;
+        }
+
+        return $e instanceof RequestException
+            && ($e->response->status() >= 500 || $e->response->status() === 429);
     }
 
     public function createOrder(array $payload): array
@@ -78,7 +111,7 @@ class OtoClient
 
     public function orderDetails(string $orderId): array
     {
-        $response = $this->client()->get('/orderDetails', ['orderId' => $orderId]);
+        $response = $this->send('get', '/orderDetails', ['orderId' => $orderId]);
 
         if (! $response->successful()) {
             throw new RuntimeException("OTO orderDetails failed: {$response->status()}");
@@ -87,9 +120,32 @@ class OtoClient
         return $response->json() ?? [];
     }
 
+    /**
+     * Issue a request, and on an auth rejection mint a fresh access token and
+     * try once more.
+     *
+     * Needed because the cached token can stop working before its TTL elapses —
+     * OTO can revoke it, and the clock skew between "issued" and "cached" is
+     * ours to absorb. Without this a single stale token would fail every OTO
+     * call until the cache entry expired on its own, silently stranding orders
+     * at confirmed. Deliberately ONE retry: a genuinely bad refresh token would
+     * otherwise loop.
+     */
+    private function send(string $method, string $path, array $data): Response
+    {
+        $response = $this->client()->{$method}($path, $data);
+
+        if (in_array($response->status(), [401, 403], true)) {
+            $this->forgetToken();
+            $response = $this->client()->{$method}($path, $data);
+        }
+
+        return $response;
+    }
+
     private function post(string $path, array $payload): array
     {
-        $response = $this->client()->post($path, $payload);
+        $response = $this->send('post', $path, $payload);
 
         if (! $response->successful()) {
             throw new RuntimeException("OTO {$path} failed: ".$response->status().' '.$response->body());
@@ -146,9 +202,27 @@ class OtoClient
         Cache::forget(self::TOKEN_CACHE_KEY);
     }
 
-    private function tokenTtl(): int
+    /**
+     * How long to cache the access token, read from the exchange response.
+     *
+     * 🔴 This used to be a hardcoded SIX DAYS, on the assumption that OTO issues
+     * long-lived tokens. It does not: /refreshToken reports `expires_in: "3600"`
+     * — one hour. The cached token therefore died 1h in and every OTO call
+     * (delivery rates, order push, shipment creation) would have failed for the
+     * remaining ~5 days, with nothing to clear the entry. Take the lifetime from
+     * the response so we can never disagree with the provider again.
+     *
+     * Note `expires_in` arrives as a STRING ("3600"), hence is_numeric.
+     */
+    private function tokenTtl(mixed $expiresIn): int
     {
-        // OTO access tokens are long-lived; cache conservatively for 6 days.
-        return 60 * 60 * 24 * 6;
+        $lifetime = is_numeric($expiresIn) ? (int) $expiresIn : 0;
+
+        if ($lifetime <= 0) {
+            $lifetime = self::FALLBACK_LIFETIME;
+        }
+
+        // Never cache for zero/negative time if OTO ever reports a tiny lifetime.
+        return max(60, $lifetime - self::EXPIRY_MARGIN);
     }
 }

@@ -22,9 +22,7 @@ class OtoWebhookController
 
     public function handle(Request $request): JsonResponse
     {
-        $token = $request->query('token') ?? $request->input('secret_token');
-
-        if (! $this->gateway->verifyWebhookToken(is_string($token) ? $token : null)) {
+        if (! $this->authorized($request)) {
             Log::warning('Rejected OTO webhook: bad token', ['ip' => $request->ip()]);
 
             return response()->json(['message' => 'Unauthorized'], 401);
@@ -57,5 +55,40 @@ class OtoWebhookController
             'order' => $order?->order_number,
             'status' => $order?->status?->value,
         ], 200);
+    }
+
+    /**
+     * Accept the shared secret from any of the three places OTO can put it.
+     *
+     * `Authorization` is OTO's own documented mechanism — the dashboard's
+     * "Authorization Key" field is sent verbatim in that header — so it is the
+     * one to prefer. The `?token=` query form is kept because it is what the
+     * registered URL has always carried and needs no dashboard field, and it
+     * survives if a proxy ever strips the header. Bearer/Token prefixes are
+     * tolerated since the dashboard does not say whether it adds one.
+     *
+     * Not implemented: the optional HMAC-SHA256 signature OTO can derive from
+     * the separate "Secret Key" field (`orderId:status:timestamp`). A shared
+     * secret over TLS is adequate here, and the exact signing string should be
+     * confirmed against a real callback before being enforced — getting it
+     * wrong would reject every genuine delivery notification.
+     */
+    private function authorized(Request $request): bool
+    {
+        $header = $request->header('Authorization');
+
+        $candidates = [
+            $request->query('token'),
+            $request->input('secret_token'),
+            is_string($header) ? preg_replace('/^(Bearer|Token)\s+/i', '', trim($header)) : null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && $this->gateway->verifyWebhookToken($candidate)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

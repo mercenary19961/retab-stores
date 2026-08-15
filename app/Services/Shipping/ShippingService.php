@@ -147,11 +147,24 @@ class ShippingService
         return $options[0]->id;
     }
 
+    /**
+     * Map a provider status onto ours, or null to ignore it (OTO emits plenty of
+     * intermediate states like `shipmentProcessing` that we deliberately skip).
+     *
+     * Separators are stripped rather than spelled out, because OTO's documented
+     * payloads are camelCase (`shipmentProcessing`) while the original list here
+     * mixed both conventions — it carried `pickedup` and `intransit` but only
+     * `out_for_delivery`, so a real `outForDelivery` callback fell through to
+     * null and left the order sitting at confirmed. Normalising means we no
+     * longer have to guess a provider's casing at all.
+     */
     private function mapStatus(string $providerStatus): ?OrderStatus
     {
-        return match (strtolower($providerStatus)) {
+        $normalized = preg_replace('/[^a-z0-9]/', '', strtolower($providerStatus));
+
+        return match ($normalized) {
             'delivered' => OrderStatus::Delivered,
-            'shipped', 'picked_up', 'pickedup', 'out_for_delivery', 'in_transit', 'intransit' => OrderStatus::Shipped,
+            'shipped', 'pickedup', 'outfordelivery', 'intransit' => OrderStatus::Shipped,
             'cancelled', 'canceled', 'returned' => OrderStatus::Cancelled,
             default => null,
         };
