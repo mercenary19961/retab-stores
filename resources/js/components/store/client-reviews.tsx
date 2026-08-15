@@ -12,7 +12,7 @@ function Star({ filled }: { filled: boolean }) {
     return (
         // Sized in CSS rather than by the width/height attributes so the star can
         // shrink with the rest of the card on phones.
-        <svg viewBox="0 0 30 29" fill="none" aria-hidden className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-[17px]">
+        <svg viewBox="0 0 30 29" fill="none" aria-hidden className="h-3 w-3 shrink-0 sm:h-4 sm:w-[17px]">
             <path
                 d="M14.7412 0L18.2212 10.7102H29.4826L20.3719 17.3295L23.8519 28.0398L14.7412 21.4205L5.63054 28.0398L9.11051 17.3295L-0.000164986 10.7102H11.2612L14.7412 0Z"
                 fill={filled ? '#F4CD21' : '#d4d4d4'}
@@ -28,29 +28,30 @@ function ReviewCard({ review }: { review: Review }) {
 
     return (
         // Every dimension steps down below `sm`: the card was built at desktop
-        // scale and, stacked one-per-row on a phone, took most of a screen each.
-        <div className="rounded-3xl bg-[#d9d9d9]/45 p-4 sm:rounded-[2rem] sm:p-7">
-            <div className="flex items-center gap-2.5 sm:gap-3">
-                <div className="bg-brand-gold flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white sm:size-12 sm:text-lg">
+        // scale, and below `sm` it now sits two-per-row, so the content box is
+        // roughly a third of the width it was designed at.
+        <div className="rounded-2xl bg-[#d9d9d9]/45 p-3 sm:rounded-[2rem] sm:p-7">
+            <div className="flex items-center gap-2 sm:gap-3">
+                <div className="bg-brand-gold flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white sm:size-12 sm:text-lg">
                     {initial}
                 </div>
                 <div className="min-w-0">
-                    <p dir="auto" className="text-brand-teal truncate text-sm font-bold sm:text-lg">
+                    <p dir="auto" className="text-brand-teal truncate text-xs font-bold sm:text-lg">
                         {review.author_name}
                     </p>
-                    <p className="text-[0.65rem] font-medium tracking-wide text-neutral-400 uppercase sm:text-sm">{t('clientReviews.client')}</p>
+                    <p className="text-[0.55rem] font-medium tracking-wide text-neutral-400 uppercase sm:text-sm">{t('clientReviews.client')}</p>
                 </div>
             </div>
 
-            <p dir="auto" className="mt-2.5 text-sm leading-relaxed text-neutral-600 sm:mt-4 sm:text-base">
+            <p dir="auto" className="mt-2 text-xs leading-relaxed text-neutral-600 sm:mt-4 sm:text-base">
                 {review.body}
             </p>
 
-            <div className="mt-2.5 flex items-center gap-1 sm:mt-4">
+            <div className="mt-2 flex items-center gap-0.5 sm:mt-4 sm:gap-1">
                 {[0, 1, 2, 3, 4].map((i) => (
                     <Star key={i} filled={i < filled} />
                 ))}
-                <span className="ms-2 text-sm font-semibold text-neutral-500 sm:text-base">{review.rating.toFixed(1)}</span>
+                <span className="ms-1.5 text-xs font-semibold text-neutral-500 sm:ms-2 sm:text-base">{review.rating.toFixed(1)}</span>
             </div>
         </div>
     );
@@ -81,16 +82,24 @@ export default function ClientReviews({ reviews }: { reviews: Review[] }) {
             />
 
             <div className="relative z-10 mx-auto max-w-[1600px] px-6 lg:px-12">
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                {/* Two columns of reviews from the smallest width up: one per row
+                    made each card most of a phone screen. The feature card keeps
+                    the full width until it moves into its own column at `lg`. */}
+                <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
                     {/* Feature card — start side (right in RTL); spans both rows on lg. */}
                     <div
-                        className="relative flex min-h-[22rem] flex-col justify-center overflow-hidden rounded-[2rem] bg-cover bg-center p-8 text-center md:col-span-2 lg:col-span-1 lg:row-span-2 lg:min-h-full"
+                        className="relative col-span-2 flex min-h-[18rem] flex-col justify-center overflow-hidden rounded-[2rem] bg-cover bg-center p-6 text-center sm:min-h-[22rem] sm:p-8 lg:col-span-1 lg:row-span-2 lg:min-h-full"
                         style={{ backgroundImage: "url('/images/reviews/feature.webp')" }}
                     >
-                        <div className="absolute inset-0 bg-black/45" />
+                        {/* Heavier scrim below `sm`: the copy fills the card at phone
+                            width, so it sits over the busy middle of the photo rather
+                            than the calmer edges it was measured against on desktop. */}
+                        <div className="absolute inset-0 bg-black/55 max-sm:bg-black/70" />
                         <div className="relative">
                             <h2 className="font-heading text-brand-gold text-[clamp(1.75rem,3vw,2.5rem)] font-black">{t('clientReviews.title')}</h2>
-                            <p className="mt-5 text-justify text-[0.95rem] leading-loose text-white/90">{t('clientReviews.intro')}</p>
+                            <p className="mt-4 text-justify text-sm leading-relaxed text-white/95 sm:mt-5 sm:text-[0.95rem] sm:leading-loose">
+                                {t('clientReviews.intro')}
+                            </p>
                         </div>
                     </div>
 
