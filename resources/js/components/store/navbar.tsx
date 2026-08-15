@@ -1,6 +1,6 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLocalized } from '@/lib/localize';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -130,6 +130,16 @@ const REVEAL_AFTER = 180;
  * the delay, the target changes before the element has moved at all.
  */
 const REVEAL_DELAY_MS = 750;
+
+/**
+ * Signed-in account destinations, shared by the desktop dropdown and the mobile
+ * drawer so the two cannot drift. Order is by how often a customer wants them.
+ */
+const ACCOUNT_LINKS = [
+    { href: '/account', key: 'common.myAccount' },
+    { href: '/account/profile', key: 'account.editProfile' },
+    { href: '/account/wishlist', key: 'account.wishlist' },
+] as const;
 
 export default function StoreNavbar() {
     const { t } = useTranslation();
@@ -311,13 +321,55 @@ export default function StoreNavbar() {
                         >
                             <Search className="size-5" />
                         </Link>
-                        <Link
-                            href={accountHref}
-                            aria-label={t('common.myAccount')}
-                            className="text-brand-gold hover:text-brand-teal hidden transition-colors md:inline-flex"
-                        >
-                            <User className="size-5" />
-                        </Link>
+                        {/* Account. Signed out it is a plain link to sign-in (the pill
+                            in the end cell carries the sign-up); signed in it opens a
+                            menu, which is also the only place in the header a customer
+                            could previously log out from — there wasn't one. */}
+                        {loggedIn ? (
+                            <div className="group relative hidden md:block">
+                                <button
+                                    type="button"
+                                    aria-label={t('common.myAccount')}
+                                    className="text-brand-gold hover:text-brand-teal inline-flex items-center gap-1 transition-colors"
+                                >
+                                    <User className="size-5" />
+                                    <Caret />
+                                </button>
+                                {/* Same hover/focus-within mechanism as the category
+                                    dropdowns in row 2. `start-0` so it opens inward in
+                                    both directions instead of off the edge. */}
+                                <div className="border-brand-gold/15 invisible absolute start-0 top-full z-20 min-w-52 -translate-y-1 rounded-xl border bg-white p-2 opacity-0 shadow-lg transition-all group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                                    {ACCOUNT_LINKS.map((l) => (
+                                        <Link
+                                            key={l.href}
+                                            href={l.href}
+                                            className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
+                                                isActive(l.href)
+                                                    ? 'bg-brand-cream text-brand-teal'
+                                                    : 'text-brand-gold hover:bg-brand-cream hover:text-brand-teal'
+                                            }`}
+                                        >
+                                            {t(l.key)}
+                                        </Link>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => router.post('/logout')}
+                                        className="border-brand-gold/15 mt-1 block w-full rounded-lg border-t px-3 py-2 text-start text-sm text-red-600 transition-colors hover:bg-red-50"
+                                    >
+                                        {t('common.logout')}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <Link
+                                href={accountHref}
+                                aria-label={t('nav.signIn')}
+                                className="text-brand-gold hover:text-brand-teal hidden transition-colors md:inline-flex"
+                            >
+                                <User className="size-5" />
+                            </Link>
+                        )}
                         <Link
                             href="/cart"
                             aria-label={t('common.cart')}
@@ -351,6 +403,20 @@ export default function StoreNavbar() {
                                 </span>
                             )}
                         </Link>
+                        {/* Sign-up is a filled pill rather than another icon: it was
+                            previously unreachable from the storefront entirely (the
+                            header only ever offered WhatsApp sign-IN), so it needs to
+                            read as an invitation, not a utility. Desktop only — the
+                            mobile equivalent lives in the drawer. */}
+                        {!loggedIn && (
+                            <Link
+                                href="/register"
+                                data-testid="nav-signup"
+                                className="bg-brand-teal hidden rounded-full px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-[#163e42] md:inline-flex"
+                            >
+                                {t('nav.signUp')}
+                            </Link>
+                        )}
                         <button
                             type="button"
                             data-testid="lang-toggle"
@@ -503,21 +569,59 @@ export default function StoreNavbar() {
                                 {t('nav.contact')}
                             </Link>
 
-                            <div className="border-brand-gold/15 mt-3 flex items-center gap-3 border-t pt-3">
-                                <Link
-                                    href={accountHref}
-                                    className="text-brand-gold hover:bg-brand-cream flex-1 rounded-lg px-3 py-2 text-sm"
-                                    onClick={() => setMobileOpen(false)}
-                                >
-                                    {t('common.myAccount')}
-                                </Link>
+                            {/* Account block. Signed out, this is the ONLY sign-up entry
+                                point on a phone (the header pill is desktop-only), so it
+                                is a filled button rather than another quiet link. */}
+                            <div className="border-brand-gold/15 mt-3 space-y-1 border-t pt-3">
+                                {loggedIn ? (
+                                    <>
+                                        {ACCOUNT_LINKS.map((l) => (
+                                            <Link
+                                                key={l.href}
+                                                href={l.href}
+                                                className="text-brand-gold hover:bg-brand-cream block rounded-lg px-3 py-2 text-sm"
+                                                onClick={() => setMobileOpen(false)}
+                                            >
+                                                {t(l.key)}
+                                            </Link>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setMobileOpen(false);
+                                                router.post('/logout');
+                                            }}
+                                            className="block w-full rounded-lg px-3 py-2 text-start text-sm text-red-600 hover:bg-red-50"
+                                        >
+                                            {t('common.logout')}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link
+                                            href="/login/whatsapp"
+                                            className="text-brand-gold hover:bg-brand-cream block rounded-lg px-3 py-2 text-sm"
+                                            onClick={() => setMobileOpen(false)}
+                                        >
+                                            {t('nav.signIn')}
+                                        </Link>
+                                        <Link
+                                            href="/register"
+                                            className="bg-brand-teal block rounded-lg px-3 py-2 text-center text-sm font-bold text-white"
+                                            onClick={() => setMobileOpen(false)}
+                                        >
+                                            {t('nav.signUp')}
+                                        </Link>
+                                    </>
+                                )}
+
                                 <button
                                     type="button"
                                     onClick={() => {
                                         toggleLanguage();
                                         setMobileOpen(false);
                                     }}
-                                    className="border-brand-gold/40 text-brand-gold hover:bg-brand-gold/10 rounded-full border px-3 py-1 text-sm"
+                                    className="border-brand-gold/40 text-brand-gold hover:bg-brand-gold/10 mt-2 rounded-full border px-3 py-1 text-sm"
                                 >
                                     {t('common.switchLanguage')}
                                 </button>

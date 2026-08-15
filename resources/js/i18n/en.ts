@@ -16,6 +16,7 @@ const en = {
         switchLanguage: 'العربية',
         currency: 'SAR',
         save: 'Save',
+        saving: 'Saving…',
         remove: 'Remove',
         delete: 'Remove',
         outOfStock: 'Out of stock',
@@ -81,6 +82,8 @@ const en = {
         search: 'Search',
         menu: 'Menu',
         closeMenu: 'Close menu',
+        signIn: 'Sign in',
+        signUp: 'Create account',
     },
     hero: {
         // ⚠️ Length is load-bearing, not just wording. The headline is a two-line
@@ -429,7 +432,11 @@ const en = {
     },
     profile: {
         title: 'Edit details',
+        subtitle: 'Keep your details up to date so orders reach you without delay.',
+        completePrompt: '{{n}} details are still missing. Adding them speeds up checkout.',
+        emailHint: 'Used for order receipts and updates.',
         back: '← My account',
+        backPlain: 'My account',
         phone: 'Mobile number',
         verified: 'Verified via WhatsApp',
         unverified: 'Not verified',

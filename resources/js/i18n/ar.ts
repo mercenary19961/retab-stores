@@ -17,6 +17,7 @@ const ar = {
         switchLanguage: 'English',
         currency: 'ر.س',
         save: 'حفظ',
+        saving: 'جارٍ الحفظ…',
         remove: 'إزالة',
         delete: 'حذف',
         outOfStock: 'غير متوفر',
@@ -82,6 +83,8 @@ const ar = {
         search: 'البحث',
         menu: 'القائمة',
         closeMenu: 'إغلاق القائمة',
+        signIn: 'تسجيل الدخول',
+        signUp: 'إنشاء حساب',
     },
     hero: {
         // "طيب" elongated with kashida (tatweel ـ) so both headline lines reach
@@ -437,7 +440,11 @@ const ar = {
     },
     profile: {
         title: 'تعديل البيانات',
+        subtitle: 'حدّث بياناتك ليصلك طلبك دون تأخير.',
+        completePrompt: 'ما زالت {{n}} من البيانات ناقصة. إضافتها تسرّع إتمام الطلب.',
+        emailHint: 'نستخدمه لإرسال فواتير الطلبات وتحديثاتها.',
         back: '← حسابي',
+        backPlain: 'حسابي',
         phone: 'رقم الجوال',
         verified: 'موثّق عبر واتساب',
         unverified: 'غير موثّق',
