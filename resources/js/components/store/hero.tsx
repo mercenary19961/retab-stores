@@ -61,9 +61,25 @@ export default function StoreHero() {
             {/* <picture>, not two <img> toggled with `hidden`: the browser picks ONE
                 source and downloads only that, so a phone never pulls the 145 KB
                 desktop crop it isn't going to show. */}
+            {/* On phones the portrait crop is trimmed from the TOP rather than
+                shipped at its full 874px, which was slightly taller than a phone
+                screen once the navbar is counted. Done in CSS (aspect + cover +
+                bottom anchor) rather than by re-cutting the file: lossless,
+                reversible, and the amount stays tunable in one number.
+
+                🔑 The trim comes off the top because the subject is anchored at
+                the BOTTOM — but that same top band is the empty sand the copy
+                sits in, so every pixel removed is a pixel of copy headroom
+                spent. Measured: the man and the fire begin at y=371 of 874, and
+                the English copy needs 220px at a 320px viewport, leaving only
+                ~95px of theoretical slack. 70 is taken, not 95, so the tightest
+                case keeps a real margin instead of just clearing.
+                402x874 → 402x804. If this is ever re-tuned, re-measure the
+                clearance at 320px in ENGLISH — it is the binding case, not
+                Arabic and not the common widths. */}
             <picture>
                 <source media={MOBILE_ART} srcSet={slide.imageMobile} />
-                <img src={slide.image} alt="" className="block h-auto w-full" />
+                <img src={slide.image} alt="" className="block h-auto w-full max-sm:aspect-[402/804] max-sm:object-cover max-sm:object-bottom" />
             </picture>
 
             {/* Scrim direction follows where the copy sits: left-to-right on desktop
@@ -91,7 +107,10 @@ export default function StoreHero() {
             {/* Desktop: a left column beside the baked-in product. Phones: the full
                 width of the top 38% band, since the portrait crop puts the subject
                 centre-bottom and leaves the sky/sand above it empty. */}
-            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:inset-y-auto max-sm:top-0 max-sm:h-[38%] max-sm:w-full max-sm:min-w-0 max-sm:justify-center max-sm:px-6 lg:-translate-x-4 lg:-translate-y-[6.5vw]">
+            {/* 38% → 37%: the band is a fraction of the section, and trimming 70px
+                off the top moved the subject from 42.4% to 37.4% of what remains.
+                The two track together — change the crop, recompute this. */}
+            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:inset-y-auto max-sm:top-0 max-sm:h-[37%] max-sm:w-full max-sm:min-w-0 max-sm:justify-center max-sm:px-6 lg:-translate-x-4 lg:-translate-y-[6.5vw]">
                 <div className="w-full text-start max-sm:text-center">
                     {/* Below 732px the kashida-elongated headline overflows the
                         narrow text column, so step the size down there and smaller.

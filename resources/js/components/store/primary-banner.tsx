@@ -22,12 +22,26 @@ export default function PrimaryBanner() {
         <section className="relative w-full overflow-hidden">
             {/* One source is fetched, not both — a phone never downloads the
                 86 KB landscape crop it won't display. */}
+            {/* Trimmed from the top on phones, same technique as the hero (CSS
+                aspect + cover + bottom anchor, so the file is untouched).
+                This one can afford far more: the product cluster does not begin
+                until y=539 of 874 (61.7%), and the copy needs only 172px at its
+                worst, so 150px comes off with roughly 320px of measured slack to
+                spare — where the hero had barely 95px. Same reason the numbers
+                differ: it is the composition that sets them, not symmetry.
+                402x874 → 402x724. */}
             <picture>
                 <source media="(max-width: 639px)" srcSet="/images/banner/banner-mobile.webp" />
-                <img src="/images/banner/banner.webp" alt={t('primaryBanner.alt')} className="block h-auto w-full" />
+                <img
+                    src="/images/banner/banner.webp"
+                    alt={t('primaryBanner.alt')}
+                    className="block h-auto w-full max-sm:aspect-[402/724] max-sm:object-cover max-sm:object-bottom"
+                />
             </picture>
 
-            <div className="absolute inset-y-0 right-0 flex w-[48%] flex-col items-center justify-center gap-[1.5%] px-[2%] text-center max-sm:inset-y-auto max-sm:top-0 max-sm:h-[58%] max-sm:w-full max-sm:gap-3 max-sm:px-6">
+            {/* 58% → 52%: after the 150px trim the cluster sits at 53.7% of what
+                remains, not 61.7%. Recompute alongside any change to the crop. */}
+            <div className="absolute inset-y-0 right-0 flex w-[48%] flex-col items-center justify-center gap-[1.5%] px-[2%] text-center max-sm:inset-y-auto max-sm:top-0 max-sm:h-[52%] max-sm:w-full max-sm:gap-3 max-sm:px-6">
                 {/* On phones the type is sized off the viewport rather than the old
                     vw ramp: that ramp was calibrated to a banner only ~135px tall at
                     390px wide, so it produced tiny text on the full-height crop. */}
