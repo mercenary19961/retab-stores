@@ -389,8 +389,19 @@ export default function StoreNavbar() {
                         <img src="/images/brand/logo.png" alt={t('brand')} className="h-12 w-auto" />
                     </Link>
 
-                    {/* End: language toggle (desktop) / cart (mobile) */}
-                    <div className="flex items-center gap-3 justify-self-end">
+                    {/* End: language toggle (desktop) / account + cart (mobile) */}
+                    <div className="flex items-center gap-2.5 justify-self-end sm:gap-3">
+                        {/* Mobile account. A plain link, NOT the desktop dropdown: a
+                            hover menu is unusable on touch, and the drawer already
+                            carries the full account list. Signed in it goes straight
+                            to the account, signed out to sign-in. */}
+                        <Link
+                            href={accountHref}
+                            aria-label={loggedIn ? t('common.myAccount') : t('nav.signIn')}
+                            className="text-brand-gold hover:text-brand-teal transition-colors md:hidden"
+                        >
+                            <User className="size-6" />
+                        </Link>
                         <Link
                             href="/cart"
                             aria-label={t('common.cart')}
@@ -417,13 +428,21 @@ export default function StoreNavbar() {
                                 {t('nav.signUp')}
                             </Link>
                         )}
+                        {/* Both labels name the language you switch TO. The short one
+                            below `md` keeps three controls on a phone row without
+                            crowding the logo — "العربية"/"English" is roughly three
+                            times the width of "AR"/"EN". Rendered as two spans rather
+                            than a breakpoint hook so it stays a pure CSS switch (and
+                            SSR emits both, so there is nothing to hydrate wrong). */}
                         <button
                             type="button"
                             data-testid="lang-toggle"
                             onClick={toggleLanguage}
+                            aria-label={t('common.switchLanguage')}
                             className="border-brand-gold/40 text-brand-gold hover:bg-brand-gold/10 rounded-full border px-3 py-1 text-sm transition-colors"
                         >
-                            {t('common.switchLanguage')}
+                            <span className="md:hidden">{t('common.switchLanguageShort')}</span>
+                            <span className="hidden md:inline">{t('common.switchLanguage')}</span>
                         </button>
                     </div>
                 </div>

@@ -15,6 +15,8 @@ const ar = {
         rightsReserved: 'جميع الحقوق محفوظة',
         // Label for the language toggle — shows the language you switch TO.
         switchLanguage: 'English',
+        // Compact form for the phone header — same meaning, ~a third the width.
+        switchLanguageShort: 'EN',
         currency: 'ر.س',
         save: 'حفظ',
         saving: 'جارٍ الحفظ…',
