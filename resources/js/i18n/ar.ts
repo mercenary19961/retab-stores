@@ -1552,6 +1552,7 @@ const ar = {
         builtBy: 'تطوير',
         copyright: '© {{year}} {{company}} · جميع الحقوق محفوظة',
         links: {
+            about: 'من نحن',
             returnPolicy: 'سياسة الاستبدال و الاسترجاع',
             contact: 'تواصل معنا',
             branches: 'فروعنا',

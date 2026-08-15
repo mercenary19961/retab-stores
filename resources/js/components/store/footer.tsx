@@ -29,6 +29,7 @@ interface FooterSettings {
 const HANDLE = '@RETAB_DATES';
 
 const QUICK_LINKS = [
+    { key: 'about', href: '/pages/about' },
     { key: 'returnPolicy', href: '/pages/returns-policy' },
     { key: 'contact', href: '/pages/contact' },
     { key: 'branches', href: '/pages/branches' },
@@ -68,7 +69,11 @@ export default function StoreFooter() {
 
                     {/* Company / contact block (centre column on desktop) */}
                     <div className="flex flex-col items-center gap-6 text-center max-md:w-full max-md:items-start max-md:gap-2.5 max-md:text-start">
-                        <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-base md:text-2xl">{t('footer.companyName')}</h3>
+                        {/* Hidden on phones: directly beneath the logo it just
+                            repeats the brand, and the legal bar a few rows below
+                            already carries the full company name in the copyright
+                            line. Kept on desktop, where it heads its own column. */}
+                        <h3 className="font-heading text-brand-teal text-xl font-bold max-md:hidden md:text-2xl">{t('footer.companyName')}</h3>
 
                         {/* Official badges: commercial registration + VAT.
                         On phones these previously wrapped to one per row, costing a

@@ -1570,6 +1570,7 @@ const en = {
         // "Co." and a sentence period after it renders as "Co.. All rights reserved."
         copyright: '© {{year}} {{company}} · All rights reserved',
         links: {
+            about: 'About Us',
             returnPolicy: 'Return & Exchange Policy',
             contact: 'Contact Us',
             branches: 'Our Branches',
