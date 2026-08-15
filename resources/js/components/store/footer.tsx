@@ -51,61 +51,75 @@ export default function StoreFooter() {
 
     return (
         <footer className="bg-gradient-to-b from-[#f6e8d4] via-[#f2e3cd] to-[#efdcc4]">
-            <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 px-6 py-14 md:flex-row md:items-start md:justify-between md:gap-8">
+            {/* Below `md` this whole block stacks into one column, so every gap and
+                every element is paid for twice over in height. Each piece steps
+                down with a `max-md:` variant; the desktop row is untouched. */}
+            <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 px-6 py-14 max-md:gap-6 max-md:py-8 md:flex-row md:items-start md:justify-between md:gap-8">
                 {/* Brand logo — rightmost in RTL, leftmost in LTR. Links home, same
                     as the navbar logo: a footer logo is somewhere people expect to be
                     able to click, and it is the only way back to the homepage from
                     down here (the quick links cover everything except home). */}
                 <Link href="/" className="shrink-0 transition-opacity hover:opacity-75" aria-label={t('brand')}>
-                    <img src="/images/footer/logo.png" alt={t('footer.companyName')} className="h-auto w-40 md:w-48" />
+                    <img src="/images/footer/logo.png" alt={t('footer.companyName')} className="h-auto w-40 max-md:w-24 md:w-48" />
                 </Link>
 
                 {/* Company / contact block (centre) */}
-                <div className="flex flex-col items-center gap-6 text-center">
-                    <h3 className="font-heading text-brand-teal text-xl font-bold md:text-2xl">{t('footer.companyName')}</h3>
+                <div className="flex flex-col items-center gap-6 text-center max-md:w-full max-md:gap-4">
+                    <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-base md:text-2xl">{t('footer.companyName')}</h3>
 
-                    {/* Official badges: commercial registration + VAT */}
-                    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
-                        <div className="flex items-center gap-2">
+                    {/* Official badges: commercial registration + VAT.
+                        On phones these previously wrapped to one per row, costing a
+                        whole extra band of height for two short numbers — shrinking
+                        the badge and label lets both sit side by side. */}
+                    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 max-md:gap-x-4 max-md:gap-y-2">
+                        <div className="flex items-center gap-2 max-md:gap-1.5">
                             <div className="text-start leading-tight">
-                                <div className="text-brand-teal text-sm font-bold">{t('footer.commercialReg')}</div>
-                                <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide">
+                                <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.commercialReg')}</div>
+                                <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
                                     {footer.commercial_registration}
                                 </div>
                             </div>
-                            <img src="/images/footer/badge-commerce.png" alt={t('footer.commercialReg')} className="h-12 w-12 object-contain" />
+                            <img
+                                src="/images/footer/badge-commerce.png"
+                                alt={t('footer.commercialReg')}
+                                className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
+                            />
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 max-md:gap-1.5">
                             <div className="text-start leading-tight">
-                                <div className="text-brand-teal text-sm font-bold">{t('footer.vatNumber')}</div>
-                                <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide">
+                                <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.vatNumber')}</div>
+                                <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
                                     {footer.vat_number}
                                 </div>
                             </div>
-                            <img src="/images/footer/badge-vat.png" alt={t('footer.vatNumber')} className="h-12 w-12 object-contain" />
+                            <img
+                                src="/images/footer/badge-vat.png"
+                                alt={t('footer.vatNumber')}
+                                className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
+                            />
                         </div>
                     </div>
 
                     {/* Contact (LTR content) */}
-                    <div dir="ltr" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+                    <div dir="ltr" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 max-md:gap-x-4 max-md:gap-y-1">
                         <a
                             href={`tel:${footer.contact_phone.replace(/\s/g, '')}`}
-                            className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75"
+                            className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75 max-md:gap-1.5 max-md:text-sm"
                         >
-                            <img src="/images/footer/icon-phone.png" alt="" className="h-7 w-7" />
+                            <img src="/images/footer/icon-phone.png" alt="" className="h-7 w-7 max-md:h-5 max-md:w-5" />
                             <span className="font-semibold">{footer.contact_phone}</span>
                         </a>
                         <a
                             href={`mailto:${footer.contact_email}`}
-                            className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75"
+                            className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75 max-md:gap-1.5 max-md:text-sm"
                         >
-                            <img src="/images/footer/icon-email.png" alt="" className="h-7 w-7" />
+                            <img src="/images/footer/icon-email.png" alt="" className="h-7 w-7 max-md:h-5 max-md:w-5" />
                             <span className="font-semibold">{footer.contact_email}</span>
                         </a>
                     </div>
 
                     {/* Social icons (fixed visual order) */}
-                    <div dir="ltr" className="flex items-center justify-center gap-3">
+                    <div dir="ltr" className="flex items-center justify-center gap-3 max-md:gap-2">
                         {socials.map((s) => (
                             <a
                                 key={s.key}
@@ -115,19 +129,21 @@ export default function StoreFooter() {
                                 aria-label={s.key}
                                 className="transition-opacity hover:opacity-75"
                             >
-                                <img src={`/images/footer/${s.icon}.png`} alt={s.key} className="h-9 w-9" />
+                                <img src={`/images/footer/${s.icon}.png`} alt={s.key} className="h-9 w-9 max-md:h-7 max-md:w-7" />
                             </a>
                         ))}
                     </div>
                 </div>
 
                 {/* Quick links (leftmost in RTL) + back-to-top */}
-                <div className="flex flex-col items-center gap-4 md:items-start">
-                    <h3 className="font-heading text-brand-teal text-xl font-bold md:text-2xl">{t('footer.quickLinks')}</h3>
-                    <ul className="flex flex-col items-center gap-3 md:items-start">
+                <div className="flex flex-col items-center gap-4 max-md:w-full max-md:gap-2 md:items-start">
+                    <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-base md:text-2xl">{t('footer.quickLinks')}</h3>
+                    {/* Two columns on phones: four short links stacked vertically is
+                        four rows of mostly-empty width. */}
+                    <ul className="flex flex-col items-center gap-3 max-md:grid max-md:w-full max-md:max-w-xs max-md:grid-cols-2 max-md:gap-x-4 max-md:gap-y-1.5 md:items-start">
                         {QUICK_LINKS.map((l) => (
                             <li key={l.key}>
-                                <Link href={l.href} className="font-heading text-brand-gold hover:text-brand-teal transition-colors">
+                                <Link href={l.href} className="font-heading text-brand-gold hover:text-brand-teal transition-colors max-md:text-sm">
                                     {t(`footer.links.${l.key}`)}
                                 </Link>
                             </li>
@@ -137,9 +153,9 @@ export default function StoreFooter() {
                         type="button"
                         onClick={scrollTop}
                         aria-label={t('footer.backToTop')}
-                        className="bg-brand-gold hover:bg-brand-teal mt-2 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-md transition-colors"
+                        className="bg-brand-gold hover:bg-brand-teal mt-2 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-md transition-colors max-md:mt-1 max-md:h-9 max-md:w-9"
                     >
-                        <ArrowUp className="h-6 w-6" />
+                        <ArrowUp className="h-6 w-6 max-md:h-4 max-md:w-4" />
                     </button>
                 </div>
             </div>
@@ -155,7 +171,7 @@ export default function StoreFooter() {
                 duplicated. It is not a page, and a footer that offers the same button
                 twice makes the reader look for the difference. */}
             <div className="border-brand-gold/25 border-t">
-                <div className="text-brand-teal/70 mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-6 py-5 text-xs sm:flex-row sm:justify-between">
+                <div className="text-brand-teal/70 mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-6 py-5 text-xs max-sm:gap-y-1.5 max-sm:py-3 max-sm:text-[0.7rem] sm:flex-row sm:justify-between">
                     {/* Resolved on the client so it can never go stale, which a
                         hardcoded or build-time year would. ⚠️ The SSR sidecar renders
                         in the container's timezone and the visitor's browser in theirs,
