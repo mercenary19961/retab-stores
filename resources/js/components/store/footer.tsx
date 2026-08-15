@@ -1,7 +1,7 @@
 import HardRockMark from '@/components/hardrock-mark';
 import { OPEN_CONSENT_EVENT } from '@/components/store/cookie-consent';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowUp, ArrowUpRight, Cookie } from 'lucide-react';
+import { ArrowUpRight, Cookie } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -47,116 +47,116 @@ export default function StoreFooter() {
         { key: 'linkedin', icon: 'social-linkedin', url: footer.social_linkedin },
     ].filter((s) => s.url);
 
-    const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
     return (
         <footer className="bg-gradient-to-b from-[#f6e8d4] via-[#f2e3cd] to-[#efdcc4]">
-            {/* Below `md` this whole block stacks into one column, so every gap and
-                every element is paid for twice over in height. Each piece steps
-                down with a `max-md:` variant; the desktop row is untouched. */}
-            <div className="mx-auto flex max-w-6xl flex-col items-center gap-12 px-6 py-14 max-md:gap-6 max-md:py-8 md:flex-row md:items-start md:justify-between md:gap-8">
-                {/* Brand logo — rightmost in RTL, leftmost in LTR. Links home, same
-                    as the navbar logo: a footer logo is somewhere people expect to be
-                    able to click, and it is the only way back to the homepage from
-                    down here (the quick links cover everything except home). */}
-                <Link href="/" className="shrink-0 transition-opacity hover:opacity-75" aria-label={t('brand')}>
-                    <img src="/images/footer/logo.png" alt={t('footer.companyName')} className="h-auto w-40 max-md:w-24 md:w-48" />
-                </Link>
+            {/* Two columns on phones as well as desktop — brand/contact on the
+                start side, quick links on the end side — rather than one tall
+                stack. Everything steps down with `max-md:` variants. */}
+            <div className="mx-auto flex max-w-6xl items-start gap-12 px-6 py-14 max-md:gap-5 max-md:py-6 md:justify-between md:gap-8">
+                {/* 🔑 `md:contents` dissolves this wrapper at desktop, so the logo
+                    and the company block become direct children of the row again
+                    and the original three-column layout is preserved exactly. On
+                    phones it groups them into the single start-side column. */}
+                <div className="flex min-w-0 flex-1 flex-col items-center gap-4 max-md:items-start md:contents">
+                    {/* Brand logo — start side in both directions. Links home, same
+                        as the navbar logo: a footer logo is somewhere people expect to
+                        be able to click, and it is the only way back to the homepage
+                        from down here (the quick links cover everything except home). */}
+                    <Link href="/" className="shrink-0 transition-opacity hover:opacity-75" aria-label={t('brand')}>
+                        <img src="/images/footer/logo.png" alt={t('footer.companyName')} className="h-auto w-40 max-md:w-24 md:w-48" />
+                    </Link>
 
-                {/* Company / contact block (centre) */}
-                <div className="flex flex-col items-center gap-6 text-center max-md:w-full max-md:gap-4">
-                    <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-base md:text-2xl">{t('footer.companyName')}</h3>
+                    {/* Company / contact block (centre column on desktop) */}
+                    <div className="flex flex-col items-center gap-6 text-center max-md:w-full max-md:items-start max-md:gap-2.5 max-md:text-start">
+                        <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-base md:text-2xl">{t('footer.companyName')}</h3>
 
-                    {/* Official badges: commercial registration + VAT.
+                        {/* Official badges: commercial registration + VAT.
                         On phones these previously wrapped to one per row, costing a
                         whole extra band of height for two short numbers — shrinking
                         the badge and label lets both sit side by side. */}
-                    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 max-md:gap-x-4 max-md:gap-y-2">
-                        <div className="flex items-center gap-2 max-md:gap-1.5">
-                            <div className="text-start leading-tight">
-                                <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.commercialReg')}</div>
-                                <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
-                                    {footer.commercial_registration}
+                        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 max-md:justify-start max-md:gap-x-4 max-md:gap-y-2">
+                            <div className="flex items-center gap-2 max-md:gap-1.5">
+                                <div className="text-start leading-tight">
+                                    <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.commercialReg')}</div>
+                                    <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
+                                        {footer.commercial_registration}
+                                    </div>
                                 </div>
+                                <img
+                                    src="/images/footer/badge-commerce.png"
+                                    alt={t('footer.commercialReg')}
+                                    className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
+                                />
                             </div>
-                            <img
-                                src="/images/footer/badge-commerce.png"
-                                alt={t('footer.commercialReg')}
-                                className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2 max-md:gap-1.5">
-                            <div className="text-start leading-tight">
-                                <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.vatNumber')}</div>
-                                <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
-                                    {footer.vat_number}
+                            <div className="flex items-center gap-2 max-md:gap-1.5">
+                                <div className="text-start leading-tight">
+                                    <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.vatNumber')}</div>
+                                    <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
+                                        {footer.vat_number}
+                                    </div>
                                 </div>
+                                <img
+                                    src="/images/footer/badge-vat.png"
+                                    alt={t('footer.vatNumber')}
+                                    className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
+                                />
                             </div>
-                            <img
-                                src="/images/footer/badge-vat.png"
-                                alt={t('footer.vatNumber')}
-                                className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
-                            />
                         </div>
-                    </div>
 
-                    {/* Contact (LTR content) */}
-                    <div dir="ltr" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 max-md:gap-x-4 max-md:gap-y-1">
-                        <a
-                            href={`tel:${footer.contact_phone.replace(/\s/g, '')}`}
-                            className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75 max-md:gap-1.5 max-md:text-sm"
+                        {/* Contact (LTR content) */}
+                        <div
+                            dir="ltr"
+                            className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 max-md:justify-start max-md:gap-x-4 max-md:gap-y-1"
                         >
-                            <img src="/images/footer/icon-phone.png" alt="" className="h-7 w-7 max-md:h-5 max-md:w-5" />
-                            <span className="font-semibold">{footer.contact_phone}</span>
-                        </a>
-                        <a
-                            href={`mailto:${footer.contact_email}`}
-                            className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75 max-md:gap-1.5 max-md:text-sm"
-                        >
-                            <img src="/images/footer/icon-email.png" alt="" className="h-7 w-7 max-md:h-5 max-md:w-5" />
-                            <span className="font-semibold">{footer.contact_email}</span>
-                        </a>
-                    </div>
-
-                    {/* Social icons (fixed visual order) */}
-                    <div dir="ltr" className="flex items-center justify-center gap-3 max-md:gap-2">
-                        {socials.map((s) => (
                             <a
-                                key={s.key}
-                                href={s.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={s.key}
-                                className="transition-opacity hover:opacity-75"
+                                href={`tel:${footer.contact_phone.replace(/\s/g, '')}`}
+                                className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75 max-md:gap-1.5 max-md:text-sm"
                             >
-                                <img src={`/images/footer/${s.icon}.png`} alt={s.key} className="h-9 w-9 max-md:h-7 max-md:w-7" />
+                                <img src="/images/footer/icon-phone.png" alt="" className="h-7 w-7 max-md:h-5 max-md:w-5" />
+                                <span className="font-semibold">{footer.contact_phone}</span>
                             </a>
-                        ))}
+                            <a
+                                href={`mailto:${footer.contact_email}`}
+                                className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75 max-md:gap-1.5 max-md:text-sm"
+                            >
+                                <img src="/images/footer/icon-email.png" alt="" className="h-7 w-7 max-md:h-5 max-md:w-5" />
+                                <span className="font-semibold">{footer.contact_email}</span>
+                            </a>
+                        </div>
+
+                        {/* Social icons (fixed visual order) */}
+                        <div dir="ltr" className="flex items-center justify-center gap-3 max-md:justify-start max-md:gap-2">
+                            {socials.map((s) => (
+                                <a
+                                    key={s.key}
+                                    href={s.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={s.key}
+                                    className="transition-opacity hover:opacity-75"
+                                >
+                                    <img src={`/images/footer/${s.icon}.png`} alt={s.key} className="h-9 w-9 max-md:h-7 max-md:w-7" />
+                                </a>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* Quick links (leftmost in RTL) + back-to-top */}
-                <div className="flex flex-col items-center gap-4 max-md:w-full max-md:gap-2 md:items-start">
-                    <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-base md:text-2xl">{t('footer.quickLinks')}</h3>
-                    {/* Two columns on phones: four short links stacked vertically is
-                        four rows of mostly-empty width. */}
-                    <ul className="flex flex-col items-center gap-3 max-md:grid max-md:w-full max-md:max-w-xs max-md:grid-cols-2 max-md:gap-x-4 max-md:gap-y-1.5 md:items-start">
+                {/* Quick links — end side in both directions, a single narrow
+                    column so it reads as a nav list rather than a grid. The
+                    back-to-top button that used to live here is now the fixed
+                    ScrollToTop in the layout, reachable from anywhere. */}
+                <div className="flex shrink-0 flex-col items-center gap-4 max-md:items-start max-md:gap-1.5 md:items-start">
+                    <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-sm md:text-2xl">{t('footer.quickLinks')}</h3>
+                    <ul className="flex flex-col items-center gap-3 max-md:items-start max-md:gap-1 md:items-start">
                         {QUICK_LINKS.map((l) => (
                             <li key={l.key}>
-                                <Link href={l.href} className="font-heading text-brand-gold hover:text-brand-teal transition-colors max-md:text-sm">
+                                <Link href={l.href} className="font-heading text-brand-gold hover:text-brand-teal transition-colors max-md:text-xs">
                                     {t(`footer.links.${l.key}`)}
                                 </Link>
                             </li>
                         ))}
                     </ul>
-                    <button
-                        type="button"
-                        onClick={scrollTop}
-                        aria-label={t('footer.backToTop')}
-                        className="bg-brand-gold hover:bg-brand-teal mt-2 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-md transition-colors max-md:mt-1 max-md:h-9 max-md:w-9"
-                    >
-                        <ArrowUp className="h-6 w-6 max-md:h-4 max-md:w-4" />
-                    </button>
                 </div>
             </div>
 
@@ -171,7 +171,7 @@ export default function StoreFooter() {
                 duplicated. It is not a page, and a footer that offers the same button
                 twice makes the reader look for the difference. */}
             <div className="border-brand-gold/25 border-t">
-                <div className="text-brand-teal/70 mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-6 py-5 text-xs max-sm:gap-y-1.5 max-sm:py-3 max-sm:text-[0.7rem] sm:flex-row sm:justify-between">
+                <div className="text-brand-teal/70 mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-6 py-5 text-xs max-md:pb-16 max-sm:gap-y-1.5 max-sm:pt-3 max-sm:text-[0.7rem] sm:flex-row sm:justify-between">
                     {/* Resolved on the client so it can never go stale, which a
                         hardcoded or build-time year would. ⚠️ The SSR sidecar renders
                         in the container's timezone and the visitor's browser in theirs,

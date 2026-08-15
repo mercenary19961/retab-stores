@@ -1,6 +1,7 @@
 import CookieConsent from '@/components/store/cookie-consent';
 import StoreFooter from '@/components/store/footer';
 import StoreNavbar from '@/components/store/navbar';
+import ScrollToTop from '@/components/store/scroll-to-top';
 import { type PropsWithChildren } from 'react';
 
 interface Category {
@@ -22,6 +23,10 @@ export default function StoreLayout({ children, bare = false }: PropsWithChildre
             {bare ? <div className="flex-1">{children}</div> : <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>}
 
             <StoreFooter />
+            {/* Layout-level, not inside the footer: it is fixed-position and must
+                be reachable from anywhere on the page, not only once you have
+                scrolled to the bottom. */}
+            <ScrollToTop />
             <CookieConsent />
         </div>
     );
