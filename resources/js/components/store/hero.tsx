@@ -109,7 +109,15 @@ export default function StoreHero() {
                         variant is emitted AFTER both arbitrary ones (max-[732px] and
                         max-[480px]) and wins throughout, so any such rule would be dead
                         code. Below 640 there is now one size set, not three. */}
-                    <h1 className="font-heading text-[clamp(2.25rem,6.2vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-sm:text-[clamp(1.6rem,7.5vw,2.6rem)]">
+                    {/* Desktop ramp is 4.9vw, down from 6.2vw. At 6.2vw the English
+                        lines needed ~0.604 of the viewport width but the column only
+                        offers ~0.51 of it, so they could NEVER fit at any width and both
+                        wrapped with an orphaned last word ("land", "table") — the same
+                        broken lockup the phone had. Widening the column instead is not
+                        available: the subject in the landscape crop starts at x=58.3%
+                        (measured by per-column variance) and the column already runs to
+                        56%. Arabic was unaffected either way, being far shorter. */}
+                    <h1 className="font-heading text-[clamp(2.25rem,4.9vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-sm:text-[clamp(1.6rem,7.5vw,2.6rem)]">
                         <span className="text-brand-teal block">{slide.line1}</span>
                         <span className="block text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)]">{slide.line2}</span>
                     </h1>

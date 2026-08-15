@@ -83,8 +83,18 @@ const en = {
         closeMenu: 'Close menu',
     },
     hero: {
-        headlineLine1: 'From the finest of the land',
-        headlineLine2: 'to your finest gatherings',
+        // ⚠️ Length is load-bearing, not just wording. The headline is a two-line
+        // lockup (teal line + white line) and the Arabic keeps both lines the same
+        // width with kashida elongation — English has no equivalent, so it has to
+        // be short enough to fit on one line unaided. Measured in the real font at
+        // the phone size: the previous copy ran 374px and 348px against a 342px
+        // column at 390px wide, so BOTH wrapped and the lockup became four ragged
+        // lines with "land" orphaned. These are 285px and 267px, fitting at every
+        // phone width down to 320px, and their near-equal widths give the same
+        // balanced block the Arabic gets from its tatweel. Keep any replacement
+        // under ~270px at 29px, i.e. roughly this length.
+        headlineLine1: 'From the finest land',
+        headlineLine2: 'to your finest table',
         subtext: 'Premium Sukkari dates that complete your hospitality and sweeten every gathering',
         cta: 'Shop now',
         prevSlide: 'Previous slide',
