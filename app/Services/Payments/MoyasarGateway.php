@@ -3,7 +3,9 @@
 namespace App\Services\Payments;
 
 use App\Models\Order;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -26,13 +28,58 @@ class MoyasarGateway implements PaymentGateway
         protected string $callbackUrl,
     ) {}
 
+    /**
+     * Client for WRITES (invoice creation, refunds). Deliberately has NO retry.
+     *
+     * 🔴 A retried write can execute TWICE at Moyasar. This previously carried a
+     * bare `retry(2, 200, throw: false)`, whose behaviour was measured rather than
+     * assumed (one process per case, against the real client):
+     *
+     *   4xx (400/404/422)      1 request   — not retried
+     *   429 and 5xx            2 requests  — retried
+     *   lost connection        2 requests  — retried, AND RETURNS SUCCESS
+     *
+     * The last line is the dangerous one. A lost response is indistinguishable
+     * from a lost request, so a refund that Moyasar had already executed was
+     * issued a second time and this method returned normally — one row in our
+     * `payments` ledger, two refunds in the merchant account, and nothing in our
+     * books to show it. A 5xx is the same ambiguity with a status code attached.
+     *
+     * Retab issues partial refunds (a return with or without the shipping fee),
+     * so there is usually refundable balance left for a duplicate to succeed
+     * against. A full refund would more likely be rejected for exceeding the
+     * remaining balance — but that is Moyasar's accounting saving us, not our
+     * design.
+     *
+     * A failed write now surfaces to the caller instead: checkout flashes
+     * `payment.init_failed` and the admin refund flow reports the error.
+     */
     private function client(): PendingRequest
     {
         return Http::withBasicAuth($this->secretKey, '')
             ->acceptJson()
             ->timeout(20)
-            ->retry(2, 200, throw: false)
             ->baseUrl($this->baseUrl);
+    }
+
+    /**
+     * Client for READS (fetch payment/invoice, ping). Safe to repeat, so it rides
+     * out a blip — but only on genuinely transient faults. Retrying a 4xx just
+     * sends the same rejected request three times.
+     */
+    private function readClient(): PendingRequest
+    {
+        return $this->client()->retry(2, 200, fn (\Throwable $e) => $this->isTransient($e), throw: false);
+    }
+
+    private function isTransient(\Throwable $e): bool
+    {
+        if ($e instanceof ConnectionException) {
+            return true;
+        }
+
+        return $e instanceof RequestException
+            && ($e->response->status() >= 500 || $e->response->status() === 429);
     }
 
     public function createInvoice(Order $order): array
@@ -77,7 +124,7 @@ class MoyasarGateway implements PaymentGateway
 
     public function fetchPayment(string $paymentId): NormalizedPayment
     {
-        $response = $this->client()->get("/payments/{$paymentId}");
+        $response = $this->readClient()->get("/payments/{$paymentId}");
 
         if (! $response->successful()) {
             throw new RuntimeException("Moyasar fetch payment {$paymentId} failed: ".$response->status());
@@ -88,7 +135,7 @@ class MoyasarGateway implements PaymentGateway
 
     public function fetchInvoice(string $invoiceId): array
     {
-        $response = $this->client()->get("/invoices/{$invoiceId}");
+        $response = $this->readClient()->get("/invoices/{$invoiceId}");
 
         if (! $response->successful()) {
             throw new RuntimeException("Moyasar fetch invoice {$invoiceId} failed: ".$response->status());
@@ -129,7 +176,7 @@ class MoyasarGateway implements PaymentGateway
         }
 
         try {
-            $response = $this->client()->get('/invoices');
+            $response = $this->readClient()->get('/invoices');
 
             if ($response->successful()) {
                 return ['configured' => true, 'ok' => true, 'status' => $response->status(), 'message' => 'authenticated'];
