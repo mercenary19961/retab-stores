@@ -80,32 +80,39 @@ export default function StoreFooter() {
                         On phones these previously wrapped to one per row, costing a
                         whole extra band of height for two short numbers — shrinking
                         the badge and label lets both sit side by side. */}
+                        {/* ⚠️ Badge BEFORE its text in DOM order, which is what puts it on
+                            the reading-start side — left in English, right in Arabic —
+                            without a single physical `left`/`right` anywhere. This
+                            reverses the earlier arrangement (badge trailing the text);
+                            leading reads as a marker for the number that follows, and it
+                            also aligns the two badges into a column on phones, where the
+                            rows are `justify-between`. */}
                         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 max-md:w-full max-md:max-w-[15rem] max-md:justify-start max-md:gap-x-4 max-md:gap-y-2">
-                            <div className="flex items-center gap-2 max-md:w-full max-md:justify-between max-md:gap-1.5">
+                            <div className="flex items-center gap-2 max-md:w-full max-md:justify-start max-md:gap-2">
+                                <img
+                                    src="/images/footer/badge-commerce.png"
+                                    alt={t('footer.commercialReg')}
+                                    className="h-12 w-12 shrink-0 object-contain max-md:h-8 max-md:w-8"
+                                />
                                 <div className="text-start leading-tight">
                                     <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.commercialReg')}</div>
                                     <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
                                         {footer.commercial_registration}
                                     </div>
                                 </div>
-                                <img
-                                    src="/images/footer/badge-commerce.png"
-                                    alt={t('footer.commercialReg')}
-                                    className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
-                                />
                             </div>
-                            <div className="flex items-center gap-2 max-md:w-full max-md:justify-between max-md:gap-1.5">
+                            <div className="flex items-center gap-2 max-md:w-full max-md:justify-start max-md:gap-2">
+                                <img
+                                    src="/images/footer/badge-vat.png"
+                                    alt={t('footer.vatNumber')}
+                                    className="h-12 w-12 shrink-0 object-contain max-md:h-8 max-md:w-8"
+                                />
                                 <div className="text-start leading-tight">
                                     <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.vatNumber')}</div>
                                     <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
                                         {footer.vat_number}
                                     </div>
                                 </div>
-                                <img
-                                    src="/images/footer/badge-vat.png"
-                                    alt={t('footer.vatNumber')}
-                                    className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
-                                />
                             </div>
                         </div>
 
