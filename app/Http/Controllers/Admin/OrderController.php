@@ -10,6 +10,7 @@ use App\Services\OrderConfirmationService;
 use App\Services\Shipping\ShippingService;
 use App\Services\WhatsApp\WhatsAppService;
 use App\Support\TableExport;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -112,6 +113,41 @@ class OrderController extends Controller
         return Inertia::render('admin/orders/show', $this->detailData($order));
     }
 
+    /**
+     * Live carrier options for the shipping picker, fetched on demand.
+     *
+     * A separate JSON endpoint rather than a prop on the show page, because the
+     * picker is rendered by the shared OrderDetailView — which also runs inside
+     * the in-list modal, where there is no Inertia page of its own to attach a
+     * prop to. It sits alongside the existing `detail` endpoint that modal
+     * already fetches, so both surfaces load quotes the same way.
+     *
+     * On demand and never eagerly: quoting crosses the network to OTO and pushes
+     * the order there first, which is far too much to do on every page view.
+     *
+     * Always answers 200 with a usable shape. A quote can fail for reasons that
+     * have nothing to do with this order (credentials, an outage, a destination
+     * OTO won't serve), and the admin needs to SEE why rather than get a dead
+     * spinner — so the error travels as data. Automatic shipping still works in
+     * that case, since fulfill() re-quotes server-side.
+     */
+    public function shippingQuotes(Order $order): JsonResponse
+    {
+        try {
+            $options = collect($this->shipping->quote($order))
+                ->sortBy('price')
+                ->values()
+                ->map(fn ($option) => $option->toArray())
+                ->all();
+
+            return response()->json(['options' => $options, 'error' => null]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json(['options' => [], 'error' => $e->getMessage()]);
+        }
+    }
+
     /** JSON detail for the in-list order modal (same payload as the show page). */
     public function detail(Order $order)
     {
@@ -170,7 +206,17 @@ class OrderController extends Controller
                 'confirm' => $order->status === OrderStatus::AwaitingConfirmation,
                 'unavailable' => $order->status === OrderStatus::AwaitingConfirmation,
                 'ship' => $order->status === OrderStatus::Confirmed && ! $order->tracking_number,
-                'cancel' => in_array($order->status, [OrderStatus::Confirmed], true),
+                // 🔴 This used to be `status === Confirmed`, which is the exact
+                // complement of what cancelByCustomer() accepts — so the button
+                // appeared only in the one state guaranteed to fail, and clicking
+                // it always flashed "This order can no longer be cancelled."
+                // Ask the enum rather than restating its rule here.
+                'cancel' => $order->status->isCancellableByCustomer(),
+                // Cancelling the SHIPMENT is a different operation from cancelling
+                // the ORDER: it recalls the parcel and returns the order to
+                // confirmed so it can be shipped again, and moves no money.
+                // Excluded once delivered — there is nothing left to recall.
+                'cancelShipment' => $order->tracking_number !== null && $order->status === OrderStatus::Shipped,
             ],
         ];
     }
@@ -210,10 +256,25 @@ class OrderController extends Controller
         return back()->with('success', __('messages.admin.order_unavailable'));
     }
 
-    public function ship(Order $order)
+    /**
+     * Create the shipment. `delivery_option_id` is optional — omitted means the
+     * cheapest available carrier, which is the default because the customer pays
+     * a flat rate regardless, so the difference is entirely the store's margin.
+     * Staff can override it (a faster carrier, or one that actually serves a
+     * remote district) from the picker.
+     *
+     * The id is deliberately NOT validated against a fresh quote: that would
+     * double the OTO calls on every shipment, and a stale id is self-correcting
+     * — OTO rejects it and the admin sees the error and re-opens the picker.
+     */
+    public function ship(Request $request, Order $order)
     {
+        $data = $request->validate([
+            'delivery_option_id' => ['nullable', 'integer'],
+        ]);
+
         try {
-            $this->shipping->fulfill($order, null, Auth::id());
+            $this->shipping->fulfill($order, $data['delivery_option_id'] ?? null, Auth::id());
         } catch (\Throwable $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -222,6 +283,25 @@ class OrderController extends Controller
         $this->mailer->orderShipped($order);
 
         return back()->with('success', __('messages.admin.shipment_created'));
+    }
+
+    /**
+     * Recall the shipment from the carrier and return the order to confirmed so
+     * it can be shipped again (typically with a different carrier).
+     *
+     * ⚠️ This moves NO money, deliberately. The order is still live and will
+     * still be delivered, so refunding the customer's shipping fee would be
+     * wrong. Cancelling the ORDER is a separate action with its own refund path.
+     */
+    public function cancelShipment(Order $order)
+    {
+        try {
+            $this->shipping->cancel($order, Auth::id());
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('messages.admin.shipment_cancelled'));
     }
 
     public function cancel(Order $order)

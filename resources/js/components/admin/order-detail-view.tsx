@@ -1,5 +1,6 @@
 import Button from '@/components/admin/button';
 import PaymentStatusBadge from '@/components/admin/payment-status-badge';
+import ShippingPicker from '@/components/admin/shipping-picker';
 import CopyText from '@/components/copy-text';
 import OrderStatusBadge from '@/components/order-status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
@@ -17,6 +18,7 @@ import {
     Package,
     PackageCheck,
     PackageSearch,
+    PackageX,
     Phone,
     ShieldCheck,
     Signpost,
@@ -74,7 +76,10 @@ export interface OrderCan {
     confirm: boolean;
     unavailable: boolean;
     ship: boolean;
+    /** Cancel the ORDER (refunds it). Only before the admin confirms. */
     cancel: boolean;
+    /** Recall the SHIPMENT and return the order to confirmed. Moves no money. */
+    cancelShipment: boolean;
 }
 
 function Row({ label, value, icon: Icon }: { label: string; value: ReactNode; icon?: LucideIcon }) {
@@ -116,11 +121,25 @@ export default function OrderDetailView({
 }) {
     const { t } = useAdminT();
     const [note, setNote] = useState('');
+    const [picking, setPicking] = useState(false);
     const addr = order.shipping_address ?? {};
-    const hasActions = can.confirm || can.unavailable || can.ship || can.cancel;
+    const hasActions = can.confirm || can.unavailable || can.ship || can.cancel || can.cancelShipment;
+
+    const ship = (deliveryOptionId: number | null) => {
+        setPicking(false);
+        // Omitted entirely rather than sent as null: the server treats an absent
+        // delivery_option_id as "choose the cheapest".
+        onAction('ship', deliveryOptionId === null ? {} : { delivery_option_id: String(deliveryOptionId) });
+    };
 
     return (
         <div className="space-y-6">
+            {/* Mounted only while open so each opening refetches rates — they are
+                live prices and a cached list would ship the wrong carrier. */}
+            {picking && (
+                <ShippingPicker open={picking} onClose={() => setPicking(false)} orderNumber={order.order_number} onConfirm={ship} busy={busy} />
+            )}
+
             <div className="flex flex-wrap items-center gap-3">
                 <OrderStatusBadge status={order.status} />
                 <span className="text-sm text-neutral-400">{order.created_at ?? '—'}</span>
@@ -140,13 +159,21 @@ export default function OrderDetailView({
                             </Button>
                         )}
                         {can.ship && (
-                            <Button
-                                variant="primary"
-                                icon={Truck}
-                                disabled={busy}
-                                onClick={() => onAction('ship', {}, t('admin.orders.show.shipMsg'))}
-                            >
+                            <Button variant="primary" icon={Truck} disabled={busy} onClick={() => setPicking(true)}>
                                 {t('admin.orders.show.ship')}
+                            </Button>
+                        )}
+                        {/* Recalls the parcel so the order can be shipped again — NOT
+                            the same as cancelling the order, so it is deliberately
+                            styled as a secondary action and worded differently. */}
+                        {can.cancelShipment && (
+                            <Button
+                                variant="secondary"
+                                icon={PackageX}
+                                disabled={busy}
+                                onClick={() => onAction('cancel-shipment', {}, t('admin.orders.show.cancelShipmentMsg'))}
+                            >
+                                {t('admin.orders.show.cancelShipment')}
                             </Button>
                         )}
                         {can.cancel && (

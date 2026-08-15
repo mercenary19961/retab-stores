@@ -46,9 +46,15 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::get('orders/{order:order_number}/detail', [OrderController::class, 'detail'])->middleware('permission:orders.view')->name('orders.detail');
     Route::get('orders/{order:order_number}', [OrderController::class, 'show'])->middleware('permission:orders.view')->name('orders.show');
     Route::middleware('permission:orders.manage')->group(function () {
+        // GET, but gated on `manage` not `view`: it pushes the order to OTO and
+        // burns a live rate lookup, and only someone who can ship needs it.
+        Route::get('orders/{order:order_number}/shipping-quotes', [OrderController::class, 'shippingQuotes'])->name('orders.shipping-quotes');
         Route::post('orders/{order:order_number}/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');
         Route::post('orders/{order:order_number}/unavailable', [OrderController::class, 'markUnavailable'])->name('orders.unavailable');
         Route::post('orders/{order:order_number}/ship', [OrderController::class, 'ship'])->name('orders.ship');
+        // Recalls the parcel and returns the order to confirmed — distinct from
+        // `orders.cancel`, which kills the order and refunds it.
+        Route::post('orders/{order:order_number}/cancel-shipment', [OrderController::class, 'cancelShipment'])->name('orders.cancel-shipment');
         Route::post('orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
     });
 

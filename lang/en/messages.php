@@ -101,6 +101,7 @@ return [
         'order_confirmed' => 'Order confirmed and stock deducted.',
         'order_unavailable' => 'Order marked unavailable and the payment hold released.',
         'shipment_created' => 'Shipment created and carrier pickup requested.',
+        'shipment_cancelled' => 'Shipment cancelled. The order is back to confirmed and can be shipped again.',
         'order_cancelled' => 'Order cancelled.',
         'images_uploaded' => 'Images uploaded.',
         'image_deleted' => 'Image deleted.',

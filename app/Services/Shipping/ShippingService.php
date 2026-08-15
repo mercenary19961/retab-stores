@@ -66,6 +66,24 @@ class ShippingService
         return $order;
     }
 
+    /**
+     * Recall the shipment and return the order to `confirmed` so it can be
+     * shipped again — typically to switch carrier. Moves no money: the order is
+     * still live and still owed to the customer, so refunding the shipping fee
+     * here would be wrong (cancelling the ORDER is a separate path with its own
+     * refund).
+     *
+     * `oto_id` is deliberately KEPT, so the follow-up fulfil() reuses the order
+     * already pushed to OTO instead of trying to create a duplicate under the
+     * same order number.
+     *
+     * ⚠️ UNVERIFIED against a live parcel: whether OTO's cancelShipment voids
+     * only the shipment or the whole order on their side. If it is the latter,
+     * the re-ship will fail at createShipment and the admin will see OTO's error
+     * — recoverable, but it would mean clearing `oto_id` here so the order gets
+     * re-pushed. Confirm on the first real cancellation before trusting the
+     * re-ship path in a client runbook.
+     */
     public function cancel(Order $order, ?int $userId = null): Order
     {
         if (! $order->tracking_number) {
