@@ -131,7 +131,16 @@ class User extends Authenticatable
 
     /**
      * Check a "section.action" permission. Admins always pass; editors check
-     * their granted set (falling back to the defaults while unset).
+     * their resolved set.
+     *
+     * 🔑 Goes through resolvedPermissions() rather than reading users.permissions
+     * directly, and that is load-bearing. The stored array is a snapshot of the
+     * SCHEMA as it stood when an admin last saved the grid, so a section added
+     * afterwards is simply missing from it. Reading the raw array turned that
+     * absence into a denial, while the sidebar (which renders from the resolved
+     * set) showed the entry — so every existing editor got a visible menu item
+     * that 403'd, and needed a manual re-grant on each new admin page. Sharing
+     * one resolver means the two can no longer disagree.
      */
     public function hasPermission(string $permission): bool
     {
@@ -144,14 +153,17 @@ class User extends Authenticatable
         }
 
         [$section, $action] = array_pad(explode('.', $permission, 2), 2, '');
-        $perms = $this->permissions ?? Permission::DEFAULTS;
 
-        return (bool) ($perms[$section][$action] ?? false);
+        return (bool) ($this->resolvedPermissions()[$section][$action] ?? false);
     }
 
     /**
-     * The editor's effective permissions — stored grants merged over the
+     * The editor's effective permissions — stored grants merged OVER the
      * defaults. Empty for non-editors (admins have implicit full access).
+     *
+     * The merge direction matters both ways: an explicit false in the stored
+     * grants still revokes (the grid writes every action), while a section the
+     * grants have never heard of inherits its default.
      *
      * @return array<string, array<string, bool>>
      */

@@ -83,4 +83,58 @@ class StaffAccessTest extends TestCase
                 ->where('auth.permissions.orders.view', true)
                 ->where('auth.permissions.settings.view', false));
     }
+
+    /**
+     * A section added to the SCHEMA after an editor's permissions were last
+     * saved is simply absent from their stored array. That row must fall back
+     * to the section's default rather than reading as a denial — otherwise
+     * every existing editor needs a manual re-grant each time the panel gains
+     * a page (which is what happened when product_requests, then
+     * contact_messages, were added).
+     */
+    public function test_a_section_added_after_the_last_save_falls_back_to_its_default(): void
+    {
+        $stored = Permission::DEFAULTS;
+        unset($stored['contact_messages']); // permissions saved before the section existed
+
+        $editor = User::factory()->create(['role' => 'editor']);
+        $editor->forceFill(['permissions' => $stored])->save();
+
+        $this->actingAs($editor->fresh())->get('/admin/contact-messages')->assertOk();
+    }
+
+    /**
+     * The counterpart: the fallback must never resurrect a permission an admin
+     * deliberately switched off, since the grid stores every action explicitly.
+     */
+    public function test_an_explicit_revocation_still_beats_the_default(): void
+    {
+        $stored = Permission::DEFAULTS;
+        $stored['contact_messages']['view'] = false;
+
+        $editor = User::factory()->create(['role' => 'editor']);
+        $editor->forceFill(['permissions' => $stored])->save();
+
+        $this->actingAs($editor->fresh())->get('/admin/contact-messages')->assertForbidden();
+    }
+
+    /**
+     * The sidebar renders from resolvedPermissions() while the route is gated by
+     * hasPermission(). If those two ever disagree, staff get a visible menu entry
+     * that 403s on click — so pin that they answer identically for a stale row.
+     */
+    public function test_the_sidebar_and_the_route_gate_agree_for_a_stale_permission_row(): void
+    {
+        $stored = Permission::DEFAULTS;
+        unset($stored['contact_messages']);
+
+        $editor = User::factory()->create(['role' => 'editor']);
+        $editor->forceFill(['permissions' => $stored])->save();
+        $editor = $editor->fresh();
+
+        $this->assertSame(
+            $editor->resolvedPermissions()['contact_messages']['view'],
+            $editor->hasPermission('contact_messages.view'),
+        );
+    }
 }

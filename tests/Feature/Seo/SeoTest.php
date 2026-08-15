@@ -119,4 +119,88 @@ class SeoTest extends TestCase
 
         $this->assertSame(route('shop.product', $product->slug), $url);
     }
+
+    /** The `<link rel="canonical">` href on a page, or null when there is no tag. */
+    private function canonicalOf(string $uri): ?string
+    {
+        $html = $this->get($uri)->getContent();
+
+        if (! preg_match('~<link rel="canonical" href="([^"]+)">~', $html, $m)) {
+            return null;
+        }
+
+        // Blade escapes the `&` between query params; compare against real URLs.
+        return html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+    }
+
+    public function test_public_pages_carry_a_self_referencing_canonical(): void
+    {
+        $product = $this->makeProduct();
+
+        $this->assertSame(route('home'), $this->canonicalOf('/'));
+        $this->assertSame(route('shop.catalogue'), $this->canonicalOf('/shop'));
+        $this->assertSame(route('shop.product', $product->slug), $this->canonicalOf("/products/{$product->slug}"));
+    }
+
+    /**
+     * The catalogue is one path behind many query strings. Params that change
+     * WHICH products are listed stay; params that only reorder them, search
+     * them, or track the click are dropped, so those variants all consolidate
+     * onto one URL instead of competing as duplicates.
+     */
+    public function test_canonical_keeps_filtering_params_and_drops_the_rest(): void
+    {
+        $base = route('shop.catalogue');
+
+        $this->assertSame(
+            $base.'?category=dates&page=2',
+            $this->canonicalOf('/shop?category=dates&page=2&sort=price_asc&utm_source=whatsapp&fbclid=abc'),
+        );
+
+        $this->assertSame($base, $this->canonicalOf('/shop?q=%D8%AA%D9%85%D8%B1'));
+        $this->assertSame($base.'?on_sale=1', $this->canonicalOf('/shop?on_sale=1'));
+    }
+
+    /** page=1 and on_sale=0 render the base page, so they must not mint a second URL. */
+    public function test_canonical_collapses_no_op_params_onto_the_bare_url(): void
+    {
+        $base = route('shop.catalogue');
+
+        $this->assertSame($base, $this->canonicalOf('/shop?page=1'));
+        $this->assertSame($base, $this->canonicalOf('/shop?on_sale=0'));
+    }
+
+    /** Reaching the same page two ways must not produce two canonical URLs. */
+    public function test_canonical_is_stable_regardless_of_query_param_order(): void
+    {
+        $this->assertSame(
+            $this->canonicalOf('/shop?category=dates&page=2'),
+            $this->canonicalOf('/shop?page=2&category=dates'),
+        );
+    }
+
+    /** Private areas are robots-disallowed; a canonical tag there is noise. */
+    public function test_no_canonical_on_private_paths(): void
+    {
+        $this->assertNull($this->canonicalOf('/login'));
+        $this->assertNull($this->canonicalOf('/cart'));
+    }
+
+    /**
+     * The tag exists to name ONE host. Built through url()->current() rather
+     * than the request, so forceRootUrl wins even when the site is reached on
+     * the Railway hostname — otherwise every duplicate would canonicalise to
+     * itself, which is the failure the tag is supposed to prevent.
+     */
+    public function test_canonical_names_the_configured_host_not_the_requested_one(): void
+    {
+        config(['app.url' => 'https://retab.com.sa']);
+        $this->app['env'] = 'production';
+
+        (new AppServiceProvider($this->app))->boot();
+
+        $html = $this->get('http://retab-website-production.up.railway.app/shop')->getContent();
+
+        $this->assertStringContainsString('<link rel="canonical" href="https://retab.com.sa/shop">', $html);
+    }
 }

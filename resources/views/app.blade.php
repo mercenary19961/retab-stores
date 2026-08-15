@@ -64,6 +64,16 @@
         <link rel="manifest" href="/site.webmanifest">
         <meta name="theme-color" content="#1b4e53">
 
+        {{-- Canonical URL. Rendered here rather than in a page's Inertia <Head>
+             on purpose: Inertia head tags only reach the server HTML while the
+             SSR sidecar is up, and a canonical that disappears when SSR is off
+             is worse than none. Skipped on private paths (returns null there).
+             Unlike og:image above, ordering doesn't matter — no page emits its
+             own canonical, so this is the only one on the document. --}}
+        @if ($canonical = App\Support\CanonicalUrl::for(request()))
+            <link rel="canonical" href="{{ $canonical }}">
+        @endif
+
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
