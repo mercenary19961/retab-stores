@@ -178,7 +178,7 @@ export default function StoreFooter() {
                 duplicated. It is not a page, and a footer that offers the same button
                 twice makes the reader look for the difference. */}
             <div className="border-brand-gold/25 border-t">
-                <div className="text-brand-teal/70 mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-6 py-5 text-xs max-sm:gap-y-1.5 max-sm:pt-3 max-sm:text-[0.7rem] sm:flex-row sm:justify-between">
+                <div className="text-brand-teal/70 mx-auto flex max-w-6xl flex-col items-center gap-x-6 gap-y-3 px-6 py-5 text-xs max-md:pl-14 max-sm:gap-y-1.5 max-sm:pt-3 max-sm:text-[0.7rem] sm:flex-row sm:justify-between">
                     {/* Resolved on the client so it can never go stale, which a
                         hardcoded or build-time year would. ⚠️ The SSR sidecar renders
                         in the container's timezone and the visitor's browser in theirs,

@@ -28,19 +28,8 @@ export default function ScrollToTop() {
         const scrollable = document.documentElement.scrollHeight - window.innerHeight;
         const p = scrollable > 0 ? Math.min(1, window.scrollY / scrollable) : 0;
 
-        // 🔑 Also hide once the footer arrives. A fixed bottom-corner button will
-        // overlap SOMETHING down there whatever it does — parked low it covers the
-        // legal bar, lifted above the legal bar it covers the social icons — and
-        // the two alternatives are both worse: reserving footer padding leaves a
-        // permanent band of dead space on every page, and a translucent button
-        // over live text is just a less obvious collision. Fading out costs
-        // nothing, because the footer carries its own navigation and the button
-        // returns the instant you scroll back up.
-        const footer = document.querySelector('footer');
-        const footerInView = footer ? footer.getBoundingClientRect().top < window.innerHeight : false;
-
         setProgress(p);
-        setVisible(p >= APPEAR_AT && !footerInView);
+        setVisible(p >= APPEAR_AT);
     }, []);
 
     useEffect(() => {
@@ -75,7 +64,10 @@ export default function ScrollToTop() {
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             aria-label="Scroll to top"
             aria-hidden={!visible}
-            className={`bg-brand-teal/90 hover:bg-brand-teal fixed bottom-5 left-5 z-40 flex size-11 items-center justify-center rounded-full text-white shadow-lg backdrop-blur-sm transition-all duration-300 ${
+            // Small and tucked hard into the corner, which is what keeps it clear
+            // of the footer's content without hiding, docking, or reserving space
+            // for it — all three of which were tried and are worse.
+            className={`bg-brand-teal/90 hover:bg-brand-teal fixed bottom-2 left-2 z-40 flex size-9 items-center justify-center rounded-full text-white shadow-lg backdrop-blur-sm transition-[opacity,transform] duration-300 ${
                 // `pointer-events-none` as well as invisible, or it would keep
                 // swallowing taps in the corner while faded out.
                 visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
@@ -96,7 +88,7 @@ export default function ScrollToTop() {
                     className="transition-[stroke-dashoffset] duration-100"
                 />
             </svg>
-            <ArrowUp className="relative size-4" />
+            <ArrowUp className="relative size-3.5" />
         </button>
     );
 }
