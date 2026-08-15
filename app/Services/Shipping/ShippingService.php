@@ -41,27 +41,40 @@ class ShippingService
     public function fulfill(Order $order, ?int $deliveryOptionId = null, ?int $userId = null): Order
     {
         if ($order->tracking_number) {
-            throw new \RuntimeException('This order already has a shipment.');
+            throw new \RuntimeException(__('messages.admin.shipment_already_exists'));
         }
 
         $this->ensureOrderPushed($order);
 
-        if ($deliveryOptionId === null) {
-            $deliveryOptionId = $this->cheapestOptionId($order);
-        }
+        // Quote even when the carrier was chosen by hand. The option's PRICE
+        // exists nowhere else — createShipment does not report it — and it is
+        // the store's real cost, which is the whole point of recording it. The
+        // extra call only lands on manual picks (automatic had to quote anyway),
+        // and resolving the id out of the live list validates it for free.
+        $option = $this->resolveOption($order, $deliveryOptionId);
 
-        $shipment = $this->gateway->createShipment($order, $deliveryOptionId);
+        $shipment = $this->gateway->createShipment($order, $option->id);
 
         $order->forceFill([
             'shipping_provider' => 'oto',
             'tracking_number' => $shipment->trackingNumber,
             'carrier' => $shipment->carrier,
+            // What the carrier charges US. `shipping_fee` is the flat rate the
+            // CUSTOMER paid; the gap between them is the absorbed margin.
+            'shipping_cost' => $option->price,
             'shipping_label_url' => $shipment->labelUrl,
             'oto_id' => $shipment->otoId ?? $order->oto_id,
             'status' => OrderStatus::Shipped,
         ])->save();
 
-        OrderActivity::logTrackingUpdate($order, $shipment->trackingNumber, $shipment->carrier, $userId);
+        OrderActivity::logTrackingUpdate(
+            $order,
+            $shipment->trackingNumber,
+            $shipment->carrier,
+            $userId,
+            $option->price,
+            $option->currency,
+        );
 
         return $order;
     }
@@ -87,20 +100,34 @@ class ShippingService
     public function cancel(Order $order, ?int $userId = null): Order
     {
         if (! $order->tracking_number) {
-            throw new \RuntimeException('This order has no shipment to cancel.');
+            throw new \RuntimeException(__('messages.admin.shipment_missing'));
         }
 
         $this->gateway->cancelShipment($order);
 
+        // Captured before the write, because the whole value of this log entry is
+        // recording WHICH shipment was recalled — and the columns are about to
+        // be cleared.
+        $recalled = [
+            'tracking_number' => $order->tracking_number,
+            'carrier' => $order->carrier,
+            'cost' => $order->shipping_cost,
+        ];
         $old = $order->status->value;
+
         $order->forceFill([
             'tracking_number' => null,
             'carrier' => null,
             'shipping_label_url' => null,
+            // The recalled shipment's cost no longer describes this order; a
+            // re-ship writes the new one. The figure survives on the activity
+            // entry, so a cancelled-then-reshipped order can still be audited
+            // for double carrier charges.
+            'shipping_cost' => null,
             'status' => OrderStatus::Confirmed,
         ])->save();
 
-        OrderActivity::logStatusChange($order, $old, OrderStatus::Confirmed->value, $userId);
+        OrderActivity::logShipmentCancelled($order, $old, $recalled, $userId);
 
         return $order;
     }
@@ -152,17 +179,38 @@ class ShippingService
         $order->forceFill(['oto_id' => $otoId, 'shipping_provider' => 'oto'])->save();
     }
 
-    private function cheapestOptionId(Order $order): int
+    /**
+     * The carrier option to ship with: the admin's explicit choice, or the
+     * cheapest when they left it on automatic.
+     *
+     * Returns the whole DeliveryOption rather than its id so the caller gets the
+     * price with it — that figure is only available from a quote and is what
+     * makes the store's real shipping cost recordable.
+     */
+    private function resolveOption(Order $order, ?int $deliveryOptionId): DeliveryOption
     {
         $options = $this->gateway->getDeliveryOptions($order);
 
         if ($options === []) {
-            throw new \RuntimeException('No delivery options are available for this destination.');
+            throw new \RuntimeException(__('messages.admin.no_delivery_options'));
         }
 
         usort($options, fn (DeliveryOption $a, DeliveryOption $b) => $a->price <=> $b->price);
 
-        return $options[0]->id;
+        if ($deliveryOptionId === null) {
+            return $options[0];
+        }
+
+        foreach ($options as $option) {
+            if ($option->id === $deliveryOptionId) {
+                return $option;
+            }
+        }
+
+        // Rates are live, so a picker left open long enough can offer an option
+        // OTO no longer honours. Say so plainly instead of passing a dead id
+        // through and surfacing whatever OTO answers.
+        throw new \RuntimeException(__('messages.admin.delivery_option_unavailable'));
     }
 
     /**

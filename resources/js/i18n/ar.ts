@@ -1007,6 +1007,11 @@ const ar = {
                 confirmedBy: 'أكّده',
                 confirmedAt: 'وقت التأكيد',
                 deliveredAt: 'وقت التوصيل',
+                shippingCost: 'تكلفة الناقل',
+                shippingMargin: 'الفرق عن الرسوم',
+                activityShipped: 'تم الشحن عبر {{carrier}}',
+                activityShipmentCancelled: 'تم سحب الشحنة ({{carrier}})',
+                activityCost: 'التكلفة',
             },
             shipping: {
                 title: 'اختيار الناقل',

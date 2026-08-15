@@ -43,6 +43,8 @@ export interface OrderActivity {
     from_status: string | null;
     to_status: string | null;
     note: string | null;
+    /** Shipping entries carry the carrier, tracking number and the store's cost. */
+    meta: { tracking_number?: string; carrier?: string; cost?: number; currency?: string } | null;
     user: string | null;
     created_at: string | null;
 }
@@ -59,6 +61,8 @@ export interface OrderDetailData {
     subtotal: number;
     discount_total: number;
     shipping_fee: number;
+    /** What the carrier charged the store. Null when unknown or not yet shipped. */
+    shipping_cost: number | null;
     total: number;
     currency: string;
     tracking_number: string | null;
@@ -283,8 +287,22 @@ export default function OrderDetailView({
                                                     {a.from_status ? t(`status.${a.from_status}`) : '—'} →{' '}
                                                     <b>{a.to_status ? t(`status.${a.to_status}`) : ''}</b>
                                                 </>
+                                            ) : a.type === 'tracking' ? (
+                                                <b>{t('admin.orders.show.activityShipped', { carrier: a.meta?.carrier ?? '—' })}</b>
+                                            ) : a.type === 'shipment_cancelled' ? (
+                                                <b>{t('admin.orders.show.activityShipmentCancelled', { carrier: a.meta?.carrier ?? '—' })}</b>
                                             ) : (
                                                 a.type
+                                            )}
+                                            {/* The detail that makes the row auditable: which parcel,
+                                                and what the carrier charged us for it. */}
+                                            {a.meta?.tracking_number && <span className="text-neutral-500"> · {a.meta.tracking_number}</span>}
+                                            {a.meta?.cost !== undefined && (
+                                                <span className="text-neutral-500">
+                                                    {' '}
+                                                    · {t('admin.orders.show.activityCost')} {a.meta.cost.toFixed(2)}{' '}
+                                                    {a.meta.currency ?? order.currency}
+                                                </span>
                                             )}
                                             {a.note && <span className="text-neutral-500"> ({a.note})</span>}
                                             {a.user && <span className="text-neutral-400"> {t('admin.common.by', { user: a.user })}</span>}
@@ -314,6 +332,30 @@ export default function OrderDetailView({
                         {addr.building && <Row icon={Building2} label={t('admin.common.building')} value={addr.building} />}
                         <Row icon={Truck} label={t('admin.common.carrier')} value={order.carrier ?? '—'} />
                         <Row icon={PackageSearch} label={t('admin.common.tracking')} value={order.tracking_number ?? '—'} />
+                        {/* Cost vs fee: what the carrier charged us against the flat
+                            rate the customer paid. The margin line is the whole
+                            reason the cost is recorded — the flat-rate decision was
+                            "we absorb the difference", and this is the difference.
+                            Hidden entirely when unknown (never shipped, or shipped
+                            before the cost was captured) rather than shown as 0. */}
+                        {order.shipping_cost !== null && (
+                            <>
+                                <Row
+                                    icon={CircleDollarSign}
+                                    label={t('admin.orders.show.shippingCost')}
+                                    value={`${order.shipping_cost.toFixed(2)} ${order.currency}`}
+                                />
+                                <Row
+                                    icon={CircleDollarSign}
+                                    label={t('admin.orders.show.shippingMargin')}
+                                    value={
+                                        <span className={order.shipping_fee - order.shipping_cost < 0 ? 'text-red-500' : undefined}>
+                                            {(order.shipping_fee - order.shipping_cost).toFixed(2)} {order.currency}
+                                        </span>
+                                    }
+                                />
+                            </>
+                        )}
                     </section>
 
                     <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">

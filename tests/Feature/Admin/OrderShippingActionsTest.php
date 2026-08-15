@@ -130,7 +130,9 @@ class OrderShippingActionsTest extends TestCase
         $order = $this->makeOrder();
         $gateway = $this->fakeGateway();
         $gateway->shouldReceive('pushOrder')->andReturn(555);
-        $gateway->shouldNotReceive('getDeliveryOptions'); // no need to quote when told which
+        // Quotes even on a manual pick: the option's PRICE is only available
+        // here and is what makes the store's real cost recordable.
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
         $gateway->shouldReceive('createShipment')
             ->once()
             ->with(Mockery::type(Order::class), 11) // Naqel @ 23.00, the dearer one
@@ -141,6 +143,124 @@ class OrderShippingActionsTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertSame('Naqel', $order->refresh()->carrier);
+    }
+
+    /**
+     * The store absorbs the gap between the flat fee the customer pays and what
+     * the carrier actually charges. That gap was previously invisible — the
+     * quoted price was fetched, used to sort, and discarded.
+     */
+    public function test_the_carrier_cost_is_recorded_against_the_order(): void
+    {
+        $order = $this->makeOrder(); // shipping_fee 25.00
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
+        $gateway->shouldReceive('createShipment')->andReturn($this->shipment());
+
+        $this->actingAs($this->admin())->post("/admin/orders/{$order->order_number}/ship");
+
+        // Cheapest was SMSA at 19.50, so the store keeps 5.50 of the flat fee.
+        $this->assertSame('19.50', (string) $order->refresh()->shipping_cost);
+    }
+
+    /** A dearer manual pick must record ITS price, not the cheapest one. */
+    public function test_a_manual_pick_records_its_own_cost(): void
+    {
+        $order = $this->makeOrder();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
+        $gateway->shouldReceive('createShipment')->andReturn($this->shipment(carrier: 'Naqel'));
+
+        $this->actingAs($this->admin())
+            ->post("/admin/orders/{$order->order_number}/ship", ['delivery_option_id' => 11]);
+
+        // Naqel at 23.00 — dearer than the 25.00 fee by only 2.00.
+        $this->assertSame('23.00', (string) $order->refresh()->shipping_cost);
+    }
+
+    /**
+     * Rates are live, so a picker left open can offer an option OTO no longer
+     * honours. Say so plainly instead of passing a dead id through.
+     */
+    public function test_a_carrier_that_is_no_longer_offered_is_rejected_before_shipping(): void
+    {
+        $order = $this->makeOrder();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
+        $gateway->shouldNotReceive('createShipment');
+
+        $this->actingAs($this->admin())
+            ->post("/admin/orders/{$order->order_number}/ship", ['delivery_option_id' => 999])
+            ->assertSessionHas('error');
+
+        $this->assertSame(OrderStatus::Confirmed, $order->refresh()->status);
+    }
+
+    /**
+     * The timeline previously rendered a shipment as the bare word "tracking":
+     * the carrier and tracking number went into `meta`, which the controller
+     * never shipped to the client.
+     */
+    public function test_the_shipping_history_records_carrier_tracking_and_cost(): void
+    {
+        $order = $this->makeOrder();
+        $admin = $this->admin();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
+        $gateway->shouldReceive('createShipment')->andReturn($this->shipment('TRK-1', 'SMSA'));
+        $gateway->shouldReceive('cancelShipment')->andReturn(true);
+
+        $this->actingAs($admin)->post("/admin/orders/{$order->order_number}/ship");
+        $this->actingAs($admin)->post("/admin/orders/{$order->order_number}/cancel-shipment");
+
+        $activities = $this->actingAs($admin)
+            ->get("/admin/orders/{$order->order_number}")
+            ->inertiaPage()['props']['order']['activities'];
+
+        $shipped = collect($activities)->firstWhere('type', 'tracking');
+        $this->assertSame('SMSA', $shipped['meta']['carrier']);
+        $this->assertSame('TRK-1', $shipped['meta']['tracking_number']);
+        $this->assertSame(19.5, $shipped['meta']['cost']);
+
+        // The recall is its own type and remembers WHICH shipment it recalled —
+        // a plain status_change could not answer that.
+        $recalled = collect($activities)->firstWhere('type', 'shipment_cancelled');
+        $this->assertNotNull($recalled, 'the recall must be its own activity type');
+        $this->assertSame('SMSA', $recalled['meta']['carrier']);
+        $this->assertSame('TRK-1', $recalled['meta']['tracking_number']);
+        $this->assertSame(19.5, $recalled['meta']['cost']);
+        $this->assertSame('shipped', $recalled['from_status']);
+        $this->assertSame('confirmed', $recalled['to_status']);
+    }
+
+    /**
+     * The order column tracks the CURRENT shipment only, so a recall clears it —
+     * but the figure has to survive on the activity entry, otherwise a
+     * cancelled-then-reshipped order can't be audited for a double charge.
+     */
+    public function test_a_recall_clears_the_order_cost_but_the_history_keeps_it(): void
+    {
+        $order = $this->makeOrder();
+        $admin = $this->admin();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
+        $gateway->shouldReceive('createShipment')->andReturn($this->shipment());
+        $gateway->shouldReceive('cancelShipment')->andReturn(true);
+
+        $this->actingAs($admin)->post("/admin/orders/{$order->order_number}/ship");
+        $this->assertSame('19.50', (string) $order->refresh()->shipping_cost);
+
+        $this->actingAs($admin)->post("/admin/orders/{$order->order_number}/cancel-shipment");
+        $this->assertNull($order->refresh()->shipping_cost, 'the recalled cost no longer describes this order');
+
+        $costs = $order->activities()->whereIn('type', ['tracking', 'shipment_cancelled'])->get()
+            ->pluck('meta.cost')->filter()->values();
+        $this->assertCount(2, $costs, 'both the shipment and its recall keep the figure');
     }
 
     public function test_a_non_numeric_carrier_choice_is_rejected(): void
@@ -229,6 +349,7 @@ class OrderShippingActionsTest extends TestCase
 
         $gateway = $this->fakeGateway();
         $gateway->shouldReceive('cancelShipment')->once()->andReturn(true);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
         $gateway->shouldReceive('createShipment')
             ->once()
             ->with(Mockery::type(Order::class), 11)

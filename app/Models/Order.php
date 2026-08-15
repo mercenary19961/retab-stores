@@ -28,6 +28,7 @@ class Order extends Model
         'subtotal',
         'discount_total',
         'shipping_fee',
+        'shipping_cost',
         'total',
         'currency',
         'coupon_id',
@@ -56,6 +57,10 @@ class Order extends Model
         'subtotal' => 'decimal:2',
         'discount_total' => 'decimal:2',
         'shipping_fee' => 'decimal:2',
+        // What the carrier charged the store. Nullable: unknown for orders
+        // shipped before this was recorded, and cleared when a shipment is
+        // recalled (the figure survives on the activity entry).
+        'shipping_cost' => 'decimal:2',
         'total' => 'decimal:2',
         'paid_at' => 'datetime',
         'confirmed_at' => 'datetime',

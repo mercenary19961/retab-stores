@@ -1021,6 +1021,11 @@ const en = {
                 confirmedBy: 'Confirmed by',
                 confirmedAt: 'Confirmed at',
                 deliveredAt: 'Delivered at',
+                shippingCost: 'Carrier cost',
+                shippingMargin: 'Margin vs fee',
+                activityShipped: 'Shipped via {{carrier}}',
+                activityShipmentCancelled: 'Shipment recalled ({{carrier}})',
+                activityCost: 'cost',
             },
             shipping: {
                 title: 'Choose a carrier',

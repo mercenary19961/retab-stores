@@ -177,6 +177,10 @@ class OrderController extends Controller
                 'subtotal' => (float) $order->subtotal,
                 'discount_total' => (float) $order->discount_total,
                 'shipping_fee' => (float) $order->shipping_fee,
+                // What the carrier charged US, against the flat fee above. Null
+                // for orders shipped before it was recorded, so it stays nullable
+                // rather than being cast to a misleading 0.
+                'shipping_cost' => $order->shipping_cost === null ? null : (float) $order->shipping_cost,
                 'total' => (float) $order->total,
                 'currency' => $order->currency,
                 'tracking_number' => $order->tracking_number,
@@ -198,6 +202,10 @@ class OrderController extends Controller
                     'from_status' => $a->from_status,
                     'to_status' => $a->to_status,
                     'note' => $a->note,
+                    // Carries the carrier / tracking number / cost for shipping
+                    // entries. Previously omitted, which is why a shipment showed
+                    // in the timeline as the bare word "tracking".
+                    'meta' => $a->meta,
                     'user' => $a->user?->name,
                     'created_at' => $a->created_at?->toDateTimeString(),
                 ]),
