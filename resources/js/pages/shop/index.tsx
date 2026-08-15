@@ -11,6 +11,20 @@ import { type SharedData } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * ⏸️ HIDDEN 2026-08-15 at the client's request — flip to `true` to bring it back.
+ *
+ * The "جودة يمكنك الوثوق بها" trust-badge banner that used to close the homepage.
+ * Kept wired up rather than deleted because the decision is not final: it may be
+ * restored or dropped for good later. Everything it needs is still in place —
+ * `components/store/footer-banner.tsx`, `public/images/footer-banner/banner.webp`,
+ * and the `footerBanner.*` copy in both i18n bundles — so restoring it is this one
+ * word and nothing else.
+ *
+ * If it is ever dropped for good, remove all four of those together.
+ */
+const SHOW_FOOTER_BANNER = false;
+
 interface ProductCard {
     id: number;
     name_ar: string;
@@ -79,7 +93,7 @@ export default function ShopIndex({
             <PrimaryBanner />
             <NewArrivals products={newArrivals} />
             <ClientReviews reviews={reviews} />
-            <FooterBanner />
+            {SHOW_FOOTER_BANNER && <FooterBanner />}
         </StoreLayout>
     );
 }
