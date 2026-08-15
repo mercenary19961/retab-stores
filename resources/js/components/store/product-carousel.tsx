@@ -203,7 +203,13 @@ export default function ProductCarousel({
                                     </span>
                                 )}
 
-                                <h3 className="font-heading text-brand-gold mt-4 text-center text-[clamp(1rem,2vw,1.35rem)]">
+                                {/* Two lines, ALWAYS two lines' worth of box. `line-clamp-2`
+                                    alone caps the overflow but still lets a short name
+                                    occupy one line, which drops that card's price a line
+                                    higher than its neighbour's. Reserving the space with
+                                    `2lh` (two line-heights, so it follows the clamped font
+                                    size automatically) is what actually lines the row up. */}
+                                <h3 className="font-heading text-brand-gold mt-4 line-clamp-2 min-h-[2lh] text-center text-[clamp(1rem,2vw,1.35rem)]">
                                     {localized(p, 'name')}
                                 </h3>
                                 <div className="font-heading text-brand-teal mt-1 text-center">

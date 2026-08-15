@@ -48,7 +48,12 @@ export default function ProductCard({ product: p }: { product: StoreProduct }) {
                 )}
             </div>
 
-            <h3 className="font-heading text-brand-gold mt-4 line-clamp-1 text-center text-[clamp(1rem,2vw,1.35rem)]">{localized(p, 'name')}</h3>
+            {/* Two lines, ALWAYS two lines' worth of box — see the same note in
+                product-carousel.tsx. Was `line-clamp-1`, which kept the grid even but
+                cut most Arabic product names within a few words. */}
+            <h3 className="font-heading text-brand-gold mt-4 line-clamp-2 min-h-[2lh] text-center text-[clamp(1rem,2vw,1.35rem)]">
+                {localized(p, 'name')}
+            </h3>
             <div className="font-heading text-brand-teal mt-1 text-center">
                 {p.coming_soon ? (
                     <span className="text-brand-teal/70 text-sm font-semibold">{t('catalogue.requestCta')}</span>
