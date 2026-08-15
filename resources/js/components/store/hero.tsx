@@ -4,12 +4,22 @@ import { useTranslation } from 'react-i18next';
 
 interface Slide {
     image: string;
+    /** Portrait crop for phones — see the <picture> note in the markup below. */
+    imageMobile: string;
     line1: string;
     line2: string;
     subtext: string;
     ctaLabel: string;
     ctaHref: string;
 }
+
+/**
+ * Where the desktop landscape crop stops working and the portrait one takes over.
+ * 640px (Tailwind's `sm`): the 1440x800 desktop image renders only ~217px tall at
+ * 390px wide — a sliver with the headline crammed into it — while the 402x874
+ * portrait renders ~848px, about one phone screen, which is what it was cut for.
+ */
+const MOBILE_ART = '(max-width: 639px)';
 
 /** Rounded-triangle carousel arrow (from Polygon 2.svg). Points right by default. */
 function Arrow({ flip }: { flip?: boolean }) {
@@ -31,6 +41,7 @@ export default function StoreHero() {
     const slides: Slide[] = [
         {
             image: '/images/hero/slide-1.webp',
+            imageMobile: '/images/hero/slide-1-mobile.webp',
             line1: t('hero.headlineLine1'),
             line2: t('hero.headlineLine2'),
             subtext: t('hero.subtext'),
@@ -47,10 +58,20 @@ export default function StoreHero() {
 
     return (
         <section className="relative w-full overflow-hidden">
-            <img src={slide.image} alt="" className="block h-auto w-full" />
+            {/* <picture>, not two <img> toggled with `hidden`: the browser picks ONE
+                source and downloads only that, so a phone never pulls the 145 KB
+                desktop crop it isn't going to show. */}
+            <picture>
+                <source media={MOBILE_ART} srcSet={slide.imageMobile} />
+                <img src={slide.image} alt="" className="block h-auto w-full" />
+            </picture>
 
-            {/* Soft scrim to guarantee text contrast on the left across screen sizes. */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/45 via-white/10 to-transparent" />
+            {/* Scrim direction follows where the copy sits: left-to-right on desktop
+                (text on the left), top-down on phones (text in the headroom above the
+                subject). Measured: the portrait crop is uniform sand to ~39% of its
+                height (row sd 13-24), then sd jumps to ~49 where the man and the fire
+                begin — so the copy has to stay inside that top band. */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/45 via-white/10 to-transparent max-sm:bg-gradient-to-b max-sm:from-white/55 max-sm:via-white/15" />
 
             {/* Content block — physically anchored to the left (the product sits
                 baked into the right of the image), text aligned per reading dir.
@@ -67,14 +88,28 @@ export default function StoreHero() {
                 reflows). `vw` keeps the shift exactly proportional to the image's
                 own height at every width, so retune by adjusting the vw number,
                 not by switching back to a fixed unit. */}
-            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:min-w-0 lg:-translate-x-4 lg:-translate-y-[6.5vw]">
-                <div className="w-full text-start">
+            {/* Desktop: a left column beside the baked-in product. Phones: the full
+                width of the top 38% band, since the portrait crop puts the subject
+                centre-bottom and leaves the sky/sand above it empty. */}
+            <div className="absolute inset-y-0 left-0 flex w-[56%] min-w-[300px] items-center pr-4 pl-[5%] max-sm:inset-y-auto max-sm:top-0 max-sm:h-[38%] max-sm:w-full max-sm:min-w-0 max-sm:justify-center max-sm:px-6 lg:-translate-x-4 lg:-translate-y-[6.5vw]">
+                <div className="w-full text-start max-sm:text-center">
                     {/* Below 732px the kashida-elongated headline overflows the
                         narrow text column, so step the size down there and smaller.
                         line1 stays brand-teal (reads against the light sand); line2
                         is white per the two-tone treatment — see the shadow note
                         below on the subtext for why it carries a text-shadow. */}
-                    <h1 className="font-heading text-[clamp(2.25rem,6.2vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-[480px]:text-[clamp(0.85rem,4.5vw,1.35rem)]">
+                    {/* ⚠️ The old shrink steps here were tuned for the DESKTOP crop
+                        squeezed onto a phone (217px tall at 390px wide) and are far too
+                        small now that phones get a full-height portrait image, so `max-sm`
+                        re-enlarges everything below 640px — the exact range where the
+                        portrait art is in play.
+                        🔑 There is deliberately no `max-[480px]` step any more: measured at
+                        460px, the h1 computes to 34.5px, which is max-sm's value and not
+                        the 32px an active max-[480px] rule would give. The named `max-sm`
+                        variant is emitted AFTER both arbitrary ones (max-[732px] and
+                        max-[480px]) and wins throughout, so any such rule would be dead
+                        code. Below 640 there is now one size set, not three. */}
+                    <h1 className="font-heading text-[clamp(2.25rem,6.2vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-sm:text-[clamp(1.6rem,7.5vw,2.6rem)]">
                         <span className="text-brand-teal block">{slide.line1}</span>
                         <span className="block text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)]">{slide.line2}</span>
                     </h1>
@@ -98,16 +133,16 @@ export default function StoreHero() {
                                 soft wide falloff) compensates without touching the
                                 scrim, which line1 and the CTA still rely on. Remove
                                 the [text-shadow:...] utility to see the raw contrast. */}
-                            <p className="font-heading text-[clamp(0.95rem,1.9vw,1.63rem)] text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)] max-[732px]:text-[0.8rem] max-[480px]:max-w-[10rem] max-[480px]:text-[0.7rem]">
+                            <p className="font-heading text-[clamp(0.95rem,1.9vw,1.63rem)] text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)] max-[732px]:text-[0.8rem] max-sm:max-w-none max-sm:text-[0.95rem]">
                                 {slide.subtext}
                             </p>
                             <span className="bg-brand-teal hidden h-1.5 w-[clamp(2rem,5vw,4.7rem)] shrink-0 rounded-full min-[733px]:block" />
                         </div>
 
-                        <div className="mt-7 text-center max-[480px]:mt-2">
+                        <div className="mt-7 text-center">
                             <Link
                                 href={slide.ctaHref}
-                                className="bg-brand-teal font-heading hover:bg-brand-teal/90 inline-block rounded-full px-10 py-4 text-[clamp(1.15rem,2.6vw,2.5rem)] font-black text-white transition-colors max-[732px]:px-6 max-[732px]:py-2.5 max-[732px]:text-[0.9rem] max-[480px]:px-4 max-[480px]:py-2 max-[480px]:text-[0.72rem]"
+                                className="bg-brand-teal font-heading hover:bg-brand-teal/90 inline-block rounded-full px-10 py-4 text-[clamp(1.15rem,2.6vw,2.5rem)] font-black text-white transition-colors max-[732px]:px-6 max-[732px]:py-2.5 max-[732px]:text-[0.9rem] max-sm:px-7 max-sm:py-3 max-sm:text-[1rem]"
                             >
                                 <span className="cta-shimmer">{slide.ctaLabel}</span>
                             </Link>

@@ -131,8 +131,29 @@
         background-position: -60% 0;
     }
 }
+/* ⚠️ This paints the label with a gradient via `background-clip: text`, so
+   `-webkit-text-fill-color: transparent` WINS over any Tailwind `text-*` class on
+   the element. The base colour therefore has to come from here, not from a
+   utility — which is why it is a variable: a light-on-dark button (the default)
+   and a dark-on-light one (the phone banner CTA, which sits on the dark teal wall
+   and so has to invert) can share one class. Override with an arbitrary property,
+   e.g. `[--shimmer-base:#1b4e53]`. Setting `text-brand-teal` alone would silently
+   do nothing and render a white label on a white pill. */
 .cta-shimmer {
-    background-image: linear-gradient(100deg, #fff 0%, #fff 43%, #af9056 50%, #fff 57%, #fff 100%);
+    /* ⚠️ Fallbacks inside var(), NOT `--shimmer-base: #fff` declared here. A custom
+       property set on the element itself beats one inherited from an ancestor, so
+       declaring it would shadow the override on the parent button and silently keep
+       the label white — which on a white pill is an invisible label. Verified: the
+       declared version reported `--shimmer-base: #fff` on the phone even with the
+       override present. */
+    background-image: linear-gradient(
+        100deg,
+        var(--shimmer-base, #fff) 0%,
+        var(--shimmer-base, #fff) 43%,
+        var(--shimmer-glint, #af9056) 50%,
+        var(--shimmer-base, #fff) 57%,
+        var(--shimmer-base, #fff) 100%
+    );
     background-size: 220% 100%;
     background-clip: text;
     -webkit-background-clip: text;
@@ -148,8 +169,8 @@ html[dir='rtl'] .cta-shimmer {
     .cta-shimmer {
         animation: none;
         background: none;
-        color: #fff;
-        -webkit-text-fill-color: #fff;
+        color: var(--shimmer-base);
+        -webkit-text-fill-color: var(--shimmer-base);
     }
 }
 
