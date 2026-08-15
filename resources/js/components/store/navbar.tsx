@@ -3,6 +3,7 @@ import { useLocalized } from '@/lib/localize';
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 interface NavCategory {
@@ -415,99 +416,116 @@ export default function StoreNavbar() {
                 </nav>
             </div>
 
-            {/* Mobile drawer */}
-            {mobileOpen && (
-                <div className="fixed inset-0 z-50 md:hidden">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-                    <div className="absolute inset-y-0 start-0 flex w-72 max-w-[80%] flex-col gap-1 overflow-y-auto bg-white p-4 shadow-xl">
-                        <div className="mb-2 flex items-center justify-between">
-                            <img src="/images/brand/logo.png" alt={t('brand')} className="h-10 w-auto" />
-                            <button
-                                type="button"
-                                onClick={() => setMobileOpen(false)}
-                                aria-label={t('nav.closeMenu')}
-                                className="text-brand-gold hover:text-brand-teal"
-                            >
-                                <X className="size-6" />
-                            </button>
-                        </div>
+            {/* Mobile drawer.
+                🔴 PORTALLED TO <body> ON PURPOSE — it cannot live inside <header>.
+                The scroll handler above writes `header.style.transform` on every
+                tick, and a transformed ancestor becomes the CONTAINING BLOCK for
+                `position: fixed` descendants — even for an identity transform. So
+                once the visitor had scrolled once, `fixed inset-0` resolved against
+                the header's own 68px-tall box instead of the viewport, and the
+                drawer rendered as a stub strip across the top with the backdrop
+                dimming only the header. Measured: overlay 390×844 before any
+                scroll, 390×68 after (transform "none" → "matrix(1,0,0,1,0,0)").
+                It looked intermittent because a freshly loaded, unscrolled page
+                was fine.
+                Safe under SSR: `mobileOpen` starts false, so the server renderer
+                never reaches createPortal (which it cannot render). */}
+            {mobileOpen &&
+                createPortal(
+                    <div className="fixed inset-0 z-50 md:hidden">
+                        <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+                        <div className="absolute inset-y-0 start-0 flex w-72 max-w-[80%] flex-col gap-1 overflow-y-auto bg-white p-4 shadow-xl">
+                            <div className="mb-2 flex items-center justify-between">
+                                <img src="/images/brand/logo.png" alt={t('brand')} className="h-10 w-auto" />
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileOpen(false)}
+                                    aria-label={t('nav.closeMenu')}
+                                    className="text-brand-gold hover:text-brand-teal"
+                                >
+                                    <X className="size-6" />
+                                </button>
+                            </div>
 
-                        <Link href="/" className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2" onClick={() => setMobileOpen(false)}>
-                            {t('nav.home')}
-                        </Link>
+                            <Link href="/" className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2" onClick={() => setMobileOpen(false)}>
+                                {t('nav.home')}
+                            </Link>
 
-                        {navCategories.map((cat) => (
-                            <div key={cat.id} className="py-1">
-                                <p className="text-brand-teal px-3 py-1 text-xs font-semibold tracking-wide uppercase">{localized(cat, 'name')}</p>
-                                {cat.children.length > 0 ? (
-                                    cat.children.map((child) => (
+                            {navCategories.map((cat) => (
+                                <div key={cat.id} className="py-1">
+                                    <p className="text-brand-teal px-3 py-1 text-xs font-semibold tracking-wide uppercase">
+                                        {localized(cat, 'name')}
+                                    </p>
+                                    {cat.children.length > 0 ? (
+                                        cat.children.map((child) => (
+                                            <Link
+                                                key={child.id}
+                                                href={`/shop?category=${child.slug}`}
+                                                className="text-brand-gold hover:bg-brand-cream hover:text-brand-teal block rounded-lg px-5 py-2 text-sm"
+                                                onClick={() => setMobileOpen(false)}
+                                            >
+                                                {localized(child, 'name')}
+                                            </Link>
+                                        ))
+                                    ) : (
                                         <Link
-                                            key={child.id}
-                                            href={`/shop?category=${child.slug}`}
-                                            className="text-brand-gold hover:bg-brand-cream hover:text-brand-teal block rounded-lg px-5 py-2 text-sm"
+                                            href={`/shop?category=${cat.slug}`}
+                                            className="text-brand-gold hover:bg-brand-cream block rounded-lg px-5 py-2 text-sm"
                                             onClick={() => setMobileOpen(false)}
                                         >
-                                            {localized(child, 'name')}
+                                            {localized(cat, 'name')}
                                         </Link>
-                                    ))
-                                ) : (
-                                    <Link
-                                        href={`/shop?category=${cat.slug}`}
-                                        className="text-brand-gold hover:bg-brand-cream block rounded-lg px-5 py-2 text-sm"
-                                        onClick={() => setMobileOpen(false)}
-                                    >
-                                        {localized(cat, 'name')}
-                                    </Link>
-                                )}
-                            </div>
-                        ))}
+                                    )}
+                                </div>
+                            ))}
 
-                        {hasOffers && (
+                            {hasOffers && (
+                                <Link
+                                    href="/shop?on_sale=1"
+                                    className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2"
+                                    onClick={() => setMobileOpen(false)}
+                                >
+                                    {t('nav.offers')}
+                                </Link>
+                            )}
                             <Link
-                                href="/shop?on_sale=1"
+                                href="/pages/about"
                                 className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2"
                                 onClick={() => setMobileOpen(false)}
                             >
-                                {t('nav.offers')}
+                                {t('nav.about')}
                             </Link>
-                        )}
-                        <Link
-                            href="/pages/about"
-                            className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2"
-                            onClick={() => setMobileOpen(false)}
-                        >
-                            {t('nav.about')}
-                        </Link>
-                        <Link
-                            href="/pages/contact"
-                            className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2"
-                            onClick={() => setMobileOpen(false)}
-                        >
-                            {t('nav.contact')}
-                        </Link>
-
-                        <div className="border-brand-gold/15 mt-3 flex items-center gap-3 border-t pt-3">
                             <Link
-                                href={accountHref}
-                                className="text-brand-gold hover:bg-brand-cream flex-1 rounded-lg px-3 py-2 text-sm"
+                                href="/pages/contact"
+                                className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2"
                                 onClick={() => setMobileOpen(false)}
                             >
-                                {t('common.myAccount')}
+                                {t('nav.contact')}
                             </Link>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    toggleLanguage();
-                                    setMobileOpen(false);
-                                }}
-                                className="border-brand-gold/40 text-brand-gold hover:bg-brand-gold/10 rounded-full border px-3 py-1 text-sm"
-                            >
-                                {t('common.switchLanguage')}
-                            </button>
+
+                            <div className="border-brand-gold/15 mt-3 flex items-center gap-3 border-t pt-3">
+                                <Link
+                                    href={accountHref}
+                                    className="text-brand-gold hover:bg-brand-cream flex-1 rounded-lg px-3 py-2 text-sm"
+                                    onClick={() => setMobileOpen(false)}
+                                >
+                                    {t('common.myAccount')}
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        toggleLanguage();
+                                        setMobileOpen(false);
+                                    }}
+                                    className="border-brand-gold/40 text-brand-gold hover:bg-brand-gold/10 rounded-full border px-3 py-1 text-sm"
+                                >
+                                    {t('common.switchLanguage')}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </div>,
+                    document.body,
+                )}
         </header>
     );
 }
