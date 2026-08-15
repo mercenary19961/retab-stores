@@ -10,7 +10,9 @@ interface Review {
 /** Gold five-point star (from Star 6.svg). Grey when not filled. */
 function Star({ filled }: { filled: boolean }) {
     return (
-        <svg width="17" height="16" viewBox="0 0 30 29" fill="none" aria-hidden>
+        // Sized in CSS rather than by the width/height attributes so the star can
+        // shrink with the rest of the card on phones.
+        <svg viewBox="0 0 30 29" fill="none" aria-hidden className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-[17px]">
             <path
                 d="M14.7412 0L18.2212 10.7102H29.4826L20.3719 17.3295L23.8519 28.0398L14.7412 21.4205L5.63054 28.0398L9.11051 17.3295L-0.000164986 10.7102H11.2612L14.7412 0Z"
                 fill={filled ? '#F4CD21' : '#d4d4d4'}
@@ -25,28 +27,30 @@ function ReviewCard({ review }: { review: Review }) {
     const filled = Math.round(review.rating);
 
     return (
-        <div className="rounded-[2rem] bg-[#d9d9d9]/45 p-6 sm:p-7">
-            <div className="flex items-center gap-3">
-                <div className="bg-brand-gold flex size-12 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white">
+        // Every dimension steps down below `sm`: the card was built at desktop
+        // scale and, stacked one-per-row on a phone, took most of a screen each.
+        <div className="rounded-3xl bg-[#d9d9d9]/45 p-4 sm:rounded-[2rem] sm:p-7">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="bg-brand-gold flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white sm:size-12 sm:text-lg">
                     {initial}
                 </div>
                 <div className="min-w-0">
-                    <p dir="auto" className="text-brand-teal truncate text-lg font-bold">
+                    <p dir="auto" className="text-brand-teal truncate text-sm font-bold sm:text-lg">
                         {review.author_name}
                     </p>
-                    <p className="text-sm font-medium tracking-wide text-neutral-400 uppercase">{t('clientReviews.client')}</p>
+                    <p className="text-[0.65rem] font-medium tracking-wide text-neutral-400 uppercase sm:text-sm">{t('clientReviews.client')}</p>
                 </div>
             </div>
 
-            <p dir="auto" className="mt-4 text-base leading-relaxed text-neutral-600">
+            <p dir="auto" className="mt-2.5 text-sm leading-relaxed text-neutral-600 sm:mt-4 sm:text-base">
                 {review.body}
             </p>
 
-            <div className="mt-4 flex items-center gap-1">
+            <div className="mt-2.5 flex items-center gap-1 sm:mt-4">
                 {[0, 1, 2, 3, 4].map((i) => (
                     <Star key={i} filled={i < filled} />
                 ))}
-                <span className="ms-2 text-base font-semibold text-neutral-500">{review.rating.toFixed(1)}</span>
+                <span className="ms-2 text-sm font-semibold text-neutral-500 sm:text-base">{review.rating.toFixed(1)}</span>
             </div>
         </div>
     );
