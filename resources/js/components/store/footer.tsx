@@ -1,3 +1,4 @@
+import HardRockMark from '@/components/hardrock-mark';
 import { OPEN_CONSENT_EVENT } from '@/components/store/cookie-consent';
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowUp, ArrowUpRight, Cookie } from 'lucide-react';
@@ -206,7 +207,14 @@ export default function StoreFooter() {
                             rel="noopener noreferrer"
                             className="group hover:text-brand-gold inline-flex items-center gap-1 transition-colors"
                         >
-                            {t('footer.builtBy')}{' '}
+                            {t('footer.builtBy')}
+                            {/* Sized off the type (`h-[1.15em]`) rather than a fixed
+                                px value, so it stays optically matched to the label if
+                                the bar's font size is ever changed. The emblem is
+                                taller than wide (155.55 × 219.67 ≈ 0.71), so width is
+                                left to `w-auto` instead of being forced square — a
+                                square box would squash it. */}
+                            <HardRockMark className="h-[1.15em] w-auto" />
                             {/* The underline is a background gradient sized 0% → 100%
                                 rather than a border, so it WIPES in instead of just
                                 appearing. ⚠️ It has to start from the reading side or
