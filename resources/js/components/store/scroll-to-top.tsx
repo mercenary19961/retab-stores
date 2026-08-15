@@ -28,8 +28,19 @@ export default function ScrollToTop() {
         const scrollable = document.documentElement.scrollHeight - window.innerHeight;
         const p = scrollable > 0 ? Math.min(1, window.scrollY / scrollable) : 0;
 
+        // 🔑 Also hide once the footer arrives. A fixed bottom-corner button will
+        // overlap SOMETHING down there whatever it does — parked low it covers the
+        // legal bar, lifted above the legal bar it covers the social icons — and
+        // the two alternatives are both worse: reserving footer padding leaves a
+        // permanent band of dead space on every page, and a translucent button
+        // over live text is just a less obvious collision. Fading out costs
+        // nothing, because the footer carries its own navigation and the button
+        // returns the instant you scroll back up.
+        const footer = document.querySelector('footer');
+        const footerInView = footer ? footer.getBoundingClientRect().top < window.innerHeight : false;
+
         setProgress(p);
-        setVisible(p >= APPEAR_AT);
+        setVisible(p >= APPEAR_AT && !footerInView);
     }, []);
 
     useEffect(() => {
