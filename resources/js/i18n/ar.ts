@@ -1549,6 +1549,7 @@ const ar = {
         vatNumber: 'الرقم الضريبي',
         backToTop: 'العودة للأعلى',
         privacyPolicy: 'سياسة الخصوصية',
+        builtBy: 'تطوير',
         copyright: '© {{year}} {{company}} · جميع الحقوق محفوظة',
         links: {
             returnPolicy: 'سياسة الاستبدال و الاسترجاع',

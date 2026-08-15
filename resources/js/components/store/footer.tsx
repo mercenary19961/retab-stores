@@ -1,6 +1,6 @@
 import { OPEN_CONSENT_EVENT } from '@/components/store/cookie-consent';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowUp, Cookie } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, Cookie } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -186,6 +186,46 @@ export default function StoreFooter() {
                         <span dir="ltr" className="tracking-wide">
                             {HANDLE}
                         </span>
+
+                        {/* Build credit. Deliberately the quietest thing in the bar:
+                            it inherits the row's colour at rest so it never competes
+                            with the client's own brand, and only earns the gold accent
+                            on hover — gold rather than the neighbours' teal, so it
+                            reads as a different KIND of link (off-site) rather than
+                            another Retab page.
+
+                            Links to www, which is where the apex redirects — no point
+                            sending every visitor through an extra hop.
+
+                            `rel="noopener"` is not optional on a target=_blank link:
+                            without it the opened page gets a handle on this one via
+                            window.opener. */}
+                        <a
+                            href="https://www.hardrock-co.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group hover:text-brand-gold inline-flex items-center gap-1 transition-colors"
+                        >
+                            {t('footer.builtBy')}{' '}
+                            {/* The underline is a background gradient sized 0% → 100%
+                                rather than a border, so it WIPES in instead of just
+                                appearing. ⚠️ It has to start from the reading side or
+                                the wipe runs backwards in Arabic, hence the rtl
+                                position override. */}
+                            <span
+                                dir="ltr"
+                                className="bg-[linear-gradient(currentColor,currentColor)] bg-[length:0%_1px] bg-[position:0_100%] bg-no-repeat font-semibold transition-[background-size] duration-300 group-hover:bg-[length:100%_1px] rtl:bg-[position:100%_100%]"
+                            >
+                                HardRock
+                            </span>
+                            {/* Always rendered, so hovering can't shift the row's
+                                layout; it just brightens and steps outward. Mirrored
+                                under RTL so "away from the text" stays away. */}
+                            <ArrowUpRight
+                                className="h-3 w-3 opacity-50 transition-all duration-300 group-hover:translate-x-px group-hover:-translate-y-px group-hover:opacity-100 rtl:-scale-x-100 rtl:group-hover:-translate-x-px"
+                                aria-hidden
+                            />
+                        </a>
                     </div>
                 </div>
             </div>

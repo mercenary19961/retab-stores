@@ -1563,6 +1563,9 @@ const en = {
         vatNumber: 'VAT Number',
         backToTop: 'Back to top',
         privacyPolicy: 'Privacy Policy',
+        // The company name itself stays Latin in both locales — it's a brand, not
+        // a phrase to translate — so only the lead-in is localized.
+        builtBy: 'Built by',
         // Separated by a middot, not a full stop: the EN company name already ends in
         // "Co." and a sentence period after it renders as "Co.. All rights reserved."
         copyright: '© {{year}} {{company}} · All rights reserved',
