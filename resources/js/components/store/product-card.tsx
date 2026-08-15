@@ -53,16 +53,19 @@ export default function ProductCard({ product: p }: { product: StoreProduct }) {
                 {p.coming_soon ? (
                     <span className="text-brand-teal/70 text-sm font-semibold">{t('catalogue.requestCta')}</span>
                 ) : p.on_sale ? (
-                    <span className="inline-flex items-center gap-2">
-                        <span className="font-bold">
+                    // Stacked below `sm`, side by side above. Two prices do not fit one
+                    // line on a phone-width card, and the `nowrap` is what stops an amount
+                    // splitting from its currency ("100.00" over "SAR").
+                    <span className="inline-flex flex-col items-center gap-0 sm:flex-row sm:gap-2">
+                        <span className="font-bold whitespace-nowrap">
                             {p.effective_price.toFixed(2)} {currency}
                         </span>
-                        <span className="text-brand-teal/50 text-sm line-through">
+                        <span className="text-brand-teal/50 text-sm whitespace-nowrap line-through">
                             {p.price.toFixed(2)} {currency}
                         </span>
                     </span>
                 ) : (
-                    <span className="font-bold">
+                    <span className="font-bold whitespace-nowrap">
                         {p.price.toFixed(2)} {currency}
                     </span>
                 )}

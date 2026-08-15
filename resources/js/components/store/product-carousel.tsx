@@ -24,7 +24,9 @@ const GAP = 24;
 /** Rounded-triangle arrow (from Polygon 2.svg), teal. Points right by default. */
 function Arrow({ flip }: { flip?: boolean }) {
     return (
-        <svg width="26" height="27" viewBox="0 0 24 25" fill="none" aria-hidden className={flip ? '-scale-x-100' : undefined}>
+        // Sized in CSS rather than by the width/height attributes so it can shrink
+        // on phones, where the arrows overlay the cards instead of sitting in a gutter.
+        <svg viewBox="0 0 24 25" fill="none" aria-hidden className={`h-[17px] w-4 sm:h-[27px] sm:w-[26px] ${flip ? '-scale-x-100' : ''}`}>
             <path
                 d="M19.9167 6.95319C24.0648 9.34813 24.0648 15.3355 19.9167 17.7304L9.33334 23.8407C5.18519 26.2356 0 23.242 0 18.4521V6.23151C0 1.44165 5.18519 -1.55203 9.33333 0.842905L19.9167 6.95319Z"
                 fill="#1b4e53"
@@ -57,11 +59,14 @@ export default function ProductCarousel({
     /** Flip the corner watermark to the right edge (mirrored) instead of the left. */
     mirrorPattern?: boolean;
 }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const localized = useLocalized();
     const currency = t('common.currency');
     const trackRef = useRef<HTMLDivElement>(null);
-    const [edges, setEdges] = useState({ atStart: true, atEnd: false });
+    // Kept as PHYSICAL directions ("is there anything further left?"), because the
+    // buttons are physical. Deriving them from a start/end pair silently inverts
+    // them under RTL — see measure().
+    const [edges, setEdges] = useState({ canLeft: false, canRight: true });
     // Whether the track actually overflows at the current breakpoint — drives
     // both the arrows (hidden when everything fits) and centring (few cards are
     // centred instead of hugging the start). Default heuristic: more cards than
@@ -74,8 +79,19 @@ export default function ProductCarousel({
         const el = trackRef.current;
         if (!el) return;
         const max = el.scrollWidth - el.clientWidth;
-        const pos = Math.abs(el.scrollLeft);
-        setEdges({ atStart: pos <= 1, atEnd: pos >= max - 1 });
+        // scrollLeft runs 0..max in LTR but -max..0 in RTL (modern browsers keep
+        // 0 at the reading start and go negative toward the end), so the travel
+        // limits have to be read per direction. Collapsing them with Math.abs()
+        // makes "at the start" mean the LEFT edge in LTR and the RIGHT edge in
+        // RTL, which inverted both buttons on the Arabic site: the arrow that
+        // actually paged was the disabled one, and the enabled one clamped and
+        // did nothing.
+        const rtl = getComputedStyle(el).direction === 'rtl';
+        const pos = el.scrollLeft;
+        setEdges({
+            canLeft: pos > (rtl ? -max : 0) + 1,
+            canRight: pos < (rtl ? 0 : max) - 1,
+        });
         setScrollable(max > 1);
 
         // Height of the first card's square image (its first child), so arrows
@@ -94,7 +110,10 @@ export default function ProductCarousel({
             el.removeEventListener('scroll', measure);
             window.removeEventListener('resize', measure);
         };
-    }, [measure, products.length]);
+        // `i18n.language`: the locale toggle flips document.dir without a reload or a
+        // resize, so nothing else would re-run measure() and the arrows would keep
+        // the previous direction's enabled states until the next scroll.
+    }, [measure, products.length, i18n.language]);
 
     const page = (dir: 'left' | 'right') => {
         const el = trackRef.current;
@@ -110,7 +129,14 @@ export default function ProductCarousel({
 
     // Arrows centred on the image once measured; mid-track before then.
     const arrowTop = imageHeight ? imageHeight / 2 : undefined;
-    const arrowBase = 'absolute z-10 hidden -translate-y-1/2 p-2 transition-opacity sm:block';
+    // Below `sm` there is no gutter to sit in — the track is full-bleed so the two
+    // cards stay readable — so the arrows are pulled out into the page's own side
+    // margin (`-left-5`/`-right-5`), clearing all but ~6px of the card rather than
+    // sitting on top of the product photo. The disc covers that sliver, which can
+    // fall on a dark image. Without any arrow the track is swipeable but gives no
+    // sign that anything follows the two visible cards.
+    const arrowBase =
+        'absolute z-10 -translate-y-1/2 p-2 transition-opacity max-sm:rounded-full max-sm:bg-white/85 max-sm:p-1.5 max-sm:shadow-md max-sm:backdrop-blur-sm';
 
     return (
         <section className="relative w-full overflow-hidden bg-white py-10 sm:py-14">
@@ -137,8 +163,8 @@ export default function ProductCarousel({
                             onClick={() => page('left')}
                             aria-label={t('carousel.prev')}
                             style={{ top: arrowTop }}
-                            className={`${arrowBase} left-0 ${arrowTop === undefined ? 'top-1/2' : ''} ${
-                                edges.atStart ? 'pointer-events-none opacity-20' : 'opacity-70 hover:opacity-100'
+                            className={`${arrowBase} left-0 max-sm:-left-5 ${arrowTop === undefined ? 'top-1/2' : ''} ${
+                                edges.canLeft ? 'opacity-70 hover:opacity-100' : 'pointer-events-none opacity-20'
                             }`}
                         >
                             <Arrow flip />
@@ -182,16 +208,20 @@ export default function ProductCarousel({
                                 </h3>
                                 <div className="font-heading text-brand-teal mt-1 text-center">
                                     {p.on_sale ? (
-                                        <span className="inline-flex items-center gap-2">
-                                            <span className="font-bold">
+                                        // Stacked below `sm`, side by side above. Two prices
+                                        // do not fit one line on a ~160px phone card, and the
+                                        // `nowrap` is what stops an amount splitting from its
+                                        // currency ("100.00" over "SAR").
+                                        <span className="inline-flex flex-col items-center gap-0 sm:flex-row sm:gap-2">
+                                            <span className="font-bold whitespace-nowrap">
                                                 {p.effective_price.toFixed(2)} {currency}
                                             </span>
-                                            <span className="text-brand-teal/50 text-sm line-through">
+                                            <span className="text-brand-teal/50 text-sm whitespace-nowrap line-through">
                                                 {p.price.toFixed(2)} {currency}
                                             </span>
                                         </span>
                                     ) : (
-                                        <span className="font-bold">
+                                        <span className="font-bold whitespace-nowrap">
                                             {p.price.toFixed(2)} {currency}
                                         </span>
                                     )}
@@ -207,8 +237,8 @@ export default function ProductCarousel({
                             onClick={() => page('right')}
                             aria-label={t('carousel.next')}
                             style={{ top: arrowTop }}
-                            className={`${arrowBase} right-0 ${arrowTop === undefined ? 'top-1/2' : ''} ${
-                                edges.atEnd ? 'pointer-events-none opacity-20' : 'opacity-70 hover:opacity-100'
+                            className={`${arrowBase} right-0 max-sm:-right-5 ${arrowTop === undefined ? 'top-1/2' : ''} ${
+                                edges.canRight ? 'opacity-70 hover:opacity-100' : 'pointer-events-none opacity-20'
                             }`}
                         >
                             <Arrow />
