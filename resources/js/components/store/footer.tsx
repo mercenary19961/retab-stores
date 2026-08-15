@@ -80,8 +80,8 @@ export default function StoreFooter() {
                         On phones these previously wrapped to one per row, costing a
                         whole extra band of height for two short numbers — shrinking
                         the badge and label lets both sit side by side. */}
-                        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 max-md:justify-start max-md:gap-x-4 max-md:gap-y-2">
-                            <div className="flex items-center gap-2 max-md:gap-1.5">
+                        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 max-md:w-full max-md:max-w-[15rem] max-md:justify-start max-md:gap-x-4 max-md:gap-y-2">
+                            <div className="flex items-center gap-2 max-md:w-full max-md:justify-between max-md:gap-1.5">
                                 <div className="text-start leading-tight">
                                     <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.commercialReg')}</div>
                                     <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
@@ -94,7 +94,7 @@ export default function StoreFooter() {
                                     className="h-12 w-12 object-contain max-md:h-8 max-md:w-8"
                                 />
                             </div>
-                            <div className="flex items-center gap-2 max-md:gap-1.5">
+                            <div className="flex items-center gap-2 max-md:w-full max-md:justify-between max-md:gap-1.5">
                                 <div className="text-start leading-tight">
                                     <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.vatNumber')}</div>
                                     <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
@@ -110,23 +110,24 @@ export default function StoreFooter() {
                         </div>
 
                         {/* Contact (LTR content) */}
-                        <div
-                            dir="ltr"
-                            className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 max-md:justify-start max-md:gap-x-4 max-md:gap-y-1"
-                        >
+                        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 max-md:justify-start max-md:gap-x-4 max-md:gap-y-1">
                             <a
                                 href={`tel:${footer.contact_phone.replace(/\s/g, '')}`}
                                 className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75 max-md:gap-1.5 max-md:text-sm"
                             >
                                 <img src="/images/footer/icon-phone.png" alt="" className="h-7 w-7 max-md:h-5 max-md:w-5" />
-                                <span className="font-semibold">{footer.contact_phone}</span>
+                                <span dir="ltr" className="font-semibold">
+                                    {footer.contact_phone}
+                                </span>
                             </a>
                             <a
                                 href={`mailto:${footer.contact_email}`}
                                 className="text-brand-teal flex items-center gap-2 transition-opacity hover:opacity-75 max-md:gap-1.5 max-md:text-sm"
                             >
                                 <img src="/images/footer/icon-email.png" alt="" className="h-7 w-7 max-md:h-5 max-md:w-5" />
-                                <span className="font-semibold">{footer.contact_email}</span>
+                                <span dir="ltr" className="font-semibold">
+                                    {footer.contact_email}
+                                </span>
                             </a>
                         </div>
 
