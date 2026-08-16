@@ -1,6 +1,7 @@
 import Button from '@/components/admin/button';
 import ChangePasswordForm from '@/components/admin/change-password-form';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
+import Modal from '@/components/admin/modal';
 import CopyText from '@/components/copy-text';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -106,6 +107,18 @@ export default function UsersIndex({
         });
     };
 
+    /**
+     * Open with a clean slate and a fresh password, so the credential is ready to
+     * copy and a cancelled attempt never leaks into the next one.
+     */
+    const openAdd = () => {
+        addForm.setData({ name: '', email: '', password: newPassword() });
+        addForm.clearErrors();
+        setAdding(true);
+    };
+
+    const closeAdd = () => setAdding(false);
+
     const submitAdd = (e: React.FormEvent) => {
         e.preventDefault();
         addForm.post('/admin/users', {
@@ -130,28 +143,22 @@ export default function UsersIndex({
 
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <p className="text-sm text-neutral-400">{t('admin.users.subtitle')}</p>
-                <Button
-                    variant="primary"
-                    icon={UserPlus}
-                    onClick={() => {
-                        // Seed a fresh password each time the form opens, so it is
-                        // ready to copy and there is never a blank credential field.
-                        if (!adding) addForm.setData({ name: '', email: '', password: newPassword() });
-                        setAdding((a) => !a);
-                    }}
-                >
+                <Button variant="primary" icon={UserPlus} onClick={openAdd}>
                     {t('admin.users.addEditor')}
                 </Button>
             </div>
 
-            {adding && (
+            {/* In a dialog rather than inline: opening the form used to push the whole
+                staff list and detail panel down the page, so the thing you were about
+                to configure moved out from under you. The shared admin Modal also
+                brings Esc + backdrop dismissal for free. */}
+            <Modal open={adding} onClose={closeAdd} title={t('admin.users.addEditor')}>
                 <form
                     onSubmit={submitAdd}
                     // ⚠️ `autoComplete="off"` on the form is not enough on its own for
                     // Chrome — see the password field below — but it does stop the
                     // name/email being filled from the signed-in admin's own profile.
                     autoComplete="off"
-                    className="mb-6 max-w-3xl rounded-lg border border-neutral-800 bg-neutral-900 p-4"
                 >
                     <div className="grid gap-3 sm:grid-cols-2">
                         <label className="block">
@@ -218,7 +225,12 @@ export default function UsersIndex({
                         {addForm.errors.password && <span className="text-xs text-red-400">{addForm.errors.password}</span>}
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2">
+                    {/* Actions on the dialog's trailing edge, which is the convention the
+                        panel's other modals follow. */}
+                    <div className="mt-6 flex items-center justify-end gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                        <Button type="button" variant="secondary" onClick={closeAdd}>
+                            {t('admin.users.cancel')}
+                        </Button>
                         {/* `primary`, not `success`: this is the form's main action, not
                             the confirmation of a risky one (which is what the green
                             success variant means elsewhere — approve a return, apply a
@@ -226,12 +238,9 @@ export default function UsersIndex({
                         <Button type="submit" variant="primary" disabled={addForm.processing || !addForm.data.name || !addForm.data.email}>
                             {t('admin.users.create')}
                         </Button>
-                        <Button type="button" variant="secondary" onClick={() => setAdding(false)}>
-                            {t('admin.users.cancel')}
-                        </Button>
                     </div>
                 </form>
-            )}
+            </Modal>
 
             <div className="flex flex-col gap-6 lg:flex-row">
                 {/* Staff list */}
