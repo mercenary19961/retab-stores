@@ -413,6 +413,11 @@ const ar = {
     order: {
         headTitle: 'طلب {{number}}',
         received: 'تم استلام طلبك',
+        reserved: 'تم حجز طلبك',
+        payHeading: 'لم يكتمل الدفع',
+        payHint: 'منتجاتك محجوزة لك. أكمل الدفع لتأكيد الطلب.',
+        payButton: 'إكمال الدفع',
+        paying: 'جارٍ فتح صفحة الدفع…',
         orderNumber: 'رقم الطلب',
         total: 'الإجمالي',
         bankHeading: 'للدفع عبر التحويل البنكي',

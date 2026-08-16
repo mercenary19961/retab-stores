@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\User;
@@ -105,6 +107,15 @@ class CheckoutController
         $this->whatsapp->notifyAdminsNewOrder($order);
         Notification::send(User::staff()->get(), new NewOrderNotification($order));
 
+        // Record the CHOSEN method immediately, for all three. It used to be written
+        // only on the bank-transfer branch (card/Tamara set it when the payment
+        // landed), which left an unpaid card order with a null `payment_method` —
+        // so nothing could tell which gateway to send the customer back to, and
+        // `pay()` below would have no way to resume. Both dashboard counts that key
+        // on this column also filter on `payment_status`, so an unpaid card/Tamara
+        // order still can't drift into them.
+        $order->update(['payment_method' => PaymentMethod::from($data['payment_method'])]);
+
         if (in_array($data['payment_method'], ['card', 'tamara'], true)) {
             try {
                 $url = $data['payment_method'] === 'card'
@@ -122,29 +133,83 @@ class CheckoutController
         }
 
         // Bank transfer — no gateway; the order page shows the IBAN to transfer to.
-        $order->update(['payment_method' => PaymentMethod::BankTransfer]);
-
+        //
         // Email the transfer instructions NOW. This is the one payment method with
         // no gateway receipt of its own, and the IBAN + the order number the
         // customer must quote as the reference otherwise live on a single page
         // view that's gone the moment they close the tab.
         //
-        // ⚠️ Must come AFTER the update above: the mail decides whether to render
-        // the bank block from `payment_method`, which is only set on this line.
-        // Card/Tamara receipts are sent on payment confirmation instead, so an
-        // abandoned gateway checkout never produces a receipt (see PaymentService).
+        // ⚠️ Must come AFTER `payment_method` is set above: the mail decides whether
+        // to render the bank block from that column. Card/Tamara receipts are sent
+        // on payment confirmation instead, so an abandoned gateway checkout never
+        // produces a receipt (see PaymentService).
         $this->mailer->orderPlaced($order->refresh());
 
         return redirect()->route('orders.show', $order->order_number);
     }
 
-    public function confirmation(Request $request, Order $order)
+    /**
+     * Send the customer back to the hosted gateway for an order they never paid.
+     *
+     * 🔴 Without this an abandoned card/Tamara checkout was UNRECOVERABLE: the
+     * order sat in `pending_payment` and `orders.payment_url` was stored but never
+     * surfaced anywhere, so closing the gateway tab (or a declined card, or a
+     * failed `initiate()`) left the customer on an order page with no way to pay
+     * and no way back. Every one of those was a lost sale.
+     */
+    public function pay(Request $request, Order $order)
+    {
+        $this->assertOwns($request, $order);
+        abort_unless($this->canPay($order), 403);
+
+        // A FAILED attempt cannot be resumed on the same invoice — the gateway has
+        // already closed it — so drop the stored session and let initiate() mint a
+        // fresh one. Only `pending` (never completed, e.g. the tab was closed) is
+        // safe to hand back as-is, which is what initiate() does when both fields
+        // are still present.
+        if ($order->payment_status === PaymentStatus::Failed) {
+            $order->forceFill(['payment_url' => null, 'gateway_reference' => null])->save();
+        }
+
+        try {
+            $url = $order->payment_method === PaymentMethod::Card
+                ? app(PaymentService::class)->initiate($order)
+                : app(TamaraService::class)->initiate($order);
+        } catch (\Throwable $e) {
+            Log::error('Payment resume failed', ['order' => $order->order_number, 'error' => $e->getMessage()]);
+
+            return back()->with('error', __('messages.payment.init_failed'));
+        }
+
+        return Inertia::location($url);
+    }
+
+    /**
+     * Is there a gateway payment still outstanding on this order?
+     *
+     * Bank transfer is excluded on purpose: it has no gateway to return to, and
+     * its instructions are already on the page.
+     */
+    private function canPay(Order $order): bool
+    {
+        return in_array($order->payment_method, [PaymentMethod::Card, PaymentMethod::Tamara], true)
+            && in_array($order->payment_status, [PaymentStatus::Pending, PaymentStatus::Failed], true)
+            && $order->status === OrderStatus::PendingPayment;
+    }
+
+    /** Guests are authorised by the session; signed-in customers by ownership. */
+    private function assertOwns(Request $request, Order $order): void
     {
         $placed = $request->session()->get('placed_orders', []);
         abort_unless(
             in_array($order->order_number, $placed, true) || ($request->user() && $order->user_id === $request->user()->id),
             403,
         );
+    }
+
+    public function confirmation(Request $request, Order $order)
+    {
+        $this->assertOwns($request, $order);
 
         $bank = null;
         if ($order->payment_method === PaymentMethod::BankTransfer && $order->payment_status->value === 'pending') {
@@ -167,6 +232,7 @@ class CheckoutController
                 'total' => (float) $order->total,
             ],
             'bank' => $bank,
+            'canPay' => $this->canPay($order),
             // Defect/damage returns: offer the form only to the signed-in owner
             // while the order is delivered + inside the 3-day window.
             'canReturn' => $request->user()

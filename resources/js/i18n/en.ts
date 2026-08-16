@@ -404,6 +404,11 @@ const en = {
     order: {
         headTitle: 'Order {{number}}',
         received: 'Your order has been received',
+        reserved: 'Your order is reserved',
+        payHeading: 'Payment not completed',
+        payHint: 'Your items are held for you. Finish the payment to confirm the order.',
+        payButton: 'Complete payment',
+        paying: 'Opening payment page…',
         orderNumber: 'Order number',
         total: 'Total',
         bankHeading: 'Pay by bank transfer',

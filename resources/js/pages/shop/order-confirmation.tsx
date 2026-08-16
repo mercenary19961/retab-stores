@@ -1,5 +1,6 @@
 import StoreLayout from '@/layouts/store-layout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface Order {
@@ -20,24 +21,31 @@ interface Bank {
 export default function OrderConfirmation({
     order,
     bank,
+    canPay,
     canReturn,
     orderReturn,
 }: {
     order: Order;
     bank: Bank | null;
+    canPay?: boolean;
     canReturn?: boolean;
     orderReturn?: { status: string } | null;
 }) {
     const { t } = useTranslation();
     const currency = t('common.currency');
+    const flash = (usePage().props as { flash?: { error?: string | null } }).flash;
+    const [paying, setPaying] = useState(false);
 
     return (
         <StoreLayout>
             <Head title={t('order.headTitle', { number: order.order_number })} />
 
             <div className="mx-auto max-w-xl text-center">
-                <div className="text-5xl">✅</div>
-                <h1 className="mt-3 text-2xl font-bold">{t('order.received')}</h1>
+                {/* ⚠️ A green tick over "order received" is a lie while the payment is
+                    still outstanding, and it is probably why an abandoned checkout
+                    never gets finished: the page reads as done. State the truth. */}
+                <div className="text-5xl">{canPay ? '⏳' : '✅'}</div>
+                <h1 className="mt-3 text-2xl font-bold">{canPay ? t('order.reserved') : t('order.received')}</h1>
                 <p className="mt-2 text-gray-600">
                     {t('order.orderNumber')}: <span className="font-mono font-semibold">{order.order_number}</span>
                 </p>
@@ -68,8 +76,39 @@ export default function OrderConfirmation({
                             </div>
                         </dl>
                     </div>
+                ) : canPay ? (
+                    /* 🔴 The recovery path for an abandoned card/Tamara checkout. Until
+                       this existed, closing the gateway tab left the order unpayable
+                       and the customer with nowhere to go. Deliberately the loudest
+                       thing on the page when it shows: the order is NOT paid yet, and
+                       the success tick above otherwise implies it is. */
+                    <div className="border-brand-gold/30 bg-brand-cream/50 mt-6 rounded-2xl border p-5">
+                        <h2 className="text-brand-teal font-bold">{t('order.payHeading')}</h2>
+                        <p className="mt-1 text-sm text-neutral-600">{t('order.payHint')}</p>
+                        <button
+                            type="button"
+                            data-testid="resume-payment"
+                            disabled={paying}
+                            onClick={() =>
+                                router.post(
+                                    `/orders/${order.order_number}/pay`,
+                                    {},
+                                    { onStart: () => setPaying(true), onFinish: () => setPaying(false) },
+                                )
+                            }
+                            className="bg-brand-teal mt-4 w-full rounded-full px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#163e42] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {paying ? t('order.paying') : t('order.payButton')}
+                        </button>
+                    </div>
                 ) : (
                     <p className="mt-4 text-gray-600">{t('order.noBank')}</p>
+                )}
+
+                {flash?.error && (
+                    <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                        {flash.error}
+                    </p>
                 )}
 
                 {orderReturn && (

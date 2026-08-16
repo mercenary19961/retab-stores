@@ -96,6 +96,11 @@ Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->middlewa
 Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
 Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1,checkout')->name('checkout.store');
 Route::get('/orders/{order:order_number}', [CheckoutController::class, 'confirmation'])->name('orders.show');
+// Resume an abandoned card/Tamara payment. Own throttle bucket: a bare
+// `throttle:N,1` rejoins the shared per-visitor counter (see the 2026-08-06 note).
+Route::post('/orders/{order:order_number}/pay', [CheckoutController::class, 'pay'])
+    ->middleware('throttle:10,1,order-pay')
+    ->name('orders.pay');
 
 // Server-to-server webhooks (CSRF-exempt via the webhooks/* rule).
 Route::post('/webhooks/oto', [OtoWebhookController::class, 'handle'])->name('webhooks.oto');
