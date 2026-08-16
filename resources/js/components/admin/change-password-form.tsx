@@ -85,7 +85,7 @@ export default function ChangePasswordForm({ compact = false }: { compact?: bool
                 {field('password_confirmation', t('admin.account.confirmPassword'), 'new-password')}
             </div>
 
-            <Button type="submit" variant="success" disabled={form.processing || !form.isDirty}>
+            <Button type="submit" variant="primary" disabled={form.processing || !form.isDirty}>
                 {t('admin.account.savePassword')}
             </Button>
         </form>

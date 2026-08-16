@@ -175,6 +175,44 @@ html[dir='rtl'] .cta-shimmer {
 }
 
 /*
+ * Autofilled inputs — repaint them in the surrounding theme.
+ *
+ * 🔴 Chrome paints `:-webkit-autofill` with its own near-white background, and
+ * `background-color` CANNOT override it: the UA style wins. On the dark admin
+ * panel that turned every autofilled field into a white block (reported on the
+ * Staff & access page, where Chrome offered the signed-in admin's own saved
+ * credentials to the "create editor" form).
+ *
+ * The only reliable fix is to cover the UA background with a huge inset
+ * box-shadow, plus `-webkit-text-fill-color` for the text, which is likewise not
+ * settable via `color`. The long transition-delay is the standard companion
+ * trick: Chrome re-applies its background on interaction, and delaying the
+ * transition keeps ours painted.
+ *
+ * Applied panel-wide rather than per input, since any field the browser decides
+ * to fill has the same problem. Opt an element out with `.no-autofill-fix`.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-neutral-900);
+    box-shadow: 0 0 0 1000px #fff inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+    -webkit-text-fill-color: var(--color-neutral-100);
+    /* Matches the admin field background (`bg-neutral-950`). */
+    box-shadow: 0 0 0 1000px #0a0a0a inset;
+}
+
+/*
  * Admin scrollbars — brand-gold thumb across the panel (table x-scroll, the
  * main content area, the sidebar nav). Firefox uses scrollbar-color (inherits
  * to descendants); WebKit needs the ::-webkit-scrollbar pseudo per element.

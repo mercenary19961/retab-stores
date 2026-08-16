@@ -38,6 +38,17 @@ class UserController extends Controller
             ]),
             'schema' => Permission::SCHEMA,
             'defaults' => Permission::DEFAULTS,
+            // Expanded server-side from the same SCHEMA, so every section is present
+            // and explicitly denied where a preset doesn't name it (an absent section
+            // would fall back to DEFAULTS and silently grant).
+            'presets' => [
+                'default' => Permission::DEFAULTS,
+                'operations' => Permission::preset('operations'),
+                'catalogue' => Permission::preset('catalogue'),
+                'manager' => Permission::preset('manager'),
+                'readonly' => Permission::preset('full', viewOnly: true),
+                'full' => Permission::preset('full'),
+            ],
         ]);
     }
 

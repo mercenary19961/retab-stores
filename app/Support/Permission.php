@@ -52,4 +52,60 @@ class Permission
         'settings' => ['view' => false, 'edit' => false],
         'change_log' => ['view' => true, 'revert' => false],
     ];
+
+    /**
+     * Named starting points for the permission grid, by SECTION.
+     *
+     * 14 sections × 33 actions is a lot of switches to set one at a time, and the
+     * realistic staff roles are few: someone who runs the daily order desk, someone
+     * who looks after the catalogue, a trusted second-in-command, or a read-only
+     * account for a bookkeeper. Presets are a starting point the admin then
+     * fine-tunes — they are applied client-side to the grid, never stored, so the
+     * saved value is always the explicit map the admin actually confirmed.
+     *
+     * Listing SECTIONS rather than individual permissions is deliberate: a new
+     * action added to SCHEMA is then included automatically instead of being
+     * silently omitted from every preset until someone remembers to update them.
+     *
+     * @var array<string, list<string>>
+     */
+    public const PRESETS = [
+        // The daily fulfilment desk: take orders out of the door, handle returns.
+        'operations' => ['orders', 'returns', 'product_requests', 'customers', 'inventory', 'contact_messages'],
+        // Looks after what the store sells and how it reads.
+        'catalogue' => ['products', 'coupons', 'discounts', 'reviews', 'content_pages'],
+        // Everything except the settings that can reconfigure the business itself.
+        'manager' => [
+            'orders', 'returns', 'product_requests', 'customers', 'inventory', 'contact_messages',
+            'products', 'coupons', 'discounts', 'reviews', 'content_pages', 'marketing', 'change_log',
+        ],
+    ];
+
+    /**
+     * Expand a preset into a complete permission map.
+     *
+     * Every section in SCHEMA is present in the result, so a section the preset
+     * does not name is explicitly denied rather than absent — which matters
+     * because `resolvedPermissions()` falls back to DEFAULTS for a missing
+     * section, and an omitted key would silently grant instead of deny.
+     *
+     * `viewOnly` grants the `view` action alone on the named sections, which is
+     * what a bookkeeper or a reporting account wants.
+     *
+     * @return array<string, array<string, bool>>
+     */
+    public static function preset(string $name, bool $viewOnly = false): array
+    {
+        $sections = $name === 'full' ? array_keys(self::SCHEMA) : (self::PRESETS[$name] ?? []);
+
+        $map = [];
+        foreach (self::SCHEMA as $section => $actions) {
+            $granted = in_array($section, $sections, true);
+            foreach ($actions as $action) {
+                $map[$section][$action] = $granted && (! $viewOnly || $action === 'view');
+            }
+        }
+
+        return $map;
+    }
 }
