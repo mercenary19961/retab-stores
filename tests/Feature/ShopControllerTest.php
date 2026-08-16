@@ -99,7 +99,26 @@ class ShopControllerTest extends TestCase
                 ->has('reviewReward.available')
                 ->has('reviewReward.percent')
                 ->has('wishlisted')
-                ->has('authed'),
+                ->has('authed')
+                // Drives BOTH the divisor and the copy in the Tamara block. If it
+                // ever stops arriving the page quotes NaN per instalment.
+                ->where('tamaraInstalments', (int) config('services.tamara.instalments', 3)),
+        );
+    }
+
+    /**
+     * The product page's "split into N payments" quote and the plan Tamara is
+     * actually asked for must be the same number. They were not: the page
+     * hardcoded 4 while `TamaraService` sent the configured 3, so a shopper was
+     * quoted 4 payments and landed on a 3-payment plan.
+     */
+    public function test_the_advertised_instalment_count_matches_the_one_checkout_requests(): void
+    {
+        config(['services.tamara.instalments' => 6]);
+        $this->makeProduct(['slug' => 'sukkari-instalments']);
+
+        $this->get('/products/sukkari-instalments')->assertOk()->assertInertia(
+            fn (Assert $page) => $page->where('tamaraInstalments', 6),
         );
     }
 

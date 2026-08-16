@@ -317,7 +317,10 @@ const en = {
         rateThis: 'Rate this product',
         reviewReward: 'Write a review with a comment and get {{percent}}% off your next order (valid 30 days).',
         timesBought: 'Purchased {{n}} times',
-        tamaraSplit: 'Split into 4 payments of {{amount}} {{currency}}',
+        // {{n}} is the SERVER's configured instalment count, never a literal, or
+        // this quote disagrees with the plan Tamara actually offers. Named `n`
+        // rather than `count`, which i18next reserves for pluralization.
+        tamaraSplit: 'Split into {{n}} payments of {{amount}} {{currency}}',
         tamaraNote: 'No late fees, Sharia-compliant',
         decreaseQty: 'Decrease quantity',
         increaseQty: 'Increase quantity',

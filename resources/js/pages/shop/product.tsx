@@ -71,12 +71,14 @@ export default function ShopProduct({
     reviewReward,
     wishlisted,
     authed,
+    tamaraInstalments,
 }: {
     product: Product;
     reviews: Reviews;
     reviewReward: ReviewReward;
     wishlisted: boolean;
     authed: boolean;
+    tamaraInstalments: number;
 }) {
     const { t } = useTranslation();
     const localized = useLocalized();
@@ -86,7 +88,11 @@ export default function ShopProduct({
     const description = localized(product, 'description');
 
     const [qty, setQty] = useState(1);
-    const installment = product.effective_price / 4;
+    // ⚠️ The divisor is the SERVER's configured instalment count, not a literal.
+    // This block used to hardcode 4 while checkout requested 3, so the shopper
+    // was quoted "4 payments of 25" and landed on a Tamara page offering 3 of
+    // 33.33. Both numbers now come from the one config value.
+    const installment = product.effective_price / Math.max(tamaraInstalments, 1);
 
     // Product/Offer structured data for rich results.
     const jsonLd = {
@@ -211,7 +217,10 @@ export default function ShopProduct({
                                 <span className="bg-brand-teal rounded-md px-2 py-0.5 text-xs font-bold tracking-wide text-white lowercase">
                                     tamara
                                 </span>
-                                {t('product.tamaraSplit', { amount: installment.toFixed(2), currency })}
+                                {/* ⚠️ `n`, NOT `count`: `count` is reserved by i18next and
+                                    switches on pluralization, which for Arabic means six
+                                    suffixed variants this key does not define. */}
+                                {t('product.tamaraSplit', { n: tamaraInstalments, amount: installment.toFixed(2), currency })}
                             </span>
                             <p className="text-brand-teal/60 mt-1 text-xs">{t('product.tamaraNote')}</p>
                         </div>

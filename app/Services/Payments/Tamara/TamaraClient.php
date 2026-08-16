@@ -2,9 +2,12 @@
 
 namespace App\Services\Payments\Tamara;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 /**
  * Thin wrapper over the Tamara REST API. Knows nothing about our orders — it
@@ -21,14 +24,52 @@ class TamaraClient
         protected string $baseUrl,
     ) {}
 
+    /**
+     * Client for WRITES (checkout creation, authorise, capture, refund, cancel).
+     * Deliberately has NO retry.
+     *
+     * 🔴 A lost response is indistinguishable from a lost request, so re-sending
+     * a capture or a refund that Tamara has ALREADY executed takes the money, or
+     * gives it back, twice — against a real customer's instalment plan, with one
+     * row in our `payments` ledger to show for two movements. Measured under the
+     * previous bare `retry(2, 200, throw: false)`: a dropped connection sent
+     * every write twice, and so did any 4xx or 5xx (that config retries EVERY
+     * unsuccessful response, 400s included).
+     *
+     * Checkout creation counts as a write for the same reason: a retry leaves a
+     * stray unpaid session polluting reconciliation.
+     *
+     * A failed write now surfaces to the caller, which is what we want —
+     * checkout already flashes `payment.init_failed` and the admin refund flow
+     * reports the error.
+     */
     private function client(): PendingRequest
     {
         return Http::withToken($this->apiToken)
             ->acceptJson()
             ->asJson()
             ->timeout(25)
-            ->retry(2, 200, throw: false)
             ->baseUrl($this->baseUrl);
+    }
+
+    /**
+     * Client for READS (order lookup, readiness probe). Safe to repeat, so it
+     * retries — but only on genuinely transient faults, never on a 4xx that will
+     * fail identically the second time.
+     */
+    private function readClient(): PendingRequest
+    {
+        return $this->client()->retry(2, 200, fn (Throwable $e) => $this->isTransient($e), throw: false);
+    }
+
+    private function isTransient(Throwable $e): bool
+    {
+        if ($e instanceof ConnectionException) {
+            return true;
+        }
+
+        return $e instanceof RequestException
+            && ($e->response->status() >= 500 || $e->response->status() === 429);
     }
 
     /** @return array{order_id:string, checkout_id:string, checkout_url:string, status:string} */
@@ -53,7 +94,7 @@ class TamaraClient
 
     public function getOrder(string $orderId): array
     {
-        $response = $this->client()->get("/orders/{$orderId}");
+        $response = $this->readClient()->get("/orders/{$orderId}");
 
         if (! $response->successful()) {
             throw new RuntimeException("Tamara get order {$orderId} failed: ".$response->status());
@@ -126,7 +167,7 @@ class TamaraClient
         }
 
         try {
-            $status = $this->client()->get('/orders/readiness-probe')->status();
+            $status = $this->readClient()->get('/orders/readiness-probe')->status();
 
             if (in_array($status, [401, 403], true)) {
                 return ['configured' => true, 'ok' => false, 'status' => $status, 'message' => 'API token rejected'];
@@ -137,7 +178,7 @@ class TamaraClient
             }
 
             return ['configured' => true, 'ok' => true, 'status' => $status, 'message' => 'authenticated'];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return ['configured' => true, 'ok' => false, 'status' => null, 'message' => 'unreachable: '.$e->getMessage()];
         }
     }

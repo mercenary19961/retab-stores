@@ -271,6 +271,12 @@ class ShopController
                 ? Wishlist::where('user_id', $user->id)->where('product_id', $product->id)->exists()
                 : false,
             'authed' => (bool) $user,
+            // ⚠️ The instalment COUNT is shipped rather than hardcoded in the page.
+            // It previously advertised "split into 4" while checkout requested
+            // `instalments` (3 by default), so a shopper was quoted one plan and
+            // shown another on Tamara's own page. Both now read one config value,
+            // which is the same one `TamaraService::buildCheckoutPayload()` sends.
+            'tamaraInstalments' => (int) config('services.tamara.instalments', 3),
         ]);
     }
 
