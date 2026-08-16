@@ -11,6 +11,7 @@ import { RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
 type Perms = Record<string, Record<string, boolean>>;
+type Role = 'admin' | 'editor';
 
 const inputCls = 'mt-1 w-full rounded border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm';
 
@@ -34,7 +35,7 @@ interface Staff {
     id: number;
     name: string;
     email: string;
-    role: 'admin' | 'editor';
+    role: Role;
     created_at: string | null;
     permissions: Perms;
 }
@@ -55,14 +56,25 @@ export default function UsersIndex({
     // Local editable copy of each editor's permission map.
     const [edits, setEdits] = useState<Record<number, Perms>>({});
     const [adding, setAdding] = useState(false);
+    // The staff member whose role is being changed, held while the confirm dialog
+    // is open (null = closed).
+    const [roleTarget, setRoleTarget] = useState<Staff | null>(null);
 
     const selected = staff.find((s) => s.id === selectedId) ?? null;
-    const addForm = useForm({ name: '', email: '', password: '' });
+    const addForm = useForm<{ name: string; email: string; password: string; role: Role }>({
+        name: '',
+        email: '',
+        password: '',
+        role: 'editor',
+    });
 
     // The password section only appears on your OWN row: changing it requires the
     // current password, which is by definition nobody else's to supply.
     const { auth } = usePage<SharedData>().props;
     const isMe = selected !== null && selected.id === auth.user?.id;
+
+    // Everyone with back-office access is on this page, so the count is exact.
+    const adminCount = staff.filter((s) => s.role === 'admin').length;
 
     const permsFor = (s: Staff): Perms => edits[s.id] ?? s.permissions;
 
@@ -108,11 +120,33 @@ export default function UsersIndex({
     };
 
     /**
+     * Why a role change may be refused, or null when it is allowed.
+     *
+     * Mirrors the server's two guards, IN THE SAME ORDER, so the button explains
+     * itself instead of failing on submit. The server still enforces both — this
+     * is the hint, not the rule.
+     */
+    const roleBlockedReason = (s: Staff): string | null => {
+        // Count first: the sole admin looking at their own row wants "promote
+        // someone else first", not "not your own role", which tells them nothing.
+        if (s.role === 'admin' && adminCount <= 1) return t('admin.users.role.lastAdminBlocked');
+        if (s.id === auth.user?.id) return t('admin.users.role.selfBlocked');
+
+        return null;
+    };
+
+    const confirmRoleChange = () => {
+        if (!roleTarget) return;
+        const next: Role = roleTarget.role === 'admin' ? 'editor' : 'admin';
+        router.put(`/admin/users/${roleTarget.id}/role`, { role: next }, { preserveScroll: true, onFinish: () => setRoleTarget(null) });
+    };
+
+    /**
      * Open with a clean slate and a fresh password, so the credential is ready to
      * copy and a cancelled attempt never leaks into the next one.
      */
     const openAdd = () => {
-        addForm.setData({ name: '', email: '', password: newPassword() });
+        addForm.setData({ name: '', email: '', password: newPassword(), role: 'editor' });
         addForm.clearErrors();
         setAdding(true);
     };
@@ -137,6 +171,34 @@ export default function UsersIndex({
                 : 'border-neutral-700 bg-neutral-800 text-neutral-400 hover:border-neutral-500'
         }`;
 
+    /**
+     * The role row, shown for admins and editors alike so it sits in one place
+     * whoever you select.
+     *
+     * When a change is refused the button is not rendered at all and the reason
+     * takes its place — a dead control the admin has to hover to understand is
+     * worse than a sentence saying why.
+     */
+    const roleCard = (s: Staff) => {
+        const blocked = roleBlockedReason(s);
+
+        return (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-800 bg-neutral-900 px-5 py-4">
+                <div className="min-w-0">
+                    <p className="text-xs text-neutral-500">{t('admin.users.role.label')}</p>
+                    <p className="font-medium text-neutral-100">{t(`admin.users.roles.${s.role}`)}</p>
+                </div>
+                {blocked ? (
+                    <p className="max-w-xs text-xs text-neutral-500">{blocked}</p>
+                ) : (
+                    <Button size="sm" variant={s.role === 'admin' ? 'warning' : 'secondary'} onClick={() => setRoleTarget(s)}>
+                        {t(s.role === 'admin' ? 'admin.users.role.makeEditor' : 'admin.users.role.makeAdmin')}
+                    </Button>
+                )}
+            </div>
+        );
+    };
+
     return (
         <AdminLayout title={t('admin.users.title')}>
             <Head title={t('admin.users.title')} />
@@ -144,7 +206,7 @@ export default function UsersIndex({
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <p className="text-sm text-neutral-400">{t('admin.users.subtitle')}</p>
                 <Button variant="primary" icon={UserPlus} onClick={openAdd}>
-                    {t('admin.users.addEditor')}
+                    {t('admin.users.addStaff')}
                 </Button>
             </div>
 
@@ -152,7 +214,7 @@ export default function UsersIndex({
                 staff list and detail panel down the page, so the thing you were about
                 to configure moved out from under you. The shared admin Modal also
                 brings Esc + backdrop dismissal for free. */}
-            <Modal open={adding} onClose={closeAdd} title={t('admin.users.addEditor')}>
+            <Modal open={adding} onClose={closeAdd} title={t('admin.users.addStaff')}>
                 <form
                     onSubmit={submitAdd}
                     // ⚠️ `autoComplete="off"` on the form is not enough on its own for
@@ -225,6 +287,24 @@ export default function UsersIndex({
                         {addForm.errors.password && <span className="text-xs text-red-400">{addForm.errors.password}</span>}
                     </div>
 
+                    {/* Role. Two chips rather than a <select>: it is a binary choice
+                        whose consequence differs enough to be worth spelling out
+                        under it, and the note changes with the selection. */}
+                    <div className="mt-4">
+                        <span className="text-xs text-neutral-400">{t('admin.users.role.label')}</span>
+                        <div className="mt-1.5 flex flex-wrap gap-2">
+                            {(['editor', 'admin'] as const).map((r) => (
+                                <button key={r} type="button" onClick={() => addForm.setData('role', r)} className={chip(addForm.data.role === r)}>
+                                    {t(`admin.users.roles.${r}`)}
+                                </button>
+                            ))}
+                        </div>
+                        <p className={`mt-1.5 text-xs ${addForm.data.role === 'admin' ? 'text-amber-400/80' : 'text-neutral-500'}`}>
+                            {t(addForm.data.role === 'admin' ? 'admin.users.role.adminNote' : 'admin.users.role.editorNote')}
+                        </p>
+                        {addForm.errors.role && <span className="text-xs text-red-400">{addForm.errors.role}</span>}
+                    </div>
+
                     {/* Actions on the dialog's trailing edge, which is the convention the
                         panel's other modals follow. */}
                     <div className="mt-6 flex items-center justify-end gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
@@ -236,10 +316,37 @@ export default function UsersIndex({
                             success variant means elsewhere — approve a return, apply a
                             stock import). */}
                         <Button type="submit" variant="primary" disabled={addForm.processing || !addForm.data.name || !addForm.data.email}>
-                            {t('admin.users.create')}
+                            {t(addForm.data.role === 'admin' ? 'admin.users.createAdmin' : 'admin.users.create')}
                         </Button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Role changes get a confirm step where the permission grid does not:
+                this one is not a display preference, it either hands somebody every
+                section of the store or takes it away. */}
+            <Modal
+                open={roleTarget !== null}
+                onClose={() => setRoleTarget(null)}
+                title={t(roleTarget?.role === 'admin' ? 'admin.users.role.confirmDemoteTitle' : 'admin.users.role.confirmPromoteTitle')}
+            >
+                {roleTarget && (
+                    <>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                            {t(roleTarget.role === 'admin' ? 'admin.users.role.confirmDemoteBody' : 'admin.users.role.confirmPromoteBody', {
+                                name: roleTarget.name ?? roleTarget.email,
+                            })}
+                        </p>
+                        <div className="mt-6 flex items-center justify-end gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                            <Button variant="secondary" onClick={() => setRoleTarget(null)}>
+                                {t('admin.users.cancel')}
+                            </Button>
+                            <Button variant={roleTarget.role === 'admin' ? 'warning' : 'primary'} onClick={confirmRoleChange}>
+                                {t(roleTarget.role === 'admin' ? 'admin.users.role.makeEditor' : 'admin.users.role.makeAdmin')}
+                            </Button>
+                        </div>
+                    </>
+                )}
             </Modal>
 
             <div className="flex flex-col gap-6 lg:flex-row">
@@ -286,6 +393,7 @@ export default function UsersIndex({
                                 <p className="font-medium text-neutral-200">{selected.name}</p>
                                 <p className="mt-1 text-sm text-neutral-500">{t('admin.users.adminFullAccess')}</p>
                             </div>
+                            {roleCard(selected)}
                             {isMe && (
                                 <div className="rounded-lg border border-neutral-800 bg-neutral-900">
                                     <ChangePasswordForm />
@@ -294,6 +402,7 @@ export default function UsersIndex({
                         </div>
                     ) : (
                         <div className="space-y-6">
+                            {roleCard(selected)}
                             <div className="rounded-lg border border-neutral-800 bg-neutral-900">
                                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 px-5 py-3">
                                     <div className="min-w-0">

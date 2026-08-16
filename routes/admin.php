@@ -136,6 +136,7 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
         Route::put('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.permissions');
+        Route::put('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 

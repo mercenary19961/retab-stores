@@ -1394,7 +1394,7 @@ const en = {
         users: {
             title: 'Staff & access',
             subtitle: 'Manage admins and editors, and control what each editor can do.',
-            addEditor: 'Add editor',
+            addStaff: 'Add staff member',
             name: 'Name',
             email: 'Email',
             password: 'Password',
@@ -1413,8 +1413,25 @@ const en = {
                 none: 'Clear all',
             },
             create: 'Create editor',
+            createAdmin: 'Create admin',
             cancel: 'Cancel',
             roles: { admin: 'Admin', editor: 'Editor' },
+            role: {
+                label: 'Role',
+                adminNote:
+                    'Admins have full access to every section, including adding and removing staff. Only grant this to people you trust with the whole store.',
+                editorNote: 'Editors get only the sections you grant them. You can adjust the permissions after the account is created.',
+                makeAdmin: 'Make admin',
+                makeEditor: 'Make editor',
+                selfBlocked: 'You cannot change your own role.',
+                lastAdminBlocked: 'This is the only admin account. Promote someone else first.',
+                confirmPromoteTitle: 'Grant full access?',
+                confirmPromoteBody:
+                    '{{name}} will get full access to every section, including staff, settings and change log, and will be able to add or remove other staff. You can change this back later.',
+                confirmDemoteTitle: 'Remove full access?',
+                confirmDemoteBody:
+                    '{{name}} will lose full access and become an editor with a normal permission set. Check their permissions afterwards.',
+            },
             adminFullAccess: 'Admins have full access to every section. Nothing to configure.',
             permissionsFor: 'Permissions',
             hint: 'Turn a section off (View) to hide it entirely from this editor.',
