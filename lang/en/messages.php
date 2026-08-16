@@ -34,6 +34,9 @@ return [
 
     'payment' => [
         'init_failed' => 'Could not start online payment. You can pay by bank transfer.',
+        'received' => 'Payment received. Thank you.',
+        'not_completed' => 'Your payment was not completed. You can try again below.',
+        'result_unknown' => 'We could not match that payment to an order. If you were charged, contact us and we will sort it out.',
     ],
 
     'profile' => [

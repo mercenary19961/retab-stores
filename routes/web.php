@@ -95,6 +95,13 @@ Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->middlewa
 // Checkout.
 Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
 Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1,checkout')->name('checkout.store');
+// Where BOTH hosted gateways return the customer. Moyasar's success_url is
+// pointed here too (see AppServiceProvider) so there is one landing path, not
+// two that can drift. Own throttle bucket — it triggers an outbound gateway
+// call, and a bare `throttle:N,1` rejoins the shared per-visitor counter.
+Route::get('/checkout/result', [CheckoutController::class, 'result'])
+    ->middleware('throttle:30,1,checkout-result')
+    ->name('checkout.result');
 Route::get('/orders/{order:order_number}', [CheckoutController::class, 'confirmation'])->name('orders.show');
 // Resume an abandoned card/Tamara payment. Own throttle bucket: a bare
 // `throttle:N,1` rejoins the shared per-visitor counter (see the 2026-08-06 note).

@@ -185,6 +185,116 @@ class CheckoutController
     }
 
     /**
+     * Where a hosted gateway returns the customer after payment.
+     *
+     * 🔴 Neither gateway's return URL existed. Tamara sends the shopper to
+     * `/checkout/result` and Moyasar to `/checkout/success`, and BOTH 404'd — so
+     * a customer paid, got redirected, and landed on an error page. Worse, that
+     * left the webhook as the ONLY thing able to advance the order, so a delayed
+     * or misconfigured callback stranded a paid order at `pending_payment` with
+     * nobody watching.
+     *
+     * 🔑 This is deliberately a SECOND path to the same outcome, not a
+     * replacement. The webhook stays authoritative (it re-fetches and verifies
+     * amount + currency); this just lets the customer's own return journey
+     * confirm the order too, so a webhook problem degrades instead of stalling.
+     * Both services are idempotent and row-locked, so the two racing is a no-op.
+     */
+    public function result(Request $request)
+    {
+        $order = $this->resolveReturnedOrder($request);
+
+        if (! $order) {
+            return redirect()->route('home')->with('error', __('messages.payment.result_unknown'));
+        }
+
+        // Best-effort by design: the webhook is the authority, so a failure here
+        // must still land the customer on their order rather than a 500.
+        try {
+            $this->confirmReturnedPayment($order);
+        } catch (\Throwable $e) {
+            Log::warning('Gateway return confirmation failed', [
+                'order' => $order->order_number,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $order->refresh();
+
+        // Cancelled or declined: the order page already renders the pay button
+        // (canPay), so this only has to explain why they are looking at it.
+        return redirect()->route('orders.show', $order->order_number)
+            ->with($this->canPay($order) ? 'error' : 'success', $this->canPay($order)
+                ? __('messages.payment.not_completed')
+                : __('messages.payment.received'));
+    }
+
+    /**
+     * Which order did this visitor just come back from paying?
+     *
+     * Preference order matters. Our OWN session record is checked first because
+     * it cannot be influenced by the query string, and it survives the round
+     * trip: a top-level GET redirect from the gateway carries a SameSite=Lax
+     * cookie. The gateway reference is only a fallback for a lost session
+     * (expired, cookies cleared, finished on another device).
+     */
+    private function resolveReturnedOrder(Request $request): ?Order
+    {
+        /** @var Store $session — push() lives on Store, not the Session contract */
+        $session = $request->session();
+        $placed = $session->get('placed_orders', []);
+
+        if ($placed !== [] && $order = Order::where('order_number', end($placed))->first()) {
+            return $order;
+        }
+
+        // ⚠️ Moyasar returns `?id=<PAYMENT id>` while our `gateway_reference`
+        // holds the INVOICE id, so the payment id can't be matched directly —
+        // confirmFromGateway resolves the order from the payment itself.
+        // Tamara returns `?orderId=<its order id>`, which is what we stored.
+        $order = ($paymentId = $request->query('id'))
+            ? app(PaymentService::class)->confirmFromGateway((string) $paymentId)
+            : Order::where('gateway_reference', (string) ($request->query('orderId') ?? $request->query('order_id') ?? ''))
+                ->whereNotNull('gateway_reference')
+                ->first();
+
+        // Grant the confirmation page to a visitor who arrived holding a valid
+        // gateway-side reference. ⚠️ Residual risk accepted knowingly: those
+        // references are server-generated UUIDs known only to us, the gateway
+        // and this customer, so reaching here with someone else's requires
+        // guessing one. The alternative is stranding a paying customer who lost
+        // their session, which is the exact failure this method exists to fix.
+        if ($order) {
+            $session->push('placed_orders', $order->order_number);
+        }
+
+        return $order;
+    }
+
+    /**
+     * Ask the gateway what really happened. Skipped once a webhook has already
+     * settled the order, so the common case costs no outbound call.
+     */
+    private function confirmReturnedPayment(Order $order): void
+    {
+        if (in_array($order->payment_status, [PaymentStatus::Paid, PaymentStatus::Authorized], true)) {
+            return;
+        }
+
+        if ($order->payment_method === PaymentMethod::Tamara && $order->gateway_reference) {
+            app(TamaraService::class)->confirm($order->gateway_reference);
+
+            return;
+        }
+
+        if ($order->payment_method === PaymentMethod::Card) {
+            // reconcile() reads the INVOICE and confirms whichever payment on it
+            // succeeded, so it needs no id from the query string.
+            app(PaymentService::class)->reconcile($order);
+        }
+    }
+
+    /**
      * Is there a gateway payment still outstanding on this order?
      *
      * Bank transfer is excluded on purpose: it has no gateway to return to, and

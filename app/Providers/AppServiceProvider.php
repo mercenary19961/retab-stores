@@ -43,7 +43,12 @@ class AppServiceProvider extends ServiceProvider
             baseUrl: rtrim((string) config('services.moyasar.base_url'), '/'),
             currency: (string) config('services.moyasar.currency', 'SAR'),
             webhookToken: (string) config('services.moyasar.webhook_secret'),
-            successUrl: rtrim((string) config('app.url'), '/').'/checkout/success',
+            // ⚠️ Was '/checkout/success', which was never routed — a paying
+            // customer landed on a 404. Both gateways now return to the one
+            // '/checkout/result' handler. Safe to change outright because
+            // Moyasar has never been live, so no outstanding invoice carries
+            // the old URL.
+            successUrl: rtrim((string) config('app.url'), '/').'/checkout/result',
             callbackUrl: rtrim((string) config('app.url'), '/').'/webhooks/moyasar',
         ));
 
