@@ -577,7 +577,8 @@ const ar = {
         undo: {
             button: 'تراجع عن آخر حفظ',
             saved: 'تم حفظ {{label}}',
-            confirm: 'هل تريد التراجع عن هذا التغيير؟',
+            confirm: 'سيُعاد ما يلي إلى ما كان عليه:',
+            savedAgo: 'حُفظ {{when}}',
             dismiss: 'إخفاء',
         },
         revertConflict: {

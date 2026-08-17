@@ -572,7 +572,8 @@ const en = {
         undo: {
             button: 'Undo last save',
             saved: 'Saved {{label}}',
-            confirm: 'Undo this change?',
+            confirm: 'This will put the following back the way it was:',
+            savedAgo: 'Saved {{when}}',
             dismiss: 'Dismiss',
         },
         revertConflict: {
