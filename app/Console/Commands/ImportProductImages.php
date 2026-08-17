@@ -49,10 +49,10 @@ class ImportProductImages extends Command
         $this->info('Scanned '.count($files).' image(s)'.($dry ? '  (dry run — nothing will be written)' : ''));
 
         $totalStored = 0;
-        foreach ($maps[$group] as $slug => [$include, $exclude]) {
-            $product = Product::where('slug', $slug)->first();
+        foreach ($maps[$group] as $key => [$include, $exclude]) {
+            $product = $this->resolve($key);
             if (! $product) {
-                $this->warn("  · no product with slug {$slug} — skipped");
+                $this->warn("  · no product matching '{$key}' — skipped");
 
                 continue;
             }
@@ -72,6 +72,26 @@ class ImportProductImages extends Command
         $this->info($dry ? 'Dry run complete.' : "Done — stored {$totalStored} image(s).");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * A map key is either a product SLUG or a SKU.
+     *
+     * 🔑 SKU is the only identifier that is stable across environments, and that
+     * matters because this command has to run on production too. Slugs do NOT
+     * match between dev and prod: `catalog:clean-slugs --apply` has been run
+     * locally but is deliberately deferred to launch on prod (it is what mints the
+     * 301s from the indexed Zid URLs), so 27 products currently have clean Arabic
+     * slugs here and junk ones there — `قهوة-نجدية` locally is `Najdi-coffee` on
+     * prod, `بوكس-مكسرات-مشكل` is `RETAB076`. A slug-keyed map therefore silently
+     * skips those products on prod and attaches nothing. Prefer SKU for any new
+     * group; slug support stays for the existing `rusks` group.
+     *
+     * No ambiguity to guard against: slugs are Arabic/kebab, SKUs are `RTB-####`.
+     */
+    private function resolve(string $key): ?Product
+    {
+        return Product::where('slug', $key)->orWhere('sku', $key)->first();
     }
 
     /**
