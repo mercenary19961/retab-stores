@@ -20,6 +20,12 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <!-- Pinned so the suite is deterministic regardless of where it runs.
+             Production is Asia/Riyadh (+3) and a developer's machine may be
+             anything; without this, a test that asserts a date would pass or
+             fail depending on the hour and the deployment. Nothing here tests
+             timezone CONVERSION, so UTC is simply the stable choice. -->
+        <env name="APP_TIMEZONE" value="UTC"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
