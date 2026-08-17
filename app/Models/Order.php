@@ -89,6 +89,35 @@ class Order extends Model
         return $this->hasMany(OrderReturn::class);
     }
 
+    /**
+     * Is there a gateway payment still outstanding on this order?
+     *
+     * 🔑 Lives on the MODEL because two surfaces ask it — the order confirmation
+     * page and the account order list — and the pay route enforces it. Three
+     * copies of a money rule is how the admin panel ended up offering a Cancel
+     * button in the one state it could never work (2026-08-15).
+     *
+     * Bank transfer is excluded deliberately: there is no gateway to return to,
+     * and its IBAN instructions are already on the order page.
+     */
+    public function isAwaitingGatewayPayment(): bool
+    {
+        return in_array($this->payment_method, [PaymentMethod::Card, PaymentMethod::Tamara], true)
+            && in_array($this->payment_status, [PaymentStatus::Pending, PaymentStatus::Failed], true)
+            && $this->status === OrderStatus::PendingPayment;
+    }
+
+    /**
+     * The gateway transaction ledger (authorisations, captures, voids, refunds).
+     * Append-only: every service writes rows here and none are updated in place,
+     * so the timestamps are a reliable record of WHEN money moved — which is how
+     * the expiry alert knows when a Tamara hold actually started.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function confirmedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'confirmed_by');

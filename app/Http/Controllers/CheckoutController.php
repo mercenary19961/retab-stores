@@ -9,9 +9,11 @@ use App\Models\Order;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\NewOrderNotification;
+use App\Notifications\OrderCancelledNotification;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use App\Services\CustomerMailer;
+use App\Services\OrderConfirmationService;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\Tamara\TamaraService;
 use App\Services\ReturnService;
@@ -295,16 +297,46 @@ class CheckoutController
     }
 
     /**
+     * Customer cancels their own order, allowed only before an admin confirms.
+     *
+     * An explicit requirement of the client brief that had no storefront route
+     * at all: `OrderConfirmationService::cancelByCustomer()` is literally named
+     * for this, but the only thing reaching it was the admin panel.
+     *
+     * 🔑 The window is asked of the ENUM, never restated here. Restating it is
+     * exactly how the admin panel ended up offering a Cancel button in the one
+     * state where the service was guaranteed to reject it (2026-08-15).
+     * `cancelByCustomer()` releases the money as it goes: a Tamara hold is
+     * voided, a captured card is refunded, bank transfer has nothing to release.
+     */
+    public function cancel(Request $request, Order $order)
+    {
+        $this->assertOwns($request, $order);
+
+        try {
+            app(OrderConfirmationService::class)->cancelByCustomer($order);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        // Staff have to find out: someone may already be picking stock for this.
+        // The bell writes synchronously so it works with no queue and no Meta
+        // credentials; the WhatsApp fan-out is the extra, not the mechanism.
+        Notification::send(User::staff()->get(), new OrderCancelledNotification($order));
+        $this->whatsapp->notifyAdminsOrderCancelled($order);
+
+        return back()->with('success', __('messages.orders.cancelled'));
+    }
+
+    /**
      * Is there a gateway payment still outstanding on this order?
      *
-     * Bank transfer is excluded on purpose: it has no gateway to return to, and
-     * its instructions are already on the page.
+     * Delegates to the model so this page, the account order list and the pay
+     * route can never disagree about it.
      */
     private function canPay(Order $order): bool
     {
-        return in_array($order->payment_method, [PaymentMethod::Card, PaymentMethod::Tamara], true)
-            && in_array($order->payment_status, [PaymentStatus::Pending, PaymentStatus::Failed], true)
-            && $order->status === OrderStatus::PendingPayment;
+        return $order->isAwaitingGatewayPayment();
     }
 
     /** Guests are authorised by the session; signed-in customers by ownership. */
@@ -322,7 +354,13 @@ class CheckoutController
         $this->assertOwns($request, $order);
 
         $bank = null;
-        if ($order->payment_method === PaymentMethod::BankTransfer && $order->payment_status->value === 'pending') {
+        // 🔴 `payment_status` stays `pending` on a cancelled bank transfer (there
+        // is nothing to release), so without the status check this page kept
+        // showing the IBAN and telling the customer to transfer money for an
+        // order that no longer exists.
+        if ($order->payment_method === PaymentMethod::BankTransfer
+            && $order->payment_status->value === 'pending'
+            && $order->status !== OrderStatus::Cancelled) {
             $bank = [
                 'bank_name' => Setting::get('bank_name'),
                 'beneficiary' => Setting::get('bank_beneficiary'),
@@ -343,6 +381,8 @@ class CheckoutController
             ],
             'bank' => $bank,
             'canPay' => $this->canPay($order),
+            // Asked of the enum, so the button and the service can never disagree.
+            'canCancel' => $order->status->isCancellableByCustomer(),
             // Defect/damage returns: offer the form only to the signed-in owner
             // while the order is delivered + inside the 3-day window.
             'canReturn' => $request->user()

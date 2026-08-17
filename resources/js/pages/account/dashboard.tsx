@@ -8,6 +8,7 @@ interface OrderRow {
     payment_status: string;
     total: number;
     created_at: string | null;
+    can_pay: boolean;
 }
 
 interface Reward {
@@ -32,6 +33,7 @@ interface Profile {
 export default function AccountDashboard({ orders, loyalty }: { profile: Profile; orders: OrderRow[]; loyalty: Loyalty }) {
     const { t } = useTranslation();
     const currency = t('common.currency');
+    const unpaid = orders.filter((o) => o.can_pay);
 
     return (
         <StoreLayout>
@@ -89,6 +91,18 @@ export default function AccountDashboard({ orders, loyalty }: { profile: Profile
                 {/* Orders */}
                 <section className="rounded-lg border border-gray-200 bg-white p-5 lg:col-span-2">
                     <h2 className="mb-3 font-bold">{t('account.myOrders')}</h2>
+                    {/* A shopper who abandoned a gateway page has no idea the order
+                        is still waiting, so say it once at the top rather than
+                        relying on them reading down a table of dates. */}
+                    {unpaid.length > 0 && (
+                        <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+                            {/* `n`, not `count` — i18next reserves `count` for
+                                pluralization, which in Arabic means six suffixed
+                                variants this key does not define. */}
+                            {t('account.unpaidNotice', { n: unpaid.length })}
+                        </p>
+                    )}
+
                     {orders.length === 0 ? (
                         <p className="text-sm text-gray-400">{t('account.noOrders')}</p>
                     ) : (
@@ -99,11 +113,17 @@ export default function AccountDashboard({ orders, loyalty }: { profile: Profile
                                     <th className="py-2 text-start font-medium">{t('account.colStatus')}</th>
                                     <th className="py-2 text-start font-medium">{t('account.colTotal')}</th>
                                     <th className="py-2 text-start font-medium">{t('account.colDate')}</th>
+                                    <th className="sr-only py-2 text-start font-medium">{t('account.colAction')}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {orders.map((o) => (
-                                    <tr key={o.order_number} className="border-t border-gray-100">
+                                    <tr
+                                        key={o.order_number}
+                                        // Tint the row rather than only adding a button: the
+                                        // reason to look at it is that something is owed.
+                                        className={`border-t border-gray-100 ${o.can_pay ? 'bg-amber-50/60' : ''}`}
+                                    >
                                         <td className="py-2">
                                             <Link href={`/orders/${o.order_number}`} className="font-mono text-[#2f4f4f] underline">
                                                 {o.order_number}
@@ -114,6 +134,21 @@ export default function AccountDashboard({ orders, loyalty }: { profile: Profile
                                             {o.total} {currency}
                                         </td>
                                         <td className="py-2 text-gray-500">{o.created_at ?? '—'}</td>
+                                        <td className="py-2 text-end">
+                                            {o.can_pay && (
+                                                /* Posts to the SAME gated route the order page
+                                                   uses — `assertOwns` passes for the signed-in
+                                                   owner, so no new authorisation path. */
+                                                <button
+                                                    type="button"
+                                                    data-testid="account-pay"
+                                                    onClick={() => router.post(`/orders/${o.order_number}/pay`)}
+                                                    className="bg-brand-teal rounded-full px-3 py-1.5 text-xs font-bold whitespace-nowrap text-white transition hover:bg-[#163e42]"
+                                                >
+                                                    {t('order.payButton')}
+                                                </button>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

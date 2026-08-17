@@ -420,6 +420,15 @@ const ar = {
         payHint: 'منتجاتك محجوزة لك. أكمل الدفع لتأكيد الطلب.',
         payButton: 'إكمال الدفع',
         paying: 'جارٍ فتح صفحة الدفع…',
+        // الإلغاء متاح فقط قبل تأكيد الطلب من الإدارة. الصياغة محايدة عمدًا حتى لا نشجّع على الإلغاء.
+        cancelledHeading: 'تم إلغاء هذا الطلب',
+        cancelledNote: 'سيتم إرجاع أي مبلغ دفعته إليك. لن يتم شحن أي شيء.',
+        cancelButton: 'إلغاء هذا الطلب',
+        cancelConfirmTitle: 'إلغاء هذا الطلب؟',
+        cancelConfirmBody: 'لا يمكن التراجع عن ذلك. سيتم إرجاع أي مبلغ دفعته إليك تلقائيًا.',
+        cancelConfirmButton: 'نعم، ألغِ الطلب',
+        cancelKeep: 'الاحتفاظ بالطلب',
+        cancelling: 'جارٍ الإلغاء…',
         orderNumber: 'رقم الطلب',
         total: 'الإجمالي',
         bankHeading: 'للدفع عبر التحويل البنكي',
@@ -446,6 +455,8 @@ const ar = {
         colStatus: 'الحالة',
         colTotal: 'الإجمالي',
         colDate: 'التاريخ',
+        colAction: 'إجراء',
+        unpaidNotice: 'لديك {{n}} طلب بانتظار الدفع. أكمل الدفع لتأكيدها.',
     },
     profile: {
         title: 'تعديل البيانات',
@@ -460,6 +471,10 @@ const ar = {
         name: 'الاسم',
         email: 'البريد الإلكتروني',
         city: 'المدينة',
+        setPasswordHeading: 'إضافة كلمة مرور',
+        setPasswordHint: 'أنت تدخل حاليًا عبر واتساب. أضف كلمة مرور لتتمكن أيضًا من الدخول ببريدك الإلكتروني.',
+        setPasswordNeedsEmail: 'أضف بريدك الإلكتروني بالأعلى واحفظه أولاً، ليكون لديك وسيلة للدخول.',
+        setPasswordButton: 'تعيين كلمة المرور',
         whatsappOptIn: 'أرغب باستقبال العروض والتحديثات عبر واتساب',
     },
     wishlist: {
@@ -746,6 +761,14 @@ const ar = {
                 newOrder: {
                     title: 'طلب جديد {{order}}',
                     body: '{{total}} {{currency}}، بانتظار المراجعة',
+                },
+                orderCancelled: {
+                    title: 'تم إلغاء الطلب {{order}}',
+                    body: 'ألغى {{customer}} الطلب قبل التأكيد. أوقف أي تجهيز له.',
+                },
+                paymentExpiring: {
+                    title: 'الطلب {{order}} على وشك الانتهاء',
+                    body: 'ينتهي حجز تمارا خلال {{hours}} ساعة تقريبًا. أكّد الطلب أو ارفضه.',
                 },
                 returnRequested: {
                     title: 'طلب إرجاع للطلب {{order}}',

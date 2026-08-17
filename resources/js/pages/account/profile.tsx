@@ -1,6 +1,7 @@
+import PasswordInput from '@/components/password-input';
 import StoreLayout from '@/layouts/store-layout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { BadgeCheck, ChevronLeft, ShieldAlert } from 'lucide-react';
+import { BadgeCheck, ChevronLeft, KeyRound, ShieldAlert } from 'lucide-react';
 import { type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +12,8 @@ interface Profile {
     city: string | null;
     phone_verified: boolean;
     whatsapp_opt_in: boolean;
+    has_password: boolean;
+    can_set_password: boolean;
 }
 
 /** Shared field shell: label, control, and an error slot that reserves no space. */
@@ -30,7 +33,7 @@ const inputBase =
 
 export default function AccountProfile({ profile }: { profile: Profile }) {
     const { t } = useTranslation();
-    const flash = (usePage().props as { flash?: { success?: string | null } }).flash;
+    const flash = (usePage().props as { flash?: { success?: string | null; error?: string | null } }).flash;
 
     const { data, setData, patch, processing, errors, isDirty } = useForm({
         name: profile.name ?? '',
@@ -42,6 +45,18 @@ export default function AccountProfile({ profile }: { profile: Profile }) {
     const submit = (e: FormEvent) => {
         e.preventDefault();
         patch('/account/profile', { preserveScroll: true });
+    };
+
+    // A separate form: different endpoint, different throttle bucket, and it must
+    // not be gated on the profile form's `isDirty`.
+    const pw = useForm({ password: '', password_confirmation: '' });
+
+    const submitPassword = (e: FormEvent) => {
+        e.preventDefault();
+        pw.post('/account/password', {
+            preserveScroll: true,
+            onSuccess: () => pw.reset(),
+        });
     };
 
     // A WhatsApp-only signup arrives with nothing but a phone, so the page's job is
@@ -146,6 +161,62 @@ export default function AccountProfile({ profile }: { profile: Profile }) {
                         {processing ? t('common.saving') : t('common.save')}
                     </button>
                 </form>
+
+                {/* 🔑 Set a FIRST password. A WhatsApp-OTP signup has
+                    password = null, and the shared password.update route needs a
+                    `current_password` these customers have never had — so the
+                    store's primary sign-in method left people unable to ever add
+                    an email login. Hidden once one exists: changing a password
+                    belongs on the route that asks for the old one. */}
+                {!profile.has_password && (
+                    <div className="border-brand-gold/25 bg-brand-cream/40 mt-8 rounded-3xl border p-6">
+                        <h2 className="text-brand-teal flex items-center gap-2 text-base font-bold">
+                            <KeyRound className="size-4" />
+                            {t('profile.setPasswordHeading')}
+                        </h2>
+                        <p className="mt-1 text-sm text-neutral-600">{t('profile.setPasswordHint')}</p>
+
+                        {/* Refused server-side too; this only explains it up front
+                            rather than after a wasted submit. */}
+                        {!profile.can_set_password ? (
+                            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                {t('profile.setPasswordNeedsEmail')}
+                            </p>
+                        ) : (
+                            <form onSubmit={submitPassword} noValidate className="mt-4 space-y-4">
+                                <Field label={t('auth.password')} error={pw.errors.password}>
+                                    <PasswordInput
+                                        value={pw.data.password}
+                                        onChange={(e) => pw.setData('password', e.target.value)}
+                                        autoComplete="new-password"
+                                        showLabel={t('auth.showPassword')}
+                                        hideLabel={t('auth.hidePassword')}
+                                        aria-invalid={pw.errors.password ? true : undefined}
+                                        className={`${inputBase} ${pw.errors.password ? 'border-red-400' : ''}`}
+                                    />
+                                </Field>
+                                <Field label={t('auth.confirmPassword')} error={pw.errors.password_confirmation}>
+                                    <PasswordInput
+                                        value={pw.data.password_confirmation}
+                                        onChange={(e) => pw.setData('password_confirmation', e.target.value)}
+                                        autoComplete="new-password"
+                                        showLabel={t('auth.showPassword')}
+                                        hideLabel={t('auth.hidePassword')}
+                                        className={`${inputBase} ${pw.errors.password_confirmation ? 'border-red-400' : ''}`}
+                                    />
+                                </Field>
+                                <button
+                                    type="submit"
+                                    data-testid="set-password"
+                                    disabled={pw.processing || !pw.data.password}
+                                    className="bg-brand-teal w-full rounded-full px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-[#163e42] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {pw.processing ? t('common.saving') : t('profile.setPasswordButton')}
+                                </button>
+                            </form>
+                        )}
+                    </div>
+                )}
             </div>
         </StoreLayout>
     );

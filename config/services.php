@@ -56,6 +56,12 @@ return [
         'country' => env('TAMARA_COUNTRY', 'SA'),
         'instalments' => env('TAMARA_INSTALMENTS', 3),
         'currency' => env('TAMARA_CURRENCY', 'SAR'),
+        // How long Tamara holds an authorisation before it lapses, and how much
+        // runway staff get before that. An authorisation that expires unnoticed
+        // is an order we can never capture — the money simply evaporates — so
+        // the alert fires at (authorization_hours - expiry_warning_hours).
+        'authorization_hours' => (int) env('TAMARA_AUTHORIZATION_HOURS', 48),
+        'expiry_warning_hours' => (int) env('TAMARA_EXPIRY_WARNING_HOURS', 12),
     ],
 
     // Google Tag Manager (analytics + ad tags). Unset by default → GTM never

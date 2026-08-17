@@ -136,7 +136,9 @@ class OrderConfirmationService
     public function cancelByCustomer(Order $order): Order
     {
         if (! $order->status->isCancellableByCustomer()) {
-            throw new \RuntimeException('This order can no longer be cancelled.');
+            // ⚠️ Localized: this reaches a STOREFRONT customer, and the store is
+            // Arabic-first. It was a hardcoded English literal.
+            throw new \RuntimeException(__('messages.orders.not_cancellable'));
         }
 
         $this->releaseFunds($order);

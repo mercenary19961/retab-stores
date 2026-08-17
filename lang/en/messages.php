@@ -39,7 +39,14 @@ return [
         'result_unknown' => 'We could not match that payment to an order. If you were charged, contact us and we will sort it out.',
     ],
 
+    'orders' => [
+        'cancelled' => 'Your order has been cancelled. Any payment will be returned to you.',
+        'not_cancellable' => 'This order can no longer be cancelled. Contact us and we will help.',
+    ],
+
     'profile' => [
+        'password_set' => 'Password set. You can now sign in with your email and password.',
+        'email_needed_first' => 'Add your email address first, so you have something to sign in with.',
         'updated' => 'Your details have been updated.',
         'password_updated' => 'Your password has been changed.',
     ],

@@ -108,6 +108,12 @@ Route::get('/orders/{order:order_number}', [CheckoutController::class, 'confirma
 Route::post('/orders/{order:order_number}/pay', [CheckoutController::class, 'pay'])
     ->middleware('throttle:10,1,order-pay')
     ->name('orders.pay');
+// Customer cancels their own order (only before an admin confirms — the enum
+// owns that window). Own throttle bucket: a bare `throttle:N,1` rejoins the
+// shared per-visitor counter (the 2026-08-06 revenue bug).
+Route::post('/orders/{order:order_number}/cancel', [CheckoutController::class, 'cancel'])
+    ->middleware('throttle:10,1,order-cancel')
+    ->name('orders.cancel');
 
 // Server-to-server webhooks (CSRF-exempt via the webhooks/* rule).
 Route::post('/webhooks/oto', [OtoWebhookController::class, 'handle'])->name('webhooks.oto');
@@ -126,6 +132,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('account', [AccountController::class, 'dashboard'])->name('account.dashboard');
     Route::get('account/profile', [AccountController::class, 'editProfile'])->name('account.profile.edit');
     Route::patch('account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
+    // First password for an OTP-only account (password.update needs a
+    // `current_password` these customers have never had). Own throttle bucket.
+    Route::post('account/password', [AccountController::class, 'setPassword'])
+        ->middleware('throttle:10,1,account-set-password')
+        ->name('account.password.set');
 
     // Reviews (verified-purchase) + helpful votes.
     Route::post('products/{product:slug}/reviews', [ReviewController::class, 'store'])->middleware('throttle:10,1,reviews')->name('reviews.store');

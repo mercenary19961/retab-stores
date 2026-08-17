@@ -1,4 +1,4 @@
-import { Bell, Mail, RotateCcw, ShoppingBag, Sparkles, type LucideIcon } from 'lucide-react';
+import { Bell, Clock, Mail, RotateCcw, ShoppingBag, Sparkles, XCircle, type LucideIcon } from 'lucide-react';
 
 import { useAdminT } from '@/i18n/use-admin-t';
 
@@ -11,6 +11,8 @@ export interface NotificationData {
     product_name?: string | null;
     contact?: string | null;
     name?: string | null;
+    customer?: string | null;
+    hours_left?: number;
     url?: string;
 }
 
@@ -22,10 +24,19 @@ export interface NotificationItem {
 }
 
 /** Every notification `type` the server can store, for the history page's filter. */
-export const NOTIFICATION_TYPES = ['new_order', 'return_requested', 'product_requested', 'contact_message_received'] as const;
+export const NOTIFICATION_TYPES = [
+    'new_order',
+    'order_cancelled',
+    'payment_expiring',
+    'return_requested',
+    'product_requested',
+    'contact_message_received',
+] as const;
 
 const ICONS: Record<string, LucideIcon> = {
     new_order: ShoppingBag,
+    order_cancelled: XCircle,
+    payment_expiring: Clock,
     return_requested: RotateCcw,
     product_requested: Sparkles,
     contact_message_received: Mail,
@@ -51,6 +62,8 @@ export function useNotificationText() {
 
     const titleFor = (d: NotificationData): string => {
         if (d.type === 'new_order') return t('admin.notifications.items.newOrder.title', { order: d.order_number ?? '' });
+        if (d.type === 'order_cancelled') return t('admin.notifications.items.orderCancelled.title', { order: d.order_number ?? '' });
+        if (d.type === 'payment_expiring') return t('admin.notifications.items.paymentExpiring.title', { order: d.order_number ?? '' });
         if (d.type === 'return_requested') return t('admin.notifications.items.returnRequested.title', { order: d.order_number ?? '' });
         if (d.type === 'product_requested') return t('admin.notifications.items.productRequested.title');
         if (d.type === 'contact_message_received') return t('admin.notifications.items.contactMessage.title', { name: d.name ?? '' });
@@ -59,6 +72,8 @@ export function useNotificationText() {
 
     const bodyFor = (d: NotificationData): string => {
         if (d.type === 'new_order') return t('admin.notifications.items.newOrder.body', { total: d.total ?? '', currency: d.currency ?? '' });
+        if (d.type === 'order_cancelled') return t('admin.notifications.items.orderCancelled.body', { customer: d.customer ?? '' });
+        if (d.type === 'payment_expiring') return t('admin.notifications.items.paymentExpiring.body', { hours: d.hours_left ?? 0 });
         if (d.type === 'return_requested') return d.reason || t('admin.notifications.items.returnRequested.body');
         if (d.type === 'product_requested') return t('admin.notifications.items.productRequested.body', { product: d.product_name ?? '' });
         if (d.type === 'contact_message_received') return t('admin.notifications.items.contactMessage.body');

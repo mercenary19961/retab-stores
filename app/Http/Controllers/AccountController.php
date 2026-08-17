@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Services\LoyaltyService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 
 /**
@@ -31,6 +33,10 @@ class AccountController extends Controller
                 'payment_status' => $o->payment_status->value,
                 'total' => (float) $o->total,
                 'created_at' => $o->created_at?->toDateString(),
+                // An abandoned gateway checkout was reachable ONLY from the
+                // confirmation page the customer had already navigated away
+                // from, so this list showed unpaid orders with no way to act.
+                'can_pay' => $o->isAwaitingGatewayPayment(),
             ]);
 
         $count = (int) $user->confirmed_purchases_count;
@@ -112,6 +118,49 @@ class AccountController extends Controller
             'city' => $user->city,
             'phone_verified' => $user->phone_verified_at !== null,
             'whatsapp_opt_in' => (bool) $user->whatsapp_opt_in,
+            // Drives the "set a password" block. A WhatsApp-OTP signup arrives
+            // with password = null, and the shared `password.update` route
+            // requires `current_password`, which they have never had.
+            'has_password' => $user->password !== null,
+            // A password is useless without an identifier to sign in WITH: the
+            // login form is email + password, so an account with no email must
+            // add one first.
+            'can_set_password' => $user->password === null && filled($user->email),
         ];
+    }
+
+    /**
+     * Set a FIRST password on an account that has never had one.
+     *
+     * 🔑 Why this cannot just reuse `password.update`: that route requires
+     * `current_password`, and an account created through WhatsApp OTP has
+     * `password = null`. So the one existing way to get a password was
+     * unavailable to exactly the customers who most needed it — the primary
+     * sign-in method for this store.
+     *
+     * 🔴 Guarded to `password === null`, and that guard is the whole security
+     * model here. Allowing it on an account that already has a password would
+     * turn a hijacked session into a permanent takeover with no knowledge of the
+     * old credential. Changing an existing password stays on `password.update`,
+     * where the current one must be supplied.
+     */
+    public function setPassword(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+
+        abort_unless($user->password === null, 403);
+
+        // Refuse rather than silently create an unusable credential.
+        if (blank($user->email)) {
+            return back()->with('error', __('messages.profile.email_needed_first'));
+        }
+
+        $data = $request->validate([
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $user->forceFill(['password' => $data['password']])->save(); // 'hashed' cast
+
+        return back()->with('success', __('messages.profile.password_set'));
     }
 }

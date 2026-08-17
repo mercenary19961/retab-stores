@@ -412,6 +412,17 @@ const en = {
         payHint: 'Your items are held for you. Finish the payment to confirm the order.',
         payButton: 'Complete payment',
         paying: 'Opening payment page…',
+        // Cancellation is allowed only until staff confirm the order. The wording
+        // is deliberately plain rather than inviting: the brief asks that
+        // cancelling isn't incentivised.
+        cancelledHeading: 'This order was cancelled',
+        cancelledNote: 'Anything you paid is being returned to you. Nothing will be shipped.',
+        cancelButton: 'Cancel this order',
+        cancelConfirmTitle: 'Cancel this order?',
+        cancelConfirmBody: 'This cannot be undone. Anything you have paid is returned to you automatically.',
+        cancelConfirmButton: 'Yes, cancel it',
+        cancelKeep: 'Keep my order',
+        cancelling: 'Cancelling…',
         orderNumber: 'Order number',
         total: 'Total',
         bankHeading: 'Pay by bank transfer',
@@ -439,6 +450,8 @@ const en = {
         colStatus: 'Status',
         colTotal: 'Total',
         colDate: 'Date',
+        colAction: 'Action',
+        unpaidNotice: 'You have {{n}} order(s) waiting for payment. Finish paying to confirm them.',
     },
     profile: {
         title: 'Edit details',
@@ -453,6 +466,10 @@ const en = {
         name: 'Name',
         email: 'Email',
         city: 'City',
+        setPasswordHeading: 'Add a password',
+        setPasswordHint: 'You sign in with WhatsApp today. Add a password and you can also sign in with your email.',
+        setPasswordNeedsEmail: 'Add your email address above and save it first, so you have something to sign in with.',
+        setPasswordButton: 'Set password',
         whatsappOptIn: 'I want to receive offers and updates via WhatsApp',
     },
     wishlist: {
@@ -739,6 +756,14 @@ const en = {
                 newOrder: {
                     title: 'New order {{order}}',
                     body: '{{total}} {{currency}}, needs review',
+                },
+                orderCancelled: {
+                    title: 'Order {{order}} cancelled',
+                    body: '{{customer}} cancelled before confirmation. Stop any preparation.',
+                },
+                paymentExpiring: {
+                    title: 'Order {{order}} expires soon',
+                    body: 'The Tamara hold lapses in about {{hours}}h. Confirm or reject it.',
                 },
                 returnRequested: {
                     title: 'Return requested for {{order}}',

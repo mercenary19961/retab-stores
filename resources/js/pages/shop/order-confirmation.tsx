@@ -22,19 +22,27 @@ export default function OrderConfirmation({
     order,
     bank,
     canPay,
+    canCancel,
     canReturn,
     orderReturn,
 }: {
     order: Order;
     bank: Bank | null;
     canPay?: boolean;
+    canCancel?: boolean;
     canReturn?: boolean;
     orderReturn?: { status: string } | null;
 }) {
     const { t } = useTranslation();
     const currency = t('common.currency');
-    const flash = (usePage().props as { flash?: { error?: string | null } }).flash;
+    const flash = (usePage().props as { flash?: { error?: string | null; success?: string | null } }).flash;
     const [paying, setPaying] = useState(false);
+    // Two-step rather than a window.confirm(): cancelling releases the payment
+    // and cannot be undone, and a native dialog can't be written in the
+    // customer's own language or say what happens to their money.
+    const [confirmingCancel, setConfirmingCancel] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
+    const cancelled = order.status === 'cancelled';
 
     return (
         <StoreLayout>
@@ -43,9 +51,14 @@ export default function OrderConfirmation({
             <div className="mx-auto max-w-xl text-center">
                 {/* ⚠️ A green tick over "order received" is a lie while the payment is
                     still outstanding, and it is probably why an abandoned checkout
-                    never gets finished: the page reads as done. State the truth. */}
-                <div className="text-5xl">{canPay ? '⏳' : '✅'}</div>
-                <h1 className="mt-3 text-2xl font-bold">{canPay ? t('order.reserved') : t('order.received')}</h1>
+                    never gets finished: the page reads as done. It was equally a lie
+                    on a CANCELLED order, which kept the tick and the "received"
+                    heading. State the truth in all three cases. */}
+                <div className="text-5xl">{cancelled ? '🚫' : canPay ? '⏳' : '✅'}</div>
+                <h1 className="mt-3 text-2xl font-bold">
+                    {cancelled ? t('order.cancelledHeading') : canPay ? t('order.reserved') : t('order.received')}
+                </h1>
+                {cancelled && <p className="mt-2 text-sm text-neutral-500">{t('order.cancelledNote')}</p>}
                 <p className="mt-2 text-gray-600">
                     {t('order.orderNumber')}: <span className="font-mono font-semibold">{order.order_number}</span>
                 </p>
@@ -102,12 +115,20 @@ export default function OrderConfirmation({
                         </button>
                     </div>
                 ) : (
-                    <p className="mt-4 text-gray-600">{t('order.noBank')}</p>
+                    /* Suppressed on a cancelled order — there is no payment to
+                       arrange, so the fallback line would only confuse. */
+                    !cancelled && <p className="mt-4 text-gray-600">{t('order.noBank')}</p>
                 )}
 
                 {flash?.error && (
                     <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
                         {flash.error}
+                    </p>
+                )}
+
+                {flash?.success && (
+                    <p className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+                        {flash.success}
                     </p>
                 )}
 
@@ -124,6 +145,65 @@ export default function OrderConfirmation({
                     >
                         {t('returns.requestButton', { days: 3 })}
                     </Link>
+                )}
+
+                {/* Customer cancellation, allowed only until an admin confirms.
+                    Deliberately the quietest control on the page — the brief asks
+                    that cancelling isn't incentivised — so it's a plain text
+                    button under everything else, not a bordered one competing
+                    with Pay or Return. */}
+                {canCancel && (
+                    <div className="mt-8 border-t border-neutral-200 pt-5">
+                        {confirmingCancel ? (
+                            <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                                <p className="text-sm font-semibold text-red-800">{t('order.cancelConfirmTitle')}</p>
+                                {/* Says what happens to their MONEY, which is the
+                                    one thing a native confirm() could never do in
+                                    the customer's own language. */}
+                                <p className="mt-1 text-sm text-red-700">{t('order.cancelConfirmBody')}</p>
+                                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setConfirmingCancel(false)}
+                                        className="rounded-full border border-neutral-300 px-5 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-white"
+                                    >
+                                        {t('order.cancelKeep')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-testid="cancel-order"
+                                        disabled={cancelling}
+                                        onClick={() =>
+                                            router.post(
+                                                `/orders/${order.order_number}/cancel`,
+                                                {},
+                                                {
+                                                    preserveScroll: true,
+                                                    onStart: () => setCancelling(true),
+                                                    onFinish: () => {
+                                                        setCancelling(false);
+                                                        setConfirmingCancel(false);
+                                                    },
+                                                },
+                                            )
+                                        }
+                                        className="rounded-full bg-red-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {cancelling ? t('order.cancelling') : t('order.cancelConfirmButton')}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                data-testid="cancel-order-open"
+                                onClick={() => setConfirmingCancel(true)}
+                                className="text-sm text-neutral-500 underline underline-offset-4 transition hover:text-red-700"
+                            >
+                                {t('order.cancelButton')}
+                            </button>
+                        )}
+                    </div>
                 )}
 
                 <Link href="/" className="mt-6 block text-[#2f4f4f] underline">

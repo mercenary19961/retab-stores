@@ -48,6 +48,8 @@ class WhatsAppService
 
     public const T_ADMIN_RETURN_REQUESTED = 'admin_return_requested';
 
+    public const T_ADMIN_ORDER_CANCELLED = 'admin_order_cancelled';
+
     // Authentication (WhatsApp OTP sign-in).
     public const T_OTP = 'otp';
 
@@ -177,6 +179,26 @@ class WhatsAppService
                 number_format((float) $order->total, 2),
                 $order->payment_method?->value ?? '',
             ], purpose: 'admin_new_order', order: $order, category: 'utility');
+        }
+    }
+
+    /**
+     * A customer cancelled before the admin confirmed — alert every recipient.
+     *
+     * 🔑 Staff-only, deliberately. The brief says to notify the customer
+     * "indirectly" so cancelling isn't incentivised, and they are looking at the
+     * order page they just cancelled from, so a cheerful confirmation message
+     * would only advertise how easy it is. Staff, on the other hand, may already
+     * be picking stock for it.
+     */
+    public function notifyAdminsOrderCancelled(Order $order): void
+    {
+        foreach ($this->adminRecipients() as $recipient) {
+            $this->dispatch($recipient, self::T_ADMIN_ORDER_CANCELLED, [
+                $order->order_number,
+                number_format((float) $order->total, 2),
+                $order->customer_name ?? '',
+            ], purpose: 'admin_order_cancelled', order: $order, category: 'utility');
         }
     }
 
