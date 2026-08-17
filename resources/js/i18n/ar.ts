@@ -957,7 +957,6 @@ const ar = {
             comingSoon: 'قريباً',
             statusAll: 'كل الحالات',
             statusActive: 'نشط',
-            statusDrafts: 'مسودات',
             needsPrice: 'بدون سعر',
             needsImage: 'بدون صورة',
             needsDescription: 'بدون وصف',

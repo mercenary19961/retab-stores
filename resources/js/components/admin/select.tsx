@@ -113,7 +113,33 @@ export default function Select({ value, onChange, options, placeholder, classNam
                 aria-expanded={open}
                 className="focus:border-brand-gold focus:ring-brand-gold/30 flex w-full items-center justify-between gap-2 rounded-lg border border-neutral-300 bg-white py-2 ps-3 pe-2 text-start text-sm text-neutral-800 transition-colors hover:border-neutral-400 focus:ring-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-neutral-600"
             >
-                <span className={`truncate ${selected ? '' : 'text-neutral-400'}`}>{selected ? selected.label : placeholder}</span>
+                {/*
+                 * 🔑 The control is sized by its WIDEST option, not by the selected
+                 * one. Every option is rendered again into the same grid cell as
+                 * the visible label, zero-height and invisible, so it contributes
+                 * its intrinsic width and nothing else.
+                 *
+                 * Two bugs at once, both from `w-auto` sizing to the selection:
+                 * the box visibly resized whenever the filter changed, and — worse
+                 * — the popup below is `min-w-full`, so a short selection ("Active")
+                 * squeezed the list until every option truncated to "All sta…",
+                 * "Ac…", "Drafts…", i.e. the menu became unreadable exactly when
+                 * you needed to read it.
+                 */}
+                <span className="grid min-w-0 flex-1">
+                    <span className={`col-start-1 row-start-1 truncate ${selected ? '' : 'text-neutral-400'}`}>
+                        {selected ? selected.label : placeholder}
+                    </span>
+                    {options.map((opt) => (
+                        <span
+                            key={`sizer-${opt.value}`}
+                            aria-hidden
+                            className="col-start-1 row-start-1 h-0 overflow-hidden whitespace-nowrap opacity-0"
+                        >
+                            {opt.label}
+                        </span>
+                    ))}
+                </span>
                 <ChevronDown className={`text-brand-gold h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
@@ -121,7 +147,15 @@ export default function Select({ value, onChange, options, placeholder, classNam
                 <ul
                     ref={listRef}
                     role="listbox"
-                    className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-neutral-700 bg-neutral-900 p-1 shadow-xl"
+                    /*
+                     * `min-w-full w-max` rather than `w-full`: at least as wide as
+                     * the trigger, but free to grow to its own content so an option
+                     * can never be clipped by a narrow trigger (a caller may still
+                     * pass a constrained width, e.g. plain "w-full" on mobile).
+                     * Capped so a long label cannot run off the viewport, and
+                     * anchored to the reading start so it grows leftwards in RTL.
+                     */
+                    className="absolute start-0 z-50 mt-1 max-h-60 w-max max-w-[min(22rem,90vw)] min-w-full overflow-auto rounded-lg border border-neutral-700 bg-neutral-900 p-1 shadow-xl"
                 >
                     {options.map((opt, i) => {
                         const isSel = opt.value === value;

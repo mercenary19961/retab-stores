@@ -317,9 +317,18 @@ export default function ProductsIndex({
                         { value: '', label: t('admin.products.statusAll') },
                         { value: 'active', label: t('admin.products.statusActive') },
                         {
+                            /*
+                             * Labelled "Hidden", not "Drafts", because that is what it
+                             * filters: is_active = false, which covers both unfinished
+                             * imports AND products deliberately taken off the shopfront
+                             * (e.g. everything still on Zid photography). The query
+                             * VALUE stays `draft` so the dashboard's existing
+                             * ?status=draft action link keeps working.
+                             */
                             value: 'draft',
-                            label: draftCount > 0 ? `${t('admin.products.statusDrafts')} (${draftCount})` : t('admin.products.statusDrafts'),
+                            label: draftCount > 0 ? `${t('admin.products.hidden')} (${draftCount})` : t('admin.products.hidden'),
                         },
+                        { value: 'coming_soon', label: t('admin.products.comingSoon') },
                     ]}
                     className="w-full sm:w-auto"
                 />

@@ -973,7 +973,6 @@ const en = {
             comingSoon: 'Coming Soon',
             statusAll: 'All statuses',
             statusActive: 'Active',
-            statusDrafts: 'Drafts',
             needsPrice: 'No price',
             needsImage: 'No image',
             needsDescription: 'No description',
