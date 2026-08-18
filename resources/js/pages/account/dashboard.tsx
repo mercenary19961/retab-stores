@@ -1,5 +1,6 @@
 import StoreLayout from '@/layouts/store-layout';
 import { Head, Link, router } from '@inertiajs/react';
+import { LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface OrderRow {
@@ -41,7 +42,17 @@ export default function AccountDashboard({ orders, loyalty }: { profile: Profile
 
             <div className="mb-6 flex items-center justify-between">
                 <h1 className="text-2xl font-bold">{t('account.title')}</h1>
-                <button type="button" onClick={() => router.post('/logout')} className="text-sm text-gray-500 underline">
+                {/* Restrained on purpose — it sits beside an <h1>, where the drawer's
+                    outlined button would out-shout the page title. But it now speaks
+                    the same language as the two in the navbar (teal label, red door
+                    glyph mirrored under RTL) instead of being a grey underlined link,
+                    so "sign out" looks like one thing across the storefront. */}
+                <button
+                    type="button"
+                    onClick={() => router.post('/logout')}
+                    className="text-brand-teal hover:bg-brand-cream inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium transition-colors"
+                >
+                    <LogOut className="size-4 shrink-0 text-red-500 rtl:-scale-x-100" aria-hidden />
                     {t('common.logout')}
                 </button>
             </div>

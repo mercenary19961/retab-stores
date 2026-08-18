@@ -1,7 +1,7 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLocalized } from '@/lib/localize';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
+import { LogOut, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,26 @@ function Caret() {
             />
         </svg>
     );
+}
+
+/**
+ * Sign-out glyph, shared by the desktop dropdown and the mobile drawer.
+ *
+ * 🔑 The RED LIVES HERE AND NOWHERE ELSE. Signing out is worth marking as an exit
+ * rather than a destination, but a fully red row (or worse, a red-bordered
+ * red-tinted button) reads as an error state and is the loudest thing in a drawer
+ * of quiet gold links. Confining the warning colour to a 16px glyph gives the same
+ * signal at a fraction of the volume, and lets the label sit in brand teal with
+ * the rest of the storefront.
+ *
+ * ⚠️ Mirrored under RTL. The lucide mark is a door with the arrow pointing OUT to
+ * the right, which is a direction, not a shape — in Arabic "out" reads leftward,
+ * so unmirrored it points back into the page. Same treatment as the footer's
+ * HardRock arrow. (Note Tailwind v4 emits this as the standalone `scale` property,
+ * so `getComputedStyle().transform` reads `none` while the flip is working.)
+ */
+function LogOutIcon() {
+    return <LogOut className="size-4 shrink-0 text-red-500 rtl:-scale-x-100" aria-hidden />;
 }
 
 /*
@@ -362,11 +382,18 @@ export default function StoreNavbar() {
                                             {t(l.key)}
                                         </Link>
                                     ))}
+                                    {/* The rule is its own element rather than a
+                                        `border-t` on the button: on the button it sat
+                                        inside the rounded hover fill, so the divider
+                                        appeared to belong to the row instead of
+                                        separating it. */}
+                                    <div className="border-brand-gold/15 my-1 border-t" />
                                     <button
                                         type="button"
                                         onClick={() => router.post('/logout')}
-                                        className="border-brand-gold/15 mt-1 block w-full rounded-lg border-t px-3 py-2 text-start text-sm text-red-600 transition-colors hover:bg-red-50"
+                                        className="text-brand-teal hover:bg-brand-cream flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm font-medium transition-colors"
                                     >
+                                        <LogOutIcon />
                                         {t('common.logout')}
                                     </button>
                                 </div>
@@ -629,14 +656,34 @@ export default function StoreNavbar() {
                                                 {t(l.key)}
                                             </Link>
                                         ))}
+                                        {/* Outlined rather than a red text row, so it
+                                            reads as an ACTION and not as a fourth
+                                            account destination that happens to be red
+                                            — which is how it looked sitting flush under
+                                            المفضلة. It deliberately takes the same
+                                            shape as the sign-up button a signed-OUT
+                                            visitor sees in this exact spot, so the
+                                            drawer always ends in one button; the two
+                                            states never appear together, so there is
+                                            nothing to compare it against.
+
+                                            `py-2.5` not `py-2`: this is the only
+                                            destructive control on a touch surface, and
+                                            36px was under the comfortable tap size.
+
+                                            Gold rule, cream fill, teal label — the
+                                            drawer's own palette, with the warning
+                                            colour confined to the glyph (see
+                                            LogOutIcon). */}
                                         <button
                                             type="button"
                                             onClick={() => {
                                                 setMobileOpen(false);
                                                 router.post('/logout');
                                             }}
-                                            className="block w-full rounded-lg px-3 py-2 text-start text-sm text-red-600 hover:bg-red-50"
+                                            className="border-brand-gold/40 bg-brand-cream/60 text-brand-teal hover:border-brand-gold/70 hover:bg-brand-cream active:bg-brand-cream mt-2 flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-bold transition-colors"
                                         >
+                                            <LogOutIcon />
                                             {t('common.logout')}
                                         </button>
                                     </>
