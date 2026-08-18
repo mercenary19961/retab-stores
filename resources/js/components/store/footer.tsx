@@ -51,25 +51,32 @@ export default function StoreFooter() {
 
     return (
         <footer className="bg-gradient-to-b from-[#f6e8d4] via-[#f2e3cd] to-[#efdcc4]">
-            {/* Two columns on phones as well as desktop — brand/contact on the
-                start side, quick links on the end side — rather than one tall
-                stack. Everything steps down with `max-md:` variants. */}
-            <div className="mx-auto flex max-w-6xl items-start gap-12 px-6 py-14 max-md:gap-5 max-md:py-6 md:justify-between md:gap-8">
-                {/* 🔑 `md:contents` dissolves this wrapper at desktop, so the logo
-                    and the company block become direct children of the row again
-                    and the original three-column layout is preserved exactly. On
-                    phones it groups them into the single start-side column. */}
-                <div className="flex min-w-0 flex-1 flex-col items-center gap-4 max-md:items-start md:contents">
-                    {/* Brand logo — start side in both directions. Links home, same
-                        as the navbar logo: a footer logo is somewhere people expect to
-                        be able to click, and it is the only way back to the homepage
-                        from down here (the quick links cover everything except home). */}
-                    <Link href="/" className="shrink-0 transition-opacity hover:opacity-75" aria-label={t('brand')}>
-                        <img src="/images/footer/logo.png" alt={t('footer.companyName')} className="h-auto w-40 max-md:w-24 md:w-48" />
-                    </Link>
+            {/* Phones: the logo alone on a centred row, then the same two columns
+                below it — contact on the start side, quick links on the end side
+                (so quick links land on the LEFT in Arabic and the right in English,
+                which is reading order rather than a physical choice). Desktop keeps
+                the original three columns in one row. */}
+            <div className="mx-auto flex max-w-6xl px-6 py-14 max-md:flex-col max-md:gap-5 max-md:py-6 md:items-start md:justify-between md:gap-8">
+                {/* Brand logo. Alone and centred above the columns on phones, simply
+                    the first of three columns on desktop. Links home, same as the
+                    navbar logo: a footer logo is somewhere people expect to be able to
+                    click, and it is the only way back to the homepage from down here
+                    (the quick links cover everything except home). */}
+                <Link href="/" className="shrink-0 transition-opacity hover:opacity-75 max-md:self-center" aria-label={t('brand')}>
+                    {/* Bumped 24 → 32 on phones: standing alone on its own centred row
+                        it is a focal element rather than a column header, and at w-24
+                        it read as undersized. */}
+                    <img src="/images/footer/logo.png" alt={t('footer.companyName')} className="h-auto w-40 max-md:w-32 md:w-48" />
+                </Link>
 
-                    {/* Company / contact block (centre column on desktop) */}
-                    <div className="flex flex-col items-center gap-6 text-center max-md:w-full max-md:items-start max-md:gap-2.5 max-md:text-start">
+                {/* 🔑 `md:contents` dissolves this wrapper at desktop, so the contact
+                    block and the quick links become direct children of the row again
+                    and the original three-column layout is preserved exactly. On
+                    phones it is the two-column row sitting under the logo. */}
+                <div className="flex items-start gap-5 max-md:justify-between md:contents">
+                    {/* Company / contact block (centre column on desktop, start-side
+                        column on phones) */}
+                    <div className="flex flex-col items-center gap-6 text-center max-md:min-w-0 max-md:flex-1 max-md:items-start max-md:gap-2.5 max-md:text-start">
                         {/* Hidden on phones: directly beneath the logo it just
                             repeats the brand, and the legal bar a few rows below
                             already carries the full company name in the copyright
@@ -154,23 +161,25 @@ export default function StoreFooter() {
                             ))}
                         </div>
                     </div>
-                </div>
-
-                {/* Quick links — end side in both directions, a single narrow
-                    column so it reads as a nav list rather than a grid. The
-                    back-to-top button that used to live here is now the fixed
-                    ScrollToTop in the layout, reachable from anywhere. */}
-                <div className="flex shrink-0 flex-col items-center gap-4 max-md:items-start max-md:gap-1.5 md:items-start">
-                    <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-sm md:text-2xl">{t('footer.quickLinks')}</h3>
-                    <ul className="flex flex-col items-center gap-3 max-md:items-start max-md:gap-1 md:items-start">
-                        {QUICK_LINKS.map((l) => (
-                            <li key={l.key}>
-                                <Link href={l.href} className="font-heading text-brand-gold hover:text-brand-teal transition-colors max-md:text-xs">
-                                    {t(`footer.links.${l.key}`)}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                    {/* Quick links — end side in both directions, a single narrow
+                        column so it reads as a nav list rather than a grid. The
+                        back-to-top button that used to live here is now the fixed
+                        ScrollToTop in the layout, reachable from anywhere. */}
+                    <div className="flex shrink-0 flex-col items-center gap-4 max-md:items-start max-md:gap-1.5 md:items-start">
+                        <h3 className="font-heading text-brand-teal text-xl font-bold max-md:text-sm md:text-2xl">{t('footer.quickLinks')}</h3>
+                        <ul className="flex flex-col items-center gap-3 max-md:items-start max-md:gap-1 md:items-start">
+                            {QUICK_LINKS.map((l) => (
+                                <li key={l.key}>
+                                    <Link
+                                        href={l.href}
+                                        className="font-heading text-brand-gold hover:text-brand-teal transition-colors max-md:text-xs"
+                                    >
+                                        {t(`footer.links.${l.key}`)}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
             </div>
 
