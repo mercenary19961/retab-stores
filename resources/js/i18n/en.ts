@@ -137,6 +137,27 @@ const en = {
             coolDry: 'Store Cool & Dry',
         },
     },
+    clientLogos: {
+        title: 'Trusted by',
+        // {{n}} not {{count}} — see the Arabic bundle.
+        subtitle: 'More than {{n}} government bodies, companies and universities have chosen our dates for their events and hospitality.',
+        names: {
+            stc: 'stc',
+            ksu: 'King Saud University',
+            moc: 'Saudi Ministry of Culture',
+            modon: 'MODON — Saudi Authority for Industrial Cities and Technology Zones',
+            'saudi-standards': 'Saudi Standards, Metrology and Quality Organization',
+            'rajhi-takaful': 'Al Rajhi Takaful',
+            kfmc: 'King Fahad Medical City',
+            pnu: 'Princess Nourah bint Abdulrahman University',
+            ksrelief: 'King Salman Humanitarian Aid and Relief Centre',
+            sbahc: 'Sultan Bin Abdulaziz Humanitarian City',
+            osus: 'OSUS',
+            rakez: 'Rakez Real Estate',
+            'al-majed-oud': 'Al Majed Oud',
+            ratbli: 'Ratbli',
+        },
+    },
     clientReviews: {
         title: 'Client Reviews',
         client: 'Client',

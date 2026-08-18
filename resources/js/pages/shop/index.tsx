@@ -1,5 +1,6 @@
 import BestSellers from '@/components/store/best-sellers';
 import CategoriesSection from '@/components/store/categories-section';
+import ClientLogos from '@/components/store/client-logos';
 import ClientReviews from '@/components/store/client-reviews';
 import FooterBanner from '@/components/store/footer-banner';
 import StoreHero from '@/components/store/hero';
@@ -92,6 +93,7 @@ export default function ShopIndex({
             <CategoriesSection categories={featuredCategories} />
             <PrimaryBanner />
             <NewArrivals products={newArrivals} />
+            <ClientLogos />
             <ClientReviews reviews={reviews} />
             {SHOW_FOOTER_BANNER && <FooterBanner />}
         </StoreLayout>

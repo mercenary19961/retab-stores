@@ -131,6 +131,28 @@ const ar = {
             coolDry: 'تحفظ في مكان بارد وجاف',
         },
     },
+    clientLogos: {
+        title: 'جهات تثق برطاب',
+        // {{n}} not {{count}} — i18next reserves `count` for pluralization, which
+        // under Arabic means six suffixed variants this key does not define.
+        subtitle: 'أكثر من {{n}} جهة حكومية وشركة ومؤسسة تعليمية اختارت تمورنا لمناسباتها وضيافتها.',
+        names: {
+            stc: 'إس تي سي',
+            ksu: 'جامعة الملك سعود',
+            moc: 'وزارة الثقافة السعودية',
+            modon: 'مدن — الهيئة السعودية للمدن الصناعية ومناطق التقنية',
+            'saudi-standards': 'الهيئة السعودية للمواصفات والمقاييس والجودة',
+            'rajhi-takaful': 'تكافل الراجحي',
+            kfmc: 'مدينة الملك فهد الطبية',
+            pnu: 'جامعة الأميرة نورة بنت عبدالرحمن',
+            ksrelief: 'مركز الملك سلمان للإغاثة والأعمال الإنسانية',
+            sbahc: 'مدينة سلطان بن عبدالعزيز للخدمات الإنسانية',
+            osus: 'أسس',
+            rakez: 'راكز العقارية',
+            'al-majed-oud': 'الماجد للعود',
+            ratbli: 'رتبلي',
+        },
+    },
     clientReviews: {
         title: 'آراء العملاء',
         client: 'عميل',

@@ -562,3 +562,56 @@ select:-webkit-autofill {
         outline-offset: 2px;
     }
 }
+
+/* ---------------------------------------------------------------------------
+   Client-logo marquee ("جهات تثق برطاب")
+   ---------------------------------------------------------------------------
+   Two rows of logo tiles drifting in opposite directions. The track holds the
+   logo list TWICE and slides exactly -50%, so the moment the first copy leaves
+   the frame the second is in the identical position and the loop is seamless.
+
+   🔑 The track is pinned dir="ltr" in the markup. The animation is a fixed-sign
+   translate, so leaving it direction-relative would make the two rows swap
+   drift direction between Arabic and English — and the seam only lands
+   correctly for one of them. Logo order carries no meaning, so pinning the
+   track costs nothing and makes the loop deterministic in both locales.
+--------------------------------------------------------------------------- */
+@keyframes logo-marquee {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+.logo-marquee {
+    display: flex;
+    width: max-content;
+    animation: logo-marquee var(--marquee-duration, 42s) linear infinite;
+    animation-direction: var(--marquee-direction, normal);
+}
+
+/* Pausing on hover is the point of the whole component: a logo you cannot hold
+   still is a logo nobody can read. Scoped to the group so hovering either row
+   only stops that row. */
+.logo-marquee-row:hover .logo-marquee {
+    animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* Not merely paused — a frozen marquee leaves a half-clipped tile at each
+       edge, which reads as broken layout. Drop the transform and let the rows
+       wrap into a plain centred grid instead. */
+    .logo-marquee {
+        animation: none;
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    /* The duplicated second copy is redundant once the rows wrap. */
+    .logo-marquee[data-marquee-clone='true'] {
+        display: none;
+    }
+}
