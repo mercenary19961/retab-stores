@@ -585,9 +585,11 @@ select:-webkit-autofill {
     }
 }
 
+/* Layout (display:flex + width:max-content) lives on the element as Tailwind
+   utilities, deliberately — see the note in client-logos.tsx. This rule adds
+   ONLY the animation, so if it ever fails to load the marquee degrades to a
+   static row rather than collapsing into a vertical column. */
 .logo-marquee {
-    display: flex;
-    width: max-content;
     animation: logo-marquee var(--marquee-duration, 42s) linear infinite;
     animation-direction: var(--marquee-direction, normal);
 }

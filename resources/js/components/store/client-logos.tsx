@@ -114,7 +114,18 @@ function Row({ slugs, reverse, duration }: { slugs: readonly string[]; reverse: 
             {[false, true].map((isClone) => (
                 <div
                     key={String(isClone)}
-                    className="logo-marquee"
+                    /*
+                     * 🔴 `flex w-max` are Tailwind utilities here, NOT left to the
+                     * `.logo-marquee` rule in app.css, and that is deliberate.
+                     * When the hand-written CSS is missing for any reason (a stale
+                     * asset bundle, a cached stylesheet), the track loses
+                     * `display:flex` and every tile stacks vertically — a
+                     * 1400px-tall column of logos that pushes the rest of the page
+                     * off screen. Carrying the layout on utilities means a missing
+                     * `.logo-marquee` costs only the animation, which degrades to
+                     * a static row instead of destroying the page.
+                     */
+                    className="logo-marquee flex w-max"
                     data-marquee-clone={isClone}
                     // The clone exists only to make the loop seamless, so it must
                     // not be announced — otherwise a screen reader hears all
