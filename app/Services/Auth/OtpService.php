@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Exceptions\WhatsAppUnavailableException;
 use App\Models\OtpVerification;
 use App\Services\WhatsApp\WhatsAppService;
 use Illuminate\Support\Facades\Hash;
@@ -27,10 +28,19 @@ class OtpService
 
     /**
      * Issue a code for the phone and send it over WhatsApp. Throws if a code was
-     * requested too recently (cooldown).
+     * requested too recently (cooldown), or if WhatsApp cannot actually deliver.
      */
     public function request(string $phone, string $purpose = 'login'): void
     {
+        // 🔴 Checked FIRST, before any row is written. The log driver reports a
+        // successful send, so without this the flow issued a real OTP, "sent" it to
+        // the application log, and asked the customer for a code that was never
+        // going to arrive — a dead end with no error anywhere. Failing here also
+        // keeps the table free of codes that could never be used.
+        if (! $this->whatsapp->canDeliver()) {
+            throw new WhatsAppUnavailableException(__('messages.otp.unavailable'));
+        }
+
         $phone = $this->normalize($phone);
 
         $recent = OtpVerification::where('phone', $phone)

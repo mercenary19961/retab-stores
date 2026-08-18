@@ -36,4 +36,19 @@ interface WhatsAppGateway
      * @throws \Throwable on transport failure
      */
     public function sendText(string $to, string $body): string;
+
+    /**
+     * Whether a message handed to this transport will actually reach a phone.
+     *
+     * 🔑 This exists because the log driver SUCCEEDS. It writes the message to the
+     * application log and returns a synthetic wam_id, so every caller sees a clean
+     * send — which is exactly right for dev, and silently catastrophic for anything
+     * the customer is waiting on. The OTP flow used to advance to "enter the code"
+     * against a code that had gone to a log file.
+     *
+     * So a caller whose feature is USELESS without real delivery (the sign-in code)
+     * must ask this first and refuse. Callers that merely notify (order updates,
+     * campaigns) do not — a logged notification in dev is the intended behaviour.
+     */
+    public function isLive(): bool;
 }

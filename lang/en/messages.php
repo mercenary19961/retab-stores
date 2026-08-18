@@ -58,6 +58,7 @@ return [
     'otp' => [
         'rate_limited' => 'Please wait a moment before requesting a new code.',
         'invalid' => 'The code is incorrect or has expired.',
+        'unavailable' => 'WhatsApp sign-in is unavailable right now. You can sign in with your email and password instead.',
     ],
 
     'requests' => [

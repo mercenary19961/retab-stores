@@ -178,6 +178,13 @@ class AdminAlertChannelsTest extends TestCase
             {
                 throw new \RuntimeException('network down');
             }
+
+            // A REAL transport that happens to be erroring, which is the situation
+            // under test — not an unconfigured one.
+            public function isLive(): bool
+            {
+                return true;
+            }
         });
 
         $row = WhatsappMessage::create([

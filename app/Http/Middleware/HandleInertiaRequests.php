@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CartService;
+use App\Services\WhatsApp\WhatsAppGateway;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -63,6 +64,15 @@ class HandleInertiaRequests extends Middleware
                 : null,
             // Null while unset → the Turnstile widget renders nothing (dev).
             'turnstileSiteKey' => config('services.turnstile.site_key'),
+            // Whether WhatsApp can actually deliver a sign-in code. Drives BOTH the
+            // navbar's signed-out account destination and the whatsapp-login page,
+            // so the storefront never offers a door that cannot open.
+            //
+            // 🔑 Config-driven rather than a hardcoded temporary: when the client's
+            // Meta verification clears, setting WHATSAPP_DRIVER=cloud (with a token)
+            // lights the whole flow back up with no code change and nothing to
+            // remember to revert on launch day.
+            'whatsappAuth' => fn () => app(WhatsAppGateway::class)->isLive(),
             // Default social-share card. Shared rather than hardcoded client-side
             // because og:image MUST be absolute — crawlers do not resolve relative
             // paths — so it has to be built from APP_URL on the server. JPEG, not

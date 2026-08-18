@@ -26,4 +26,10 @@ class LogGateway implements WhatsAppGateway
 
         return 'log-'.Str::uuid();
     }
+
+    /** Nothing leaves the process, so nothing a customer is waiting for may rely on it. */
+    public function isLive(): bool
+    {
+        return false;
+    }
 }

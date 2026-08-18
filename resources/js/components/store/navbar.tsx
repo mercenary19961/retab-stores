@@ -19,6 +19,7 @@ interface SharedProps {
     cart?: { count?: number };
     auth?: { user?: unknown };
     hasOffers?: boolean;
+    whatsappAuth?: boolean;
     [key: string]: unknown;
 }
 
@@ -173,7 +174,18 @@ export default function StoreNavbar() {
     const hasOffers = Boolean(props.hasOffers);
     const cartCount = props.cart?.count ?? 0;
     const loggedIn = Boolean(props.auth?.user);
-    const accountHref = loggedIn ? '/account' : '/login/whatsapp';
+    /*
+     * 🔴 Every sign-in affordance in the storefront resolves through here, so while
+     * WhatsApp cannot deliver a code this MUST NOT point at the OTP page — that was
+     * the store's default sign-in path leading to a form that silently could not
+     * work (the log driver reports sends as successful, so the customer reached a
+     * code field and waited forever).
+     *
+     * Driven by the shared prop rather than hardcoded to `/login`, so switching
+     * WHATSAPP_DRIVER=cloud restores the intended flow with no code change and
+     * nothing to remember to undo at launch.
+     */
+    const accountHref = loggedIn ? '/account' : props.whatsappAuth ? '/login/whatsapp' : '/login';
 
     const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -689,8 +701,11 @@ export default function StoreNavbar() {
                                     </>
                                 ) : (
                                     <>
+                                        {/* Same resolved destination as the header
+                                            icon — never a second hardcoded path that
+                                            could disagree with it. */}
                                         <Link
-                                            href="/login/whatsapp"
+                                            href={accountHref}
                                             className="text-brand-gold hover:bg-brand-cream block rounded-lg px-3 py-2 text-sm"
                                             onClick={() => setMobileOpen(false)}
                                         >

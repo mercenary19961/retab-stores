@@ -508,6 +508,11 @@ const en = {
         confirm: 'Confirm sign in',
         changeNumber: 'Change number',
         useEmail: 'Sign in with email instead',
+        unavailableTitle: 'WhatsApp sign-in is not available yet',
+        unavailableBody: 'We’re working on switching it on. In the meantime you can sign in or create an account with your email.',
+        goToEmailLogin: 'Sign in with email',
+        createAccount: 'Create an account',
+        withWhatsapp: 'Sign in with WhatsApp',
     },
     admin: {
         brand: 'Retab Admin',

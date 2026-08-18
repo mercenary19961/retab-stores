@@ -41,6 +41,11 @@ class SecurityHardeningTest extends TestCase
 
     public function test_otp_send_passes_when_turnstile_unconfigured(): void
     {
+        // Turnstile is what is under test here, so the channel has to be deliverable
+        // or the OTP guard would reject first and the assertion would pass for the
+        // wrong reason.
+        $this->withLiveWhatsapp();
+
         // No secret key (dev default) → verifier no-ops and the code is issued.
         $this->post('/login/whatsapp/send', ['phone' => '+966500000000'])
             ->assertSessionDoesntHaveErrors();

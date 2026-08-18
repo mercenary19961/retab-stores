@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Exceptions\WhatsAppUnavailableException;
 use App\Models\OtpVerification;
 use App\Models\WhatsappMessage;
 use App\Services\Auth\OtpService;
@@ -18,8 +19,25 @@ class OtpServiceTest extends TestCase
         return app(OtpService::class);
     }
 
+    public function test_request_refuses_when_whatsapp_cannot_deliver(): void
+    {
+        // No withLiveWhatsapp() here — the default log driver, i.e. exactly what a
+        // deployment with no WHATSAPP_* variables runs.
+        $this->expectException(WhatsAppUnavailableException::class);
+
+        try {
+            $this->service()->request('966500000000');
+        } finally {
+            // 🔑 The guard runs BEFORE the row is written, so no unusable code is
+            // left behind for a customer to be asked for.
+            $this->assertDatabaseCount('otp_verifications', 0);
+            $this->assertDatabaseCount('whatsapp_messages', 0);
+        }
+    }
+
     public function test_request_stores_a_hashed_code_and_sends_a_redacted_whatsapp_message(): void
     {
+        $this->withLiveWhatsapp();
         $this->service()->request('+966 50 111 2222');
 
         $otp = OtpVerification::firstOrFail();
@@ -35,6 +53,7 @@ class OtpServiceTest extends TestCase
 
     public function test_request_enforces_resend_cooldown(): void
     {
+        $this->withLiveWhatsapp();
         $this->service()->request('966500000000');
 
         $this->expectException(\RuntimeException::class);

@@ -71,6 +71,13 @@ class WhatsAppServiceTest extends TestCase
             {
                 throw new \RuntimeException('network down');
             }
+
+            // A REAL transport that happens to be erroring, which is the situation
+            // under test — not an unconfigured one.
+            public function isLive(): bool
+            {
+                return true;
+            }
         });
 
         $order = $this->order();

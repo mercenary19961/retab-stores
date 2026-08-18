@@ -2,6 +2,7 @@ import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import WhatsAppLoginLink from '@/components/auth/whatsapp-login-link';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -89,6 +90,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </>
                 )}
             </Form>
+
+            {/* Renders nothing while WhatsApp cannot deliver a code, so this page is
+                never a one-way street into a door that does not open. */}
+            <div className="mt-4">
+                <WhatsAppLoginLink />
+            </div>
 
             {status && <div className="mt-4 text-center text-sm font-medium text-green-600">{status}</div>}
         </AuthLayout>

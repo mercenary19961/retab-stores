@@ -27,6 +27,13 @@ export interface SharedData {
     auth: Auth;
     /** Absolute URL of the default social-share card, built from APP_URL server-side. */
     ogImage: string;
+    /**
+     * Whether WhatsApp can actually deliver a sign-in code. False means the OTP door
+     * is offered nowhere and the phone form is replaced by a "use email" notice —
+     * the log driver reports sends as successful, so an unguarded flow would ask for
+     * a code that went to the server log.
+     */
+    whatsappAuth: boolean;
     [key: string]: unknown;
 }
 

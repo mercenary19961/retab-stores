@@ -1,14 +1,30 @@
 import { Turnstile, type TurnstileHandle } from '@/components/turnstile';
 import StoreLayout from '@/layouts/store-layout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { AlertCircle } from 'lucide-react';
 import { type FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * ⚠️ The index signature is what lets `errors.whatsapp` typecheck. Inertia types the
+ * error bag against the FORM's keys, but a form-level error is deliberately keyed to
+ * something that is NOT a field (see OtpAuthController) so it cannot mark a valid
+ * phone number as invalid. Same shape the contact form uses for `errors.turnstile`.
+ */
+interface FormData {
+    phone: string;
+    code: string;
+    'cf-turnstile-response': string;
+    [key: string]: string;
+}
+
 export default function WhatsAppLogin() {
     const { t } = useTranslation();
+    const { whatsappAuth } = usePage<SharedData>().props;
     const [step, setStep] = useState<'phone' | 'code'>('phone');
     const turnstileRef = useRef<TurnstileHandle>(null);
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm<FormData>({
         phone: '',
         code: '',
         'cf-turnstile-response': '',
@@ -34,9 +50,35 @@ export default function WhatsAppLogin() {
             <Head title={t('login.title')} />
 
             <div className="mx-auto max-w-md">
-                <h1 className="mb-2 text-2xl font-bold">{t('login.title')}</h1>
+                <h1 className="mb-2 text-2xl font-bold">{whatsappAuth ? t('login.title') : t('login.unavailableTitle')}</h1>
 
-                {step === 'phone' ? (
+                {/* 🔴 The whole reason this branch exists: with WhatsApp unconfigured
+                    the transport is the LOG driver, which reports every send as a
+                    success. So the form would happily accept a number, advance to the
+                    code step, and leave the customer waiting for a code that had gone
+                    to the server log — no error, no way forward, on the store's
+                    primary sign-in method.
+
+                    Rather than show a form that cannot work, send them to the door
+                    that does. The server refuses the POST too (see OtpAuthController),
+                    so this is presentation, not the guard. */}
+                {!whatsappAuth ? (
+                    <div className="mt-4 space-y-4">
+                        <p className="text-sm text-gray-600">{t('login.unavailableBody')}</p>
+                        <Link
+                            href="/login"
+                            className="bg-brand-teal block rounded-lg px-6 py-3 text-center font-semibold text-white transition hover:bg-[#163e42]"
+                        >
+                            {t('login.goToEmailLogin')}
+                        </Link>
+                        <Link
+                            href="/register"
+                            className="border-brand-gold/40 text-brand-teal hover:bg-brand-cream block rounded-lg border px-6 py-3 text-center font-semibold transition"
+                        >
+                            {t('login.createAccount')}
+                        </Link>
+                    </div>
+                ) : step === 'phone' ? (
                     <>
                         <p className="mb-6 text-sm text-gray-600">{t('login.phoneInstructions')}</p>
                         <form onSubmit={sendCode} className="space-y-4">
@@ -58,6 +100,18 @@ export default function WhatsAppLogin() {
                                 onVerify={(token) => setData('cf-turnstile-response', token)}
                                 onExpire={() => setData('cf-turnstile-response', '')}
                             />
+                            {/* Form-level, not under the phone field: the channel is
+                                down, so the number they typed is not the problem and
+                                marking it red would send them off correcting a
+                                perfectly good phone number. Only reachable if the
+                                shared prop went stale between render and submit — the
+                                page normally hides this form entirely. */}
+                            {errors.whatsapp && (
+                                <div role="alert" className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-2.5">
+                                    <AlertCircle aria-hidden className="size-4 shrink-0 text-red-500" />
+                                    <span className="text-sm text-red-700">{errors.whatsapp}</span>
+                                </div>
+                            )}
                             <button
                                 type="submit"
                                 disabled={processing}
@@ -111,11 +165,16 @@ export default function WhatsAppLogin() {
                     </>
                 )}
 
-                <div className="mt-6 text-center text-sm text-gray-500">
-                    <Link href="/login" className="underline">
-                        {t('login.useEmail')}
-                    </Link>
-                </div>
+                {/* Suppressed in the unavailable state, where the two buttons above
+                    already are the way out — a third link to the same place reads as
+                    clutter. */}
+                {whatsappAuth && (
+                    <div className="mt-6 text-center text-sm text-gray-500">
+                        <Link href="/login" className="underline">
+                            {t('login.useEmail')}
+                        </Link>
+                    </div>
+                )}
             </div>
         </StoreLayout>
     );

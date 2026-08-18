@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\CartService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,6 +47,12 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+
+        // 🔴 Without this a guest who fills a cart and then signs up arrives at an
+        // EMPTY one, on the exact path a first-time customer takes. Login and the
+        // WhatsApp OTP flow both merged already; registration was the one that did
+        // not, which is why it went unnoticed.
+        app(CartService::class)->mergeGuestInto($user);
 
         return to_route('dashboard');
     }

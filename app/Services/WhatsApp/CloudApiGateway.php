@@ -51,6 +51,18 @@ class CloudApiGateway implements WhatsAppGateway
     }
 
     /**
+     * ⚠️ Being BOUND is not the same as being usable: `WHATSAPP_DRIVER=cloud` with a
+     * blank token or phone-number id constructs this class perfectly happily and then
+     * 401s on the first send. Checking the credentials here means a half-finished
+     * configuration is reported as "not live" rather than as a mystery failure at the
+     * moment a customer is trying to sign in.
+     */
+    public function isLive(): bool
+    {
+        return $this->token !== '' && $this->phoneNumberId !== '';
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      */
     private function send(array $payload): string

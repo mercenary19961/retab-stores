@@ -57,6 +57,20 @@ class WhatsAppService
         protected WhatsAppGateway $gateway,
     ) {}
 
+    /**
+     * Whether the underlying transport really delivers. {@see WhatsAppGateway::isLive()}
+     * for why this has to be asked rather than assumed — the log driver reports every
+     * send as a success.
+     *
+     * Only callers whose feature is meaningless without delivery should consult it;
+     * the notification methods below deliberately do not, because a logged order
+     * update in dev is the point.
+     */
+    public function canDeliver(): bool
+    {
+        return $this->gateway->isLive();
+    }
+
     /** Admin confirmed the order — stock deducted, courier on the way. */
     public function notifyOrderConfirmed(Order $order): ?WhatsappMessage
     {

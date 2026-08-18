@@ -24,10 +24,46 @@ class WhatsAppLoginTest extends TestCase
 
     public function test_send_creates_an_otp(): void
     {
+        $this->withLiveWhatsapp();
+
         $this->post('/login/whatsapp/send', ['phone' => '+966500000000'])
             ->assertRedirect();
 
         $this->assertDatabaseHas('otp_verifications', ['phone' => '966500000000']);
+    }
+
+    /**
+     * 🔴 The regression this whole change exists for. With no WHATSAPP_* variables the
+     * transport is the log driver, which reports every send as a SUCCESS — so the
+     * request returned 303, the page advanced to its code step, and the customer sat
+     * waiting for a six-digit code that had been written to the server log. No error
+     * anywhere, on the store's primary sign-in method.
+     */
+    public function test_send_refuses_when_whatsapp_cannot_deliver(): void
+    {
+        $response = $this->post('/login/whatsapp/send', ['phone' => '+966500000000']);
+
+        // 🔑 Keyed `whatsapp`, NOT `phone`. The channel is down; their number is fine,
+        // and flagging the field would send them off correcting a valid phone number.
+        $response->assertSessionHasErrors('whatsapp');
+        $response->assertSessionDoesntHaveErrors('phone');
+
+        // Nothing issued, so nothing to be asked for later.
+        $this->assertDatabaseCount('otp_verifications', 0);
+    }
+
+    public function test_the_sign_in_page_reports_whether_whatsapp_can_deliver(): void
+    {
+        // Default (log driver): the page renders its "use email instead" state.
+        $this->get('/login/whatsapp')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('whatsappAuth', false));
+
+        $this->withLiveWhatsapp();
+
+        $this->get('/login/whatsapp')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('whatsappAuth', true));
     }
 
     public function test_verify_creates_a_new_user_and_logs_in(): void

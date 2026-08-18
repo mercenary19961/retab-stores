@@ -65,4 +65,33 @@ class CartMergeTest extends TestCase
         // Guest cart is gone.
         $this->assertDatabaseMissing('carts', ['session_token' => $guestToken]);
     }
+
+    /**
+     * 🔴 Registration was the one entry point that did NOT merge — login and the
+     * WhatsApp OTP flow both did — so a guest who filled a cart and then signed up
+     * landed on an empty one. That is the exact path a first-time customer takes,
+     * which is what made it expensive and easy to miss.
+     */
+    public function test_guest_cart_merges_into_user_on_registration(): void
+    {
+        $product = $this->product('REG');
+
+        $this->post('/cart', ['product_id' => $product->id, 'quantity' => 2]);
+        $guestToken = session('cart_token');
+        $this->assertNotNull($guestToken);
+
+        $this->post('/register', [
+            'name' => 'New Customer',
+            'email' => 'new@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $this->assertAuthenticated();
+        $user = User::where('email', 'new@example.com')->firstOrFail();
+
+        $cart = Cart::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame(2, (int) $cart->items()->where('product_id', $product->id)->value('quantity'));
+        $this->assertDatabaseMissing('carts', ['session_token' => $guestToken]);
+    }
 }

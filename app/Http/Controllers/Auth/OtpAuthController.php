@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Exceptions\WhatsAppUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Auth\OtpService;
@@ -26,6 +27,9 @@ class OtpAuthController extends Controller
 
     public function create()
     {
+        // The page decides whether to show the phone form or a "use email instead"
+        // notice from the shared `whatsappAuth` prop, so there is exactly one source
+        // of truth for whether this door opens.
         return Inertia::render('auth/whatsapp-login');
     }
 
@@ -43,7 +47,13 @@ class OtpAuthController extends Controller
 
         try {
             $this->otp->request($data['phone']);
+        } catch (WhatsAppUnavailableException $e) {
+            // Form-level, NOT on `phone`. The channel is down; the number they typed
+            // is fine, and marking it invalid would send them off correcting a
+            // perfectly good phone number.
+            return back()->withErrors(['whatsapp' => $e->getMessage()]);
         } catch (\RuntimeException $e) {
+            // The resend cooldown, which genuinely is about this phone.
             return back()->withErrors(['phone' => $e->getMessage()]);
         }
 
