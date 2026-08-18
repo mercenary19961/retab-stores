@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 
 /**
- * "جهات تثق برطاب" — the client logo wall, between New Arrivals and Client Reviews.
+ * "جهات تثق برطاب" — the client logo wall, the last section of the homepage,
+ * below Client Reviews.
  *
  * Two rows of white tiles drifting in opposite directions, desaturated at rest
  * and full colour on hover. Three decisions worth keeping:
@@ -86,11 +87,26 @@ function Tile({ slug }: { slug: string }) {
 
 function Row({ slugs, reverse, duration }: { slugs: readonly string[]; reverse: boolean; duration: string }) {
     return (
-        // Masked at both ends so tiles dissolve into the section instead of being
-        // cut off mid-logo, which is the detail that separates a marquee that
-        // looks designed from one that looks like an overflow bug.
+        /*
+         * Masked at both ends so tiles dissolve into the section instead of being
+         * cut off mid-logo, which is the detail that separates a marquee that
+         * looks designed from one that looks like an overflow bug.
+         *
+         * 🔴 `py-4` is load-bearing, not spacing. The row must clip HORIZONTALLY
+         * (the track is far wider than the viewport), but `overflow-hidden` clips
+         * both axes — so a tile lifting 4px on hover had its top edge and its
+         * shadow sliced off.
+         *
+         * ⚠️ `overflow-x-hidden overflow-y-visible` is NOT the fix: per spec, when
+         * one axis is `hidden` the other computes `visible` to `auto`, so that
+         * trades the clipping for a stray scrollbar. Padding the row instead keeps
+         * the lift inside the overflow box, where nothing clips it.
+         *
+         * Smaller below `sm` because there is no hover on touch, so the phone only
+         * needs the padding for row separation, not for a lift it never shows.
+         */
         <div
-            className="logo-marquee-row relative flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]"
+            className="logo-marquee-row relative flex overflow-hidden py-3 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)] sm:py-4"
             // dir is pinned so the animation's fixed-sign translate drifts the
             // same way in both locales (see app.css).
             dir="ltr"
@@ -133,8 +149,12 @@ export default function ClientLogos() {
             </div>
 
             {/* Full-bleed, outside the padded container: the rows have to run to
-                the viewport edges for the edge mask to make sense. */}
-            <div className="relative flex flex-col gap-3 sm:gap-4">
+                the viewport edges for the edge mask to make sense.
+
+                No gap here — each row already carries its own vertical padding for
+                the hover lift, and that padding is what separates the rows. Adding
+                a gap on top would double-count it and push them apart. */}
+            <div className="relative flex flex-col">
                 {ROWS.map((slugs, i) => (
                     <Row key={i} slugs={slugs} reverse={i % 2 === 1} duration={i === 0 ? '46s' : '58s'} />
                 ))}

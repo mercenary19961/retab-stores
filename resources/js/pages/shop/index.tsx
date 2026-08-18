@@ -93,8 +93,8 @@ export default function ShopIndex({
             <CategoriesSection categories={featuredCategories} />
             <PrimaryBanner />
             <NewArrivals products={newArrivals} />
-            <ClientLogos />
             <ClientReviews reviews={reviews} />
+            <ClientLogos />
             {SHOW_FOOTER_BANNER && <FooterBanner />}
         </StoreLayout>
     );
