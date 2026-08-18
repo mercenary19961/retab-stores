@@ -139,8 +139,20 @@ function Row({ slugs, reverse, duration }: { slugs: readonly string[]; reverse: 
 export default function ClientLogos() {
     const { t } = useTranslation();
 
+    /*
+     * The section background is a vertical gradient that hands off into the
+     * footer. It starts at #f9f7f2 — exactly what `bg-brand-cream/60` (#f5f1ea at
+     * 60% over white) used to render as — and ends at #f6e8d4, the first stop of
+     * the footer's own gradient, so the section's bottom edge and the footer's top
+     * edge are the same colour and the seam disappears.
+     *
+     * ⚠️ Both ends are literal hex on purpose. The start cannot stay
+     * `bg-brand-cream/60` because a gradient stop takes a colour, not a composited
+     * result; and the end tracks the FOOTER, so if that gradient is ever retuned
+     * this value has to move with it.
+     */
     return (
-        <section className="bg-brand-cream/60 relative w-full overflow-hidden py-12 sm:py-16">
+        <section className="relative w-full overflow-hidden bg-gradient-to-b from-[#f9f7f2] to-[#f6e8d4] py-12 sm:py-16">
             <div className="relative z-10 mx-auto max-w-[1600px] px-6 lg:px-12">
                 <div className="mb-8 text-center sm:mb-10">
                     <h2 className="font-heading text-brand-gold text-[clamp(1.75rem,3vw,2.5rem)] font-black">{t('clientLogos.title')}</h2>
