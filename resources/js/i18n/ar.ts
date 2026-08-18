@@ -87,6 +87,9 @@ const ar = {
         closeMenu: 'إغلاق القائمة',
         signIn: 'تسجيل الدخول',
         signUp: 'إنشاء حساب',
+        // Phone header pill. Already short enough in Arabic, so it matches signUp;
+        // the English value is the one that had to shrink. See navbar.tsx.
+        signUpShort: 'إنشاء حساب',
     },
     hero: {
         // "طيب" elongated with kashida (tatweel ـ) so both headline lines reach

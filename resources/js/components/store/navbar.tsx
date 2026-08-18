@@ -335,16 +335,59 @@ export default function StoreNavbar() {
                     fine, and it shortens the travel band too (the band IS the
                     header's measured height), so the header also hides sooner. */}
                 <div className="grid grid-cols-3 items-center py-2.5">
-                    {/* Start: utility icons (desktop) / hamburger (mobile) */}
-                    <div className="flex items-center gap-4 justify-self-start">
+                    {/* Start: utility icons (desktop) / hamburger + sign-up (mobile) */}
+                    <div className="flex items-center gap-2 justify-self-start sm:gap-3 md:gap-4">
                         <button
                             type="button"
                             onClick={() => setMobileOpen(true)}
                             aria-label={t('nav.menu')}
-                            className="text-brand-gold hover:text-brand-teal transition-colors md:hidden"
+                            className="text-brand-gold hover:text-brand-teal shrink-0 transition-colors md:hidden"
                         >
                             <Menu className="size-6" />
                         </button>
+                        {/* Mobile sign-up, beside the burger.
+                            🔑 Sign-UP was the one auth action a phone visitor could
+                            only reach by opening the drawer — the end cell's User icon
+                            goes to sign-IN. So a new customer had to guess that
+                            "create an account" lived behind a hamburger.
+                            Filled and labelled rather than a third icon, because it is
+                            an invitation, not a utility; that is the same reasoning as
+                            the desktop pill, whose place in the end cell it takes on
+                            phones (there is no room for it beside the cart). */}
+                        {!loggedIn && (
+                            <Link
+                                href="/register"
+                                data-testid="nav-signup-mobile"
+                                /*
+                                 * ⚠️ `max-[359px]:hidden` is measured, not a guess.
+                                 * Row 1 is a 3-column grid so the logo is
+                                 * mathematically centred, which means each cell gets
+                                 * exactly a third — 90.7px at a 320px viewport. The
+                                 * burger plus this pill need 116, so the start cell
+                                 * overruns its column and lands ON the logo (19px of
+                                 * overlap in Arabic). No text short enough to fit 56px
+                                 * is still readable.
+                                 *
+                                 * The alternative was auto-sized columns, which stops
+                                 * the collision but pushes the logo ~20px off centre
+                                 * at EVERY width to fix one rare one. Hiding here
+                                 * costs nothing instead: 320px phones are where this
+                                 * button already was before today, and the drawer two
+                                 * pixels away still carries it.
+                                 */
+                                className="bg-brand-teal shrink-0 rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap text-white transition-colors hover:bg-[#163e42] max-[359px]:hidden sm:px-3 md:hidden"
+                            >
+                                {/* ⚠️ A SHORTER label than the desktop pill, and the
+                                    difference is load-bearing rather than cosmetic:
+                                    "Create account" measured 111px, which drove the
+                                    start cell past its grid column and straight over
+                                    the centred logo (46px of overlap at 320). Same
+                                    trick, same reason as the EN/AR language toggle
+                                    below `md`. Arabic is already short enough that its
+                                    two values are identical. */}
+                                {t('nav.signUpShort')}
+                            </Link>
+                        )}
                         {/* Catalogue hosts the product search box. */}
                         <Link
                             href="/shop"
@@ -442,15 +485,24 @@ export default function StoreNavbar() {
                     <div className="flex items-center gap-2.5 justify-self-end sm:gap-3">
                         {/* Mobile account. A plain link, NOT the desktop dropdown: a
                             hover menu is unusable on touch, and the drawer already
-                            carries the full account list. Signed in it goes straight
-                            to the account, signed out to sign-in. */}
-                        <Link
-                            href={accountHref}
-                            aria-label={loggedIn ? t('common.myAccount') : t('nav.signIn')}
-                            className="text-brand-gold hover:text-brand-teal transition-colors md:hidden"
-                        >
-                            <User className="size-6" />
-                        </Link>
+                            carries the full account list.
+
+                            🔑 Signed-IN only. Signed out it duplicated the new sign-up
+                            pill's job from the opposite end of a 69px bar, and the two
+                            together did not fit: six controls plus a centred logo
+                            overran the row and overlapped the logo. Sign-in has not
+                            been lost — it is the first item in the drawer, one tap
+                            from the burger the pill now sits next to, and /register
+                            itself links to it. */}
+                        {loggedIn && (
+                            <Link
+                                href={accountHref}
+                                aria-label={t('common.myAccount')}
+                                className="text-brand-gold hover:text-brand-teal transition-colors md:hidden"
+                            >
+                                <User className="size-6" />
+                            </Link>
+                        )}
                         <Link
                             href="/cart"
                             aria-label={t('common.cart')}

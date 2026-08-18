@@ -86,6 +86,9 @@ const en = {
         closeMenu: 'Close menu',
         signIn: 'Sign in',
         signUp: 'Create account',
+        // Phone header pill. "Create account" measured 111px and drove the start cell
+        // over the centred logo; this is 40% narrower. See navbar.tsx.
+        signUpShort: 'Sign up',
     },
     hero: {
         // ⚠️ Length is load-bearing, not just wording. The headline is a two-line
