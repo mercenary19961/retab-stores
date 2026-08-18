@@ -35,7 +35,10 @@ const ar = {
         confirmPassword: 'تأكيد كلمة المرور',
         confirmPasswordPlaceholder: 'تأكيد كلمة المرور',
         name: 'الاسم',
-        namePlaceholder: 'الاسم الكامل',
+        // An EXAMPLE of a first + family name, not a restatement of the label
+        // above it. "الاسم الكامل" only repeated "الاسم" and did not show that
+        // both names are wanted.
+        namePlaceholder: 'محمد العتيبي',
         forgotPassword: 'نسيت كلمة المرور؟',
         remember: 'تذكّرني',
         login: {

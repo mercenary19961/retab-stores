@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import WhatsAppLoginLink from '@/components/auth/whatsapp-login-link';
 import InputError from '@/components/input-error';
+import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,30 +56,37 @@ export default function Register() {
                                 <InputError message={errors.email} />
                             </div>
 
+                            {/* Both password fields use the shared PasswordInput so the
+                                show/hide toggle matches the login screen. Each keeps its
+                                own toggle state: confirming a password you cannot see is
+                                the point of the second field, so revealing one must not
+                                reveal the other. */}
                             <div className="grid gap-2">
                                 <Label htmlFor="password">{t('auth.password')}</Label>
-                                <Input
+                                <PasswordInput
                                     id="password"
                                     name="password"
-                                    type="password"
                                     required
                                     tabIndex={3}
                                     autoComplete="new-password"
                                     placeholder={t('auth.passwordPlaceholder')}
+                                    showLabel={t('auth.showPassword')}
+                                    hideLabel={t('auth.hidePassword')}
                                 />
                                 <InputError message={errors.password} />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">{t('auth.confirmPassword')}</Label>
-                                <Input
+                                <PasswordInput
                                     id="password_confirmation"
                                     name="password_confirmation"
-                                    type="password"
                                     required
                                     tabIndex={4}
                                     autoComplete="new-password"
                                     placeholder={t('auth.confirmPasswordPlaceholder')}
+                                    showLabel={t('auth.showPassword')}
+                                    hideLabel={t('auth.hidePassword')}
                                 />
                                 <InputError message={errors.password_confirmation} />
                             </div>

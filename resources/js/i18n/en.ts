@@ -34,7 +34,10 @@ const en = {
         confirmPassword: 'Confirm password',
         confirmPasswordPlaceholder: 'Confirm password',
         name: 'Name',
-        namePlaceholder: 'Full name',
+        // An EXAMPLE of a first + family name, not a restatement of the label
+        // above it. Transliterated from the Arabic rather than swapped for a
+        // generic western name, since the audience is the same either way.
+        namePlaceholder: 'Mohammed Alotaibi',
         forgotPassword: 'Forgot password?',
         remember: 'Remember me',
         login: {
