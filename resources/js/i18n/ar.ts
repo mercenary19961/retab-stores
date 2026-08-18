@@ -92,15 +92,49 @@ const ar = {
         signUpShort: 'إنشاء حساب',
     },
     hero: {
-        // "طيب" elongated with kashida (tatweel ـ) so both headline lines reach
-        // the subtext width and their start edges align. Tune the tatweel count
-        // to match the subtext line exactly.
-        headlineLine1: 'مــن طيـــــب الأرض',
-        headlineLine2: 'لطيـــــب جمعتكـــم',
-        subtext: 'تمر سكري فاخر يكمّل ضيافتكم ويحلّي كل جمعة',
-        cta: 'تسوّق الآن',
+        // One entry per carousel slide, in display order. The component pairs
+        // these with its own SLIDES table by index, so a fifth slide is a copy
+        // change plus one row of art config — same shape as about.journey.steps.
+        //
+        // Kashida (tatweel ـ) elongation makes a slide's two headline lines reach
+        // the same width so their edges align, which is what the designs do.
+        // English has no equivalent device, so see en.ts for the length budget
+        // that replaces it there.
+        slides: [
+            {
+                key: 'harvest',
+                line1: 'مــن طيـــــب الأرض',
+                line2: 'لطيـــــب جمعتكـــم',
+                subtext: 'تمر سكري فاخر يكمّل ضيافتكم ويحلّي كل جمعة',
+                cta: 'تسوّق الآن',
+            },
+            {
+                key: 'gift',
+                line1: 'هدية تليــق',
+                line2: 'بمن تحــب',
+                subtext: 'اختيارات بتفاصيل تجعل كل مناسبة أكثر تميزًا',
+                cta: 'اكتشف الهدايا',
+            },
+            {
+                key: 'delivery',
+                line1: 'تمور رطـاب',
+                line2: 'تصلك أينما كنـت',
+                subtext: 'تمورنا تصل إلى جميع مناطق المملكة، ونشحن إلى دول الخليج لنبقى أقرب إليك',
+                cta: 'تسوّق الآن',
+            },
+            {
+                key: 'occasion',
+                line1: 'لكل مناسبـة',
+                line2: 'تمور تليــق بها',
+                subtext: 'اختر من رطاب ما يكمّل كل لحظة',
+                cta: 'تسوّق الآن',
+            },
+        ],
         prevSlide: 'الشريحة السابقة',
         nextSlide: 'الشريحة التالية',
+        // The dots announce a destination, not a direction — they used to reuse
+        // nextSlide, which read as "next slide 3" on every dot.
+        goToSlide: 'الانتقال إلى الشريحة',
     },
     bestSellers: {
         title: 'الأكثر مبيعاً',

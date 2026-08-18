@@ -91,22 +91,50 @@ const en = {
         signUpShort: 'Sign up',
     },
     hero: {
-        // ⚠️ Length is load-bearing, not just wording. The headline is a two-line
-        // lockup (teal line + white line) and the Arabic keeps both lines the same
-        // width with kashida elongation — English has no equivalent, so it has to
-        // be short enough to fit on one line unaided. Measured in the real font at
-        // the phone size: the previous copy ran 374px and 348px against a 342px
-        // column at 390px wide, so BOTH wrapped and the lockup became four ragged
-        // lines with "land" orphaned. These are 285px and 267px, fitting at every
-        // phone width down to 320px, and their near-equal widths give the same
-        // balanced block the Arabic gets from its tatweel. Keep any replacement
-        // under ~270px at 29px, i.e. roughly this length.
-        headlineLine1: 'From the finest land',
-        headlineLine2: 'to your finest table',
-        subtext: 'Premium Sukkari dates that complete your hospitality and sweeten every gathering',
-        cta: 'Shop now',
+        // ⚠️ Length is load-bearing here, not just wording. Each headline is a
+        // two-line lockup and the Arabic keeps both lines the same width with
+        // kashida elongation — English has no equivalent, so every line has to be
+        // short enough to fit unaided. Measured in the real font at the phone
+        // size: the original copy ran 374px and 348px against a 342px column at
+        // 390px wide, so BOTH wrapped and the lockup became four ragged lines with
+        // "land" orphaned. Keep every line under ~270px at 29px, i.e. roughly the
+        // length of the ones below, and keep a slide's two lines near-equal so the
+        // block stays balanced the way the tatweel makes the Arabic balanced.
+        slides: [
+            {
+                key: 'harvest',
+                line1: 'From the finest land',
+                line2: 'to your finest table',
+                subtext: 'Premium Sukkari dates that complete your hospitality and sweeten every gathering',
+                cta: 'Shop now',
+            },
+            {
+                key: 'gift',
+                line1: 'A gift worthy',
+                line2: 'of those you love',
+                subtext: 'Chosen in detail, so every occasion feels more special',
+                cta: 'Explore gifts',
+            },
+            {
+                key: 'delivery',
+                line1: 'Retab dates',
+                line2: 'reach you anywhere',
+                subtext: 'Delivered across the Kingdom, and shipped throughout the GCC',
+                cta: 'Shop now',
+            },
+            {
+                key: 'occasion',
+                line1: 'For every occasion',
+                line2: 'dates worthy of it',
+                subtext: 'Choose what completes the moment',
+                cta: 'Shop now',
+            },
+        ],
         prevSlide: 'Previous slide',
         nextSlide: 'Next slide',
+        // The dots announce a destination, not a direction — they used to reuse
+        // nextSlide, which read as "next slide 3" on every dot.
+        goToSlide: 'Go to slide',
     },
     bestSellers: {
         title: 'Best Sellers',
