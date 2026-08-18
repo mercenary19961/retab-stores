@@ -326,7 +326,17 @@ export default function StoreNavbar() {
                             menu, which is also the only place in the header a customer
                             could previously log out from — there wasn't one. */}
                         {loggedIn ? (
-                            <div className="group relative hidden md:block">
+                            /* ⚠️ `md:flex md:items-center`, NOT `md:block`. Its child
+                               is an inline-flex button, so a block wrapper puts it in a
+                               LINE BOX and the strut's descent adds ~6px of space
+                               beneath the baseline-aligned button. The row centres the
+                               wrapper, so that dead space pushed the icon visibly ABOVE
+                               its neighbours (measured: wrapper 26px vs 20px, icon
+                               centre 31 vs 34). Making the wrapper a flex container
+                               blockifies the button and removes the line box entirely.
+                               The sibling icons never had this because they are direct
+                               flex items of the row. */
+                            <div className="group relative hidden md:flex md:items-center">
                                 <button
                                     type="button"
                                     aria-label={t('common.myAccount')}
@@ -456,7 +466,22 @@ export default function StoreNavbar() {
                     {navCategories.map((cat) =>
                         cat.children.length > 0 ? (
                             <div key={cat.id} className="group relative">
-                                <Link href="/" className={`${linkBase} ${linkIdle} inline-flex items-center gap-1.5`}>
+                                {/* The parent label goes to the catalogue with NO
+                                    category param, which is what the "All" chip there
+                                    selects. It used to point at `/` — so clicking a
+                                    top-level nav item silently reloaded the homepage,
+                                    which reads as a dead control.
+
+                                    ⚠️ Deliberately NOT `?category=<parent-slug>`: the
+                                    products live on the CHILD categories, so filtering
+                                    by the parent would land the customer on an empty
+                                    catalogue. The children are one hover away in this
+                                    same dropdown.
+
+                                    ⚠️ And deliberately no active state: every parent
+                                    here resolves to the same `/shop`, so highlighting
+                                    would light up all of them at once. */}
+                                <Link href="/shop" className={`${linkBase} ${linkIdle} inline-flex items-center gap-1.5`}>
                                     {localized(cat, 'name')}
                                     <Caret />
                                 </Link>
@@ -633,17 +658,11 @@ export default function StoreNavbar() {
                                         </Link>
                                     </>
                                 )}
-
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        toggleLanguage();
-                                        setMobileOpen(false);
-                                    }}
-                                    className="border-brand-gold/40 text-brand-gold hover:bg-brand-gold/10 mt-2 rounded-full border px-3 py-1 text-sm"
-                                >
-                                    {t('common.switchLanguage')}
-                                </button>
+                                {/* No language toggle here on purpose. Row 1 of the
+                                    header carries one at every width (it shortens to
+                                    EN/AR below `md`), so a second copy inside the
+                                    drawer was a duplicate of a control already on
+                                    screen behind it. */}
                             </div>
                         </div>
                     </div>,
