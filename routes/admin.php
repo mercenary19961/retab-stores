@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PreferenceController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\ProductRequestController;
+use App\Http\Controllers\Admin\ProductReviewController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StockImportController;
@@ -72,6 +73,14 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     // "I want this" demand signals for Coming-Soon products.
     Route::get('product-requests', [ProductRequestController::class, 'index'])->middleware('permission:product_requests.view')->name('product-requests.index');
     Route::post('product-requests/{productRequest}/handle', [ProductRequestController::class, 'markHandled'])->middleware('permission:product_requests.manage')->name('product-requests.handle');
+
+    // Product reviews written by customers on the storefront. A TAKEDOWN path:
+    // reviews publish on arrival (see ProductReviewController), so staff hide or
+    // remove the occasional bad one rather than approving every good one.
+    // ⚠️ Distinct from `client-reviews` below, which is the homepage testimonials.
+    Route::get('product-reviews', [ProductReviewController::class, 'index'])->middleware('permission:product_reviews.view')->name('product-reviews.index');
+    Route::patch('product-reviews/{review}/toggle', [ProductReviewController::class, 'toggleApproval'])->middleware('permission:product_reviews.manage')->name('product-reviews.toggle');
+    Route::delete('product-reviews/{review}', [ProductReviewController::class, 'destroy'])->middleware('permission:product_reviews.manage')->name('product-reviews.destroy');
 
     // Product images (clean multipart POST, separate from the text form).
     Route::middleware('permission:products.edit')->group(function () {

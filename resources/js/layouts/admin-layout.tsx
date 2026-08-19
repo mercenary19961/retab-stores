@@ -22,6 +22,7 @@ import {
     Mail,
     Megaphone,
     Menu,
+    MessageSquareQuote,
     Package,
     RotateCcw,
     Settings,
@@ -70,6 +71,7 @@ const NAV_GROUPS: { key: string; items: NavItem[] }[] = [
         items: [
             { key: 'products', href: '/admin/products', icon: Package, perm: 'products' },
             { key: 'productRequests', href: '/admin/product-requests', icon: Sparkles, perm: 'product_requests' },
+            { key: 'productReviews', href: '/admin/product-reviews', icon: MessageSquareQuote, perm: 'product_reviews' },
             { key: 'inventory', href: '/admin/stock-import', icon: Boxes, perm: 'inventory' },
         ],
     },
