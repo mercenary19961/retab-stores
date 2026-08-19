@@ -346,6 +346,7 @@ export default function DiscountsIndex({
             <form onSubmit={submitImport} className="space-y-4">
                 <input
                     type="file"
+                    aria-label={t('admin.discounts.import.title')}
                     accept=".csv,text/csv"
                     onChange={(e) => imp.setData('file', e.target.files?.[0] ?? null)}
                     className="file:bg-brand-gold/15 file:text-brand-gold hover:file:bg-brand-gold/30 block w-full text-sm text-neutral-500 file:me-3 file:cursor-pointer file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-sm file:font-medium file:transition-colors"

@@ -97,6 +97,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                     <form onSubmit={submit}>
                         <input
                             type="file"
+                            aria-label={t('admin.inventory.uploadTitle')}
                             accept=".csv,text/csv"
                             onChange={(e) => setData('file', e.target.files?.[0] ?? null)}
                             className="block w-full text-sm"

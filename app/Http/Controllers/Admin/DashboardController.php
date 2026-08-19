@@ -242,12 +242,19 @@ class DashboardController extends Controller
             ->get(['id', 'name_ar', 'name_en'])
             ->keyBy('id');
 
-        return $rows->map(fn ($r) => [
-            'product_id' => (int) $r->product_id,
-            'name_ar' => $names->get($r->product_id)?->name_ar,
-            'name_en' => $names->get($r->product_id)?->name_en,
-            'count' => (int) $r->cnt,
-        ])->all();
+        // Drop rows whose product no longer resolves. The FK is nullOnDelete and the
+        // query already skips NULLs, so this is only reachable when a product row
+        // vanished without the constraint firing (seeded demo data, a truncate, a
+        // restored dump). Rendering those anyway gives the operator "— 5 requests":
+        // an action item naming nothing, which is worse than one fewer row.
+        return $rows
+            ->filter(fn ($r) => $names->has($r->product_id))
+            ->map(fn ($r) => [
+                'product_id' => (int) $r->product_id,
+                'name_ar' => $names->get($r->product_id)?->name_ar,
+                'name_en' => $names->get($r->product_id)?->name_en,
+                'count' => (int) $r->cnt,
+            ])->values()->all();
     }
 
     /** @return Collection<int, array<string, mixed>> */

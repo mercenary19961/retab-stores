@@ -270,6 +270,7 @@ export default function ProductFormBody({
                         <div className="flex flex-wrap items-center gap-3">
                             <input
                                 type="file"
+                                aria-label={t('admin.products.form.selectImages')}
                                 accept="image/jpeg,image/png,image/webp,image/gif"
                                 multiple
                                 onChange={(e) => setData('images', Array.from(e.target.files ?? []))}
@@ -341,6 +342,7 @@ export default function ProductFormBody({
                     >
                         <input
                             type="file"
+                            aria-label={t('admin.products.form.selectImages')}
                             accept="image/jpeg,image/png,image/webp,image/gif"
                             multiple
                             onChange={(e) => imageForm.setData('images', Array.from(e.target.files ?? []))}
