@@ -114,9 +114,13 @@ export default function ContactInfo() {
                     block's right edge, on a right margin that matches nothing else in
                     the frame. Aligning it to the card container instead is the only
                     relationship here that is reproducible and reads as deliberate. */}
-                <h2 className="text-brand-teal font-heading text-start text-[clamp(1.75rem,6.875vw,6.1875rem)] leading-[1.15] font-black">
+                {/* h1, not h2: this is the contact page's top-level heading. The page
+                    has no hero section to carry one (unlike About, whose hero does), so
+                    without this the whole page started at h2 and had no h1 at all.
+                    Purely semantic — every style here is class-based, so nothing moves. */}
+                <h1 className="text-brand-teal font-heading text-start text-[clamp(1.75rem,6.875vw,6.1875rem)] leading-[1.15] font-black">
                     {t('contact.info.heading')}
-                </h2>
+                </h1>
 
                 {/* auto-rows-fr makes every row the same height, so all four cards match
                     as they do in the design (591 × 295 each) even though the lower two

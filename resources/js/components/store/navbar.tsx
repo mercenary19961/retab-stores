@@ -159,7 +159,11 @@ const REVEAL_DELAY_MS = 750;
 const ACCOUNT_LINKS = [
     { href: '/account', key: 'common.myAccount' },
     { href: '/account/profile', key: 'account.editProfile' },
-    { href: '/account/wishlist', key: 'account.wishlist' },
+    // ⚠️ `/wishlist`, NOT `/account/wishlist`. The route is registered at the bare
+    // path (routes/web.php, `wishlist.index`), so the prefixed guess 404'd for every
+    // signed-in customer from both the dropdown and the drawer. The account
+    // dashboard already linked here correctly, which is why it went unnoticed.
+    { href: '/wishlist', key: 'account.wishlist' },
 ] as const;
 
 export default function StoreNavbar() {

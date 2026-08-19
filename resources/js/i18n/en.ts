@@ -160,6 +160,9 @@ const en = {
         alt: 'Quality we grow, trust we deliver',
         title: 'Quality we grow',
         subtitle: 'Trust we deliver',
+        // See the note in ar.ts: this label is deliberately local to the banner
+        // rather than shared with the hero.
+        cta: 'Shop now',
     },
     footerBanner: {
         headline: 'Quality You Can Trust',

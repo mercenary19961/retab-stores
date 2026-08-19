@@ -27,8 +27,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             {/* Uncontrolled Inertia <Form>: submits the actual DOM field values via
                 FormData, so browser / password-manager autofill can't desync the
                 submitted credentials (the cause of "first login attempt fails on a
-                fresh browser, works on retry"). */}
-            <Form action={route('login')} method="post" resetOnError={['password']} className="flex flex-col gap-6">
+                fresh browser, works on retry").
+
+                `noValidate` + no `required`: native validation would intercept the
+                submit and the localized InputError messages below could never render
+                for an empty field. Same reasoning as register and contact. */}
+            <Form action={route('login')} method="post" resetOnError={['password']} className="flex flex-col gap-6" noValidate>
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
@@ -38,7 +42,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                     id="email"
                                     name="email"
                                     type="email"
-                                    required
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="email"
@@ -60,7 +63,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 <PasswordInput
                                     id="password"
                                     name="password"
-                                    required
                                     tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder={t('auth.passwordPlaceholder')}

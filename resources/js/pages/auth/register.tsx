@@ -17,12 +17,19 @@ export default function Register() {
     return (
         <AuthLayout title={t('auth.register.title')} description={t('auth.register.subtitle')}>
             <Head title={t('auth.register.title')} />
+            {/* `noValidate`, and deliberately NO `required` on any field below. The
+                browser's native validation intercepts the submit before Inertia sees
+                it, so every `InputError` on this form was unreachable for an empty
+                field and the customer got a browser tooltip instead — in the BROWSER's
+                language, which on an Arabic-first store is routinely the wrong one.
+                Server-validated only, matching contact, profile, checkout and returns. */}
             <Form
                 action={route('register')}
                 method="post"
                 resetOnError={['password', 'password_confirmation']}
                 disableWhileProcessing
                 className="flex flex-col gap-6"
+                noValidate
             >
                 {({ processing, errors }) => (
                     <>
@@ -33,7 +40,6 @@ export default function Register() {
                                     id="name"
                                     name="name"
                                     type="text"
-                                    required
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="name"
@@ -48,7 +54,6 @@ export default function Register() {
                                     id="email"
                                     name="email"
                                     type="email"
-                                    required
                                     tabIndex={2}
                                     autoComplete="email"
                                     placeholder={t('auth.emailPlaceholder')}
@@ -66,7 +71,6 @@ export default function Register() {
                                 <PasswordInput
                                     id="password"
                                     name="password"
-                                    required
                                     tabIndex={3}
                                     autoComplete="new-password"
                                     placeholder={t('auth.passwordPlaceholder')}
@@ -81,7 +85,6 @@ export default function Register() {
                                 <PasswordInput
                                     id="password_confirmation"
                                     name="password_confirmation"
-                                    required
                                     tabIndex={4}
                                     autoComplete="new-password"
                                     placeholder={t('auth.confirmPasswordPlaceholder')}

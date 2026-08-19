@@ -160,6 +160,12 @@ const ar = {
         alt: 'جودة نزرعها وثقة نقدمها',
         title: 'جودة نزرعها',
         subtitle: 'وثقة نقدمها',
+        // ⚠️ This banner owns its own CTA label. It used to borrow the hero's
+        // `hero.cta`, and when the hero became a carousel that key moved into
+        // `hero.slides[].cta` — leaving the button rendering the literal string
+        // "hero.cta" on the homepage in both locales. Keep the copy local to the
+        // component that shows it so a change to one can't silently break the other.
+        cta: 'تسوّق الآن',
     },
     footerBanner: {
         headline: 'جودة يمكنك الوثوق بها',
