@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderActivity;
 use App\Services\CustomerMailer;
 use App\Services\OrderConfirmationService;
 use App\Services\Shipping\ShippingService;
@@ -13,6 +14,7 @@ use App\Support\TableExport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 
 /**
@@ -225,6 +227,13 @@ class OrderController extends Controller
                 // confirmed so it can be shipped again, and moves no money.
                 // Excluded once delivered — there is nothing left to recall.
                 'cancelShipment' => $order->tracking_number !== null && $order->status === OrderStatus::Shipped,
+                // Recovery for a gateway hold that lapsed before we confirmed it.
+                // Asks the model rather than restating the rule — the same predicate
+                // the storefront pay route and the account list already use, so the
+                // three cannot drift (the 2026-08-15 admin-cancel bug).
+                // `customer_phone` is NOT NULL on orders, so there is no phone check
+                // here — an unreachable guard reads as a real one to the next person.
+                'sendPaymentLink' => $order->isAwaitingGatewayPayment(),
             ],
         ];
     }
@@ -310,6 +319,42 @@ class OrderController extends Controller
         }
 
         return back()->with('success', __('messages.admin.shipment_cancelled'));
+    }
+
+    /**
+     * Send the customer a signed link to finish paying an order whose gateway hold
+     * lapsed before we confirmed it.
+     *
+     * 🔑 Staff-triggered rather than automatic, deliberately. The hold expired
+     * because WE did not confirm in time, so the customer did nothing wrong — and
+     * a canned "something went wrong" from the system that dropped the ball reads
+     * badly. Volume should be near zero if the expiry alert is working, so the
+     * human step costs almost nothing and lets staff apologise or attach a coupon.
+     * The WORK is automatic: one click reopens the order and sends the link.
+     */
+    public function sendPaymentLink(Order $order)
+    {
+        if (! $order->isAwaitingGatewayPayment()) {
+            return back()->with('error', __('messages.admin.payment_link_not_applicable'));
+        }
+        // Three days: long enough that a customer who reads the message the next
+        // morning is not locked out, short enough that a forwarded link does not
+        // stay live indefinitely.
+        $url = URL::temporarySignedRoute('orders.resume', now()->addDays(3), ['order' => $order->order_number]);
+
+        $sent = $this->whatsapp->sendPaymentLink($order, $url);
+
+        OrderActivity::create([
+            'order_id' => $order->id,
+            'type' => 'payment_link_sent',
+            'user_id' => Auth::id(),
+            'meta' => ['channel' => 'whatsapp', 'queued' => $sent !== null],
+        ]);
+
+        return back()->with(
+            $sent ? 'success' : 'error',
+            $sent ? __('messages.admin.payment_link_sent') : __('messages.admin.payment_link_failed'),
+        );
     }
 
     public function cancel(Order $order)

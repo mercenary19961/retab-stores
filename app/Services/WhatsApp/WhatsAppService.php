@@ -51,6 +51,12 @@ class WhatsAppService
 
     public const T_ADMIN_ORDER_CANCELLED = 'admin_order_cancelled';
 
+    /** Staff: a Tamara hold is about to lapse. ⚠️ Needs Meta approval before it sends. */
+    public const T_ADMIN_PAYMENT_EXPIRING = 'admin_payment_expiring';
+
+    /** Customer: their hold lapsed before we confirmed — here is a link to finish paying. */
+    public const T_PAYMENT_LINK = 'payment_link';
+
     // Authentication (WhatsApp OTP sign-in).
     public const T_OTP = 'otp';
 
@@ -215,6 +221,44 @@ class WhatsAppService
                 $order->customer_name ?? '',
             ], purpose: 'admin_order_cancelled', order: $order, category: 'utility');
         }
+    }
+
+    /**
+     * Staff: a Tamara authorisation is close to lapsing.
+     *
+     * 🔑 This alert reaches a PHONE, unlike the bell and the email it accompanies,
+     * and that asymmetry is the point: it is the only staff alert where simply not
+     * reading it in time loses the sale outright. Nothing errors when a hold
+     * expires — the order just quietly stops being collectable.
+     */
+    public function notifyAdminsPaymentExpiring(Order $order, int $hoursLeft): void
+    {
+        foreach ($this->adminRecipients() as $recipient) {
+            $this->dispatch($recipient, self::T_ADMIN_PAYMENT_EXPIRING, [
+                $order->order_number,
+                (string) $hoursLeft,
+                number_format((float) $order->total, 2),
+            ], purpose: 'admin_payment_expiring', order: $order, category: 'utility');
+        }
+    }
+
+    /**
+     * Customer: the hold on their order lapsed before we confirmed it, so here is
+     * a link to complete payment.
+     *
+     * ⚠️ The wording must not read as "an error occurred, please order again". The
+     * hold expired because WE did not confirm in time — the customer did nothing
+     * wrong, and their order still exists with its items and address intact. The
+     * link resumes THAT order rather than asking them to rebuild a basket.
+     */
+    public function sendPaymentLink(Order $order, string $url): ?WhatsappMessage
+    {
+        return $this->dispatch($order->customer_phone, self::T_PAYMENT_LINK, [
+            $order->customer_name ?: '',
+            $order->order_number,
+            number_format((float) $order->total, 2),
+            $url,
+        ], purpose: 'payment_link', order: $order, category: 'utility');
     }
 
     /**

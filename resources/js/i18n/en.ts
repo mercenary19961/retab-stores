@@ -1170,6 +1170,9 @@ const en = {
                 cancelShipmentMsg:
                     'Recall this shipment from the carrier? The order stays live and returns to confirmed, so you can ship it again. No refund is issued.',
                 unavailableMsg: 'Mark unavailable? This releases the payment hold / flags a refund.',
+                paymentLink: 'Send payment link',
+                paymentLinkMsg:
+                    'The hold lapsed before this order was confirmed. It will be reopened for payment and the customer gets a WhatsApp link to finish it. Continue?',
                 noteLabel: 'Internal note (optional, not sent to the customer)',
                 items: 'Items',
                 activity: 'Activity',

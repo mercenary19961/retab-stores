@@ -33,6 +33,7 @@ return [
     ],
 
     'payment' => [
+        'already_settled' => 'That order has already been paid or closed — nothing left to do.',
         'init_failed' => 'Could not start online payment. You can pay by bank transfer.',
         'received' => 'Payment received. Thank you.',
         'not_completed' => 'Your payment was not completed. You can try again below.',
@@ -117,6 +118,9 @@ return [
         'order_confirmed' => 'Order confirmed and stock deducted.',
         'order_unavailable' => 'Order marked unavailable and the payment hold released.',
         'shipment_created' => 'Shipment created and carrier pickup requested.',
+        'payment_link_sent' => 'Payment link sent to the customer on WhatsApp.',
+        'payment_link_failed' => 'Could not send the payment link — check the customer has a reachable phone number.',
+        'payment_link_not_applicable' => 'This order is not waiting on a gateway payment, so there is nothing to resume.',
         'shipment_cancelled' => 'Shipment cancelled. The order is back to confirmed and can be shipped again.',
         'shipment_already_exists' => 'This order already has a shipment.',
         'shipment_missing' => 'This order has no shipment to cancel.',

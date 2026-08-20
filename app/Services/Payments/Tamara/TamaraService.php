@@ -7,6 +7,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentTransactionType;
 use App\Models\Order;
+use App\Models\OrderActivity;
 use App\Models\Payment;
 use App\Services\CustomerMailer;
 use Illuminate\Support\Facades\DB;
@@ -163,6 +164,82 @@ class TamaraService
         if ($order->payment_status !== PaymentStatus::Paid) {
             $order->forceFill(['payment_status' => PaymentStatus::Paid, 'paid_at' => now()])->save();
         }
+    }
+
+    /**
+     * Statuses Tamara reports for an order whose hold can no longer be captured.
+     *
+     * ⚠️ Read from Tamara's documented order lifecycle, NOT verified against a live
+     * response. That is why `reconcileLapsed()` treats an unrecognised status as
+     * "still fine" — marking a live order dead is far worse than being slow to
+     * notice a dead one, so the unknown case must fail in the safe direction.
+     */
+    private const TERMINAL = ['expired', 'canceled', 'cancelled', 'declined'];
+
+    /**
+     * Ask Tamara whether a hold we still believe is live has actually lapsed, and
+     * record reality if it has.
+     *
+     * 🔑 We otherwise only discover an expired hold when a human clicks Confirm and
+     * the capture throws — until then the order sits on the dashboard looking
+     * actionable when the sale is already gone.
+     *
+     * 🔑 The order is moved to Failed + PendingPayment rather than cancelled,
+     * because that is exactly the shape the existing resume-payment route already
+     * knows how to restart (see CheckoutController::pay, which clears the dead
+     * session and mints a fresh one). Cancelling would destroy an order the
+     * customer still wants; this keeps their items and address and only marks the
+     * payment as needing another go.
+     *
+     * Returns the remote status when it acted, null when the hold is still good or
+     * Tamara could not be reached.
+     */
+    /** Fetch the remote order. Extracted so tests can report a status without HTTP. */
+    protected function remoteOrder(string $reference): array
+    {
+        return $this->client->getOrder($reference);
+    }
+
+    public function reconcileLapsed(Order $order): ?string
+    {
+        if ($order->payment_gateway !== 'tamara' || ! $order->gateway_reference) {
+            return null;
+        }
+        if ($order->payment_status !== PaymentStatus::Authorized) {
+            return null; // already captured, refunded or otherwise resolved
+        }
+
+        try {
+            $remote = $this->remoteOrder($order->gateway_reference);
+        } catch (\Throwable $e) {
+            // A network blip must not be read as an expiry.
+            Log::warning('Tamara status check failed', ['order' => $order->order_number, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+
+        $status = strtolower((string) ($remote['status'] ?? ''));
+        if (! in_array($status, self::TERMINAL, true)) {
+            return null;
+        }
+
+        $order->forceFill([
+            'payment_status' => PaymentStatus::Failed,
+            'status' => OrderStatus::PendingPayment,
+        ])->save();
+
+        // `payment_url` and `gateway_reference` are deliberately left in place —
+        // CheckoutController::pay() clears them when it restarts a Failed order, so
+        // duplicating that here would be two places to keep in step.
+        OrderActivity::create([
+            'order_id' => $order->id,
+            'type' => 'payment_lapsed',
+            'from_status' => OrderStatus::AwaitingConfirmation->value,
+            'to_status' => OrderStatus::PendingPayment->value,
+            'meta' => ['gateway' => 'tamara', 'remote_status' => $status],
+        ]);
+
+        return $status;
     }
 
     /**

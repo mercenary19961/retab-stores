@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Order;
 use App\Models\User;
 use App\Notifications\PaymentExpiringNotification;
+use App\Services\Payments\Tamara\TamaraService;
+use App\Services\WhatsApp\WhatsAppService;
 use App\Support\ExpiringAuthorizations;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Notification;
@@ -27,6 +30,13 @@ class AlertExpiringAuthorizations extends Command
 
     protected $description = 'Alert staff about Tamara authorisations approaching expiry';
 
+    public function __construct(
+        protected WhatsAppService $whatsapp,
+        protected TamaraService $tamara,
+    ) {
+        parent::__construct();
+    }
+
     public function handle(): int
     {
         // Held, still waiting on the admin, and not already alerted. The stamp is
@@ -38,8 +48,16 @@ class AlertExpiringAuthorizations extends Command
             ExpiringAuthorizations::query()->whereNull('payment_expiry_alerted_at')
         );
 
+        // Before warning about holds that are still alive, record any that have
+        // already died. Otherwise an expired order keeps sitting in the dashboard
+        // queue looking actionable, and we only find out when a human clicks
+        // Confirm and the capture throws.
+        $lapsed = $this->reconcileLapsed();
+
         if ($orders->isEmpty()) {
-            $this->info('No authorisations approaching expiry.');
+            $this->info($lapsed > 0
+                ? "No authorisations approaching expiry. ({$lapsed} already lapsed and were reopened for payment.)"
+                : 'No authorisations approaching expiry.');
 
             return self::SUCCESS;
         }
@@ -56,6 +74,12 @@ class AlertExpiringAuthorizations extends Command
             }
 
             Notification::send($staff, new PaymentExpiringNotification($order, $hoursLeft));
+            // 🔑 And to a PHONE. The bell needs someone already looking at the panel
+            // and email needs someone reading it; this is the one staff alert where
+            // not seeing it in time loses the sale, so it gets the channel people
+            // actually notice. Queued and best-effort — a Meta outage must never
+            // stop the bell alert or the stamp below.
+            $this->whatsapp->notifyAdminsPaymentExpiring($order, $hoursLeft);
             $order->forceFill(['payment_expiry_alerted_at' => now()])->save();
         }
 
@@ -64,5 +88,40 @@ class AlertExpiringAuthorizations extends Command
             : 'Alerted staff about '.$orders->count().' order(s).');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Ask Tamara about holds that are past their window and record the ones that
+     * have actually lapsed.
+     *
+     * ⚠️ Only orders PAST the full window are checked, not merely approaching one:
+     * that keeps this to a handful of API calls an hour, and a hold inside its
+     * window has nothing to reconcile. Our own 48h figure is an assumption
+     * (TAMARA_AUTHORIZATION_HOURS), so it is used to decide who to ASK — Tamara's
+     * answer, never our clock, is what marks an order dead.
+     */
+    private function reconcileLapsed(): int
+    {
+        $past = ExpiringAuthorizations::query()
+            ->get()
+            ->filter(fn (Order $o) => ExpiringAuthorizations::authorizedAt($o)
+                ->lte(now()->subHours(ExpiringAuthorizations::authorizationHours())));
+
+        $count = 0;
+        foreach ($past as $order) {
+            if ($this->option('dry-run')) {
+                $this->line("would check {$order->order_number} with Tamara");
+
+                continue;
+            }
+
+            $status = $this->tamara->reconcileLapsed($order);
+            if ($status !== null) {
+                $this->error("{$order->order_number} — hold {$status}, reopened for payment");
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }

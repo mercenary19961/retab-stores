@@ -334,6 +334,56 @@ class CheckoutController
      * Delegates to the model so this page, the account order list and the pay
      * route can never disagree about it.
      */
+    /**
+     * Resume payment from a signed link (WhatsApp), with no session required.
+     *
+     * 🔑 Why a signed URL rather than the normal pay route: the storefront gates
+     * /orders/{n} on session state, so a guest who checked out days ago — or any
+     * customer opening the link on their phone instead of the browser they ordered
+     * in — would 403. The signature is the authorisation, which is the whole point:
+     * it is unguessable, time-limited, and carries no login.
+     *
+     * ⚠️ Deliberately does NOT call assertOwns(): requiring the session as well
+     * would defeat the reason the link exists. `canPay` still applies, so a link to
+     * an order that has since been paid or cancelled cannot restart anything.
+     *
+     * The residual exposure is that whoever holds the link can reach the gateway
+     * page for that order and see its total. Weighed against a paying customer
+     * locked out of an order they still want, that is the right trade — and it is
+     * the same call already made for the gateway-return route.
+     */
+    public function resume(Request $request, Order $order)
+    {
+        if (! $this->canPay($order)) {
+            // Already settled or cancelled — say so rather than 403ing at someone
+            // who simply tapped an old message.
+            return redirect()->route('home')->with('success', __('messages.payment.already_settled'));
+        }
+
+        // Same reasoning as pay(): a dead session cannot be handed back, so drop it
+        // and let initiate() mint a fresh one.
+        if ($order->payment_status === PaymentStatus::Failed) {
+            $order->forceFill(['payment_url' => null, 'gateway_reference' => null])->save();
+        }
+
+        try {
+            $url = $order->payment_method === PaymentMethod::Card
+                ? app(PaymentService::class)->initiate($order)
+                : app(TamaraService::class)->initiate($order);
+        } catch (\Throwable $e) {
+            Log::error('Resume payment failed', ['order' => $order->order_number, 'error' => $e->getMessage()]);
+
+            return redirect()->route('home')->with('error', __('messages.payment.init_failed'));
+        }
+
+        // Remember it for the return trip, so the gateway lands them on their own
+        // confirmation page exactly as a normal checkout would.
+        $placed = $request->session()->get('placed_orders', []);
+        $request->session()->put('placed_orders', array_unique([...$placed, $order->order_number]));
+
+        return redirect()->away($url);
+    }
+
     private function canPay(Order $order): bool
     {
         return $order->isAwaitingGatewayPayment();

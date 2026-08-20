@@ -20,6 +20,7 @@ import {
     PackageSearch,
     PackageX,
     Phone,
+    Send,
     ShieldCheck,
     Signpost,
     Truck,
@@ -84,6 +85,7 @@ export interface OrderCan {
     cancel: boolean;
     /** Recall the SHIPMENT and return the order to confirmed. Moves no money. */
     cancelShipment: boolean;
+    sendPaymentLink: boolean;
 }
 
 function Row({ label, value, icon: Icon }: { label: string; value: ReactNode; icon?: LucideIcon }) {
@@ -127,7 +129,7 @@ export default function OrderDetailView({
     const [note, setNote] = useState('');
     const [picking, setPicking] = useState(false);
     const addr = order.shipping_address ?? {};
-    const hasActions = can.confirm || can.unavailable || can.ship || can.cancel || can.cancelShipment;
+    const hasActions = can.confirm || can.unavailable || can.ship || can.cancel || can.cancelShipment || can.sendPaymentLink;
 
     const ship = (deliveryOptionId: number | null) => {
         setPicking(false);
@@ -178,6 +180,17 @@ export default function OrderDetailView({
                                 onClick={() => onAction('cancel-shipment', {}, t('admin.orders.show.cancelShipmentMsg'))}
                             >
                                 {t('admin.orders.show.cancelShipment')}
+                            </Button>
+                        )}
+                        {/* The hold lapsed before anyone confirmed. Secondary, not
+                            danger: this recovers the sale rather than ending it. */}
+                        {can.sendPaymentLink && (
+                            <Button
+                                variant="secondary"
+                                icon={Send}
+                                onClick={() => onAction('payment-link', {}, t('admin.orders.show.paymentLinkMsg'))}
+                            >
+                                {t('admin.orders.show.paymentLink')}
                             </Button>
                         )}
                         {can.cancel && (

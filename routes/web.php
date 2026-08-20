@@ -108,6 +108,13 @@ Route::get('/orders/{order:order_number}', [CheckoutController::class, 'confirma
 Route::post('/orders/{order:order_number}/pay', [CheckoutController::class, 'pay'])
     ->middleware('throttle:10,1,order-pay')
     ->name('orders.pay');
+// Resume from a SIGNED link (WhatsApp), for a customer whose Tamara hold lapsed
+// before staff confirmed. GET because it is tapped from a message, and `signed`
+// rather than session-gated because the point is to reach a guest who no longer
+// has the session they ordered in. See CheckoutController::resume.
+Route::get('/orders/{order:order_number}/resume', [CheckoutController::class, 'resume'])
+    ->middleware(['signed', 'throttle:10,1,order-pay'])
+    ->name('orders.resume');
 // Customer cancels their own order (only before an admin confirms — the enum
 // owns that window). Own throttle bucket: a bare `throttle:N,1` rejoins the
 // shared per-visitor counter (the 2026-08-06 revenue bug).

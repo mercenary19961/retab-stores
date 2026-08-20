@@ -57,6 +57,9 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
         // `orders.cancel`, which kills the order and refunds it.
         Route::post('orders/{order:order_number}/cancel-shipment', [OrderController::class, 'cancelShipment'])->name('orders.cancel-shipment');
         Route::post('orders/{order:order_number}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+        // Re-open a lapsed gateway hold and WhatsApp the customer a signed link to
+        // finish paying — the recovery for an expired Tamara authorisation.
+        Route::post('orders/{order:order_number}/payment-link', [OrderController::class, 'sendPaymentLink'])->name('orders.payment-link');
     });
 
     // Products.
