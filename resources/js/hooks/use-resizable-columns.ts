@@ -30,7 +30,27 @@ export function useResizableColumns({ tableKey, columns, enabled = true }: { tab
         [columns.map((c) => c.key).join(',')],
     );
 
-    const [widths, setWidths] = useState<Widths>(() => ({ ...defaults, ...(saved ?? {}) }));
+    /**
+     * Saved widths are clamped to the column's current constraints on hydration.
+     *
+     * ⚠️ Without this, raising a `minWidth` has NO effect on anyone who already
+     * dragged that column narrower — their stored value was applied verbatim. That
+     * is not hypothetical: widening the orders/products status columns for the new
+     * status pills did nothing on an account with a stored 110, and the pill went
+     * on overflowing its cell. Only a saved value outside the constraints changes,
+     * so a deliberate resize is preserved.
+     */
+    const [widths, setWidths] = useState<Widths>(() => {
+        const merged = { ...defaults, ...(saved ?? {}) };
+
+        return Object.fromEntries(
+            Object.entries(merged).map(([key, w]) => {
+                const c = constraints[key];
+
+                return [key, c ? Math.min(c.max, Math.max(c.min, w)) : w];
+            }),
+        ) as Widths;
+    });
     const [resizing, setResizing] = useState<string | null>(null);
     const widthsRef = useRef(widths);
     useEffect(() => {

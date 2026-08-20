@@ -59,7 +59,7 @@ export default function ContentPageForm({ page }: { page: PageData | null }) {
 
             <form
                 onSubmit={submit}
-                className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+                className="max-w-3xl space-y-4 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
             >
                 {field(
                     'slug',

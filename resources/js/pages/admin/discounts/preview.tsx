@@ -1,9 +1,11 @@
 import Button from '@/components/admin/button';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, useForm } from '@inertiajs/react';
-import { BadgePercent, X } from 'lucide-react';
+import { BadgePercent, CircleCheck, CircleX, TriangleAlert, X } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 interface Matched {
@@ -43,25 +45,26 @@ export default function DiscountPreview({ token, diff }: { token: string; diff: 
             <Head title={t('admin.discounts.preview.title')} />
 
             <div className="mb-4 flex flex-wrap gap-3 text-sm">
-                <span className="rounded-full bg-green-100 px-3 py-1 text-green-800 dark:bg-green-950 dark:text-green-200">
+                <StatusPill tone="done" icon={CircleCheck} className="px-3 py-1 text-sm">
                     {t('admin.discounts.preview.matched', { n: diff.matched.length })}
-                </span>
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                </StatusPill>
+                {/* Unmatched rows are the ones a human has to look at before applying. */}
+                <StatusPill tone="attention" icon={TriangleAlert} className="px-3 py-1 text-sm">
                     {t('admin.discounts.preview.unmatched', { n: diff.unmatched.length })}
-                </span>
-                <span className="rounded-full bg-red-100 px-3 py-1 text-red-700 dark:bg-red-950 dark:text-red-300">
+                </StatusPill>
+                <StatusPill tone="stopped" icon={CircleX} className="px-3 py-1 text-sm">
                     {t('admin.discounts.preview.invalid', { n: diff.invalid.length })}
-                </span>
+                </StatusPill>
             </div>
 
             {diff.matched.length === 0 ? (
-                <p className="rounded-lg border border-neutral-200 bg-white p-6 text-center text-sm text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900">
+                <p className="rounded-xl border border-neutral-200 bg-white p-6 text-center text-sm text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900">
                     {t('admin.discounts.preview.none')}
                 </p>
             ) : (
-                <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+                <StickyScrollWrapper className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                     <table className="min-w-full text-sm">
-                        <thead className="border-b border-neutral-200 text-left text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
+                        <thead className={THEAD}>
                             <tr>
                                 <th className="px-4 py-2">{t('admin.discounts.preview.cols.product')}</th>
                                 <th className="px-4 py-2">{t('admin.discounts.preview.cols.sku')}</th>
@@ -93,7 +96,7 @@ export default function DiscountPreview({ token, diff }: { token: string; diff: 
                 </p>
             )}
 
-            <form onSubmit={apply} className="mt-6 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+            <form onSubmit={apply} className="mt-6 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                 <p className="mb-3 text-sm font-medium text-neutral-600 dark:text-neutral-300">{t('admin.discounts.preview.window')}</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block text-sm">

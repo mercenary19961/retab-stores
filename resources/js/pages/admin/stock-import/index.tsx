@@ -3,6 +3,7 @@ import ConfirmDialog from '@/components/admin/confirm-dialog';
 import ExportButtons from '@/components/admin/export-buttons';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { relativeTimeFromIso } from '@/lib/relative-time';
 import { Head, router, useForm } from '@inertiajs/react';
 import { AlertTriangle, Check, Download, History, Upload } from 'lucide-react';
@@ -78,7 +79,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
             </div>
 
             {/* Current-stock export (feeds the daily SMACC reconciliation) */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
                 <div className="text-sm">
                     <p className="flex items-center gap-2 font-semibold">
                         <Download className="text-brand-gold h-4 w-4" /> {t('admin.inventory.exportTitle')}
@@ -89,7 +90,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
-                <section className="rounded-lg border border-neutral-200 bg-white p-4 lg:col-span-1 dark:border-neutral-800 dark:bg-neutral-900">
+                <section className="rounded-xl border border-neutral-200 bg-white p-4 lg:col-span-1 dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="mb-2 flex items-center gap-2 font-bold">
                         <Upload className="text-brand-gold h-4 w-4" /> {t('admin.inventory.uploadTitle')}
                     </h2>
@@ -109,7 +110,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                     </form>
                 </section>
 
-                <section className="rounded-lg border border-neutral-200 bg-white p-4 lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
+                <section className="rounded-xl border border-neutral-200 bg-white p-4 lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="mb-3 flex items-center gap-2 font-bold">
                         <History className="text-brand-gold h-4 w-4" /> {t('admin.inventory.recentImports')}
                     </h2>
@@ -117,7 +118,7 @@ export default function StockImportIndex({ lastSynced, history }: { lastSynced: 
                         <p className="text-sm text-neutral-400">{t('admin.inventory.noImports')}</p>
                     ) : (
                         <table className="w-full text-sm">
-                            <thead className="bg-neutral-50 text-left text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
+                            <thead className={THEAD}>
                                 <tr>
                                     <th className="py-2 font-medium">{t('admin.inventory.when')}</th>
                                     <th className="py-2 font-medium">{t('admin.inventory.by')}</th>

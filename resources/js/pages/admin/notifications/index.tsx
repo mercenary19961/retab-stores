@@ -76,7 +76,7 @@ export default function NotificationsIndex({
                 </div>
             </div>
 
-            <div className="divide-y divide-neutral-100 overflow-hidden rounded-lg border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="divide-y divide-neutral-100 overflow-hidden rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900">
                 {entries.data.length === 0 && (
                     <p className="px-4 py-10 text-center text-sm text-neutral-400">{t('admin.notifications.history.empty')}</p>
                 )}

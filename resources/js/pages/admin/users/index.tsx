@@ -184,7 +184,7 @@ export default function UsersIndex({
         const blocked = roleBlockedReason(s);
 
         return (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-800 bg-neutral-900 px-5 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-900 px-5 py-4">
                 <div className="min-w-0">
                     <p className="text-xs text-neutral-500">{t('admin.users.role.label')}</p>
                     <p className="font-medium text-neutral-100">{t(`admin.users.roles.${s.role}`)}</p>
@@ -384,19 +384,19 @@ export default function UsersIndex({
                 {/* Detail panel */}
                 <div className="min-w-0 flex-1">
                     {!selected ? (
-                        <p className="rounded-lg border border-neutral-800 bg-neutral-900 p-8 text-center text-sm text-neutral-500">
+                        <p className="rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center text-sm text-neutral-500">
                             {t('admin.users.noEditors')}
                         </p>
                     ) : selected.role === 'admin' ? (
                         <div className="space-y-6">
-                            <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-8 text-center">
+                            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center">
                                 <ShieldCheck className="mx-auto mb-3 h-9 w-9 text-purple-400" />
                                 <p className="font-medium text-neutral-200">{selected.name}</p>
                                 <p className="mt-1 text-sm text-neutral-500">{t('admin.users.adminFullAccess')}</p>
                             </div>
                             {roleCard(selected)}
                             {isMe && (
-                                <div className="rounded-lg border border-neutral-800 bg-neutral-900">
+                                <div className="rounded-xl border border-neutral-800 bg-neutral-900">
                                     <ChangePasswordForm />
                                 </div>
                             )}
@@ -404,7 +404,7 @@ export default function UsersIndex({
                     ) : (
                         <div className="space-y-6">
                             {roleCard(selected)}
-                            <div className="rounded-lg border border-neutral-800 bg-neutral-900">
+                            <div className="rounded-xl border border-neutral-800 bg-neutral-900">
                                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 px-5 py-3">
                                     <div className="min-w-0">
                                         <h2 className="truncate font-semibold text-neutral-100">{selected.name}</h2>
@@ -460,7 +460,7 @@ export default function UsersIndex({
                                 </div>
                             </div>
                             {isMe && (
-                                <div className="rounded-lg border border-neutral-800 bg-neutral-900">
+                                <div className="rounded-xl border border-neutral-800 bg-neutral-900">
                                     <ChangePasswordForm />
                                 </div>
                             )}

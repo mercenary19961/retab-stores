@@ -96,7 +96,7 @@ export default function ReturnDetailView({
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="space-y-6 lg:col-span-2">
-                    <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                         <h2 className="mb-3 flex items-center gap-2 font-bold">
                             <RotateCcw className="text-brand-gold h-4 w-4" /> {t('admin.returns.show.headTitle', { id: orderReturn.id })}
                         </h2>
@@ -135,7 +135,7 @@ export default function ReturnDetailView({
                     </section>
 
                     {(orderReturn.status === 'requested' || orderReturn.status === 'approved') && (
-                        <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                        <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                             <h2 className="mb-3 flex items-center gap-2 font-bold">
                                 <Gavel className="text-brand-gold h-4 w-4" /> {t('admin.returns.show.resolve')}
                             </h2>
@@ -195,7 +195,7 @@ export default function ReturnDetailView({
                     )}
                 </div>
 
-                <div className="h-fit space-y-4 rounded-lg border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
+                <div className="h-fit space-y-4 rounded-xl border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="flex items-center gap-2 font-bold">
                         <ShoppingBag className="text-brand-gold h-4 w-4" /> {t('admin.common.order')}
                     </h2>

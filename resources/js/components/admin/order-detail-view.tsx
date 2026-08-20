@@ -3,6 +3,7 @@ import ShippingPicker from '@/components/admin/shipping-picker';
 import StatusBadge from '@/components/admin/status-badge';
 import CopyText from '@/components/copy-text';
 import { useAdminT } from '@/i18n/use-admin-t';
+import { THEAD } from '@/lib/admin-ui';
 import {
     Ban,
     Building2,
@@ -151,7 +152,7 @@ export default function OrderDetailView({
             </div>
 
             {hasActions && (
-                <div className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                <div className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                     <div className="flex flex-wrap items-center gap-3">
                         {can.confirm && (
                             <Button
@@ -229,11 +230,11 @@ export default function OrderDetailView({
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="space-y-6 lg:col-span-2">
-                    <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={Package}>{t('admin.orders.show.items')}</SectionHeader>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-neutral-50 text-left text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
+                                <thead className={THEAD}>
                                     <tr>
                                         <th className="py-1 font-medium">{t('admin.common.product')}</th>
                                         <th className="py-1 font-medium">{t('admin.common.sku')}</th>
@@ -282,7 +283,7 @@ export default function OrderDetailView({
                         </div>
                     </section>
 
-                    <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={History}>{t('admin.orders.show.activity')}</SectionHeader>
                         {order.activities.length === 0 ? (
                             <p className="text-sm text-neutral-400">{t('admin.orders.show.noActivity')}</p>
@@ -328,14 +329,14 @@ export default function OrderDetailView({
                 </div>
 
                 <div className="space-y-6">
-                    <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={User}>{t('admin.common.customer')}</SectionHeader>
                         <Row icon={User} label={t('admin.common.name')} value={order.customer_name ?? '—'} />
                         <Row icon={Phone} label={t('admin.common.phone')} value={order.customer_phone ?? '—'} />
                         <Row icon={Mail} label={t('admin.common.email')} value={order.customer_email ?? '—'} />
                     </section>
 
-                    <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={Truck}>{t('admin.common.shipping')}</SectionHeader>
                         <Row icon={Globe} label={t('admin.common.country')} value={addr.country ?? '—'} />
                         <Row icon={Building2} label={t('admin.common.city')} value={addr.city ?? '—'} />
@@ -370,7 +371,7 @@ export default function OrderDetailView({
                         )}
                     </section>
 
-                    <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={CreditCard}>{t('admin.common.payment')}</SectionHeader>
                         <Row
                             icon={CreditCard}
@@ -385,7 +386,7 @@ export default function OrderDetailView({
                     </section>
 
                     {(order.confirmed_by || order.confirmed_at || order.delivered_at || order.admin_notes) && (
-                        <section className="rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                        <section className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                             <SectionHeader icon={ShieldCheck}>{t('admin.orders.show.admin')}</SectionHeader>
                             {order.confirmed_by && <Row icon={UserCheck} label={t('admin.orders.show.confirmedBy')} value={order.confirmed_by} />}
                             {order.confirmed_at && <Row icon={CalendarCheck} label={t('admin.orders.show.confirmedAt')} value={order.confirmed_at} />}

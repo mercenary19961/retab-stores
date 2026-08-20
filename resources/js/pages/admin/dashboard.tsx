@@ -1,6 +1,8 @@
 import StatusBadge from '@/components/admin/status-badge';
+import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { relativeTimeFromMinutes } from '@/lib/relative-time';
 import { Head, Link } from '@inertiajs/react';
 import {
@@ -378,11 +380,9 @@ export default function AdminDashboard({
                                     >
                                         {loc(p.name_ar, p.name_en)}
                                     </Link>
-                                    <span
-                                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${p.stock <= 0 ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300'}`}
-                                    >
+                                    <StatusPill tone={p.stock <= 0 ? 'stopped' : 'attention'} className="shrink-0">
                                         {t('admin.dashboard.inventory.units', { count: p.stock })}
-                                    </span>
+                                    </StatusPill>
                                 </li>
                             ))}
                         </ul>
@@ -495,7 +495,7 @@ export default function AdminDashboard({
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-neutral-50 text-start text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
+                                <thead className={THEAD}>
                                     <tr className="border-b border-neutral-800">
                                         <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.order')}</th>
                                         <th className="px-5 py-3 text-start font-medium">{t('admin.common.customer')}</th>

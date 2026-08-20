@@ -1,9 +1,11 @@
 import Button from '@/components/admin/button';
 import ConfirmDialog from '@/components/admin/confirm-dialog';
+import Pagination from '@/components/admin/pagination';
 import StatusBadge from '@/components/admin/status-badge';
 import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, Link, router } from '@inertiajs/react';
 import { Check, ExternalLink, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -59,12 +61,12 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
         <AdminLayout title={t('admin.changeLog.title')}>
             <Head title={t('admin.changeLog.title')} />
 
-            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 {logs.data.length === 0 ? (
                     <p className="p-6 text-sm text-neutral-400">{t('admin.changeLog.empty')}</p>
                 ) : (
                     <table className="w-full text-sm">
-                        <thead className="bg-neutral-50 text-left text-xs tracking-wide text-neutral-600 uppercase dark:bg-neutral-800/50 dark:text-neutral-300">
+                        <thead className={THEAD}>
                             <tr className="border-b border-neutral-100 dark:border-neutral-800">
                                 <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.when')}</th>
                                 <th className="px-4 py-3 font-medium">{t('admin.changeLog.cols.section')}</th>
@@ -154,20 +156,8 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                 )}
             </div>
 
-            {logs.total > logs.data.length && (
-                <div className="mt-4 flex flex-wrap gap-1">
-                    {logs.links.map((link, i) => (
-                        <button
-                            key={i}
-                            type="button"
-                            disabled={!link.url}
-                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
-                            className={`rounded px-3 py-1 text-sm ${link.active ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-600 disabled:opacity-40 dark:text-neutral-300'}`}
-                            dangerouslySetInnerHTML={{ __html: link.label }}
-                        />
-                    ))}
-                </div>
-            )}
+            {/* Was a byte-for-byte copy of the shared pager's markup. */}
+            <Pagination paginator={logs} />
 
             <ConfirmDialog
                 open={!!confirmRow}

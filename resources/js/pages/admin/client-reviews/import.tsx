@@ -30,7 +30,7 @@ export default function ClientReviewsImport() {
 
             <form
                 onSubmit={submit}
-                className="max-w-3xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+                className="max-w-3xl space-y-4 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
             >
                 <div className="rounded-md bg-neutral-50 p-4 text-sm text-neutral-600 dark:bg-neutral-950 dark:text-neutral-300">
                     <p className="font-semibold">{t('admin.reviews.import.formatIntro')}</p>

@@ -62,7 +62,7 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
 
             <form
                 onSubmit={submit}
-                className="max-w-2xl space-y-4 rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+                className="max-w-2xl space-y-4 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
             >
                 {field(
                     t('admin.reviews.form.authorName'),

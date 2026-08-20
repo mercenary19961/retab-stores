@@ -15,6 +15,7 @@ import StatusPill from '@/components/status-pill';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, router } from '@inertiajs/react';
 import {
     AlignLeft,
@@ -41,8 +42,10 @@ const COLUMNS: ColumnDef[] = [
     { key: 'category', defaultWidth: 150, minWidth: 90 },
     { key: 'price', defaultWidth: 110, minWidth: 70 },
     { key: 'stock', defaultWidth: 90, minWidth: 60 },
-    // Holds the visibility toggle plus up to three completeness pills.
-    { key: 'status', defaultWidth: 160, minWidth: 120 },
+    // Holds the visibility toggle plus up to three completeness pills. minWidth is
+    // the widest of those ("No description", 118px) plus the cell's 32px padding,
+    // so the column can never be narrowed to where a pill would be clipped.
+    { key: 'status', defaultWidth: 165, minWidth: 150 },
     { key: 'actions', defaultWidth: 170, minWidth: 130 },
 ];
 
@@ -317,12 +320,9 @@ export default function ProductsIndex({
                         placeholder={t('admin.products.searchPlaceholder')}
                         className="min-w-0 flex-1 rounded border border-neutral-300 px-3 py-1.5 text-sm sm:w-56 sm:flex-none dark:border-neutral-700 dark:bg-neutral-800"
                     />
-                    <button
-                        type="submit"
-                        className="shrink-0 rounded bg-neutral-900 px-3 py-1.5 text-sm text-white dark:bg-white dark:text-neutral-900"
-                    >
+                    <Button type="submit" size="sm" variant="primary" className="shrink-0">
                         {t('admin.common.search')}
-                    </button>
+                    </Button>
                 </form>
 
                 <Select
@@ -411,7 +411,7 @@ export default function ProductsIndex({
                             aria-pressed={view === 'table'}
                             aria-label={t('admin.products.viewTable')}
                             title={t('admin.products.viewTable')}
-                            className={`rounded-md p-1.5 transition-colors ${view === 'table' ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}
+                            className={`rounded-md p-1.5 transition-colors ${view === 'table' ? 'bg-brand-teal text-white' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}
                         >
                             <Table className="h-4 w-4" />
                         </button>
@@ -421,7 +421,7 @@ export default function ProductsIndex({
                             aria-pressed={view === 'cards'}
                             aria-label={t('admin.products.viewCards')}
                             title={t('admin.products.viewCards')}
-                            className={`rounded-md p-1.5 transition-colors ${view === 'cards' ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}
+                            className={`rounded-md p-1.5 transition-colors ${view === 'cards' ? 'bg-brand-teal text-white' : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'}`}
                         >
                             <LayoutGrid className="h-4 w-4" />
                         </button>
@@ -432,9 +432,9 @@ export default function ProductsIndex({
             </div>
 
             {view === 'table' ? (
-                <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+                <StickyScrollWrapper className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                     <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
-                        <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
+                        <thead className={THEAD}>
                             <tr>
                                 <ResizableTh
                                     colKey="product"
@@ -571,7 +571,9 @@ export default function ProductsIndex({
                                     <td className="px-4 py-3">
                                         <span className={p.is_low_stock ? 'font-semibold text-red-600 dark:text-red-400' : ''}>{p.stock}</span>
                                     </td>
-                                    <td className="px-4 py-3">
+                                    {/* overflow-hidden so a pill clips inside its own cell rather
+                                        than painting across the neighbouring column. */}
+                                    <td className="overflow-hidden px-4 py-3">
                                         <div className="flex flex-col items-start gap-1">{statusBadges(p)}</div>
                                     </td>
                                     <td className="px-4 py-3">
@@ -583,7 +585,7 @@ export default function ProductsIndex({
                     </table>
                 </StickyScrollWrapper>
             ) : products.data.length === 0 ? (
-                <div className="rounded-lg border border-neutral-200 bg-white px-4 py-10 text-center text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900">
+                <div className="rounded-xl border border-neutral-200 bg-white px-4 py-10 text-center text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900">
                     {t('admin.products.empty')}
                 </div>
             ) : (
@@ -591,7 +593,7 @@ export default function ProductsIndex({
                     {products.data.map((p) => (
                         <div
                             key={p.id}
-                            className="flex flex-col rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+                            className="flex flex-col rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
                         >
                             <div className="flex items-start gap-3">
                                 {thumb(p, 'h-16 w-16', 'text-xl')}

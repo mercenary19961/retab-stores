@@ -1,5 +1,6 @@
 import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
+import FilterChips from '@/components/admin/filter-chips';
 import Modal from '@/components/admin/modal';
 import Pagination from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
@@ -8,6 +9,7 @@ import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     Calendar,
@@ -195,7 +197,7 @@ function CustomerDetail({ id }: { id: number }) {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="border-b border-neutral-200 text-left text-neutral-500 dark:border-neutral-800">
+                            <thead className={THEAD}>
                                 <tr>
                                     <th className="py-2 font-medium">{t('admin.common.order')}</th>
                                     <th className="py-2 font-medium">{t('admin.common.status')}</th>
@@ -285,30 +287,21 @@ export default function CustomersIndex({ customers, filters }: { customers: Pagi
                         placeholder={t('admin.customers.searchPlaceholder')}
                         className="min-w-0 flex-1 rounded border border-neutral-300 px-3 py-1.5 text-sm sm:w-64 sm:flex-none dark:border-neutral-700 dark:bg-neutral-950"
                     />
-                    <button
-                        type="submit"
-                        className="shrink-0 rounded bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white dark:bg-white dark:text-neutral-900"
-                    >
+                    <Button type="submit" size="sm" variant="primary" className="shrink-0">
                         {t('admin.common.search')}
-                    </button>
+                    </Button>
                 </form>
 
-                <div className="flex flex-wrap gap-2">
-                    {[
-                        { key: 'all', value: undefined },
-                        { key: 'optedIn', value: '1' },
-                        { key: 'notOptedIn', value: '0' },
-                    ].map((f) => (
-                        <button
-                            key={f.key}
-                            type="button"
-                            onClick={() => apply({ opt_in: f.value })}
-                            className={`rounded-full px-3 py-1 text-sm ${(filters.opt_in ?? undefined) === f.value ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'}`}
-                        >
-                            {t(`admin.customers.filters.${f.key}`)}
-                        </button>
-                    ))}
-                </div>
+                <FilterChips
+                    value={filters.opt_in ?? null}
+                    // The chip API speaks null for "all"; the query wants the key absent.
+                    onChange={(v) => apply({ opt_in: v ?? undefined })}
+                    options={[
+                        { value: null, label: t('admin.customers.filters.all') },
+                        { value: '1', label: t('admin.customers.filters.optedIn') },
+                        { value: '0', label: t('admin.customers.filters.notOptedIn') },
+                    ]}
+                />
             </div>
 
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -327,9 +320,9 @@ export default function CustomersIndex({ customers, filters }: { customers: Pagi
                 <ExportButtons base="/admin/customers/export" params={exportParams} />
             </div>
 
-            <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <StickyScrollWrapper className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
-                    <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
+                    <thead className={THEAD}>
                         <tr>
                             <ResizableTh
                                 colKey="customer"

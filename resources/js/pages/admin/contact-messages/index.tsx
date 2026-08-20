@@ -6,6 +6,7 @@ import CopyText from '@/components/copy-text';
 import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, router } from '@inertiajs/react';
 import { Check, ChevronDown, Mail, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -77,9 +78,9 @@ export default function ContactMessagesIndex({
                 />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full text-sm">
-                    <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
+                    <thead className={THEAD}>
                         <tr>
                             <th className="px-4 py-3 font-medium">{t('admin.contactMessages.cols.sender')}</th>
                             <th className="px-4 py-3 font-medium">{t('admin.contactMessages.cols.type')}</th>

@@ -1,5 +1,6 @@
 import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
+import FilterChips from '@/components/admin/filter-chips';
 import Modal from '@/components/admin/modal';
 import OrderDetailView, { type OrderCan, type OrderDetailData } from '@/components/admin/order-detail-view';
 import Pagination from '@/components/admin/pagination';
@@ -9,6 +10,7 @@ import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, router } from '@inertiajs/react';
 import { Columns3, Eye, MoveHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -138,26 +140,15 @@ export default function OrdersIndex({
         <AdminLayout title={t('admin.orders.title')}>
             <Head title={t('admin.orders.title')} />
 
-            <div className="mb-4 flex flex-wrap gap-2">
-                <button
-                    type="button"
-                    onClick={() => filterBy(null)}
-                    className={`rounded-full px-3 py-1 text-sm ${!filters.status ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'}`}
-                >
-                    {t('admin.common.all')}
-                </button>
-                {statuses.map((s) => (
-                    <button
-                        key={s}
-                        type="button"
-                        onClick={() => filterBy(s)}
-                        className={`rounded-full px-3 py-1 text-sm ${filters.status === s ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'}`}
-                    >
-                        {t(`status.${s}`)}
-                        {counts[s] ? ` (${counts[s]})` : ''}
-                    </button>
-                ))}
-            </div>
+            <FilterChips
+                className="mb-4"
+                value={filters.status}
+                onChange={filterBy}
+                options={[
+                    { value: null, label: t('admin.common.all') },
+                    ...statuses.map((s) => ({ value: s, label: t(`status.${s}`), count: counts[s] })),
+                ]}
+            />
 
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
@@ -175,9 +166,9 @@ export default function OrdersIndex({
                 <ExportButtons base="/admin/orders/export" params={exportParams} />
             </div>
 
-            <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <StickyScrollWrapper className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
-                    <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
+                    <thead className={THEAD}>
                         <tr>
                             <ResizableTh
                                 colKey="order"

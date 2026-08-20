@@ -121,7 +121,7 @@ export default function ProductReviewsIndex({
             { preserveState: true, preserveScroll: true },
         );
 
-    const card = 'rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900';
+    const card = 'rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900';
 
     return (
         <AdminLayout title={t('admin.productReviews.title')}>

@@ -10,6 +10,7 @@ import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Columns3, MoveHorizontal, Pencil, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -296,9 +297,9 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                 </Button>
             </div>
 
-            <StickyScrollWrapper className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <StickyScrollWrapper className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                 <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
-                    <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
+                    <thead className={THEAD}>
                         <tr>
                             <ResizableTh
                                 colKey="code"

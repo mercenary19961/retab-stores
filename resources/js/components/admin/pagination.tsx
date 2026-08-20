@@ -55,7 +55,7 @@ export default function Pagination<T>({
                             type="button"
                             disabled={!link.url}
                             onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true, only })}
-                            className={`rounded px-3 py-1 text-sm ${link.active ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'text-neutral-600 disabled:opacity-40 dark:text-neutral-300'}`}
+                            className={`rounded px-3 py-1 text-sm ${link.active ? 'bg-brand-teal font-medium text-white' : 'text-neutral-600 disabled:opacity-40 dark:text-neutral-300'}`}
                             dangerouslySetInnerHTML={{ __html: link.label }}
                         />
                     ))}

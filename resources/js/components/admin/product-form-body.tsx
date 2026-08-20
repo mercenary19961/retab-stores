@@ -40,7 +40,7 @@ export interface Product {
 }
 
 const INPUT = 'mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800';
-const CARD = 'space-y-4 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900';
+const CARD = 'space-y-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900';
 
 /**
  * The product create/edit form body (details, pricing, visibility, images),
@@ -212,7 +212,7 @@ export default function ProductFormBody({
                     </div>
                 </section>
 
-                <section className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                <section className="space-y-3 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="flex items-center gap-2 font-bold">
                         <Eye className="text-brand-gold h-4 w-4" /> {t('admin.products.form.visibility')}
                     </h2>

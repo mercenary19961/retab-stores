@@ -187,7 +187,7 @@ export default function MarketingIndex({
 
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Templates registry */}
-                <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="mb-1 flex items-center gap-2 font-bold">
                         <FileText className="text-brand-gold h-4 w-4" /> {tr('admin.marketing.templates')}
                     </h2>
@@ -341,7 +341,7 @@ export default function MarketingIndex({
 
                 {/* Campaign composer + history */}
                 <div className="space-y-6">
-                    <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                         <h2 className="mb-1 flex items-center gap-2 font-bold">
                             <Megaphone className="text-brand-gold h-4 w-4" /> {tr('admin.marketing.sendCampaign')}
                         </h2>
@@ -428,7 +428,7 @@ export default function MarketingIndex({
                         </form>
                     </section>
 
-                    <section className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                         <h2 className="mb-3 flex items-center gap-2 font-bold">
                             <History className="text-brand-gold h-4 w-4" /> {tr('admin.marketing.campaignHistory')}
                         </h2>

@@ -6,6 +6,7 @@ import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, router, useForm } from '@inertiajs/react';
 import { BadgePercent, CalendarClock, CirclePause, Gift, Percent, RotateCcw, Trash2, Truck, Upload, Zap } from 'lucide-react';
 import { type FormEvent } from 'react';
@@ -51,7 +52,7 @@ interface ReviewRewardState {
 
 const INPUT =
     'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
-const CARD = 'rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900';
+const CARD = 'rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900';
 // Boxes, not pills — but they take their colour from the same vocabulary as the
 // pills three lines below them, so the page cannot say "live" in two hues.
 const SUMMARY_TINT: Record<'active' | 'scheduled', string> = {
@@ -158,34 +159,34 @@ export default function DiscountsIndex({
             ) : (
                 <StickyScrollWrapper className="max-h-[26rem] overflow-y-auto">
                     <table className="min-w-full text-sm">
-                        <thead className="border-b border-neutral-200 text-left text-neutral-600 dark:border-neutral-800 dark:text-neutral-300">
+                        <thead className={THEAD}>
                             <tr>
-                                <th className="px-3 py-2">{t('admin.discounts.current.cols.product')}</th>
-                                <th className="px-3 py-2">{t('admin.discounts.current.cols.price')}</th>
-                                <th className="px-3 py-2">{t('admin.discounts.current.cols.window')}</th>
-                                <th className="px-3 py-2">{t('admin.discounts.current.cols.status')}</th>
-                                <th className="px-3 py-2 text-end">{t('admin.common.actions')}</th>
+                                <th className="px-2 py-2">{t('admin.discounts.current.cols.product')}</th>
+                                <th className="px-2 py-2">{t('admin.discounts.current.cols.price')}</th>
+                                <th className="px-2 py-2">{t('admin.discounts.current.cols.window')}</th>
+                                <th className="px-2 py-2">{t('admin.discounts.current.cols.status')}</th>
+                                <th className="px-2 py-2 text-end">{t('admin.common.actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {discounted.map((p) => (
                                 <tr key={p.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
-                                    <td className="px-3 py-2">
+                                    <td className="px-2 py-2">
                                         <span dir="auto" className="font-medium text-neutral-800 dark:text-neutral-100">
                                             {loc(p.name_ar, p.name_en)}
                                         </span>
                                         <span className="ms-2 font-mono text-xs text-neutral-400">{p.sku}</span>
                                     </td>
-                                    <td className="px-3 py-2 whitespace-nowrap">
+                                    <td className="px-2 py-2 whitespace-nowrap">
                                         <span className="text-neutral-400 line-through">{money(p.price)}</span>{' '}
                                         <span className="font-medium text-neutral-800 dark:text-neutral-100">{money(p.sale_price)}</span>{' '}
                                         <span className="text-xs text-green-600 dark:text-green-400">-{p.percent}%</span>
                                     </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-neutral-500">{windowLabel(p.starts_at, p.ends_at)}</td>
-                                    <td className="px-3 py-2">
+                                    <td className="px-2 py-2 whitespace-nowrap text-neutral-500">{windowLabel(p.starts_at, p.ends_at)}</td>
+                                    <td className="px-2 py-2">
                                         <StatusBadge domain="discount" value={p.status} />
                                     </td>
-                                    <td className="px-3 py-2 text-end">
+                                    <td className="px-2 py-2 text-end">
                                         <Button size="sm" variant="ghost" icon={Trash2} onClick={() => clearOne(p.id)}>
                                             {t('admin.discounts.current.clear')}
                                         </Button>
@@ -473,7 +474,7 @@ export default function DiscountsIndex({
 
             {/* Summary strip */}
             <div className="mb-6 flex flex-wrap gap-3 text-sm">
-                <span className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
+                <span className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
                     {t('admin.discounts.summary.discounted', { active: activeNow, total: discounted.length })}
                 </span>
                 <span

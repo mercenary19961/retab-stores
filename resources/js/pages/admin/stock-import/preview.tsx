@@ -1,6 +1,7 @@
 import Button from '@/components/admin/button';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, router } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
@@ -33,7 +34,7 @@ interface Diff {
 
 function Stat({ label, value, tone }: { label: string; value: number; tone?: string }) {
     return (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="rounded-xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
             <div className={`text-2xl font-bold ${tone ?? ''}`}>{value}</div>
             <div className="text-xs text-neutral-500">{label}</div>
         </div>
@@ -79,10 +80,10 @@ export default function StockImportPreview({ token, diff }: { token: string; dif
             </div>
 
             {diff.matched.length > 0 && (
-                <section className="mb-6 overflow-hidden rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+                <section className="mb-6 overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="border-b border-neutral-200 px-4 py-2 font-bold dark:border-neutral-800">{t('admin.inventory.stockChanges')}</h2>
                     <table className="w-full text-sm">
-                        <thead className="bg-neutral-50 text-left text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
+                        <thead className={THEAD}>
                             <tr>
                                 <th className="px-4 py-2 font-medium">{t('admin.common.product')}</th>
                                 <th className="px-4 py-2 font-medium">{t('admin.common.sku')}</th>
@@ -119,7 +120,7 @@ export default function StockImportPreview({ token, diff }: { token: string; dif
                         {t('admin.inventory.unmatchedTitle')}
                     </h2>
                     <table className="w-full text-sm">
-                        <thead className="text-left text-amber-700 dark:text-amber-300">
+                        <thead className="text-start text-amber-700 dark:text-amber-300">
                             <tr>
                                 <th className="px-4 py-2 font-medium">{t('admin.inventory.line')}</th>
                                 <th className="px-4 py-2 font-medium">{t('admin.inventory.smaccSku')}</th>

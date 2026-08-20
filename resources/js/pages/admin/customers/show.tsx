@@ -1,6 +1,7 @@
 import StatusBadge from '@/components/admin/status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { THEAD } from '@/lib/admin-ui';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Calendar, Gift, Languages, Mail, MapPin, MessageCircle, Phone, ShoppingBag, User, type LucideIcon } from 'lucide-react';
 
@@ -61,7 +62,7 @@ export default function CustomerShow({ customer, loyalty, orders }: { customer: 
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="space-y-6 lg:col-span-1">
-                    <section className="rounded-lg border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
                         <h2 className="mb-3 flex items-center gap-2 font-bold" dir="auto">
                             <User className="text-brand-gold h-4 w-4 shrink-0" /> {customer.name ?? '—'}
                         </h2>
@@ -88,7 +89,7 @@ export default function CustomerShow({ customer, loyalty, orders }: { customer: 
                         </dl>
                     </section>
 
-                    <section className="rounded-lg border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
+                    <section className="rounded-xl border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
                         <h2 className="mb-1 flex items-center gap-2 font-bold">
                             <Gift className="text-brand-gold h-4 w-4" /> {t('admin.customers.show.loyalty')}
                         </h2>
@@ -124,7 +125,7 @@ export default function CustomerShow({ customer, loyalty, orders }: { customer: 
                     </section>
                 </div>
 
-                <section className="rounded-lg border border-neutral-200 bg-white p-5 lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
+                <section className="rounded-xl border border-neutral-200 bg-white p-5 lg:col-span-2 dark:border-neutral-800 dark:bg-neutral-900">
                     <h2 className="mb-3 flex items-center gap-2 font-bold">
                         <ShoppingBag className="text-brand-gold h-4 w-4" /> {t('admin.customers.show.orders')}
                     </h2>
@@ -132,7 +133,7 @@ export default function CustomerShow({ customer, loyalty, orders }: { customer: 
                         <p className="text-sm text-neutral-400">{t('admin.orders.empty')}</p>
                     ) : (
                         <table className="w-full text-sm">
-                            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-neutral-600 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300">
+                            <thead className={THEAD}>
                                 <tr>
                                     <th className="py-2 font-medium">{t('admin.common.order')}</th>
                                     <th className="py-2 font-medium">{t('admin.common.status')}</th>
