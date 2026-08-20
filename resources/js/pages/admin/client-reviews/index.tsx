@@ -10,7 +10,7 @@ import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-colum
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Columns3, MoveHorizontal, Pencil, Plus, Upload } from 'lucide-react';
+import { Columns3, Eye, EyeOff, MoveHorizontal, Pencil, Plus, Upload } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 const COLUMNS: ColumnDef[] = [
@@ -255,9 +255,13 @@ export default function ClientReviewsIndex({
                                 <td className="truncate px-4 py-3 align-top text-neutral-500">{r.source ?? '—'}</td>
                                 <td className="px-4 py-3 align-top">
                                     {r.is_active ? (
-                                        <StatusPill tone="green">{t('admin.reviews.activeBadge')}</StatusPill>
+                                        <StatusPill tone="active" icon={Eye}>
+                                            {t('admin.reviews.activeBadge')}
+                                        </StatusPill>
                                     ) : (
-                                        <StatusPill tone="neutral">{t('admin.reviews.hiddenBadge')}</StatusPill>
+                                        <StatusPill tone="idle" icon={EyeOff}>
+                                            {t('admin.reviews.hiddenBadge')}
+                                        </StatusPill>
                                     )}
                                 </td>
                                 <td className="truncate px-4 py-3 align-top text-neutral-500">{r.updated_at ?? '—'}</td>

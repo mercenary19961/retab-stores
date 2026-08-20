@@ -5,7 +5,7 @@ import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, useForm } from '@inertiajs/react';
-import { FileText } from 'lucide-react';
+import { Eye, FilePenLine, FileText } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 
 interface PageItem {
@@ -67,7 +67,7 @@ function PageEditor({ page }: { page: PageItem }) {
                             : t('admin.contentPages.updatedAt', { at: page.updated_at ?? '' })}
                     </p>
                 </div>
-                <StatusPill tone={page.is_published ? 'green' : 'amber'} className="shrink-0">
+                <StatusPill tone={page.is_published ? 'active' : 'idle'} icon={page.is_published ? Eye : FilePenLine} className="shrink-0">
                     {page.is_published ? t('admin.contentPages.publishedBadge') : t('admin.contentPages.draftBadge')}
                 </StatusPill>
             </div>

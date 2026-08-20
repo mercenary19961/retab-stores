@@ -3,10 +3,9 @@ import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
 import OrderDetailView, { type OrderCan, type OrderDetailData } from '@/components/admin/order-detail-view';
 import Pagination from '@/components/admin/pagination';
-import PaymentStatusBadge from '@/components/admin/payment-status-badge';
 import ResizableTh from '@/components/admin/resizable-th';
+import StatusBadge from '@/components/admin/status-badge';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
-import OrderStatusBadge from '@/components/order-status-badge';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -15,10 +14,14 @@ import { Columns3, Eye, MoveHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const COLUMNS: ColumnDef[] = [
-    { key: 'order', defaultWidth: 170, minWidth: 120 },
+    { key: 'order', defaultWidth: 160, minWidth: 120 },
     { key: 'customer', defaultWidth: 180, minWidth: 110 },
-    { key: 'status', defaultWidth: 140, minWidth: 100 },
-    { key: 'payment', defaultWidth: 190, minWidth: 120 },
+    // Sized from the widest rendered pill (161px for "Awaiting confirmation") plus
+    // the cell's own 32px of padding. The old 140 was already too narrow — the pill
+    // is whitespace-nowrap, so it simply painted over the Payment column. The 10px
+    // taken back off `order` keeps the whole table inside a 1440 viewport.
+    { key: 'status', defaultWidth: 195, minWidth: 170 },
+    { key: 'payment', defaultWidth: 215, minWidth: 170 },
     { key: 'total', defaultWidth: 110, minWidth: 80 },
     { key: 'placed', defaultWidth: 170, minWidth: 120 },
     { key: 'actions', defaultWidth: 120, minWidth: 90 },
@@ -278,15 +281,15 @@ export default function OrdersIndex({
                                 <td className="truncate px-4 py-3" dir="auto">
                                     {order.customer_name ?? '—'}
                                 </td>
-                                <td className="px-4 py-3">
-                                    <OrderStatusBadge status={order.status} />
+                                <td className="overflow-hidden px-4 py-3">
+                                    <StatusBadge domain="order" value={order.status} />
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className="overflow-hidden px-4 py-3">
                                     <div className="flex min-w-0 items-center gap-2">
                                         <span className="truncate text-neutral-500">
                                             {order.payment_method ? t(`admin.paymentMethod.${order.payment_method}`) : '—'}
                                         </span>
-                                        <PaymentStatusBadge status={order.payment_status} />
+                                        <StatusBadge domain="payment" value={order.payment_status} />
                                     </div>
                                 </td>
                                 <td className="px-4 py-3">

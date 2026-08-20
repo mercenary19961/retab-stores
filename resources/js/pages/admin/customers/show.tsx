@@ -1,4 +1,4 @@
-import PaymentStatusBadge from '@/components/admin/payment-status-badge';
+import StatusBadge from '@/components/admin/status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link } from '@inertiajs/react';
@@ -154,7 +154,7 @@ export default function CustomerShow({ customer, loyalty, orders }: { customer: 
                                         </td>
                                         <td className="py-2">{t(`status.${o.status}`)}</td>
                                         <td className="py-2">
-                                            <PaymentStatusBadge status={o.payment_status} />
+                                            <StatusBadge domain="payment" value={o.payment_status} />
                                         </td>
                                         <td className="py-2">
                                             {o.total.toFixed(2)} {t('admin.common.sar')}

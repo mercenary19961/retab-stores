@@ -101,11 +101,7 @@ export default function NotificationsIndex({
                             <span className="min-w-0 flex-1">
                                 <span className="flex flex-wrap items-center gap-2">
                                     <span className="text-sm font-medium text-neutral-800 dark:text-neutral-100">{titleFor(entry.data)}</span>
-                                    {!entry.read && (
-                                        <StatusPill tone="amber" dot={false}>
-                                            {t('admin.notifications.history.unread')}
-                                        </StatusPill>
-                                    )}
+                                    {!entry.read && <StatusPill tone="attention">{t('admin.notifications.history.unread')}</StatusPill>}
                                 </span>
                                 {body && (
                                     <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400" dir="auto">

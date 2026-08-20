@@ -2,8 +2,8 @@ import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
 import Pagination from '@/components/admin/pagination';
-import PaymentStatusBadge from '@/components/admin/payment-status-badge';
 import ResizableTh from '@/components/admin/resizable-th';
+import StatusBadge from '@/components/admin/status-badge';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
@@ -217,7 +217,7 @@ function CustomerDetail({ id }: { id: number }) {
                                         </td>
                                         <td className="py-2">{t(`status.${o.status}`)}</td>
                                         <td className="py-2">
-                                            <PaymentStatusBadge status={o.payment_status} />
+                                            <StatusBadge domain="payment" value={o.payment_status} />
                                         </td>
                                         <td className="py-2 whitespace-nowrap">
                                             {o.total.toFixed(2)} {t('admin.common.sar')}

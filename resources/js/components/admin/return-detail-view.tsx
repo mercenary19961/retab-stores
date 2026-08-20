@@ -1,5 +1,5 @@
 import Button from '@/components/admin/button';
-import StatusPill, { type StatusTone } from '@/components/status-pill';
+import StatusBadge from '@/components/admin/status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
 import {
     Calendar,
@@ -22,14 +22,6 @@ import {
 import { useState, type ReactNode } from 'react';
 
 // Return lifecycle → pill tone (shared with the returns list).
-export const RETURN_STATUS_TONE: Record<string, StatusTone> = {
-    requested: 'amber',
-    approved: 'blue',
-    rejected: 'red',
-    exchanged: 'green',
-    refunded: 'purple',
-};
-
 export interface ReturnDetail {
     id: number;
     status: string;
@@ -98,9 +90,7 @@ export default function ReturnDetailView({
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-3">
-                <StatusPill tone={RETURN_STATUS_TONE[orderReturn.status] ?? 'neutral'} className="px-3 py-1 text-sm">
-                    {t(`admin.returns.status.${orderReturn.status}`)}
-                </StatusPill>
+                <StatusBadge domain="return" value={orderReturn.status} className="px-2.5 py-1 text-sm" />
                 <span className="text-sm text-neutral-400">{orderReturn.created_at ?? '—'}</span>
             </div>
 

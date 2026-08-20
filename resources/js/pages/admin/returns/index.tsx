@@ -2,14 +2,9 @@ import Button from '@/components/admin/button';
 import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
 import ResizableTh from '@/components/admin/resizable-th';
-import ReturnDetailView, {
-    RETURN_STATUS_TONE,
-    type RefundPreview,
-    type ReturnDetail,
-    type ReturnOrderSummary,
-} from '@/components/admin/return-detail-view';
+import ReturnDetailView, { type RefundPreview, type ReturnDetail, type ReturnOrderSummary } from '@/components/admin/return-detail-view';
+import StatusBadge from '@/components/admin/status-badge';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
-import StatusPill from '@/components/status-pill';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -268,7 +263,7 @@ export default function ReturnsIndex({
                                 <td className="truncate px-4 py-3 font-mono">{r.order_number ?? '—'}</td>
                                 <td className="truncate px-4 py-3">{r.customer ?? '—'}</td>
                                 <td className="truncate px-4 py-3">
-                                    <StatusPill tone={RETURN_STATUS_TONE[r.status] ?? 'neutral'}>{t(`admin.returns.status.${r.status}`)}</StatusPill>
+                                    <StatusBadge domain="return" value={r.status} />
                                 </td>
                                 <td className="truncate px-4 py-3 text-neutral-500" dir="auto">
                                     {r.reason}

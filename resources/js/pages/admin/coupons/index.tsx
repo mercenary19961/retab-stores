@@ -4,9 +4,9 @@ import Modal from '@/components/admin/modal';
 import Pagination, { type Paginator } from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
 import Select from '@/components/admin/select';
+import { statusEntry } from '@/components/admin/status-badge';
 import StatusToggle from '@/components/admin/status-toggle';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
-import { type StatusTone } from '@/components/status-pill';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -43,14 +43,6 @@ interface CouponRow {
 
 const INPUT =
     'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
-
-const STATUS_TONE: Record<string, StatusTone> = {
-    active: 'green',
-    scheduled: 'blue',
-    expired: 'red',
-    used_up: 'amber',
-    inactive: 'neutral',
-};
 
 // 'YYYY-MM-DD HH:MM:SS' → the value a <input type="datetime-local"> expects.
 const toInput = (dt: string | null) => (dt ? dt.replace(' ', 'T').slice(0, 16) : '');
@@ -381,7 +373,7 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                                 </td>
                                 <td className="px-4 py-3">
                                     <StatusToggle
-                                        tone={STATUS_TONE[c.status] ?? 'neutral'}
+                                        {...statusEntry('coupon', c.status)}
                                         label={t(`admin.coupons.status.${c.status}`)}
                                         url={`/admin/coupons/${c.id}/toggle`}
                                         hint={t(c.is_active ? 'admin.coupons.deactivateHint' : 'admin.coupons.activateHint')}

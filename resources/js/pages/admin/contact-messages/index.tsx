@@ -1,8 +1,9 @@
 import Button from '@/components/admin/button';
 import Pagination from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
+import StatusBadge from '@/components/admin/status-badge';
 import CopyText from '@/components/copy-text';
-import StatusPill, { type StatusTone } from '@/components/status-pill';
+import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
@@ -28,14 +29,6 @@ interface Paginator<T> {
 }
 
 /** One tone per inquiry type so the list scans by colour. */
-const TYPE_TONES: Record<string, StatusTone> = {
-    order: 'blue',
-    product: 'indigo',
-    complaint: 'red',
-    partnership: 'purple',
-    other: 'neutral',
-};
-
 export default function ContactMessagesIndex({
     messages,
     filters,
@@ -135,7 +128,7 @@ export default function ContactMessagesIndex({
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <StatusPill tone={TYPE_TONES[m.inquiry_type] ?? 'neutral'}>{typeLabel(m.inquiry_type)}</StatusPill>
+                                        <StatusBadge domain="inquiry" value={m.inquiry_type} label={typeLabel(m.inquiry_type)} />
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-neutral-500">{m.created_at ?? '—'}</td>
                                     {/* The row toggles the message body, so the actions cell swallows
@@ -145,8 +138,8 @@ export default function ContactMessagesIndex({
                                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                                         <div className="flex items-center justify-end">
                                             {m.handled ? (
-                                                <StatusPill tone="green" dot={false}>
-                                                    <Check className="me-1 h-3.5 w-3.5" /> {t('admin.contactMessages.handled')}
+                                                <StatusPill tone="done" icon={Check}>
+                                                    {t('admin.contactMessages.handled')}
                                                 </StatusPill>
                                             ) : (
                                                 <Button

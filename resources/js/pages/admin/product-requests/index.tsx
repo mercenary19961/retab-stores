@@ -5,7 +5,7 @@ import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
-import { Check, ExternalLink } from 'lucide-react';
+import { Check, ExternalLink, UserRound } from 'lucide-react';
 
 interface RequestRow {
     id: number;
@@ -102,7 +102,7 @@ export default function ProductRequestsIndex({
                                 </td>
                                 <td className="px-4 py-3">
                                     {r.is_guest ? (
-                                        <StatusPill tone="neutral" dot={false}>
+                                        <StatusPill tone="idle" icon={UserRound}>
                                             {t('admin.productRequests.guest')}
                                         </StatusPill>
                                     ) : (
@@ -116,8 +116,8 @@ export default function ProductRequestsIndex({
                                 <td className="px-4 py-3">
                                     <div className="flex items-center justify-end">
                                         {r.handled ? (
-                                            <StatusPill tone="green" dot={false}>
-                                                <Check className="me-1 h-3.5 w-3.5" /> {t('admin.productRequests.handled')}
+                                            <StatusPill tone="done" icon={Check}>
+                                                {t('admin.productRequests.handled')}
                                             </StatusPill>
                                         ) : (
                                             <Button

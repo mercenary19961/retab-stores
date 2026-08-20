@@ -1,6 +1,7 @@
 import Button from '@/components/admin/button';
 import ConfirmDialog from '@/components/admin/confirm-dialog';
-import StatusPill, { type StatusTone } from '@/components/status-pill';
+import StatusBadge from '@/components/admin/status-badge';
+import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link, router } from '@inertiajs/react';
@@ -34,13 +35,6 @@ interface Paginated {
     links: { url: string | null; label: string; active: boolean }[];
     total: number;
 }
-
-const ACTION_TONE: Record<string, StatusTone> = {
-    created: 'green',
-    updated: 'blue',
-    deleted: 'red',
-    restored: 'amber',
-};
 
 export default function ChangeLogIndex({ logs, highlight = null }: { logs: Paginated; highlight?: number | null }) {
     const { t } = useAdminT();
@@ -95,9 +89,7 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                                     <td className="px-4 py-3 whitespace-nowrap text-neutral-500">{row.created_at}</td>
                                     <td className="px-4 py-3 whitespace-nowrap">{row.section}</td>
                                     <td className="px-4 py-3 whitespace-nowrap">
-                                        <StatusPill tone={ACTION_TONE[row.action] ?? 'neutral'}>
-                                            {t(`admin.changeLog.actions.${row.action}`, { defaultValue: row.action.replace(/_/g, ' ') })}
-                                        </StatusPill>
+                                        <StatusBadge domain="changeLog" value={row.action} />
                                         {row.reverts_log_id !== null && (
                                             <Link
                                                 href={`/admin/change-log?highlight=${row.reverts_log_id}`}
@@ -138,15 +130,16 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                                                 </Button>
                                             )}
                                             {row.reverted_at ? (
-                                                <span
-                                                    className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                                                <StatusPill
+                                                    tone="idle"
+                                                    icon={Check}
                                                     title={t('admin.changeLog.revertedTooltip', {
                                                         user: row.reverted_by ?? '—',
                                                         at: row.reverted_at,
                                                     })}
                                                 >
-                                                    <Check className="h-3 w-3" /> {t('admin.changeLog.reverted')}
-                                                </span>
+                                                    {t('admin.changeLog.reverted')}
+                                                </StatusPill>
                                             ) : row.revertable ? (
                                                 <Button size="sm" variant="danger" icon={RotateCcw} onClick={() => revert(row)}>
                                                     {t('admin.changeLog.revert')}

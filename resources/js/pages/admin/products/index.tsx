@@ -16,7 +16,22 @@ import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-colum
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Columns3, LayoutGrid, MoveHorizontal, Pencil, Plus, Table } from 'lucide-react';
+import {
+    AlignLeft,
+    ArrowDown,
+    ArrowUp,
+    Columns3,
+    Eye,
+    EyeOff,
+    ImageOff,
+    LayoutGrid,
+    MoveHorizontal,
+    Pencil,
+    Plus,
+    Sparkles,
+    Table,
+    Tag,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const COLUMNS: ColumnDef[] = [
@@ -26,7 +41,8 @@ const COLUMNS: ColumnDef[] = [
     { key: 'category', defaultWidth: 150, minWidth: 90 },
     { key: 'price', defaultWidth: 110, minWidth: 70 },
     { key: 'stock', defaultWidth: 90, minWidth: 60 },
-    { key: 'status', defaultWidth: 110, minWidth: 80 },
+    // Holds the visibility toggle plus up to three completeness pills.
+    { key: 'status', defaultWidth: 160, minWidth: 120 },
     { key: 'actions', defaultWidth: 170, minWidth: 130 },
 ];
 
@@ -207,37 +223,46 @@ export default function ProductsIndex({
         <>
             {p.is_active ? (
                 <StatusToggle
-                    tone="green"
+                    tone="active"
+                    icon={Eye}
                     label={t('admin.products.active')}
                     url={`/admin/products/${p.id}/toggle-active`}
                     hint={t('admin.products.deactivateHint')}
                 />
             ) : (
                 <StatusToggle
-                    tone="neutral"
+                    tone="idle"
+                    icon={EyeOff}
                     label={t('admin.products.hidden')}
                     url={`/admin/products/${p.id}/toggle-active`}
                     disabled={p.needs_image}
                     hint={p.needs_image ? t('admin.products.activateBlockedNoImage') : t('admin.products.activateHint')}
                 />
             )}
-            {!p.is_active && p.is_coming_soon && <StatusPill tone="teal">{t('admin.products.comingSoon')}</StatusPill>}
+            {!p.is_active && p.is_coming_soon && (
+                <StatusPill tone="idle" icon={Sparkles}>
+                    {t('admin.products.comingSoon')}
+                </StatusPill>
+            )}
+            {/* What a draft still needs. Deliberately `idle` rather than amber: the
+                row already says Hidden and the page has a Drafts filter, so three
+                tinted chips per row across 63 drafts would only be wallpaper. */}
             {!p.is_active && (p.needs_price || p.needs_image || p.needs_description) && (
                 <span className="flex flex-wrap gap-1">
                     {p.needs_price && (
-                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                        <StatusPill tone="idle" icon={Tag}>
                             {t('admin.products.needsPrice')}
-                        </span>
+                        </StatusPill>
                     )}
                     {p.needs_image && (
-                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                        <StatusPill tone="idle" icon={ImageOff}>
                             {t('admin.products.needsImage')}
-                        </span>
+                        </StatusPill>
                     )}
                     {p.needs_description && (
-                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                        <StatusPill tone="idle" icon={AlignLeft}>
                             {t('admin.products.needsDescription')}
-                        </span>
+                        </StatusPill>
                     )}
                 </span>
             )}

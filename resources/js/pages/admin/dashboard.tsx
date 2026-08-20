@@ -1,3 +1,4 @@
+import StatusBadge from '@/components/admin/status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { relativeTimeFromMinutes } from '@/lib/relative-time';
@@ -518,9 +519,7 @@ export default function AdminDashboard({
                                                 {o.customer_name}
                                             </td>
                                             <td className="px-5 py-3">
-                                                <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs text-neutral-300">
-                                                    {t(`status.${o.status}`)}
-                                                </span>
+                                                <StatusBadge domain="order" value={o.status} />
                                             </td>
                                             <td className="px-5 py-3 text-neutral-300" dir="ltr">
                                                 {o.total.toFixed(2)} {sar}

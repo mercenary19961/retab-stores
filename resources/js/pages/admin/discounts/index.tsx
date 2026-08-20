@@ -1,12 +1,13 @@
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Select from '@/components/admin/select';
+import StatusBadge from '@/components/admin/status-badge';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
-import StatusPill, { type StatusTone } from '@/components/status-pill';
+import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { BadgePercent, Gift, Percent, RotateCcw, Trash2, Truck, Upload } from 'lucide-react';
+import { BadgePercent, CalendarClock, CirclePause, Gift, Percent, RotateCcw, Trash2, Truck, Upload, Zap } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 interface DiscountedRow {
@@ -51,11 +52,11 @@ interface ReviewRewardState {
 const INPUT =
     'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
 const CARD = 'rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900';
-const STATUS_TONE: Record<string, StatusTone> = { active: 'green', scheduled: 'blue', expired: 'red' };
-// Soft tint for the bordered summary boxes (not pills) at the top of the page.
+// Boxes, not pills — but they take their colour from the same vocabulary as the
+// pills three lines below them, so the page cannot say "live" in two hues.
 const SUMMARY_TINT: Record<'active' | 'scheduled', string> = {
-    active: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-300',
-    scheduled: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300',
+    active: 'bg-[#1b4e53]/45 text-neutral-200',
+    scheduled: 'bg-neutral-500/10 text-neutral-300',
 };
 
 // 'YYYY-MM-DD HH:MM:SS' → the value a <input type="datetime-local"> expects.
@@ -182,7 +183,7 @@ export default function DiscountsIndex({
                                     </td>
                                     <td className="px-3 py-2 whitespace-nowrap text-neutral-500">{windowLabel(p.starts_at, p.ends_at)}</td>
                                     <td className="px-3 py-2">
-                                        <StatusPill tone={STATUS_TONE[p.status] ?? 'neutral'}>{t(`admin.discounts.status.${p.status}`)}</StatusPill>
+                                        <StatusBadge domain="discount" value={p.status} />
                                     </td>
                                     <td className="px-3 py-2 text-end">
                                         <Button size="sm" variant="ghost" icon={Trash2} onClick={() => clearOne(p.id)}>
@@ -372,7 +373,10 @@ export default function DiscountsIndex({
                 <h2 className="flex items-center gap-2 font-bold">
                     <Truck className="text-brand-gold h-4 w-4" /> {t('admin.discounts.free.title')}
                 </h2>
-                <StatusPill tone={freeStatus === 'off' ? 'neutral' : freeStatus === 'active' ? 'green' : 'blue'}>
+                <StatusPill
+                    tone={freeStatus === 'active' ? 'active' : 'idle'}
+                    icon={freeStatus === 'off' ? CirclePause : freeStatus === 'active' ? Zap : CalendarClock}
+                >
                     {t(`admin.discounts.free.status_${freeStatus}`)}
                 </StatusPill>
             </div>
@@ -423,7 +427,7 @@ export default function DiscountsIndex({
                 <h2 className="flex items-center gap-2 font-bold">
                     <Gift className="text-brand-gold h-4 w-4" /> {t('admin.discounts.reviewReward.title')}
                 </h2>
-                <StatusPill tone={review.data.enabled ? 'green' : 'neutral'}>
+                <StatusPill tone={review.data.enabled ? 'active' : 'idle'} icon={review.data.enabled ? Zap : CirclePause}>
                     {t(review.data.enabled ? 'admin.discounts.reviewReward.status_on' : 'admin.discounts.reviewReward.status_off')}
                 </StatusPill>
             </div>

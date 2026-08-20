@@ -1636,6 +1636,8 @@ const en = {
                 updated: 'updated',
                 deleted: 'deleted',
                 restored: 'restored',
+                discount_apply: 'bulk discount',
+                stock_import: 'stock import',
             },
         },
         inventory: {

@@ -1,7 +1,7 @@
 import Button from '@/components/admin/button';
 import Pagination, { type Paginator } from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
-import StatusPill, { type StatusTone } from '@/components/status-pill';
+import StatusBadge from '@/components/admin/status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
@@ -11,13 +11,6 @@ import { type FormEvent, type ReactNode, useState } from 'react';
 const PLACEHOLDER_RE = /\{\{\s*(\d+)\s*\}\}/g;
 
 // Meta template approval states → pill tone.
-const TEMPLATE_STATUS_TONE: Record<string, StatusTone> = {
-    approved: 'green',
-    pending: 'amber',
-    rejected: 'red',
-    draft: 'neutral',
-};
-
 /** Distinct {{n}} placeholders in a template body, as sorted numbers. */
 function detectPlaceholders(body: string): number[] {
     const nums = new Set<number>();
@@ -214,7 +207,7 @@ export default function MarketingIndex({
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <StatusPill tone={TEMPLATE_STATUS_TONE[t.status] ?? 'neutral'}>{label('templateStatus', t.status)}</StatusPill>
+                                    <StatusBadge domain="template" value={t.status} label={label('templateStatus', t.status)} />
                                     <Button
                                         size="sm"
                                         variant="ghost"

@@ -1626,6 +1626,8 @@ const ar = {
                 updated: 'تعديل',
                 deleted: 'حذف',
                 restored: 'استعادة',
+                discount_apply: 'خصم جماعي',
+                stock_import: 'استيراد مخزون',
             },
         },
         inventory: {

@@ -3,11 +3,12 @@ import ChangePasswordForm from '@/components/admin/change-password-form';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import Modal from '@/components/admin/modal';
 import CopyText from '@/components/copy-text';
+import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { type SharedData } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
+import { RefreshCw, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
 type Perms = Record<string, Record<string, boolean>>;
@@ -365,13 +366,13 @@ export default function UsersIndex({
                         >
                             <div className="flex items-center justify-between gap-2">
                                 <span className="truncate font-medium text-neutral-100">{s.name ?? s.email}</span>
-                                <span
-                                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${
-                                        s.role === 'admin' ? 'bg-purple-500/20 text-purple-300' : 'bg-neutral-800 text-neutral-400'
-                                    }`}
+                                <StatusPill
+                                    tone={s.role === 'admin' ? 'active' : 'idle'}
+                                    icon={s.role === 'admin' ? ShieldCheck : UserRound}
+                                    className="shrink-0"
                                 >
                                     {t(`admin.users.roles.${s.role}`)}
-                                </span>
+                                </StatusPill>
                             </div>
                             <div className="mt-0.5 truncate text-xs text-neutral-500" dir="ltr">
                                 {s.email}

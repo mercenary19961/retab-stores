@@ -1,8 +1,7 @@
 import Button from '@/components/admin/button';
-import PaymentStatusBadge from '@/components/admin/payment-status-badge';
 import ShippingPicker from '@/components/admin/shipping-picker';
+import StatusBadge from '@/components/admin/status-badge';
 import CopyText from '@/components/copy-text';
-import OrderStatusBadge from '@/components/order-status-badge';
 import { useAdminT } from '@/i18n/use-admin-t';
 import {
     Ban,
@@ -147,7 +146,7 @@ export default function OrderDetailView({
             )}
 
             <div className="flex flex-wrap items-center gap-3">
-                <OrderStatusBadge status={order.status} />
+                <StatusBadge domain="order" value={order.status} className="px-2.5 py-1 text-sm" />
                 <span className="text-sm text-neutral-400">{order.created_at ?? '—'}</span>
             </div>
 
@@ -378,7 +377,11 @@ export default function OrderDetailView({
                             label={t('admin.common.method')}
                             value={order.payment_method ? t(`admin.paymentMethod.${order.payment_method}`) : '—'}
                         />
-                        <Row icon={CircleDollarSign} label={t('admin.common.status')} value={<PaymentStatusBadge status={order.payment_status} />} />
+                        <Row
+                            icon={CircleDollarSign}
+                            label={t('admin.common.status')}
+                            value={<StatusBadge domain="payment" value={order.payment_status} />}
+                        />
                     </section>
 
                     {(order.confirmed_by || order.confirmed_at || order.delivered_at || order.admin_notes) && (

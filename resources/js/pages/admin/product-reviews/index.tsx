@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { ExternalLink, Eye, EyeOff, Star, ThumbsUp, Trash2 } from 'lucide-react';
+import { BadgeCheck, ExternalLink, Eye, EyeOff, Star, ThumbsUp, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import Button from '@/components/admin/button';
@@ -198,12 +198,18 @@ export default function ProductReviewsIndex({
                                     <Stars rating={r.rating} />
                                     <span className="sr-only">{t('admin.productReviews.nStars', { n: r.rating })}</span>
                                     {r.approved ? (
-                                        <StatusPill tone="green">{t('admin.productReviews.published')}</StatusPill>
+                                        <StatusPill tone="active" icon={Eye}>
+                                            {t('admin.productReviews.published')}
+                                        </StatusPill>
                                     ) : (
-                                        <StatusPill tone="amber">{t('admin.productReviews.hidden')}</StatusPill>
+                                        // A hidden review is a takedown staff chose, not an
+                                        // outstanding job, so it stays quiet.
+                                        <StatusPill tone="idle" icon={EyeOff}>
+                                            {t('admin.productReviews.hidden')}
+                                        </StatusPill>
                                     )}
                                     {r.verified && (
-                                        <StatusPill tone="blue" dot={false}>
+                                        <StatusPill tone="done" icon={BadgeCheck}>
                                             {t('admin.productReviews.verified')}
                                         </StatusPill>
                                     )}
