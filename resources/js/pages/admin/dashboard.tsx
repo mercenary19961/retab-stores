@@ -8,7 +8,6 @@ import {
     BellRing,
     Boxes,
     Clock,
-    FilePen,
     Gift,
     MessageCircle,
     PackageX,
@@ -55,6 +54,7 @@ interface Inventory {
     outOfStock: number;
     lowStock: number;
     activeProducts: number;
+    drafts: number;
     lowStockList: LowStockRow[];
 }
 interface TopProduct {
@@ -89,7 +89,6 @@ const TASK_ICON: Record<string, LucideIcon> = {
     bankTransfers: Banknote,
     returnsToReview: RotateCcw,
     readyToShip: Truck,
-    draftsToComplete: FilePen,
     tamaraExpiring: Clock,
 };
 
@@ -100,7 +99,7 @@ export default function AdminDashboard({
     inventory,
     insights,
     customers,
-    recentOrders = [],
+    recentOrders,
 }: {
     kpis: Kpis;
     trend: TrendPoint[];
@@ -108,7 +107,7 @@ export default function AdminDashboard({
     inventory: Inventory;
     insights: { topProducts: TopProduct[]; demand: DemandRow[] };
     customers: Customers;
-    recentOrders?: RecentOrder[];
+    recentOrders?: RecentOrder[] | null;
 }) {
     const { t, i18n } = useAdminT();
     const loc = (ar: string | null, en: string | null) => (i18n.language === 'en' && en ? en : (ar ?? '—'));
@@ -221,42 +220,49 @@ export default function AdminDashboard({
                 )}
             </div>
 
-            {/* Needs attention */}
-            <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                <h2 className="mb-4 flex items-center gap-2 font-semibold text-neutral-100">
-                    <BellRing className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.tasks.title')}
-                </h2>
-                {openTasks.length === 0 ? (
-                    <p className="text-sm text-neutral-500">{t('admin.dashboard.tasks.allClear')}</p>
-                ) : (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {openTasks.map((task) => {
-                            const Icon = TASK_ICON[task.key] ?? ShoppingBag;
-                            return (
-                                <Link
-                                    key={task.key}
-                                    href={task.href}
-                                    className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
-                                        task.urgent
-                                            ? 'border-amber-500/40 bg-amber-500/10 hover:border-amber-500'
-                                            : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700'
-                                    }`}
-                                >
-                                    <span
-                                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${task.urgent ? 'bg-amber-500/20 text-amber-300' : 'bg-neutral-800 text-neutral-300'}`}
+            {/* Needs attention.
+                ⚠️ Two different empty states, and conflating them misleads. `tasks`
+                empty means the viewer has permission for NONE of these sections, so
+                the panel is hidden outright — telling a catalogue editor "all clear"
+                would claim there is no outstanding work when we simply never looked.
+                `openTasks` empty with tiles present is the real all-clear. */}
+            {tasks.length > 0 && (
+                <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+                    <h2 className="mb-4 flex items-center gap-2 font-semibold text-neutral-100">
+                        <BellRing className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.tasks.title')}
+                    </h2>
+                    {openTasks.length === 0 ? (
+                        <p className="text-sm text-neutral-500">{t('admin.dashboard.tasks.allClear')}</p>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {openTasks.map((task) => {
+                                const Icon = TASK_ICON[task.key] ?? ShoppingBag;
+                                return (
+                                    <Link
+                                        key={task.key}
+                                        href={task.href}
+                                        className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+                                            task.urgent
+                                                ? 'border-amber-500/40 bg-amber-500/10 hover:border-amber-500'
+                                                : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700'
+                                        }`}
                                     >
-                                        <Icon className="h-5 w-5" />
-                                    </span>
-                                    <div className="min-w-0">
-                                        <div className="text-lg font-bold text-neutral-100">{task.count}</div>
-                                        <div className="truncate text-xs text-neutral-400">{t(`admin.dashboard.tasks.${task.key}`)}</div>
-                                    </div>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
+                                        <span
+                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${task.urgent ? 'bg-amber-500/20 text-amber-300' : 'bg-neutral-800 text-neutral-300'}`}
+                                        >
+                                            <Icon className="h-5 w-5" />
+                                        </span>
+                                        <div className="min-w-0">
+                                            <div className="text-lg font-bold text-neutral-100">{task.count}</div>
+                                            <div className="truncate text-xs text-neutral-400">{t(`admin.dashboard.tasks.${task.key}`)}</div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Inventory health + Insights */}
             <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -287,7 +293,7 @@ export default function AdminDashboard({
                               : t('admin.dashboard.inventory.syncOk', { ago: relativeTimeFromMinutes(inventory.lastSynced.minutes, i18n.language) })}
                     </div>
 
-                    <div className="mb-4 grid grid-cols-3 gap-3 text-center">
+                    <div className="mb-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
                         <div className="rounded-lg bg-neutral-950/40 p-3">
                             <div className={`text-xl font-bold ${inventory.outOfStock ? 'text-red-400' : 'text-neutral-100'}`}>
                                 {inventory.outOfStock}
@@ -304,6 +310,16 @@ export default function AdminDashboard({
                             <div className="text-xl font-bold text-neutral-100">{inventory.activeProducts}</div>
                             <div className="text-xs text-neutral-500">{t('admin.dashboard.inventory.active')}</div>
                         </div>
+                        {/* Moved here from the action queue: a backlog that never
+                            reaches zero belongs with the stock metrics, not beside
+                            decisions due today. Still one click from the drafts list. */}
+                        <Link
+                            href="/admin/products?status=draft"
+                            className="rounded-lg bg-neutral-950/40 p-3 transition-colors hover:bg-neutral-950/70"
+                        >
+                            <div className="text-xl font-bold text-neutral-100">{inventory.drafts}</div>
+                            <div className="text-xs text-neutral-500">{t('admin.dashboard.inventory.drafts')}</div>
+                        </Link>
                     </div>
 
                     <h3 className="mb-2 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
@@ -413,60 +429,67 @@ export default function AdminDashboard({
                 />
             </div>
 
-            {/* Recent orders */}
-            <div className="mt-6 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
-                <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-3">
-                    <h2 className="flex items-center gap-2 font-semibold text-neutral-100">
-                        <ShoppingBag className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.recentOrders')}
-                    </h2>
-                    <Link href="/admin/orders" className="text-brand-gold text-sm hover:underline">
-                        {t('admin.dashboard.viewAll')}
-                    </Link>
-                </div>
-
-                {recentOrders.length === 0 ? (
-                    <p className="px-5 py-8 text-center text-sm text-neutral-500">{t('admin.dashboard.noRecentOrders')}</p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-neutral-50 text-start text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
-                                <tr className="border-b border-neutral-800">
-                                    <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.order')}</th>
-                                    <th className="px-5 py-3 text-start font-medium">{t('admin.common.customer')}</th>
-                                    <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.status')}</th>
-                                    <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.total')}</th>
-                                    <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.date')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {recentOrders.map((o) => (
-                                    <tr key={o.order_number} className="border-b border-neutral-800 last:border-0">
-                                        <td className="px-5 py-3">
-                                            <Link href={`/admin/orders/${o.order_number}`} className="text-brand-gold font-semibold hover:underline">
-                                                {o.order_number}
-                                            </Link>
-                                        </td>
-                                        <td className="px-5 py-3 text-neutral-300" dir="auto">
-                                            {o.customer_name}
-                                        </td>
-                                        <td className="px-5 py-3">
-                                            <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs text-neutral-300">
-                                                {t(`status.${o.status}`)}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3 text-neutral-300" dir="ltr">
-                                            {o.total.toFixed(2)} {sar}
-                                        </td>
-                                        <td className="px-5 py-3 text-neutral-400" dir="ltr">
-                                            {o.created_at ?? '—'}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+            {/* Recent orders. Hidden entirely without `orders.view` — every row links
+                to an order page that would 403, and rendering "no orders yet" instead
+                would state something false. null = withheld, [] = genuinely none. */}
+            {recentOrders !== null && recentOrders !== undefined && (
+                <div className="mt-6 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
+                    <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-3">
+                        <h2 className="flex items-center gap-2 font-semibold text-neutral-100">
+                            <ShoppingBag className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.recentOrders')}
+                        </h2>
+                        <Link href="/admin/orders" className="text-brand-gold text-sm hover:underline">
+                            {t('admin.dashboard.viewAll')}
+                        </Link>
                     </div>
-                )}
-            </div>
+
+                    {recentOrders.length === 0 ? (
+                        <p className="px-5 py-8 text-center text-sm text-neutral-500">{t('admin.dashboard.noRecentOrders')}</p>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead className="bg-neutral-50 text-start text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-300">
+                                    <tr className="border-b border-neutral-800">
+                                        <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.order')}</th>
+                                        <th className="px-5 py-3 text-start font-medium">{t('admin.common.customer')}</th>
+                                        <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.status')}</th>
+                                        <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.total')}</th>
+                                        <th className="px-5 py-3 text-start font-medium">{t('admin.dashboard.date')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {recentOrders.map((o) => (
+                                        <tr key={o.order_number} className="border-b border-neutral-800 last:border-0">
+                                            <td className="px-5 py-3">
+                                                <Link
+                                                    href={`/admin/orders/${o.order_number}`}
+                                                    className="text-brand-gold font-semibold hover:underline"
+                                                >
+                                                    {o.order_number}
+                                                </Link>
+                                            </td>
+                                            <td className="px-5 py-3 text-neutral-300" dir="auto">
+                                                {o.customer_name}
+                                            </td>
+                                            <td className="px-5 py-3">
+                                                <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs text-neutral-300">
+                                                    {t(`status.${o.status}`)}
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-3 text-neutral-300" dir="ltr">
+                                                {o.total.toFixed(2)} {sar}
+                                            </td>
+                                            <td className="px-5 py-3 text-neutral-400" dir="ltr">
+                                                {o.created_at ?? '—'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
         </AdminLayout>
     );
 }

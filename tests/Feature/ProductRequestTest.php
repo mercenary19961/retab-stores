@@ -146,17 +146,17 @@ class ProductRequestTest extends TestCase
         $this->assertNotNull($request->fresh()->handled_at);
     }
 
-    public function test_dashboard_flags_draft_products_to_complete(): void
+    public function test_dashboard_reports_draft_products_under_inventory(): void
     {
+        // Moved out of the "Needs attention" action queue on 2026-08-20: a backlog
+        // count that never reaches zero is a stock metric, not a same-day decision,
+        // and at equal visual weight it taught people to skim past the whole panel.
         $staff = $this->staff();
         $this->comingSoon(['slug' => 'draft-a']);
         $this->comingSoon(['slug' => 'draft-b']);
 
         $this->actingAs($staff)->get('/admin/dashboard')->assertOk()->assertInertia(
-            fn (Assert $page) => $page->where(
-                'tasks',
-                fn ($tasks) => collect($tasks)->firstWhere('key', 'draftsToComplete')['count'] === 2,
-            ),
+            fn (Assert $page) => $page->where('inventory.drafts', 2),
         );
     }
 

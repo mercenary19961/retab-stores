@@ -722,6 +722,7 @@ const ar = {
                 outOfStock: 'نفد المخزون',
                 lowStock: 'مخزون منخفض',
                 active: 'نشط',
+                drafts: 'مسودات',
                 lowStockList: 'الأقل مخزوناً',
                 allStocked: 'لا منتجات منخفضة المخزون.',
                 units: 'متبقٍ {{count}}',

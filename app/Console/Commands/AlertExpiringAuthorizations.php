@@ -2,15 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\OrderStatus;
-use App\Enums\PaymentMethod;
-use App\Enums\PaymentStatus;
-use App\Enums\PaymentTransactionType;
-use App\Models\Order;
 use App\Models\User;
 use App\Notifications\PaymentExpiringNotification;
+use App\Support\ExpiringAuthorizations;
 use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 
 /**
@@ -34,24 +29,14 @@ class AlertExpiringAuthorizations extends Command
 
     public function handle(): int
     {
-        $authHours = (int) config('services.tamara.authorization_hours', 48);
-        $warnHours = (int) config('services.tamara.expiry_warning_hours', 12);
-        $alertAfter = max($authHours - $warnHours, 1);
-
         // Held, still waiting on the admin, and not already alerted. The stamp is
         // what stops an hourly command re-alerting for the whole window and
-        // training staff to ignore the one notification that costs money.
-        $orders = Order::where('payment_method', PaymentMethod::Tamara)
-            ->where('payment_status', PaymentStatus::Authorized)
-            ->where('status', OrderStatus::AwaitingConfirmation)
-            ->whereNull('payment_expiry_alerted_at')
-            ->with(['payments' => fn ($q) => $q
-                ->where('type', PaymentTransactionType::Authorization->value)
-                ->where('status', 'authorized')
-                ->latest(),
-            ])
-            ->get()
-            ->filter(fn (Order $order) => $this->authorizedAt($order)->lte(now()->subHours($alertAfter)));
+        // training staff to ignore the one notification that costs money — it is
+        // this command's own concern, which is why it is added here rather than
+        // living in the shared definition the dashboard also reads.
+        $orders = ExpiringAuthorizations::approaching(
+            ExpiringAuthorizations::query()->whereNull('payment_expiry_alerted_at')
+        );
 
         if ($orders->isEmpty()) {
             $this->info('No authorisations approaching expiry.');
@@ -62,9 +47,7 @@ class AlertExpiringAuthorizations extends Command
         $staff = User::staff()->get();
 
         foreach ($orders as $order) {
-            // Round DOWN, so the figure a human reads is never more optimistic
-            // than reality.
-            $hoursLeft = max((int) floor($authHours - $this->authorizedAt($order)->diffInHours(now())), 0);
+            $hoursLeft = ExpiringAuthorizations::hoursLeft($order);
 
             $this->warn("{$order->order_number} — ~{$hoursLeft}h left — ".number_format((float) $order->total, 2).' SAR');
 
@@ -81,20 +64,5 @@ class AlertExpiringAuthorizations extends Command
             : 'Alerted staff about '.$orders->count().' order(s).');
 
         return self::SUCCESS;
-    }
-
-    /**
-     * When the hold was actually taken.
-     *
-     * ⚠️ NOT `orders.created_at`, which is what the dashboard counter uses. They
-     * are usually minutes apart, but an order paid through the resume-payment
-     * route can be authorised long after it was placed — and using the wrong one
-     * there would either alert far too early or, worse, after the hold had
-     * already lapsed. Falls back to `created_at` only when no authorization
-     * ledger row exists.
-     */
-    private function authorizedAt(Order $order): Carbon
-    {
-        return $order->payments->first()?->created_at ?? $order->created_at;
     }
 }

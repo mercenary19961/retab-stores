@@ -15,6 +15,8 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Smacc\SmaccImportService;
+use App\Support\ExpiringAuthorizations;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -29,9 +31,11 @@ use Inertia\Inertia;
  */
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $now = now();
+        /** @var User $viewer */
+        $viewer = $request->user();
 
         // Paid revenue / order count within a window (BackedEnum binds by value).
         $paidRevenue = fn (Carbon $from, Carbon $to): float => (float) Order::where('payment_status', PaymentStatus::Paid)
@@ -50,7 +54,7 @@ class DashboardController extends Controller
                 'revenueYesterday' => $paidRevenue($now->copy()->subDay()->startOfDay(), $now->copy()->startOfDay()),
             ],
             'trend' => $this->dailyRevenue(),
-            'tasks' => $this->tasks(),
+            'tasks' => $this->tasks($viewer),
             'inventory' => $this->inventory(),
             'insights' => [
                 'topProducts' => $this->topProducts(),
@@ -62,7 +66,13 @@ class DashboardController extends Controller
                 'whatsappAudience' => User::where('role', 'customer')->where('whatsapp_opt_in', true)->count(),
                 'nearReward' => User::where('role', 'customer')->where('confirmed_purchases_count', 4)->count(),
             ],
-            'recentOrders' => $this->recentOrders(),
+            // Same gate as the order tiles: every row links to /admin/orders/{n},
+            // which 403s without this permission. A panel of links a viewer cannot
+            // open is the bug that was just fixed one section up.
+            // null = "not shown to you", [] = "genuinely none yet". Same distinction
+            // the tasks panel makes: an empty list would tell a catalogue editor the
+            // store has no orders, which is a different claim from not showing them.
+            'recentOrders' => $viewer->hasPermission('orders.view') ? $this->recentOrders() : null,
         ]);
     }
 
@@ -93,58 +103,62 @@ class DashboardController extends Controller
     }
 
     /**
-     * The action queue: things that need a human decision, with counts + links.
-     * `urgent` marks time-sensitive items (money on hold / expiring auths).
+     * The action queue: things that need a human DECISION today, with counts +
+     * links. `urgent` marks the time-sensitive ones (money on hold / expiring
+     * authorisations) — not merely the oldest.
+     *
+     * 🔑 Every entry is gated on the permission its destination requires, and the
+     * count query is skipped entirely when the viewer lacks it. Previously all
+     * six shipped to every staff member, so a catalogue-only editor was shown
+     * "9 orders to confirm" and got a 403 on click — the panel advertised work
+     * the person was not allowed to do.
+     *
+     * ⚠️ Deliberately NOT here: the draft-product backlog. A count of 63 that
+     * never drops is not a task, and sitting at the same visual weight as "2 bank
+     * transfers to verify" it trains people to skim past the whole panel. It
+     * lives in inventory() with the other backlog numbers.
      *
      * @return list<array{key:string, count:int, href:string, urgent:bool}>
      */
-    private function tasks(): array
+    private function tasks(User $viewer): array
     {
-        return [
-            [
-                'key' => 'awaitingConfirmation',
-                'count' => Order::where('status', OrderStatus::AwaitingConfirmation)->count(),
-                'href' => '/admin/orders?status=awaiting_confirmation',
-                'urgent' => false,
-            ],
-            [
-                'key' => 'bankTransfers',
-                'count' => Order::where('payment_method', PaymentMethod::BankTransfer)
-                    ->where('payment_status', PaymentStatus::Pending)
-                    ->where('status', OrderStatus::PendingPayment)->count(),
-                'href' => '/admin/orders?status=pending_payment',
-                'urgent' => true,
-            ],
-            [
-                'key' => 'returnsToReview',
-                'count' => OrderReturn::where('status', ReturnStatus::Requested)->count(),
-                'href' => '/admin/returns?status=requested',
-                'urgent' => false,
-            ],
-            [
-                'key' => 'readyToShip',
-                'count' => Order::where('status', OrderStatus::Confirmed)->count(),
-                'href' => '/admin/orders?status=confirmed',
-                'urgent' => false,
-            ],
-            [
-                // Hidden draft products (imported incomplete) waiting to be finished.
-                'key' => 'draftsToComplete',
-                'count' => Product::where('is_active', false)->count(),
-                'href' => '/admin/products?status=draft',
-                'urgent' => false,
-            ],
-            [
-                // Tamara authorisations expire (~48h); flag any held over 24h.
-                'key' => 'tamaraExpiring',
-                'count' => Order::where('payment_method', PaymentMethod::Tamara)
-                    ->where('payment_status', PaymentStatus::Authorized)
-                    ->where('status', OrderStatus::AwaitingConfirmation)
-                    ->where('created_at', '<=', now()->subHours(24))->count(),
-                'href' => '/admin/orders?status=awaiting_confirmation',
-                'urgent' => true,
-            ],
-        ];
+        $tasks = [];
+
+        $add = function (string $permission, string $key, callable $count, string $href, bool $urgent = false) use (&$tasks, $viewer) {
+            if (! $viewer->hasPermission($permission)) {
+                return; // not authorised for the destination — don't offer it, and don't run the query
+            }
+            $tasks[] = ['key' => $key, 'count' => $count(), 'href' => $href, 'urgent' => $urgent];
+        };
+
+        $add('orders.view', 'awaitingConfirmation',
+            fn () => Order::where('status', OrderStatus::AwaitingConfirmation)->count(),
+            '/admin/orders?status=awaiting_confirmation');
+
+        $add('orders.view', 'bankTransfers',
+            fn () => Order::where('payment_method', PaymentMethod::BankTransfer)
+                ->where('payment_status', PaymentStatus::Pending)
+                ->where('status', OrderStatus::PendingPayment)->count(),
+            '/admin/orders?status=pending_payment', urgent: true);
+
+        $add('returns.view', 'returnsToReview',
+            fn () => OrderReturn::where('status', ReturnStatus::Requested)->count(),
+            '/admin/returns?status=requested');
+
+        $add('orders.view', 'readyToShip',
+            fn () => Order::where('status', OrderStatus::Confirmed)->count(),
+            '/admin/orders?status=confirmed');
+
+        // 🔑 Counted by the SAME definition the scheduled alert acts on
+        // (App\Support\ExpiringAuthorizations), so the number on screen can never
+        // be a different set of orders from the one that gets notified. It used
+        // to date the hold from orders.created_at at a hardcoded 24h while the
+        // command used the authorization ledger row at a config-driven threshold.
+        $add('orders.view', 'tamaraExpiring',
+            fn () => ExpiringAuthorizations::approaching()->count(),
+            '/admin/orders?status=awaiting_confirmation', urgent: true);
+
+        return $tasks;
     }
 
     /**
@@ -174,6 +188,10 @@ class DashboardController extends Controller
             'lowStock' => Product::where('is_active', true)
                 ->whereRaw('stock <= COALESCE(low_stock_threshold, ?)', [5])->count(),
             'activeProducts' => Product::where('is_active', true)->count(),
+            // Moved out of the action queue: a backlog figure that never reaches
+            // zero belongs with the other stock metrics, not beside decisions that
+            // have to be made today. Still one click from here.
+            'drafts' => Product::where('is_active', false)->count(),
             'lowStockList' => $lowStockList,
         ];
     }

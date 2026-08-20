@@ -707,6 +707,7 @@ const en = {
                 outOfStock: 'Out of stock',
                 lowStock: 'Low stock',
                 active: 'Active',
+                drafts: 'Drafts',
                 lowStockList: 'Lowest stock',
                 allStocked: 'No low-stock products.',
                 units: '{{count}} left',
