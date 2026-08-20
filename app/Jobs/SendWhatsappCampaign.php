@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\WhatsappCampaign;
 use App\Services\WhatsApp\CampaignService;
 use App\Services\WhatsApp\WhatsAppService;
+use App\Support\Queues;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -26,7 +27,12 @@ class SendWhatsappCampaign implements ShouldQueue
 
     public function __construct(
         public int $campaignId,
-    ) {}
+    ) {
+        // The orchestrator belongs on bulk too, not just the messages it spawns:
+        // it iterates the whole opt-in segment, so leaving it on the default queue
+        // would block transactional sends for the length of the blast.
+        $this->onQueue(Queues::BULK);
+    }
 
     public function handle(WhatsAppService $whatsapp, CampaignService $campaigns): void
     {

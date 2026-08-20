@@ -9,6 +9,7 @@ use App\Models\OrderReturn;
 use App\Models\User;
 use App\Models\WhatsappCampaign;
 use App\Models\WhatsappMessage;
+use App\Support\Queues;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -280,7 +281,15 @@ class WhatsAppService
         // request that triggered it. The row is returned still marked `queued`;
         // the job flips it to sent/failed. Retries live in SendWhatsappMessage.
         if ($queue) {
-            SendWhatsappMessage::dispatch($message->id, array_values($params));
+            $job = SendWhatsappMessage::dispatch($message->id, array_values($params));
+
+            // Marketing goes to the bulk queue so a campaign can never delay an
+            // order confirmation. Keyed off Meta's own category rather than a
+            // separate flag, so the two cannot drift. Utility sends deliberately
+            // do NOT name a queue — they take the configured default.
+            if ($category === 'marketing') {
+                $job->onQueue(Queues::BULK);
+            }
 
             return $message;
         }
