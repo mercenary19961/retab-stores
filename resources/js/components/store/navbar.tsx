@@ -334,7 +334,7 @@ export default function StoreNavbar() {
                 />
             </div>
 
-            <div className="relative mx-auto max-w-[1600px] px-6 lg:px-12">
+            <div className="relative mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-12">
                 {/* Row 1 — utility icons · logo · language. The padding is a FIXED
                     value on purpose, never a scroll-dependent one; see the constants
                     note about in-flow height changes. Trimming the static number is
@@ -342,7 +342,7 @@ export default function StoreNavbar() {
                     header's measured height), so the header also hides sooner. */}
                 <div className="grid grid-cols-3 items-center py-2.5">
                     {/* Start: utility icons (desktop) / hamburger + sign-up (mobile) */}
-                    <div className="flex items-center gap-2 justify-self-start sm:gap-3 md:gap-4">
+                    <div className="flex items-center gap-1.5 justify-self-start min-[430px]:gap-2 sm:gap-3 md:gap-4">
                         <button
                             type="button"
                             onClick={() => setMobileOpen(true)}
@@ -350,6 +350,32 @@ export default function StoreNavbar() {
                             className="text-brand-gold hover:text-brand-teal shrink-0 transition-colors md:hidden"
                         >
                             <Menu className="size-6" />
+                        </button>
+                        {/* Opens the site-wide search overlay. It used to be a plain
+                            link to /shop — the only place a search box existed — so a
+                            shopper on a product page had to leave it to search, and
+                            lost where they were.
+                            Sits beside the burger at EVERY width: on desktop it leads
+                            the utility icons, on phones it is the first thing after the
+                            menu. See the sign-up pill below for why it goes HERE rather
+                            than after the pill — search is a utility, the pill is an
+                            invitation, and the utilities cluster by the burger. */}
+                        <button
+                            type="button"
+                            onClick={() => setSearchOpen(true)}
+                            data-testid="nav-search"
+                            aria-label={t('nav.search')}
+                            /* ⚠️ `p-1 -m-1`, not a bigger icon. At size-5 the hit area
+                               was 20x20 — under the 24px WCAG 2.5.8 floor and smaller
+                               than the 24px burger beside it. The padding grows the
+                               touch target to 28px while the negative margin cancels
+                               its layout cost, which matters because the start cell
+                               has only ~9px of clearance to the logo at 390px in
+                               Arabic. 4px of the 6px gap is absorbed, so the two hit
+                               boxes still do not overlap. */
+                            className="text-brand-gold hover:text-brand-teal -m-1 inline-flex shrink-0 p-1 transition-colors"
+                        >
+                            <Search className="size-5" />
                         </button>
                         {/* Mobile sign-up, beside the burger.
                             🔑 Sign-UP was the one auth action a phone visitor could
@@ -381,7 +407,7 @@ export default function StoreNavbar() {
                                  * button already was before today, and the drawer two
                                  * pixels away still carries it.
                                  */
-                                className="bg-brand-teal shrink-0 rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap text-white transition-colors hover:bg-[#163e42] max-[359px]:hidden sm:px-3 md:hidden"
+                                className="bg-brand-teal shrink-0 rounded-full px-2 py-1 text-xs font-bold whitespace-nowrap text-white transition-colors hover:bg-[#163e42] max-[389px]:hidden min-[430px]:px-2.5 sm:px-3 md:hidden"
                             >
                                 {/* ⚠️ A SHORTER label than the desktop pill, and the
                                     difference is load-bearing rather than cosmetic:
@@ -394,19 +420,6 @@ export default function StoreNavbar() {
                                 {t('nav.signUpShort')}
                             </Link>
                         )}
-                        {/* Opens the site-wide search overlay. It used to be a plain
-                            link to /shop, which was the only place a search box existed
-                            — so a shopper on a product page had to leave it to search,
-                            and lost where they were. */}
-                        <button
-                            type="button"
-                            onClick={() => setSearchOpen(true)}
-                            data-testid="nav-search"
-                            aria-label={t('nav.search')}
-                            className="text-brand-gold hover:text-brand-teal hidden transition-colors md:inline-flex"
-                        >
-                            <Search className="size-5" />
-                        </button>
                         {/* Account. Signed out it is a plain link to sign-in (the pill
                             in the end cell carries the sign-up); signed in it opens a
                             menu, which is also the only place in the header a customer
@@ -659,10 +672,12 @@ export default function StoreNavbar() {
                                 </button>
                             </div>
 
-                            {/* Tapping this opens the same overlay as the desktop icon;
-                                it is a button dressed as a field because row 1 cannot
-                                fit a fifth control at 320px and a bare icon in here
-                                would read as a menu item rather than a search. */}
+                            {/* A second way into the same overlay, kept deliberately
+                                even though row 1 now carries the icon on phones too:
+                                someone who opened the drawer to browse categories
+                                should not have to close it to search. Dressed as a
+                                field rather than an icon, because in a list of links a
+                                bare icon reads as another menu item. */}
                             <button
                                 type="button"
                                 data-testid="nav-search-mobile"
