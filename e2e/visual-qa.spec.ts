@@ -6,6 +6,17 @@ import { expect, test } from './fixtures';
 // any dataset (the product page opens the first catalogue card, not a fixed slug).
 const OUT = process.env.QA_OUT || 'qa-shots';
 
+/**
+ * Freeze motion for the capture pass.
+ *
+ * The hero rotates every 6s, so without this each run screenshots whatever slide
+ * the timer happened to be on and the captures stop being comparable between runs
+ * — which is the entire point of a sweep meant for human eyeballing. It also
+ * removes mid-transition shots elsewhere. The carousel's reduced-motion opt-out is
+ * what makes this work; see `hero.tsx`.
+ */
+test.use({ reducedMotion: 'reduce' });
+
 const staticTargets = [
     { name: 'home', path: '/' },
     { name: 'shop', path: '/shop' },

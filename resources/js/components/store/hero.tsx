@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /** One slide's copy, read from i18n (`hero.slides`). */
@@ -107,6 +107,15 @@ const ART: Record<string, SlideArt> = {
  */
 const MOBILE_ART = '(max-width: 639px)';
 
+/**
+ * How long each slide holds, in ms.
+ *
+ * The brief was 5-7 seconds; 6 is the middle. Worth not going shorter: each slide
+ * carries two headline lines plus a sentence of subtext, and an Arabic reader needs
+ * most of five seconds to get through it once.
+ */
+const SLIDE_MS = 6000;
+
 /*
  * ⚠️ Every class below is a WHOLE literal string on purpose. Tailwind scans source
  * text, so a composed `bg-gradient-to-${dir}` compiles to no CSS at all and the
@@ -177,6 +186,36 @@ export default function StoreHero() {
     const slides = copy.filter((c) => ART[c.key]);
 
     const [index, setIndex] = useState(0);
+    const [paused, setPaused] = useState(false);
+    const count = slides.length;
+
+    /**
+     * Auto-advance.
+     *
+     * ⚠️ Keyed on `index` as well as the pause flags, which is what makes a manual
+     * click RESET the clock rather than inherit whatever was left of the current
+     * tick — without it, tapping an arrow half a second before a tick fires yanks
+     * the slide away again immediately.
+     */
+    useEffect(() => {
+        if (count < 2 || paused) return;
+        // An auto-rotating carousel is exactly what this setting is about.
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+        const id = window.setTimeout(() => setIndex((i) => (i + 1) % count), SLIDE_MS);
+
+        return () => window.clearTimeout(id);
+    }, [index, paused, count]);
+
+    // Don't rotate behind a tab nobody is looking at — otherwise someone returns
+    // after ten minutes to a slide chosen by a timer rather than by them.
+    useEffect(() => {
+        const onVisibility = () => setPaused(document.hidden);
+        document.addEventListener('visibilitychange', onVisibility);
+
+        return () => document.removeEventListener('visibilitychange', onVisibility);
+    }, []);
+
     if (slides.length === 0) return null;
 
     const active = Math.min(index, slides.length - 1);
@@ -187,7 +226,26 @@ export default function StoreHero() {
     const next = () => setIndex((i) => (i + 1) % slides.length);
 
     return (
-        <section className="relative w-full overflow-hidden">
+        <section
+            className="relative w-full overflow-hidden"
+            /* Pause while someone is reading or tabbing through it. Hover alone is
+               not enough: a keyboard user never triggers it, and the arrows and dots
+               are focusable. Together with the reduced-motion opt-out this is the
+               mitigation for WCAG 2.2.2 short of a visible pause button, which a hero
+               this size cannot carry without becoming furniture. */
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocusCapture={(e) => {
+                // 🔴 `:focus-visible`, NOT plain focus. Clicking a dot or an arrow
+                // focuses it, so a bare focus handler paused the carousel PERMANENTLY
+                // after any interaction — moving the mouse away does not blur. Caught
+                // by measuring: 7.5s after a dot click it had still not advanced.
+                // `:focus-visible` is exactly the distinction wanted here: a keyboard
+                // user tabbing in gets it, a mouse click does not.
+                if ((e.target as HTMLElement).matches?.(':focus-visible')) setPaused(true);
+            }}
+            onBlurCapture={() => setPaused(false)}
+        >
             {/* <picture>, not two <img> toggled with `hidden`: the browser picks ONE
                 source and downloads only that, so a phone never pulls the desktop
                 crop it isn't going to show. */}
@@ -272,7 +330,21 @@ export default function StoreHero() {
                         available: the subject in the landscape crop starts at x=58.3%
                         (measured by per-column variance) and the column already runs to
                         56%. Arabic was unaffected either way, being far shorter. */}
-                    <h1 className="font-heading text-[clamp(2.25rem,4.9vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-sm:text-[clamp(1.6rem,7.5vw,2.6rem)]">
+                    {/* 🔑 `rtl:leading-[1.28]`. The two lines were nearly touching in
+                        Arabic and comfortably separated in English at the SAME leading,
+                        which is not a taste difference — it is measurable. At 1.08 the
+                        gap from line 1's ink bottom to line 2's ink top is +17.2px in
+                        English and −2.8px in Arabic, i.e. the Arabic glyphs actually
+                        OVERLAP. Arabic fills far more of its line box: deep descenders
+                        (ر, ك) under line 1 meeting tall ascenders (ل, أ, ك) on line 2,
+                        where Latin leaves the same band empty.
+                        1.28 buys Arabic ~0.15em of clear air at every width (10.6px at
+                        1440, 4.4px at 390) — short of full parity with English's 0.24em
+                        on purpose, because the headline is two lines of ~70px type and
+                        matching it outright would add ~38px to a hero whose height is
+                        already the thing everyone complains about. Measure the INK, not
+                        the line boxes: the em box says these are 1.08 apart either way. */}
+                    <h1 className="font-heading text-[clamp(2.25rem,4.9vw,5.5rem)] leading-[1.08] font-black max-[732px]:text-[clamp(1.35rem,4.5vw,2rem)] max-sm:text-[clamp(1.6rem,7.5vw,2.6rem)] rtl:leading-[1.28]">
                         <span className={`block ${LINE1[art.line1]}`}>{slide.line1}</span>
                         <span className="block text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)]">{slide.line2}</span>
                     </h1>
