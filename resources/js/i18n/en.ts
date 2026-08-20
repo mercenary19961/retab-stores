@@ -85,6 +85,7 @@ const en = {
         about: 'About Us',
         contact: 'Contact Us',
         search: 'Search',
+        closeSearch: 'Close search',
         menu: 'Menu',
         closeMenu: 'Close menu',
         signIn: 'Sign in',
@@ -225,6 +226,11 @@ const en = {
         searching: 'Searching…',
         searchViewAll: 'See all results',
         clearFilters: 'Clear filters',
+    },
+    search: {
+        prompt: 'Type a product name, variety or SKU.',
+        failed: 'Search is unavailable right now. Please try again.',
+        viewAllCorrected: 'See all results for “{{term}}”',
     },
     about: {
         headTitle: 'About Us | Retab Dates',

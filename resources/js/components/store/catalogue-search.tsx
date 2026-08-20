@@ -1,55 +1,46 @@
+import { useSearchIndex } from '@/hooks/use-search-index';
 import { useLocalized } from '@/lib/localize';
+import { correctQuery, searchProducts, serverWouldMatch, type SearchResult } from '@/lib/search';
 import { Link } from '@inertiajs/react';
 import { Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface Suggestion {
-    slug: string;
-    name_ar: string;
-    name_en: string | null;
-    image: string | null;
-    price: number;
-    effective_price: number;
-    on_sale: boolean;
-    coming_soon: boolean;
-}
-
 /**
- * Catalogue search with a live typeahead. The whole (small, server-cached)
- * catalogue index is fetched ONCE on first interaction, then every keystroke
- * filters it in-memory — so results are truly instant, with zero DB hits or
- * network round-trips per key. Fetching lazily (not as an SSR prop) keeps the
- * server-rendered page identical for crawlers. Enter runs the full grid filter.
+ * The catalogue page's own search box, with a live typeahead.
+ *
+ * 🔑 Shares `useSearchIndex` and `searchProducts` with the navbar overlay, so the
+ * two can never disagree about what matches — and on this page they are on screen
+ * at the same time. Everything about HOW matching works (Arabic letter folding,
+ * typo tolerance, synonyms, ranking) lives in `lib/search.ts`; this file only
+ * renders it. The index is still fetched lazily rather than shipped as a prop, so
+ * the server-rendered page a crawler sees is unchanged.
  */
 export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQuery: string; onSubmit: (q: string) => void }) {
     const { t } = useTranslation();
     const localized = useLocalized();
     const currency = t('common.currency');
+    const { index, load: loadIndex } = useSearchIndex();
 
     const [q, setQ] = useState(initialQuery);
-    const [index, setIndex] = useState<Suggestion[] | null>(null);
     const [open, setOpen] = useState(false);
     const boxRef = useRef<HTMLDivElement>(null);
-    const startedRef = useRef(false);
 
-    // One-shot fetch of the full index, triggered on first focus/type.
-    const loadIndex = useCallback(() => {
-        if (startedRef.current) return;
-        startedRef.current = true;
-        fetch('/shop/search-index', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-            .then((r) => r.json())
-            .then((d: { products: Suggestion[] }) => setIndex(d.products ?? []))
-            .catch(() => {
-                startedRef.current = false; // allow a retry on the next interaction
-            });
-    }, []);
+    const term = q.trim();
+    const results: SearchResult[] = useMemo(() => (index ? searchProducts(index, term, 8) : []), [index, term]);
 
-    const term = q.trim().toLowerCase();
-    const results = useMemo(() => {
-        if (!index || term.length < 1) return [];
-        return index.filter((p) => p.name_ar.toLowerCase().includes(term) || (p.name_en ?? '').toLowerCase().includes(term)).slice(0, 8);
-    }, [index, term]);
+    /**
+     * What "see all results" should search for. The results page matches by
+     * substring only, so a query that matched purely on typo tolerance has to be
+     * corrected first — otherwise the link takes a shopper from five suggestions to
+     * an empty page. null = offer no link at all.
+     */
+    const submitTerm = useMemo(() => {
+        if (!index || term === '') return null;
+        if (serverWouldMatch(index, term)) return term;
+
+        return correctQuery(index, term, results[0]);
+    }, [index, term, results]);
 
     // Close on outside click / Escape.
     useEffect(() => {
@@ -57,6 +48,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
         const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
         window.addEventListener('mousedown', onDown);
         window.addEventListener('keydown', onKey);
+
         return () => {
             window.removeEventListener('mousedown', onDown);
             window.removeEventListener('keydown', onKey);
@@ -72,7 +64,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         setOpen(false);
-        onSubmit(q.trim());
+        onSubmit(submitTerm ?? term);
     };
 
     const showDropdown = open && term.length >= 1;
@@ -92,6 +84,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                     placeholder={t('catalogue.searchPlaceholder')}
                     aria-label={t('nav.search')}
                     autoComplete="off"
+                    data-testid="catalogue-search"
                     className="border-brand-gold/30 text-brand-teal placeholder:text-brand-teal/40 focus:border-brand-gold focus:ring-brand-gold/25 w-full rounded-full border bg-white py-2 ps-9 pe-4 text-sm focus:ring-2 focus:outline-none"
                 />
             </form>
@@ -121,7 +114,7 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                                             {r.coming_soon ? (
                                                 <span className="text-brand-gold text-xs font-semibold">{t('catalogue.comingSoon')}</span>
                                             ) : (
-                                                <span className="text-brand-teal/70 text-xs">
+                                                <span className="text-brand-teal/70 text-xs whitespace-nowrap">
                                                     {r.effective_price.toFixed(2)} {currency}
                                                     {r.on_sale && (
                                                         <span className="text-brand-teal/40 ms-1.5 line-through">{r.price.toFixed(2)}</span>
@@ -132,15 +125,17 @@ export default function CatalogueSearch({ initialQuery, onSubmit }: { initialQue
                                     </Link>
                                 </li>
                             ))}
-                            <li className="border-brand-gold/10 border-t">
-                                <button
-                                    type="button"
-                                    onClick={submit}
-                                    className="text-brand-gold hover:bg-brand-cream w-full px-4 py-2.5 text-start text-sm font-medium transition-colors"
-                                >
-                                    {t('catalogue.searchViewAll')}
-                                </button>
-                            </li>
+                            {submitTerm && (
+                                <li className="border-brand-gold/10 border-t">
+                                    <button
+                                        type="button"
+                                        onClick={submit}
+                                        className="text-brand-gold hover:bg-brand-cream w-full px-4 py-2.5 text-start text-sm font-medium transition-colors"
+                                    >
+                                        {submitTerm !== term ? t('search.viewAllCorrected', { term: submitTerm }) : t('catalogue.searchViewAll')}
+                                    </button>
+                                </li>
+                            )}
                         </ul>
                     )}
                 </div>

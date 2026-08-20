@@ -14,7 +14,9 @@ use App\Services\ReviewRewardService;
 use App\Services\ReviewService;
 use App\Support\Media;
 use App\Support\ProductCards;
+use App\Support\SearchText;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -92,10 +94,17 @@ class ShopController
         }
 
         if ($search !== '') {
-            // Bound as a parameter (safe); % / _ act as wildcards, which is fine for search.
-            $query->where(fn ($q) => $q
-                ->where('name_ar', 'like', "%{$search}%")
-                ->orWhere('name_en', 'like', "%{$search}%"));
+            // 🔑 Resolved against the SAME cached, normalised index the typeahead
+            // uses, not a raw SQL LIKE. A LIKE on the stored text cannot fold أ/ا
+            // or ة/ه, so «علبه» found nothing while the typeahead offered five
+            // products — a shopper would see suggestions, press Enter, and land on
+            // "no results". Matching here in PHP is free at this catalogue size and
+            // keeps one definition of what a word means; the query stays in SQL, so
+            // sorting and pagination are unaffected.
+            $query->whereIn('id', self::cachedIndex()
+                ->filter(fn (array $p) => SearchText::matches($p['terms'], $search))
+                ->pluck('id')
+                ->all());
         }
 
         if ($onSaleOnly) {
@@ -141,15 +150,34 @@ class ShopController
      * small (dozens of SKUs), so the whole index is a few KB. Cached (memory read,
      * not a query) and busted whenever a product or its images change; the 1h TTL
      * is a safety net for time-based sale windows. Buyable products rank first.
+     *
+     * 🔑 Each entry carries a pre-built `terms` haystack (name in both languages,
+     * SKU, category, plus synonym expansions) already run through
+     * `SearchText::normalize`. Normalising the catalogue once per cache period,
+     * server-side, means the client only ever has to normalise the QUERY — and it
+     * is the same string the `?q=` results page matches against, so the typeahead
+     * and the page it links to cannot disagree about what a word means.
      */
     public function searchIndex()
     {
-        $products = Cache::remember(Product::SEARCH_INDEX_CACHE, now()->addHour(), function () {
+        return response()->json(['products' => self::cachedIndex()]);
+    }
+
+    /**
+     * The cached search index, shared by the JSON endpoint and the catalogue's own
+     * `?q=` filter.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public static function cachedIndex(): Collection
+    {
+        return Cache::remember(Product::SEARCH_INDEX_CACHE, now()->addHour(), function () {
             return Product::visibleOnStore()
-                ->with('images')
+                ->with(['images', 'category:id,name_ar,name_en'])
                 ->orderByDesc('is_active')
                 ->get()
                 ->map(fn (Product $p) => [
+                    'id' => $p->id,
                     'slug' => $p->slug,
                     'name_ar' => $p->name_ar,
                     'name_en' => $p->name_en,
@@ -158,11 +186,16 @@ class ShopController
                     'effective_price' => $p->effectivePrice(),
                     'on_sale' => $p->isOnSale(),
                     'coming_soon' => $p->isComingSoon(),
+                    'terms' => SearchText::terms([
+                        $p->name_ar,
+                        $p->name_en,
+                        $p->sku,
+                        $p->category?->name_ar,
+                        $p->category?->name_en,
+                    ]),
                 ])
                 ->values();
         });
-
-        return response()->json(['products' => $products]);
     }
 
     /**

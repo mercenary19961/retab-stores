@@ -241,6 +241,19 @@ select:-webkit-autofill {
 }
 
 /*
+ * ⚠️ Chrome/Safari draw their own ✕ inside `input[type="search"]` once it has a
+ * value, and it cannot be restyled. In the search overlay that lands right beside
+ * our own close button, so the panel shows TWO crosses that do different things —
+ * one clears the field, one shuts the overlay. Suppressing the native one leaves a
+ * single, explicit control; clearing the text is still select-all-delete.
+ */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/*
  * Storefront scrollbar — slim brand-gold thumb on a transparent track. Opt in per
  * scroll region with the `brand-scrollbar` class (e.g. the search suggestions).
  */

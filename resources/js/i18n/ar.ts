@@ -87,6 +87,7 @@ const ar = {
         contact: 'تواصل معنا',
         search: 'البحث',
         menu: 'القائمة',
+        closeSearch: 'إغلاق البحث',
         closeMenu: 'إغلاق القائمة',
         signIn: 'تسجيل الدخول',
         signUp: 'إنشاء حساب',
@@ -229,6 +230,11 @@ const ar = {
         searching: 'جارٍ البحث…',
         searchViewAll: 'عرض كل النتائج',
         clearFilters: 'إعادة الضبط',
+    },
+    search: {
+        prompt: 'اكتب اسم المنتج أو الصنف أو رمز المنتج.',
+        failed: 'البحث غير متاح حالياً. حاول مرة أخرى.',
+        viewAllCorrected: 'عرض كل النتائج عن «{{term}}»',
     },
     about: {
         headTitle: 'من نحن | رطاب للتمور',

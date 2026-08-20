@@ -1,3 +1,4 @@
+import SearchOverlay from '@/components/store/search-overlay';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLocalized } from '@/lib/localize';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -192,6 +193,7 @@ export default function StoreNavbar() {
     const accountHref = loggedIn ? '/account' : props.whatsappAuth ? '/login/whatsapp' : '/login';
 
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
 
     // Reveal-on-scroll-up navbar: one scroll down hides it outright, scrolling up
     // slides it straight back in, so navigation is always a flick away. `scrolled`
@@ -392,14 +394,19 @@ export default function StoreNavbar() {
                                 {t('nav.signUpShort')}
                             </Link>
                         )}
-                        {/* Catalogue hosts the product search box. */}
-                        <Link
-                            href="/shop"
+                        {/* Opens the site-wide search overlay. It used to be a plain
+                            link to /shop, which was the only place a search box existed
+                            — so a shopper on a product page had to leave it to search,
+                            and lost where they were. */}
+                        <button
+                            type="button"
+                            onClick={() => setSearchOpen(true)}
+                            data-testid="nav-search"
                             aria-label={t('nav.search')}
                             className="text-brand-gold hover:text-brand-teal hidden transition-colors md:inline-flex"
                         >
                             <Search className="size-5" />
-                        </Link>
+                        </button>
                         {/* Account. Signed out it is a plain link to sign-in (the pill
                             in the end cell carries the sign-up); signed in it opens a
                             menu, which is also the only place in the header a customer
@@ -652,6 +659,23 @@ export default function StoreNavbar() {
                                 </button>
                             </div>
 
+                            {/* Tapping this opens the same overlay as the desktop icon;
+                                it is a button dressed as a field because row 1 cannot
+                                fit a fifth control at 320px and a bare icon in here
+                                would read as a menu item rather than a search. */}
+                            <button
+                                type="button"
+                                data-testid="nav-search-mobile"
+                                onClick={() => {
+                                    setMobileOpen(false);
+                                    setSearchOpen(true);
+                                }}
+                                className="border-brand-gold/30 text-brand-teal/50 hover:border-brand-gold mb-2 flex w-full items-center gap-2 rounded-full border px-3 py-2 text-start text-sm transition-colors"
+                            >
+                                <Search className="text-brand-gold size-4 shrink-0" />
+                                {t('catalogue.searchPlaceholder')}
+                            </button>
+
                             <Link href="/" className="text-brand-gold hover:bg-brand-cream rounded-lg px-3 py-2" onClick={() => setMobileOpen(false)}>
                                 {t('nav.home')}
                             </Link>
@@ -786,6 +810,10 @@ export default function StoreNavbar() {
                     </div>,
                     document.body,
                 )}
+
+            {/* Portals to <body> itself — see the component. It must not be a fixed
+                descendant of this transformed header. */}
+            <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
         </header>
     );
 }
