@@ -62,7 +62,7 @@ interface TopProduct {
     name_ar: string;
     name_en: string | null;
     qty: number;
-    revenue: number;
+    revenue: number | null;
 }
 interface DemandRow {
     product_id: number;
@@ -101,8 +101,8 @@ export default function AdminDashboard({
     customers,
     recentOrders,
 }: {
-    kpis: Kpis;
-    trend: TrendPoint[];
+    kpis: Kpis | null;
+    trend: TrendPoint[] | null;
     tasks: Task[];
     inventory: Inventory;
     insights: { topProducts: TopProduct[]; demand: DemandRow[] };
@@ -119,10 +119,11 @@ export default function AdminDashboard({
         return { pct: ((cur - prev) / prev) * 100, up: cur >= prev };
     };
 
-    const aov = kpis.orders30 ? kpis.revenue30 / kpis.orders30 : 0;
-    const aovPrev = kpis.ordersPrev30 ? kpis.revenuePrev30 / kpis.ordersPrev30 : 0;
-    const trendMax = Math.max(1, ...trend.map((p) => p.revenue));
-    const trendPeak = trend.length ? Math.max(...trend.map((p) => p.revenue)) : 0;
+    // null = withheld from this viewer (money is admin-only), not zero.
+    const aov = kpis && kpis.orders30 ? kpis.revenue30 / kpis.orders30 : 0;
+    const aovPrev = kpis && kpis.ordersPrev30 ? kpis.revenuePrev30 / kpis.ordersPrev30 : 0;
+    const trendMax = Math.max(1, ...(trend ?? []).map((p) => p.revenue));
+    const trendPeak = trend?.length ? Math.max(...trend.map((p) => p.revenue)) : 0;
     // 'YYYY-MM-DD' → localized short day (parse as local midnight to avoid TZ off-by-one).
     const fmtDay = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
     const openTasks = tasks.filter((task) => task.count > 0);
@@ -154,71 +155,83 @@ export default function AdminDashboard({
 
             <p className="mb-6 text-sm text-neutral-400">{t('admin.dashboard.subtitle')}</p>
 
-            {/* Revenue KPIs */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <KpiCard
-                    label={t('admin.dashboard.kpis.revenue30')}
-                    value={money(kpis.revenue30)}
-                    cur={kpis.revenue30}
-                    prev={kpis.revenuePrev30}
-                    sub={t('admin.dashboard.kpis.vsPrev')}
-                />
-                <KpiCard
-                    label={t('admin.dashboard.kpis.orders30')}
-                    value={kpis.orders30.toLocaleString()}
-                    cur={kpis.orders30}
-                    prev={kpis.ordersPrev30}
-                    sub={t('admin.dashboard.kpis.vsPrev')}
-                />
-                <KpiCard label={t('admin.dashboard.kpis.aov')} value={money(aov)} cur={aov} prev={aovPrev} sub={t('admin.dashboard.kpis.vsPrev')} />
-                <KpiCard
-                    label={t('admin.dashboard.kpis.revenueToday')}
-                    value={money(kpis.revenueToday)}
-                    cur={kpis.revenueToday}
-                    prev={kpis.revenueYesterday}
-                    sub={t('admin.dashboard.kpis.vsYesterday')}
-                />
-            </div>
+            {/* Revenue KPIs — admin only. */}
+            {kpis && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <KpiCard
+                        label={t('admin.dashboard.kpis.revenue30')}
+                        value={money(kpis.revenue30)}
+                        cur={kpis.revenue30}
+                        prev={kpis.revenuePrev30}
+                        sub={t('admin.dashboard.kpis.vsPrev')}
+                    />
+                    <KpiCard
+                        label={t('admin.dashboard.kpis.orders30')}
+                        value={kpis.orders30.toLocaleString()}
+                        cur={kpis.orders30}
+                        prev={kpis.ordersPrev30}
+                        sub={t('admin.dashboard.kpis.vsPrev')}
+                    />
+                    <KpiCard
+                        label={t('admin.dashboard.kpis.aov')}
+                        value={money(aov)}
+                        cur={aov}
+                        prev={aovPrev}
+                        sub={t('admin.dashboard.kpis.vsPrev')}
+                    />
+                    <KpiCard
+                        label={t('admin.dashboard.kpis.revenueToday')}
+                        value={money(kpis.revenueToday)}
+                        cur={kpis.revenueToday}
+                        prev={kpis.revenueYesterday}
+                        sub={t('admin.dashboard.kpis.vsYesterday')}
+                    />
+                </div>
+            )}
 
-            {/* Daily revenue trend */}
-            <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                <h2 className="mb-4 flex items-center justify-between gap-2 font-semibold text-neutral-100">
-                    <span className="flex items-center gap-2">
-                        <BarChart3 className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.trend.title')}
-                    </span>
-                    {trendPeak > 0 && (
-                        <span className="text-xs font-normal text-neutral-400">{t('admin.dashboard.trend.peak', { value: money(trendPeak) })}</span>
-                    )}
-                </h2>
-                {trendMax <= 1 ? (
-                    <p className="py-8 text-center text-sm text-neutral-500">{t('admin.dashboard.trend.empty')}</p>
-                ) : (
-                    <>
-                        <div className="flex h-36 items-end gap-1" dir="ltr">
-                            {trend.map((p) => (
-                                <div key={p.date} className="group relative flex h-full flex-1 flex-col justify-end">
-                                    <div
-                                        className="bg-brand-gold/50 group-hover:bg-brand-gold w-full rounded-t transition-colors"
-                                        style={{ height: `${Math.max(2, (p.revenue / trendMax) * 100)}%` }}
-                                    />
-                                    {/* Styled hover tooltip (replaces the clunky native title) — anchored
+            {/* Daily revenue trend — admin only, same reason. */}
+            {trend && (
+                <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
+                    <h2 className="mb-4 flex items-center justify-between gap-2 font-semibold text-neutral-100">
+                        <span className="flex items-center gap-2">
+                            <BarChart3 className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.trend.title')}
+                        </span>
+                        {trendPeak > 0 && (
+                            <span className="text-xs font-normal text-neutral-400">
+                                {t('admin.dashboard.trend.peak', { value: money(trendPeak) })}
+                            </span>
+                        )}
+                    </h2>
+                    {trendMax <= 1 ? (
+                        <p className="py-8 text-center text-sm text-neutral-500">{t('admin.dashboard.trend.empty')}</p>
+                    ) : (
+                        <>
+                            <div className="flex h-36 items-end gap-1" dir="ltr">
+                                {trend.map((p) => (
+                                    <div key={p.date} className="group relative flex h-full flex-1 flex-col justify-end">
+                                        <div
+                                            className="bg-brand-gold/50 group-hover:bg-brand-gold w-full rounded-t transition-colors"
+                                            style={{ height: `${Math.max(2, (p.revenue / trendMax) * 100)}%` }}
+                                        />
+                                        {/* Styled hover tooltip (replaces the clunky native title) — anchored
                                         above the column so it sits at a consistent height for every bar. */}
-                                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-start whitespace-nowrap shadow-lg group-hover:block">
-                                        <div className="text-xs font-medium text-neutral-100">{fmtDay(p.date)}</div>
-                                        <div className="text-brand-gold text-xs">{money(p.revenue)}</div>
-                                        <div className="text-[11px] text-neutral-400">{t('admin.dashboard.trend.orders', { n: p.orders })}</div>
+                                        <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-start whitespace-nowrap shadow-lg group-hover:block">
+                                            <div className="text-xs font-medium text-neutral-100">{fmtDay(p.date)}</div>
+                                            <div className="text-brand-gold text-xs">{money(p.revenue)}</div>
+                                            <div className="text-[11px] text-neutral-400">{t('admin.dashboard.trend.orders', { n: p.orders })}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                        {/* Date range under the bars (chronological, so force LTR). */}
-                        <div className="mt-2 flex justify-between text-xs text-neutral-500" dir="ltr">
-                            <span>{fmtDay(trend[0].date)}</span>
-                            <span>{fmtDay(trend[trend.length - 1].date)}</span>
-                        </div>
-                    </>
-                )}
-            </div>
+                                ))}
+                            </div>
+                            {/* Date range under the bars (chronological, so force LTR). */}
+                            <div className="mt-2 flex justify-between text-xs text-neutral-500" dir="ltr">
+                                <span>{fmtDay(trend[0].date)}</span>
+                                <span>{fmtDay(trend[trend.length - 1].date)}</span>
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
 
             {/* Needs attention.
                 ⚠️ Two different empty states, and conflating them misleads. `tasks`
@@ -374,7 +387,8 @@ export default function AdminDashboard({
                                         {loc(p.name_ar, p.name_en)}
                                     </Link>
                                     <span className="shrink-0 text-xs text-neutral-400">
-                                        {t('admin.dashboard.insights.sold', { count: p.qty })} · {money(p.revenue)}
+                                        {t('admin.dashboard.insights.sold', { count: p.qty })}
+                                        {p.revenue !== null && <> · {money(p.revenue)}</>}
                                     </span>
                                 </li>
                             ))}

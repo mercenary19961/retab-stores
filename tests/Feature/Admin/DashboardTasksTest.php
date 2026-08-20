@@ -202,6 +202,42 @@ class DashboardTasksTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->has('recentOrders', 1));
     }
 
+    // ---------------------------------------------------------------------- money
+
+    public function test_revenue_is_withheld_from_editors(): void
+    {
+        $this->actingAs($this->editor(Permission::preset('manager')))
+            ->get('/admin/dashboard')
+            ->assertInertia(fn (Assert $page) => $page
+                // null, not zeroes: "0 SAR" would be a convincing lie rather than
+                // a withheld figure, and the page hides the block on null.
+                ->where('kpis', null)
+                ->where('trend', null)
+            );
+    }
+
+    public function test_an_admin_still_sees_revenue(): void
+    {
+        $this->actingAs($this->admin())
+            ->get('/admin/dashboard')
+            ->assertInertia(fn (Assert $page) => $page->has('kpis.revenue30')->has('trend'));
+    }
+
+    public function test_top_products_keep_the_ranking_but_drop_the_takings(): void
+    {
+        // What sells is operational and useful to whoever runs the catalogue;
+        // what it earned is not.
+        $manager = $this->editor(Permission::preset('manager'));
+
+        $this->actingAs($manager)->get('/admin/dashboard')
+            ->assertInertia(function (Assert $page) {
+                foreach ($page->toArray()['props']['insights']['topProducts'] as $row) {
+                    $this->assertNull($row['revenue'], 'revenue leaked to a non-admin');
+                    $this->assertArrayHasKey('qty', $row);
+                }
+            });
+    }
+
     // --------------------------------------------------------------------- drafts
 
     public function test_drafts_are_reported_as_inventory_not_as_a_task(): void

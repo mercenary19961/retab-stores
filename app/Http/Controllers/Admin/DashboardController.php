@@ -43,8 +43,16 @@ class DashboardController extends Controller
         $paidCount = fn (Carbon $from, Carbon $to): int => Order::where('payment_status', PaymentStatus::Paid)
             ->whereBetween('created_at', [$from, $to])->count();
 
+        // 🔑 Money is ADMIN-ONLY. Editors run the catalogue, the order desk and the
+        // content — none of which needs the store's takings. Gated on isAdmin()
+        // rather than a permission because there is no "revenue" section to grant
+        // and the client's rule is a flat one; add a section here if that changes.
+        // Like the other panels, withheld data is `null` (not zeroes), so the page
+        // can hide the block instead of reporting a convincing and false "0 SAR".
+        $seesMoney = $viewer->isAdmin();
+
         return Inertia::render('admin/dashboard', [
-            'kpis' => [
+            'kpis' => $seesMoney ? [
                 'currency' => 'SAR',
                 'revenue30' => $paidRevenue($now->copy()->subDays(30), $now),
                 'revenuePrev30' => $paidRevenue($now->copy()->subDays(60), $now->copy()->subDays(30)),
@@ -52,12 +60,12 @@ class DashboardController extends Controller
                 'ordersPrev30' => $paidCount($now->copy()->subDays(60), $now->copy()->subDays(30)),
                 'revenueToday' => $paidRevenue($now->copy()->startOfDay(), $now),
                 'revenueYesterday' => $paidRevenue($now->copy()->subDay()->startOfDay(), $now->copy()->startOfDay()),
-            ],
-            'trend' => $this->dailyRevenue(),
+            ] : null,
+            'trend' => $seesMoney ? $this->dailyRevenue() : null,
             'tasks' => $this->tasks($viewer),
             'inventory' => $this->inventory(),
             'insights' => [
-                'topProducts' => $this->topProducts(),
+                'topProducts' => $this->topProducts($seesMoney),
                 'demand' => $this->demand(),
             ],
             'customers' => [
@@ -217,7 +225,7 @@ class DashboardController extends Controller
      *
      * @return list<array<string, mixed>>
      */
-    private function topProducts(): array
+    private function topProducts(bool $withRevenue = true): array
     {
         return OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
@@ -234,7 +242,8 @@ class DashboardController extends Controller
                 'name_ar' => $r->name_ar,
                 'name_en' => $r->name_en,
                 'qty' => (int) $r->qty,
-                'revenue' => (float) $r->revenue,
+                // Null for non-admins: the ranking is operational, the takings are not.
+                'revenue' => $withRevenue ? (float) $r->revenue : null,
             ])->all();
     }
 
