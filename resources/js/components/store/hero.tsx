@@ -110,7 +110,7 @@ const MOBILE_ART = '(max-width: 639px)';
 /**
  * How long each slide holds, in ms.
  *
- * The brief was 5-7 seconds; 6 is the middle. Worth not going shorter: each slide
+ * The brief was 5-8 seconds; 6 sits inside it. Worth not going shorter: each slide
  * carries two headline lines plus a sentence of subtext, and an Arabic reader needs
  * most of five seconds to get through it once.
  */
@@ -187,15 +187,31 @@ export default function StoreHero() {
 
     const [index, setIndex] = useState(0);
     const [paused, setPaused] = useState(false);
+    // Bumped by every manual control, purely so the timer below restarts. See goTo.
+    const [nudge, setNudge] = useState(0);
     const count = slides.length;
+
+    /**
+     * Every manual control goes through here so the timer restarts on ANY press.
+     *
+     * 🔑 The nonce is why this exists rather than just calling `setIndex`. Keying
+     * the timer on `index` alone covers the arrows (they always move), but pressing
+     * the dot for the slide already showing sets state to the value it already has
+     * — React bails out, nothing re-renders, the effect never re-runs and the old
+     * timer keeps counting. So one control in the row would silently not reset it.
+     */
+    const goTo = (next: (i: number) => number) => {
+        setIndex(next);
+        setNudge((n) => n + 1);
+    };
 
     /**
      * Auto-advance.
      *
-     * ⚠️ Keyed on `index` as well as the pause flags, which is what makes a manual
-     * click RESET the clock rather than inherit whatever was left of the current
-     * tick — without it, tapping an arrow half a second before a tick fires yanks
-     * the slide away again immediately.
+     * ⚠️ Keyed on `index` and `nudge`, which is what makes a manual press RESET
+     * the clock rather than inherit whatever is left of the current tick — without
+     * it, tapping an arrow half a second before a tick yanks the slide away again
+     * immediately.
      */
     useEffect(() => {
         if (count < 2 || paused) return;
@@ -205,7 +221,7 @@ export default function StoreHero() {
         const id = window.setTimeout(() => setIndex((i) => (i + 1) % count), SLIDE_MS);
 
         return () => window.clearTimeout(id);
-    }, [index, paused, count]);
+    }, [index, nudge, paused, count]);
 
     // Don't rotate behind a tab nobody is looking at — otherwise someone returns
     // after ten minutes to a slide chosen by a timer rather than by them.
@@ -222,8 +238,8 @@ export default function StoreHero() {
     const slide = slides[active];
     const art = ART[slide.key];
     const many = slides.length > 1;
-    const prev = () => setIndex((i) => (i - 1 + slides.length) % slides.length);
-    const next = () => setIndex((i) => (i + 1) % slides.length);
+    const prev = () => goTo((i) => (i - 1 + slides.length) % slides.length);
+    const next = () => goTo((i) => (i + 1) % slides.length);
 
     return (
         <section
@@ -233,7 +249,15 @@ export default function StoreHero() {
                are focusable. Together with the reduced-motion opt-out this is the
                mitigation for WCAG 2.2.2 short of a visible pause button, which a hero
                this size cannot carry without becoming furniture. */
-            onMouseEnter={() => setPaused(true)}
+            onMouseEnter={() => {
+                // 🔴 Gated on a device that actually HOVERS. A tap dispatches a
+                // synthetic `mouseenter` with no matching `mouseleave` (measured:
+                // tapping an arrow fires mouseenter, and nothing ever releases it),
+                // so on a phone the carousel paused permanently the first time
+                // anyone touched it — which is most of this store's traffic. Same
+                // trap as `.spotlight-card` in app.css, which is scoped the same way.
+                if (window.matchMedia?.('(hover: hover)').matches) setPaused(true);
+            }}
             onMouseLeave={() => setPaused(false)}
             onFocusCapture={(e) => {
                 // 🔴 `:focus-visible`, NOT plain focus. Clicking a dot or an arrow
@@ -425,7 +449,7 @@ export default function StoreHero() {
                             <button
                                 key={s.key}
                                 type="button"
-                                onClick={() => setIndex(i)}
+                                onClick={() => goTo(() => i)}
                                 aria-label={`${t('hero.goToSlide')} ${i + 1}`}
                                 className={`rounded-full bg-white transition-all ${
                                     i === active ? 'size-3 opacity-90' : 'size-2 opacity-50 hover:opacity-75'
