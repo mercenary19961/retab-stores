@@ -675,6 +675,11 @@ const en = {
             status: 'Status',
             total: 'Total',
             date: 'Date',
+            greeting: {
+                morning: 'Good morning',
+                afternoon: 'Good afternoon',
+                evening: 'Good evening',
+            },
             kpis: {
                 revenue30: 'Revenue (30 days)',
                 orders30: 'Orders (30 days)',
@@ -686,11 +691,13 @@ const en = {
             trend: {
                 title: 'Daily revenue (30 days)',
                 empty: 'No sales in this period.',
-                peak: 'Peak {{value}}',
                 orders: '{{n}} orders',
             },
             tasks: {
                 title: 'Needs attention',
+                timeSensitive: 'TIME-SENSITIVE',
+                today: 'TODAY',
+                urgentCount: '{{n}} time-sensitive',
                 allClear: 'All clear, nothing needs attention.',
                 awaitingConfirmation: 'Orders to confirm',
                 bankTransfers: 'Bank transfers to verify',

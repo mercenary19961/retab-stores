@@ -104,7 +104,9 @@ const NAV_BOTTOM: NavItem[] = [
 const ALL_NAV: NavItem[] = [...NAV_TOP, ...NAV_GROUPS.flatMap((g) => g.items), ...NAV_BOTTOM];
 
 // Muted section header above each nav group.
-const GROUP_LABEL = 'px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-500';
+// On the teal sidebar, neutral-500 sits below a readable contrast — this is the
+// muted tone that still reads against #133c40.
+const GROUP_LABEL = 'px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-[#7f9fa1]';
 
 function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }>) {
     const { t, i18n } = useTranslation();
@@ -169,8 +171,8 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                 href={item.href}
                 className={
                     active
-                        ? 'bg-brand-teal/25 text-brand-gold flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold'
-                        : 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100'
+                        ? 'text-brand-gold flex items-center gap-3 rounded-lg bg-[#1b4e53] px-3 py-2 text-sm font-semibold'
+                        : 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#a8c2c4] transition-colors hover:bg-[#1b4e53]/60 hover:text-[#f5f1ea]'
                 }
             >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -262,14 +264,14 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                 so nothing reflows mid-slide. Direction handled in JS (Tailwind dropped
                 the max-lg:rtl: triple-stack). */}
             <aside
-                className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-40 flex w-60 shrink-0 flex-col overflow-hidden border-e border-neutral-800 bg-neutral-900 ease-in-out lg:static lg:translate-x-0 ${
+                className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} z-40 flex w-60 shrink-0 flex-col overflow-hidden border-e border-[#1b4e53] bg-[#133c40] ease-in-out lg:static lg:translate-x-0 ${
                     mounted ? 'transition-all duration-300' : ''
                 } ${collapsed ? 'lg:w-0 lg:border-e-0' : 'lg:w-60'} ${
                     sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
                 }`}
             >
                 <div className="flex h-full w-60 shrink-0 flex-col">
-                    <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-neutral-800 px-5">
+                    <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-[#1b4e53] px-5">
                         <Link href="/admin/dashboard" className="text-brand-gold flex min-w-0 items-center gap-2 text-lg font-bold">
                             <ShieldCheck className="h-5 w-5 shrink-0" />
                             <span className="truncate">{t('admin.brand')}</span>
@@ -295,7 +297,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                             </div>
                         ))}
                         {navBottom.length > 0 && (
-                            <div className="mt-auto border-t border-neutral-800 pt-3">
+                            <div className="mt-auto border-t border-[#1b4e53] pt-3">
                                 <p className={GROUP_LABEL}>{t('admin.navGroups.system')}</p>
                                 <div className="space-y-1">{navBottom.map(renderNavItem)}</div>
                             </div>

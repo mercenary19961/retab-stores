@@ -4,7 +4,6 @@ import { relativeTimeFromMinutes } from '@/lib/relative-time';
 import { Head, Link } from '@inertiajs/react';
 import {
     Banknote,
-    BarChart3,
     BellRing,
     Boxes,
     Clock,
@@ -121,116 +120,117 @@ export default function AdminDashboard({
 
     // null = withheld from this viewer (money is admin-only), not zero.
     const aov = kpis && kpis.orders30 ? kpis.revenue30 / kpis.orders30 : 0;
-    const aovPrev = kpis && kpis.ordersPrev30 ? kpis.revenuePrev30 / kpis.ordersPrev30 : 0;
+    const revenueDelta = delta(kpis?.revenue30 ?? 0, kpis?.revenuePrev30 ?? 0);
+
+    // Greeting + date come from the VIEWER's clock. Rendering them server-side
+    // would show the container's hour and locale, which for a KSA client on a
+    // Railway box is routinely the wrong half of the day.
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+    const today = new Date().toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' });
     const trendMax = Math.max(1, ...(trend ?? []).map((p) => p.revenue));
-    const trendPeak = trend?.length ? Math.max(...trend.map((p) => p.revenue)) : 0;
     // 'YYYY-MM-DD' → localized short day (parse as local midnight to avoid TZ off-by-one).
     const fmtDay = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
     const openTasks = tasks.filter((task) => task.count > 0);
-
-    const KpiCard = ({ label, value, cur, prev, sub }: { label: string; value: string; cur: number; prev: number; sub: string }) => {
-        const d = delta(cur, prev);
-        return (
-            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                <div className="text-sm text-neutral-400">{label}</div>
-                <div className="mt-1 text-2xl font-bold text-neutral-100">{value}</div>
-                <div className="mt-1 flex items-center gap-1.5 text-xs">
-                    {d.pct === null ? (
-                        <span className="text-neutral-500">—</span>
-                    ) : (
-                        <span className={`inline-flex items-center gap-0.5 font-medium ${d.up ? 'text-green-400' : 'text-red-400'}`}>
-                            {d.up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                            {Math.abs(d.pct).toFixed(0)}%
-                        </span>
-                    )}
-                    <span className="text-neutral-500">{sub}</span>
-                </div>
-            </div>
-        );
-    };
+    const urgentCount = openTasks.filter((task) => task.urgent).length;
+    // Bars scale against the best seller, so the leader is always full-width.
+    const topQtyMax = Math.max(1, ...insights.topProducts.map((p) => p.qty));
 
     return (
         <AdminLayout title={t('admin.dashboard.title')}>
             <Head title={t('admin.dashboard.title')} />
 
-            <p className="mb-6 text-sm text-neutral-400">{t('admin.dashboard.subtitle')}</p>
+            {/* Direction B opens by addressing the reader, not by labelling the page.
+                The greeting is computed client-side from the viewer's own clock —
+                a server-rendered one would show the container's hour. */}
+            <div className="mb-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h1 className="font-heading text-xl font-bold text-neutral-100">{t(`admin.dashboard.greeting.${greeting}`)}</h1>
+                <span className="text-sm text-neutral-500">{today}</span>
+            </div>
 
-            {/* Revenue KPIs — admin only. */}
+            {/* THE HERO — direction B. One number dominates, in gold on brand teal,
+                with the chart and the supporting figures inside the same panel rather
+                than as three competing cards. Admin-only: `kpis` is null for editors
+                (money is admins only), and the whole block goes with it. */}
             {kpis && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <KpiCard
-                        label={t('admin.dashboard.kpis.revenue30')}
-                        value={money(kpis.revenue30)}
-                        cur={kpis.revenue30}
-                        prev={kpis.revenuePrev30}
-                        sub={t('admin.dashboard.kpis.vsPrev')}
-                    />
-                    <KpiCard
-                        label={t('admin.dashboard.kpis.orders30')}
-                        value={kpis.orders30.toLocaleString()}
-                        cur={kpis.orders30}
-                        prev={kpis.ordersPrev30}
-                        sub={t('admin.dashboard.kpis.vsPrev')}
-                    />
-                    <KpiCard
-                        label={t('admin.dashboard.kpis.aov')}
-                        value={money(aov)}
-                        cur={aov}
-                        prev={aovPrev}
-                        sub={t('admin.dashboard.kpis.vsPrev')}
-                    />
-                    <KpiCard
-                        label={t('admin.dashboard.kpis.revenueToday')}
-                        value={money(kpis.revenueToday)}
-                        cur={kpis.revenueToday}
-                        prev={kpis.revenueYesterday}
-                        sub={t('admin.dashboard.kpis.vsYesterday')}
-                    />
-                </div>
-            )}
+                <section className="from-brand-teal overflow-hidden rounded-2xl bg-gradient-to-br to-[#14383c] p-6 sm:p-7">
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-9">
+                        {/* Headline figure */}
+                        <div className="flex shrink-0 flex-col gap-1.5 lg:w-64">
+                            <span className="text-xs tracking-wide text-[#9fc0c2]">{t('admin.dashboard.kpis.revenue30')}</span>
+                            <div className="flex flex-wrap items-baseline gap-x-2.5">
+                                {/* dir=ltr: a large figure must not be reordered under RTL. */}
+                                <span className="font-heading text-4xl leading-none font-bold tracking-tight text-[#d9bc82] sm:text-5xl" dir="ltr">
+                                    {Math.round(kpis.revenue30).toLocaleString()}
+                                </span>
+                                <span className="text-base text-[#9fc0c2]">{sar}</span>
+                            </div>
+                            {revenueDelta.pct !== null && (
+                                <div className="mt-1 flex items-center gap-1.5 text-xs">
+                                    <span
+                                        className={`inline-flex items-center gap-1 font-semibold ${revenueDelta.up ? 'text-[#7fd1a0]' : 'text-red-300'}`}
+                                    >
+                                        {revenueDelta.up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                                        {Math.abs(revenueDelta.pct).toFixed(0)}%
+                                    </span>
+                                    <span className="text-[#7f9fa1]">{t('admin.dashboard.kpis.vsPrev')}</span>
+                                </div>
+                            )}
+                        </div>
 
-            {/* Daily revenue trend — admin only, same reason. */}
-            {trend && (
-                <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                    <h2 className="mb-4 flex items-center justify-between gap-2 font-semibold text-neutral-100">
-                        <span className="flex items-center gap-2">
-                            <BarChart3 className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.trend.title')}
-                        </span>
-                        {trendPeak > 0 && (
-                            <span className="text-xs font-normal text-neutral-400">
-                                {t('admin.dashboard.trend.peak', { value: money(trendPeak) })}
-                            </span>
-                        )}
-                    </h2>
-                    {trendMax <= 1 ? (
-                        <p className="py-8 text-center text-sm text-neutral-500">{t('admin.dashboard.trend.empty')}</p>
-                    ) : (
-                        <>
-                            <div className="flex h-36 items-end gap-1" dir="ltr">
-                                {trend.map((p) => (
-                                    <div key={p.date} className="group relative flex h-full flex-1 flex-col justify-end">
-                                        <div
-                                            className="bg-brand-gold/50 group-hover:bg-brand-gold w-full rounded-t transition-colors"
-                                            style={{ height: `${Math.max(2, (p.revenue / trendMax) * 100)}%` }}
-                                        />
-                                        {/* Styled hover tooltip (replaces the clunky native title) — anchored
-                                        above the column so it sits at a consistent height for every bar. */}
-                                        <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md border border-neutral-700 bg-neutral-800 px-2 py-1 text-start whitespace-nowrap shadow-lg group-hover:block">
-                                            <div className="text-xs font-medium text-neutral-100">{fmtDay(p.date)}</div>
-                                            <div className="text-brand-gold text-xs">{money(p.revenue)}</div>
-                                            <div className="text-[11px] text-neutral-400">{t('admin.dashboard.trend.orders', { n: p.orders })}</div>
+                        {/* Chart, sharing the hero rather than owning a card of its own. */}
+                        {trend && (
+                            <div className="min-w-0 flex-grow">
+                                {trendMax <= 1 ? (
+                                    <p className="py-8 text-center text-sm text-[#7f9fa1]">{t('admin.dashboard.trend.empty')}</p>
+                                ) : (
+                                    <>
+                                        <div className="flex h-24 items-end gap-1 border-b border-[#2c5f64] pb-px" dir="ltr">
+                                            {trend.map((p, i) => (
+                                                <div key={p.date} className="group relative flex h-full flex-1 flex-col justify-end">
+                                                    <div
+                                                        className={`w-full rounded-t transition-colors ${
+                                                            i >= trend.length - 3 ? 'bg-brand-gold' : 'bg-[#2c5f64] group-hover:bg-[#3d7a80]'
+                                                        }`}
+                                                        style={{ height: `${Math.max(2, (p.revenue / trendMax) * 100)}%` }}
+                                                    />
+                                                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md border border-[#2c5f64] bg-[#0f2f33] px-2 py-1 text-start whitespace-nowrap shadow-lg group-hover:block">
+                                                        <div className="text-xs font-medium text-neutral-100">{fmtDay(p.date)}</div>
+                                                        <div className="text-brand-gold text-xs">{money(p.revenue)}</div>
+                                                        <div className="text-[11px] text-[#9fc0c2]">
+                                                            {t('admin.dashboard.trend.orders', { n: p.orders })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    </div>
-                                ))}
+                                        <div className="mt-2 flex justify-between text-[11px] text-[#7f9fa1]" dir="ltr">
+                                            <span>{fmtDay(trend[0].date)}</span>
+                                            <span>{fmtDay(trend[trend.length - 1].date)}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
-                            {/* Date range under the bars (chronological, so force LTR). */}
-                            <div className="mt-2 flex justify-between text-xs text-neutral-500" dir="ltr">
-                                <span>{fmtDay(trend[0].date)}</span>
-                                <span>{fmtDay(trend[trend.length - 1].date)}</span>
+                        )}
+
+                        {/* The other three figures, demoted to a supporting column — the
+                            point of B is that they are not peers of the headline. */}
+                        <div className="grid shrink-0 grid-cols-3 gap-4 border-t border-[#2c5f64] pt-4 lg:grid-cols-1 lg:gap-3.5 lg:border-s lg:border-t-0 lg:ps-7 lg:pt-0">
+                            <div className="flex flex-col">
+                                <span className="text-[11px] text-[#7f9fa1]">{t('admin.dashboard.kpis.orders30')}</span>
+                                <span className="text-lg font-bold tracking-tight text-neutral-100">{kpis.orders30.toLocaleString()}</span>
                             </div>
-                        </>
-                    )}
-                </div>
+                            <div className="flex flex-col">
+                                <span className="text-[11px] text-[#7f9fa1]">{t('admin.dashboard.kpis.aov')}</span>
+                                <span className="text-lg font-bold tracking-tight text-neutral-100">{money(aov)}</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[11px] text-[#7f9fa1]">{t('admin.dashboard.kpis.revenueToday')}</span>
+                                <span className="text-lg font-bold tracking-tight text-neutral-100">{money(kpis.revenueToday)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             )}
 
             {/* Needs attention.
@@ -241,34 +241,54 @@ export default function AdminDashboard({
                 `openTasks` empty with tiles present is the real all-clear. */}
             {tasks.length > 0 && (
                 <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-5">
-                    <h2 className="mb-4 flex items-center gap-2 font-semibold text-neutral-100">
-                        <BellRing className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.tasks.title')}
+                    <h2 className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-semibold text-neutral-100">
+                        <span className="flex items-center gap-2">
+                            <BellRing className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.tasks.title')}
+                        </span>
+                        {urgentCount > 0 && (
+                            <span className="text-xs font-normal text-amber-400/90">
+                                {t('admin.dashboard.tasks.urgentCount', { n: urgentCount })}
+                            </span>
+                        )}
                     </h2>
                     {openTasks.length === 0 ? (
                         <p className="text-sm text-neutral-500">{t('admin.dashboard.tasks.allClear')}</p>
                     ) : (
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
                             {openTasks.map((task) => {
                                 const Icon = TASK_ICON[task.key] ?? ShoppingBag;
                                 return (
                                     <Link
                                         key={task.key}
                                         href={task.href}
-                                        className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+                                        className={`flex min-h-28 flex-col gap-2 rounded-xl border p-4 transition-colors ${
                                             task.urgent
-                                                ? 'border-amber-500/40 bg-amber-500/10 hover:border-amber-500'
+                                                ? 'border-amber-500/25 bg-amber-500/[0.06] hover:border-amber-500/60'
                                                 : 'border-neutral-800 bg-neutral-950/40 hover:border-neutral-700'
                                         }`}
                                     >
-                                        <span
-                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${task.urgent ? 'bg-amber-500/20 text-amber-300' : 'bg-neutral-800 text-neutral-300'}`}
-                                        >
-                                            <Icon className="h-5 w-5" />
+                                        {/* The urgency word does the work the colour used to.
+                                            Only the money-losing queues are tinted, which is
+                                            what stops the tint becoming wallpaper. */}
+                                        <span className="flex items-center gap-1.5">
+                                            <span
+                                                className={`h-1.5 w-1.5 shrink-0 rounded-full ${task.urgent ? 'bg-amber-500' : 'bg-brand-gold/60'}`}
+                                            />
+                                            <span
+                                                className={`truncate text-[10px] font-semibold tracking-wider ${task.urgent ? 'text-amber-400/90' : 'text-neutral-500'}`}
+                                            >
+                                                {t(task.urgent ? 'admin.dashboard.tasks.timeSensitive' : 'admin.dashboard.tasks.today')}
+                                            </span>
                                         </span>
-                                        <div className="min-w-0">
-                                            <div className="text-lg font-bold text-neutral-100">{task.count}</div>
-                                            <div className="truncate text-xs text-neutral-400">{t(`admin.dashboard.tasks.${task.key}`)}</div>
-                                        </div>
+                                        <span
+                                            className={`font-heading text-3xl leading-none font-bold tracking-tight ${task.urgent ? 'text-amber-300' : 'text-neutral-100'}`}
+                                        >
+                                            {task.count}
+                                        </span>
+                                        <span className="flex items-start gap-1.5 text-xs leading-snug text-neutral-400">
+                                            <Icon className="mt-px h-3.5 w-3.5 shrink-0 opacity-60" />
+                                            <span className="min-w-0">{t(`admin.dashboard.tasks.${task.key}`)}</span>
+                                        </span>
                                     </Link>
                                 );
                             })}
@@ -306,32 +326,35 @@ export default function AdminDashboard({
                               : t('admin.dashboard.inventory.syncOk', { ago: relativeTimeFromMinutes(inventory.lastSynced.minutes, i18n.language) })}
                     </div>
 
-                    <div className="mb-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-                        <div className="rounded-lg bg-neutral-950/40 p-3">
-                            <div className={`text-xl font-bold ${inventory.outOfStock ? 'text-red-400' : 'text-neutral-100'}`}>
+                    {/* Direction B: a coloured leading rule instead of four boxes.
+                        The rule carries the severity, so out-of-stock reads as urgent
+                        without the number having to shout. `border-s` not `border-l`,
+                        so it flips with the reading direction. */}
+                    <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+                        <div className="flex flex-col gap-0.5 border-s-2 border-red-400/70 ps-3">
+                            <span className={`text-xl font-bold ${inventory.outOfStock ? 'text-red-400' : 'text-neutral-100'}`}>
                                 {inventory.outOfStock}
-                            </div>
-                            <div className="text-xs text-neutral-500">{t('admin.dashboard.inventory.outOfStock')}</div>
+                            </span>
+                            <span className="text-[11px] text-neutral-500">{t('admin.dashboard.inventory.outOfStock')}</span>
                         </div>
-                        <div className="rounded-lg bg-neutral-950/40 p-3">
-                            <div className={`text-xl font-bold ${inventory.lowStock ? 'text-amber-400' : 'text-neutral-100'}`}>
+                        <div className="flex flex-col gap-0.5 border-s-2 border-amber-400/70 ps-3">
+                            <span className={`text-xl font-bold ${inventory.lowStock ? 'text-amber-400' : 'text-neutral-100'}`}>
                                 {inventory.lowStock}
-                            </div>
-                            <div className="text-xs text-neutral-500">{t('admin.dashboard.inventory.lowStock')}</div>
+                            </span>
+                            <span className="text-[11px] text-neutral-500">{t('admin.dashboard.inventory.lowStock')}</span>
                         </div>
-                        <div className="rounded-lg bg-neutral-950/40 p-3">
-                            <div className="text-xl font-bold text-neutral-100">{inventory.activeProducts}</div>
-                            <div className="text-xs text-neutral-500">{t('admin.dashboard.inventory.active')}</div>
+                        <div className="flex flex-col gap-0.5 border-s-2 border-neutral-700 ps-3">
+                            <span className="text-xl font-bold text-neutral-100">{inventory.activeProducts}</span>
+                            <span className="text-[11px] text-neutral-500">{t('admin.dashboard.inventory.active')}</span>
                         </div>
                         {/* Moved here from the action queue: a backlog that never
                             reaches zero belongs with the stock metrics, not beside
                             decisions due today. Still one click from the drafts list. */}
-                        <Link
-                            href="/admin/products?status=draft"
-                            className="rounded-lg bg-neutral-950/40 p-3 transition-colors hover:bg-neutral-950/70"
-                        >
-                            <div className="text-xl font-bold text-neutral-100">{inventory.drafts}</div>
-                            <div className="text-xs text-neutral-500">{t('admin.dashboard.inventory.drafts')}</div>
+                        <Link href="/admin/products?status=draft" className="group flex flex-col gap-0.5 border-s-2 border-neutral-700 ps-3">
+                            <span className="group-hover:text-brand-gold text-xl font-bold text-neutral-100 transition-colors">
+                                {inventory.drafts}
+                            </span>
+                            <span className="text-[11px] text-neutral-500">{t('admin.dashboard.inventory.drafts')}</span>
                         </Link>
                     </div>
 
@@ -370,26 +393,35 @@ export default function AdminDashboard({
                     <h2 className="mb-3 flex items-center gap-2 font-semibold text-neutral-100">
                         <Trophy className="text-brand-gold h-4 w-4" /> {t('admin.dashboard.insights.topProducts')}
                     </h2>
+                    {/* Direction B: a bar per product, scaled against the best seller,
+                        so the ranking reads at a glance instead of needing the numbers
+                        compared by eye. (A JSX comment cannot sit in a ternary branch
+                        alongside the element — it has to live out here.) */}
                     {insights.topProducts.length === 0 ? (
                         <p className="mb-5 text-sm text-neutral-500">{t('admin.dashboard.insights.noSales')}</p>
                     ) : (
-                        <ul className="mb-5 space-y-1 text-sm">
+                        <ul className="mb-5 space-y-2.5">
                             {insights.topProducts.map((p) => (
-                                <li
-                                    key={p.product_id}
-                                    className="flex items-center justify-between gap-2 border-b border-neutral-800/60 py-1.5 last:border-0"
-                                >
-                                    <Link
-                                        href={`/admin/products/${p.product_id}/edit`}
-                                        className="hover:text-brand-gold min-w-0 truncate text-neutral-200"
-                                        dir="auto"
-                                    >
-                                        {loc(p.name_ar, p.name_en)}
-                                    </Link>
-                                    <span className="shrink-0 text-xs text-neutral-400">
-                                        {t('admin.dashboard.insights.sold', { count: p.qty })}
-                                        {p.revenue !== null && <> · {money(p.revenue)}</>}
-                                    </span>
+                                <li key={p.product_id} className="flex flex-col gap-1.5">
+                                    <div className="flex items-baseline justify-between gap-2 text-sm">
+                                        <Link
+                                            href={`/admin/products/${p.product_id}/edit`}
+                                            className="hover:text-brand-gold min-w-0 truncate text-neutral-200"
+                                            dir="auto"
+                                        >
+                                            {loc(p.name_ar, p.name_en)}
+                                        </Link>
+                                        <span className="shrink-0 text-xs text-neutral-400">
+                                            {t('admin.dashboard.insights.sold', { count: p.qty })}
+                                            {p.revenue !== null && <> · {money(p.revenue)}</>}
+                                        </span>
+                                    </div>
+                                    <div className="h-1 overflow-hidden rounded-full bg-neutral-800">
+                                        <div
+                                            className="bg-brand-gold h-full rounded-full"
+                                            style={{ width: `${Math.max(4, (p.qty / topQtyMax) * 100)}%` }}
+                                        />
+                                    </div>
                                 </li>
                             ))}
                         </ul>

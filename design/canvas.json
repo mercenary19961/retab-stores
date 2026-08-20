@@ -1,0 +1,50 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "A · Command — laptop", "x": 0, "y": 0, "w": 1280, "h": 860 },
+    { "file": "APhone.dc.html", "title": "A · Command — phone", "x": 320, "y": 1060, "w": 390, "h": 844 },
+
+    { "file": "BLaptop.dc.html", "title": "B · Ledger — laptop", "x": 1420, "y": 0, "w": 1280, "h": 860 },
+    { "file": "BPhone.dc.html", "title": "B · Ledger — phone", "x": 1740, "y": 1060, "w": 390, "h": 844 },
+
+    { "file": "CLaptop.dc.html", "title": "C · Signal — laptop", "x": 2840, "y": 0, "w": 1280, "h": 860 },
+    { "file": "CPhone.dc.html", "title": "C · Signal — phone", "x": 3160, "y": 1060, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": -520,
+      "y": 0,
+      "w": 440,
+      "text": "RETAB ADMIN DASHBOARD — three directions\n\nFor: the client, on a laptop each morning, and on a phone during the day.\n\nAll three use the real app tokens: Instrument Sans, gold #af9056, teal #1b4e53, and the same card/radius recipe already in the panel. Counts are the real ones from your data (9 to confirm, 2 transfers, 2 returns, 10 to ship, 1 Tamara, 5/5/28/63 stock, 22 customers).\n\nRevenue figures are SAMPLE — dev has no paid orders, and a page of zeroes can't be judged.\n\nPick one, or mix: the hero from B with the right rail from C is a perfectly good answer."
+    },
+    {
+      "id": "note-a",
+      "x": 0,
+      "y": -190,
+      "w": 420,
+      "text": "A · COMMAND — operations first\n\nThe queue IS the page. Work becomes one ranked list ordered by what it costs you NOT to act, so urgency reads as position rather than colour. Money shrinks to a single strip.\n\nBest if: the person opening this is here to DO things.\nTradeoff: least glanceable — it looks like a to-do list, not a business."
+    },
+    {
+      "id": "note-b",
+      "x": 1420,
+      "y": -190,
+      "w": 420,
+      "text": "B · LEDGER — brand-forward, calm\n\nOne number dominates, on a teal panel in gold. Teal moves into the sidebar so the panel reads as Retab on sight, and only the two money-losing queues are tinted — which is what makes the tint mean something.\n\nBest if: the client wants to feel the business, not audit it.\nTradeoff: lowest density; more scrolling to reach the work."
+    },
+    {
+      "id": "note-c",
+      "x": 2840,
+      "y": -190,
+      "w": 420,
+      "text": "C · SIGNAL — analytics-forward\n\nA real chart with gridlines and axes, KPI cards carrying their own sparkline, and the queue as a persistent RIGHT RAIL you never scroll away from. On the phone that rail becomes a swipeable strip above the chart.\n\nBest if: the client reads trends, not just today.\nTradeoff: the most new UI to build and maintain."
+    },
+    {
+      "id": "note-phones",
+      "x": 320,
+      "y": 1960,
+      "w": 400,
+      "text": "PHONES — shared rules across all three\n\nNo painted status bar or fake keyboard: the real ones render on top on a device.\n\nEvery row and tab is 56px+ so it survives a thumb. Bottom bar for reach.\n\nEach direction answers the same question differently: A shows the list, B shows the number, C shows the chart."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; }
+    a { color: #af9056; text-decoration: none; }
+    a:hover { color: #c9a76a; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<!-- A · COMMAND — phone. Same idea, stripped to the decision list. No fake status
+     bar: the real one renders on top of this on a device. Every row is 56px+. -->
+<div style="width: 390px; height: 844px; background: #0a0a0a; color: #f5f5f5; font-size: 14px; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="height: 52px; flex-shrink: 0; border-bottom: 1px solid #262626; display: flex; align-items: center; gap: 12px; padding: 0 16px">
+    <div style="width: 36px; height: 36px; border-radius: 9px; border: 1px solid #262626; display: flex; align-items: center; justify-content: center">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#a3a3a3" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </div>
+    <span style="font-weight: 600; font-size: 15px">Dashboard</span>
+    <div style="flex-grow: 1"></div>
+    <div style="width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; position: relative">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#a3a3a3" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10.3 21a2 2 0 0 0 3.4 0"/></svg>
+      <span style="position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b"></span>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px">
+
+    <!-- On a phone the owner wants one number, not four. Today's takings. -->
+    <div style="border: 1px solid #262626; border-radius: 14px; background: #171717; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 11px; color: #737373">Today</span>
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <span style="font-size: 30px; font-weight: 700; letter-spacing: -0.03em">1,840</span>
+        <span style="font-size: 14px; color: #a3a3a3">SAR</span>
+        <div style="flex-grow: 1"></div>
+        <span style="font-size: 12px; font-weight: 600; color: #4ade80">3 orders</span>
+      </div>
+      <div style="display: flex; gap: 3px; align-items: flex-end; height: 34px; margin-top: 8px">
+        <sc-for list="{{spark}}" as="b" hint-placeholder-count="14">
+          <div style="flex-grow: 1; border-radius: 2px 2px 0 0; background: {{b.fill}}; height: {{b.h}}"></div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- The work. Ranked, tappable, 60px rows. -->
+    <div style="display: flex; align-items: center; gap: 8px; padding: 0 2px">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #737373">NEEDS ATTENTION</span>
+      <div style="flex-grow: 1; height: 1px; background: #262626"></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <sc-for list="{{queue}}" as="q" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 10px 14px; border-radius: 12px; background: {{q.bg}}; border: 1px solid {{q.border}}">
+          <span style="width: 30px; font-size: 21px; font-weight: 700; letter-spacing: -0.03em; color: {{q.numColor}}">{{q.count}}</span>
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+            <span style="font-size: 13px; font-weight: 600">{{q.label}}</span>
+            <span style="font-size: 11px; color: #737373; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{q.why}}</span>
+          </div>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#525252" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 2px 0">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #737373">STOCK</span>
+      <div style="flex-grow: 1; height: 1px; background: #262626"></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+      <sc-for list="{{stock}}" as="s" hint-placeholder-count="4">
+        <div style="background: #171717; border: 1px solid #262626; border-radius: 11px; padding: 12px 6px; text-align: center">
+          <div style="font-size: 18px; font-weight: 700; color: {{s.tone}}">{{s.n}}</div>
+          <div style="font-size: 10px; color: #737373; margin-top: 2px">{{s.label}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- Bottom bar: thumb-reachable, 4 destinations, 56px. -->
+  <div style="height: 62px; flex-shrink: 0; border-top: 1px solid #262626; background: #0f0f0f; display: flex; align-items: stretch">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: {{t.color}}">
+        <div style="width: 18px; height: 18px; border-radius: 5px; border: 2px solid {{t.color}}"></div>
+        <span style="font-size: 10px; font-weight: 500">{{t.label}}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#af9056","options":["#af9056","#1b4e53","#22c55e","#f59e0b"]}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const heights = [30, 52, 41, 68, 47, 88, 62, 34, 75, 58, 96, 44, 70, 100];
+    return {
+      spark: heights.map((h, i) => ({ h: h + '%', fill: i === heights.length - 1 ? '#af9056' : '#2f2f2f' })),
+      queue: [
+        { count: '2', label: 'Bank transfers', why: 'Money sent, order not moving', bg: '#f59e0b0f', border: '#f59e0b40', numColor: '#fbbf24' },
+        { count: '1', label: 'Tamara hold expiring', why: '~11h left', bg: '#f59e0b0f', border: '#f59e0b40', numColor: '#fbbf24' },
+        { count: '9', label: 'Orders to confirm', why: 'Paid, waiting on a stock check', bg: '#171717', border: '#262626', numColor: '#f5f5f5' },
+        { count: '10', label: 'Ready to ship', why: 'Confirmed, no courier booked', bg: '#171717', border: '#262626', numColor: '#f5f5f5' },
+        { count: '2', label: 'Returns to review', why: 'Within the 3-day window', bg: '#171717', border: '#262626', numColor: '#f5f5f5' },
+      ],
+      stock: [
+        { n: '5', label: 'Out', tone: '#f87171' },
+        { n: '5', label: 'Low', tone: '#fbbf24' },
+        { n: '28', label: 'Active', tone: '#f5f5f5' },
+        { n: '63', label: 'Drafts', tone: '#a3a3a3' },
+      ],
+      tabs: [
+        { label: 'Home', color: '#af9056' },
+        { label: 'Orders', color: '#525252' },
+        { label: 'Products', color: '#525252' },
+        { label: 'More', color: '#525252' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

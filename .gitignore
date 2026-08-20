@@ -34,3 +34,11 @@ yarn-error.log
 /playwright/.cache
 /qa-shots
 /database/e2e.sqlite
+
+# Design canvas — track the ARTBOARDS, ignore the seeded output.
+# `design/*.dc.html` + `canvas.json` are the design source (~60 KB) and the only
+# way to re-seed or extend the canvas later. The published .html is ~2.2 MB of
+# bundled editor payload regenerated in one command from those files — and git
+# keeps every version, so committing it would add another 2.2 MB blob per edit.
+/design/*.html
+!/design/*.dc.html

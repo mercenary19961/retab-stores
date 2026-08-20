@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; }
+    a { color: #af9056; text-decoration: none; }
+    a:hover { color: #c9a76a; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<!-- B · LEDGER — brand-forward and calm. Teal and gold do structural work instead of
+     appearing as the odd icon; one number dominates; fewer things per screen. -->
+<div style="width: 1280px; height: 860px; display: flex; background: #0d0d0d; color: #f5f1ea; font-size: 14px; overflow: hidden">
+
+  <!-- Sidebar in brand teal, not neutral grey — the panel reads as Retab on sight. -->
+  <div style="width: 240px; flex-shrink: 0; background: #133c40; border-right: 1px solid #1b4e53; display: flex; flex-direction: column; padding: 18px 12px; gap: 3px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 2px 8px 22px 8px">
+      <div style="width: 28px; height: 28px; border-radius: 8px; background: #af9056; display: flex; align-items: center; justify-content: center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#133c40" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M5 8c3 0 5 2 7 4M19 8c-3 0-5 2-7 4"/></svg>
+      </div>
+      <span style="font-weight: 700; font-size: 14px; letter-spacing: -0.01em; color: #f5f1ea">Retab Admin</span>
+    </div>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+      <div style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 8px; background: {{n.bg}}; color: {{n.fg}}; font-size: 13px; font-weight: {{n.weight}}">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: {{n.dot}}"></span>{{n.label}}
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0; background: #0d0d0d">
+
+    <div style="height: 60px; flex-shrink: 0; display: flex; align-items: center; gap: 16px; padding: 0 28px; border-bottom: 1px solid #1f1f1f">
+      <div style="display: flex; flex-direction: column">
+        <span style="font-weight: 600; font-size: 15px">Good morning</span>
+        <span style="font-size: 11px; color: #8a8175">Wednesday, 20 August</span>
+      </div>
+      <div style="flex-grow: 1"></div>
+      <div style="width: 30px; height: 30px; border-radius: 50%; background: #1b4e53"></div>
+    </div>
+
+    <div style="padding: 22px 28px; display: flex; flex-direction: column; gap: 20px; overflow: hidden">
+
+      <!-- ONE hero number in the brand teal, gold figure. The rest is secondary by
+           construction rather than by being smaller boxes of the same thing. -->
+      <div style="border-radius: 16px; background: linear-gradient(135deg, #1b4e53 0%, #14383c 100%); padding: 24px 28px; display: flex; align-items: center; gap: 36px; position: relative; overflow: hidden">
+        <div style="display: flex; flex-direction: column; gap: 6px; min-width: 260px">
+          <span style="font-size: 12px; color: #9fc0c2; letter-spacing: 0.03em">REVENUE · LAST 30 DAYS</span>
+          <div style="display: flex; align-items: baseline; gap: 10px">
+            <span style="font-size: 48px; font-weight: 700; letter-spacing: -0.035em; color: #d9bc82; line-height: 1">48,320</span>
+            <span style="font-size: 17px; color: #9fc0c2">SAR</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; margin-top: 4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7fd1a0" stroke-width="2.4" stroke-linecap="round"><path d="M4 17l7-7 4 4 6-6M15 8h6v6"/></svg>
+            <span style="font-size: 12px; font-weight: 600; color: #7fd1a0">+12%</span>
+            <span style="font-size: 12px; color: #7f9fa1">vs previous 30 days</span>
+          </div>
+        </div>
+
+        <!-- Chart with a real baseline, so the shape means something. -->
+        <div style="flex-grow: 1; display: flex; align-items: flex-end; gap: 4px; height: 96px; border-bottom: 1px solid #2c5f64; padding-bottom: 1px">
+          <sc-for list="{{trend}}" as="d" hint-placeholder-count="30">
+            <div style="flex-grow: 1; border-radius: 3px 3px 0 0; background: {{d.fill}}; height: {{d.h}}"></div>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; border-left: 1px solid #2c5f64; padding-left: 26px; min-width: 128px">
+          <sc-for list="{{side}}" as="s" hint-placeholder-count="3">
+            <div style="display: flex; flex-direction: column; gap: 1px">
+              <span style="font-size: 11px; color: #7f9fa1">{{s.label}}</span>
+              <span style="font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #f5f1ea">{{s.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Work: only the two that cost money are tinted. The rest are quiet, which
+           is what makes the tinted pair mean something. -->
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; gap: 12px">
+          <span style="font-weight: 600; font-size: 15px">Needs attention</span>
+          <span style="font-size: 12px; color: #8a8175">2 are time-sensitive</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px">
+          <sc-for list="{{queue}}" as="q" hint-placeholder-count="5">
+            <div style="border: 1px solid {{q.border}}; border-radius: 13px; background: {{q.bg}}; padding: 16px; display: flex; flex-direction: column; gap: 7px; min-height: 112px">
+              <div style="display: flex; align-items: center; gap: 7px">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: {{q.dot}}"></span>
+                <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: {{q.tag}}">{{q.urgency}}</span>
+              </div>
+              <span style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: {{q.num}}">{{q.count}}</span>
+              <span style="font-size: 12px; color: #b8b0a4; line-height: 1.35">{{q.label}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- One supporting row, warm-surfaced so the panel isn't wall-to-wall charcoal. -->
+      <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px">
+        <div style="border: 1px solid #23201b; border-radius: 13px; background: #15130f; padding: 17px 20px; display: flex; flex-direction: column; gap: 13px">
+          <div style="display: flex; align-items: center; gap: 9px">
+            <span style="font-weight: 600; font-size: 13px; color: #f5f1ea">Inventory</span>
+            <div style="flex-grow: 1"></div>
+            <span style="font-size: 11px; color: #d9a441">Last synced 5 weeks ago</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{stock}}" as="s" hint-placeholder-count="4">
+              <div style="display: flex; flex-direction: column; gap: 3px; padding-left: 11px; border-left: 2px solid {{s.rule}}">
+                <span style="font-size: 20px; font-weight: 700; color: {{s.tone}}">{{s.n}}</span>
+                <span style="font-size: 10px; color: #8a8175">{{s.label}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border: 1px solid #23201b; border-radius: 13px; background: #15130f; padding: 17px 20px; display: flex; flex-direction: column; gap: 11px">
+          <span style="font-weight: 600; font-size: 13px; color: #f5f1ea">Best sellers · 30 days</span>
+          <sc-for list="{{top}}" as="p" hint-placeholder-count="3">
+            <div style="display: flex; flex-direction: column; gap: 5px">
+              <div style="display: flex; align-items: baseline; gap: 10px">
+                <span style="flex-grow: 1; font-size: 12px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
+                <span style="font-size: 11px; color: #8a8175">{{p.qty}}</span>
+              </div>
+              <div style="height: 4px; border-radius: 2px; background: #23201b">
+                <div style="height: 4px; border-radius: 2px; background: #af9056; width: {{p.w}}"></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"heroTint":{"editor":"color","default":"#1b4e53","options":["#1b4e53","#133c40","#2a2119","#0d0d0d"]}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const bars = [38, 52, 44, 61, 49, 72, 58, 40, 66, 55, 81, 47, 63, 70, 52, 88, 61, 45, 74, 59, 92, 68, 51, 77, 64, 96, 71, 58, 83, 100];
+    return {
+      nav: [
+        { label: 'Dashboard', bg: '#1b4e53', fg: '#f5f1ea', dot: '#af9056', weight: '600' },
+        { label: 'Orders', bg: 'transparent', fg: '#a8c2c4', dot: '#2c5f64', weight: '400' },
+        { label: 'Returns', bg: 'transparent', fg: '#a8c2c4', dot: '#2c5f64', weight: '400' },
+        { label: 'Customers', bg: 'transparent', fg: '#a8c2c4', dot: '#2c5f64', weight: '400' },
+        { label: 'Products', bg: 'transparent', fg: '#a8c2c4', dot: '#2c5f64', weight: '400' },
+        { label: 'Inventory', bg: 'transparent', fg: '#a8c2c4', dot: '#2c5f64', weight: '400' },
+        { label: 'Marketing', bg: 'transparent', fg: '#a8c2c4', dot: '#2c5f64', weight: '400' },
+      ],
+      trend: bars.map((h, i) => ({ h: h + '%', fill: i >= bars.length - 3 ? '#af9056' : '#2c5f64' })),
+      side: [
+        { label: 'Orders', value: '176' },
+        { label: 'Average order', value: '275 SAR' },
+        { label: 'Today', value: '1,840 SAR' },
+      ],
+      queue: [
+        { count: '2', label: 'Bank transfers to verify', urgency: 'TIME-SENSITIVE', bg: '#f59e0b0f', border: '#f59e0b3d', dot: '#f59e0b', tag: '#d9a441', num: '#e8b45c' },
+        { count: '1', label: 'Tamara hold expiring', urgency: 'TIME-SENSITIVE', bg: '#f59e0b0f', border: '#f59e0b3d', dot: '#f59e0b', tag: '#d9a441', num: '#e8b45c' },
+        { count: '9', label: 'Orders to confirm', urgency: 'TODAY', bg: '#15130f', border: '#23201b', dot: '#af9056', tag: '#8a8175', num: '#f5f1ea' },
+        { count: '10', label: 'Ready to ship', urgency: 'TODAY', bg: '#15130f', border: '#23201b', dot: '#af9056', tag: '#8a8175', num: '#f5f1ea' },
+        { count: '2', label: 'Returns to review', urgency: 'THIS WEEK', bg: '#15130f', border: '#23201b', dot: '#4b463d', tag: '#8a8175', num: '#f5f1ea' },
+      ],
+      stock: [
+        { n: '5', label: 'Out of stock', tone: '#e07a6b', rule: '#e07a6b' },
+        { n: '5', label: 'Low stock', tone: '#d9a441', rule: '#d9a441' },
+        { n: '28', label: 'Active', tone: '#f5f1ea', rule: '#3d3830' },
+        { n: '63', label: 'Drafts', tone: '#8a8175', rule: '#3d3830' },
+      ],
+      top: [
+        { name: 'Sukkari Premium 1kg', qty: '84 sold', w: '100%' },
+        { name: 'Khalas Ushaiger Grade 1 · Carton', qty: '61 sold', w: '73%' },
+        { name: 'Ajwa Gift Box', qty: '39 sold', w: '46%' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

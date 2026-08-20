@@ -690,6 +690,11 @@ const ar = {
             status: 'الحالة',
             total: 'الإجمالي',
             date: 'التاريخ',
+            greeting: {
+                morning: 'صباح الخير',
+                afternoon: 'مساء الخير',
+                evening: 'مساء الخير',
+            },
             kpis: {
                 revenue30: 'الإيرادات (30 يوماً)',
                 orders30: 'الطلبات (30 يوماً)',
@@ -701,11 +706,13 @@ const ar = {
             trend: {
                 title: 'الإيرادات اليومية (30 يوماً)',
                 empty: 'لا مبيعات في هذه الفترة.',
-                peak: 'الأعلى {{value}}',
                 orders: '{{n}} طلب',
             },
             tasks: {
                 title: 'يحتاج انتباهك',
+                timeSensitive: 'عاجل',
+                today: 'اليوم',
+                urgentCount: '{{n}} عاجل',
                 allClear: 'كل شيء على ما يرام، لا شيء يحتاج انتباهك.',
                 awaitingConfirmation: 'طلبات بانتظار التأكيد',
                 bankTransfers: 'تحويلات بنكية للتحقق',

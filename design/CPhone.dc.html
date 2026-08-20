@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; }
+    a { color: #af9056; text-decoration: none; }
+    a:hover { color: #c9a76a; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<!-- C · SIGNAL — phone. The desktop's right rail becomes a swipeable strip at the
+     top, so the work is still the first thing, then the chart underneath. -->
+<div style="width: 390px; height: 844px; background: #09090b; color: #fafafa; font-size: 14px; display: flex; flex-direction: column; overflow: hidden">
+
+  <div style="height: 54px; flex-shrink: 0; border-bottom: 1px solid #1c1c1f; display: flex; align-items: center; gap: 12px; padding: 0 16px">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: #af9056; display: flex; align-items: center; justify-content: center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M5 8c3 0 5 2 7 4M19 8c-3 0-5 2-7 4"/></svg>
+    </div>
+    <span style="font-weight: 600; font-size: 15px">Overview</span>
+    <div style="flex-grow: 1"></div>
+    <div style="width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; position: relative">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10.3 21a2 2 0 0 0 3.4 0"/></svg>
+      <span style="position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b"></span>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; overflow: hidden; padding: 15px 0 0; display: flex; flex-direction: column; gap: 16px">
+
+    <!-- Horizontally scrolling action chips: urgent ones lead, so the first thing
+         under the thumb is the thing that costs money. -->
+    <div style="display: flex; flex-direction: column; gap: 9px">
+      <div style="display: flex; align-items: center; gap: 8px; padding: 0 16px">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.07em; color: #71717a">NEEDS ATTENTION</span>
+        <span style="font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #f59e0b1f; color: #fbbf24">24</span>
+      </div>
+      <div style="display: flex; gap: 9px; padding: 0 16px; overflow: hidden">
+        <sc-for list="{{queue}}" as="q" hint-placeholder-count="4">
+          <div style="flex-shrink: 0; width: 138px; min-height: 92px; border: 1px solid {{q.border}}; border-radius: 13px; background: {{q.bg}}; padding: 12px 13px; display: flex; flex-direction: column; gap: 5px">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: {{q.dot}}"></span>
+            <span style="font-size: 24px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: {{q.num}}">{{q.count}}</span>
+            <span style="font-size: 11px; color: #a1a1aa; line-height: 1.3">{{q.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="padding: 0 16px; display: flex; flex-direction: column; gap: 12px">
+
+      <!-- Chart keeps its axes on the phone; it's the reason to open the page. -->
+      <div style="border: 1px solid #1c1c1f; border-radius: 14px; background: #131316; padding: 15px 16px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; gap: 9px">
+          <span style="font-size: 24px; font-weight: 700; letter-spacing: -0.03em">48,320</span>
+          <span style="font-size: 12px; color: #71717a">SAR · 30 days</span>
+          <div style="flex-grow: 1"></div>
+          <span style="font-size: 12px; font-weight: 600; color: #4ade80">+12%</span>
+        </div>
+        <div style="display: flex; gap: 9px">
+          <div style="display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 16px; width: 22px">
+            <sc-for list="{{yAxis}}" as="y" hint-placeholder-count="3">
+              <span style="font-size: 9px; color: #52525b; text-align: right">{{y.label}}</span>
+            </sc-for>
+          </div>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0">
+            <div style="position: relative; height: 96px">
+              <sc-for list="{{gridlines}}" as="g" hint-placeholder-count="3">
+                <div style="position: absolute; left: 0; right: 0; top: {{g.top}}; height: 1px; background: #1c1c1f"></div>
+              </sc-for>
+              <div style="position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px">
+                <sc-for list="{{series}}" as="d" hint-placeholder-count="20">
+                  <div style="flex-grow: 1; border-radius: 2px 2px 0 0; background: {{d.fill}}; height: {{d.h}}"></div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-top: 6px">
+              <sc-for list="{{xAxis}}" as="x" hint-placeholder-count="3">
+                <span style="font-size: 9px; color: #52525b">{{x.label}}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{mini}}" as="m" hint-placeholder-count="2">
+          <div style="border: 1px solid #1c1c1f; border-radius: 13px; background: #131316; padding: 13px 15px; display: flex; flex-direction: column; gap: 3px">
+            <span style="font-size: 11px; color: #71717a">{{m.label}}</span>
+            <div style="display: flex; align-items: baseline; gap: 7px">
+              <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.02em">{{m.value}}</span>
+              <span style="font-size: 11px; font-weight: 600; color: #4ade80">{{m.delta}}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="border: 1px solid #1c1c1f; border-radius: 13px; background: #131316; padding: 13px 15px; display: flex; align-items: center; gap: 16px">
+        <sc-for list="{{stock}}" as="s" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 6px">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: {{s.dot}}"></span>
+            <span style="font-size: 15px; font-weight: 700">{{s.n}}</span>
+            <span style="font-size: 10px; color: #71717a">{{s.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 62px; flex-shrink: 0; border-top: 1px solid #1c1c1f; background: #0c0c0e; display: flex; align-items: stretch">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: {{t.color}}">
+        <div style="width: 18px; height: 18px; border-radius: 5px; border: 2px solid {{t.color}}"></div>
+        <span style="font-size: 10px; font-weight: 500">{{t.label}}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"chartColor":{"editor":"color","default":"#af9056","options":["#af9056","#1b4e53","#22c55e","#6366f1"]}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const main = [36, 50, 42, 60, 47, 71, 56, 39, 65, 53, 80, 45, 62, 69, 51, 88, 60, 44, 74, 100];
+    return {
+      queue: [
+        { count: '2', label: 'Bank transfers', bg: '#f59e0b0d', border: '#f59e0b33', dot: '#f59e0b', num: '#fbbf24' },
+        { count: '1', label: 'Tamara expiring', bg: '#f59e0b0d', border: '#f59e0b33', dot: '#f59e0b', num: '#fbbf24' },
+        { count: '9', label: 'To confirm', bg: '#131316', border: '#1c1c1f', dot: '#af9056', num: '#fafafa' },
+        { count: '10', label: 'Ready to ship', bg: '#131316', border: '#1c1c1f', dot: '#52525b', num: '#fafafa' },
+      ],
+      yAxis: [{ label: '3k' }, { label: '1.5k' }, { label: '0' }],
+      gridlines: [{ top: '0%' }, { top: '50%' }, { top: '100%' }],
+      series: main.map((h, i) => ({ h: h + '%', fill: i >= main.length - 2 ? '#af9056' : '#2a2a2e' })),
+      xAxis: [{ label: '22 Jul' }, { label: '5 Aug' }, { label: '20 Aug' }],
+      mini: [
+        { label: 'Orders', value: '176', delta: '+8%' },
+        { label: 'Average order', value: '275', delta: '+4%' },
+      ],
+      stock: [
+        { n: '5', label: 'out', dot: '#f87171' },
+        { n: '5', label: 'low', dot: '#fbbf24' },
+        { n: '28', label: 'active', dot: '#4ade80' },
+        { n: '63', label: 'drafts', dot: '#52525b' },
+      ],
+      tabs: [
+        { label: 'Home', color: '#af9056' },
+        { label: 'Orders', color: '#3f3f46' },
+        { label: 'Products', color: '#3f3f46' },
+        { label: 'More', color: '#3f3f46' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

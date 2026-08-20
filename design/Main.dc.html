@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; }
+    a { color: #af9056; text-decoration: none; }
+    a:hover { color: #c9a76a; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<!-- A · COMMAND — operations first. The action queue IS the page; money is a strip. -->
+<div style="width: 1280px; height: 860px; display: flex; background: #0a0a0a; color: #f5f5f5; font-size: 14px; overflow: hidden">
+
+  <!-- Sidebar (existing app chrome, 240px) -->
+  <div style="width: 240px; flex-shrink: 0; background: #0a0a0a; border-right: 1px solid #262626; display: flex; flex-direction: column; padding: 16px 12px; gap: 4px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px 8px">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #af9056; display: flex; align-items: center; justify-content: center">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M5 8c3 0 5 2 7 4M19 8c-3 0-5 2-7 4"/></svg>
+      </div>
+      <span style="font-weight: 700; font-size: 14px; letter-spacing: -0.01em">Retab Admin</span>
+    </div>
+    <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #525252; padding: 10px 8px 4px">SALES</div>
+    <sc-for list="{{navSales}}" as="n" hint-placeholder-count="3">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; color: #a3a3a3; font-size: 13px">
+        <span style="width: 5px; height: 5px; border-radius: 50%; background: #404040"></span>{{n.label}}
+      </div>
+    </sc-for>
+    <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.09em; color: #525252; padding: 14px 8px 4px">CATALOG</div>
+    <sc-for list="{{navCatalog}}" as="n" hint-placeholder-count="3">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; color: #a3a3a3; font-size: 13px">
+        <span style="width: 5px; height: 5px; border-radius: 50%; background: #404040"></span>{{n.label}}
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- Main column -->
+  <div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0">
+
+    <!-- Top bar -->
+    <div style="height: 56px; flex-shrink: 0; border-bottom: 1px solid #262626; display: flex; align-items: center; gap: 16px; padding: 0 24px">
+      <span style="font-weight: 600; font-size: 15px">Dashboard</span>
+      <div style="flex-grow: 1"></div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #737373">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e"></span>Store open
+      </div>
+      <div style="width: 28px; height: 28px; border-radius: 50%; background: #262626"></div>
+    </div>
+
+    <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; overflow: hidden">
+
+      <!-- MONEY AS A STRIP, not four boxes. One line, secondary to the work. -->
+      <div style="display: flex; align-items: stretch; gap: 0; border: 1px solid #262626; border-radius: 12px; background: #171717; overflow: hidden">
+        <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+          <div style="flex-grow: 1; padding: 12px 18px; border-right: 1px solid #262626; display: flex; flex-direction: column; gap: 3px">
+            <span style="font-size: 11px; color: #737373; letter-spacing: 0.01em">{{k.label}}</span>
+            <div style="display: flex; align-items: baseline; gap: 8px">
+              <span style="font-size: 19px; font-weight: 700; letter-spacing: -0.02em">{{k.value}}</span>
+              <span style="font-size: 11px; font-weight: 600; color: {{k.tone}}">{{k.delta}}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- THE HERO: work to do, as a ranked list. Urgency reads as ORDER, and the
+           amber rail carries it without shouting. -->
+      <div style="border: 1px solid #262626; border-radius: 12px; background: #171717; overflow: hidden">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #262626">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#af9056" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10.3 21a2 2 0 0 0 3.4 0"/></svg>
+          <span style="font-weight: 600; font-size: 14px">Needs attention</span>
+          <span style="font-size: 11px; color: #737373">24 items across 5 queues</span>
+        </div>
+        <sc-for list="{{queue}}" as="q" hint-placeholder-count="5">
+          <div style="display: flex; align-items: center; gap: 16px; padding: 13px 18px; border-bottom: 1px solid #1f1f1f; border-left: 3px solid {{q.rail}}">
+            <span style="width: 44px; font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: {{q.numColor}}">{{q.count}}</span>
+            <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 13px; font-weight: 600">{{q.label}}</span>
+              <span style="font-size: 11px; color: #737373">{{q.why}}</span>
+            </div>
+            <span style="font-size: 12px; font-weight: 600; color: #af9056; display: flex; align-items: center; gap: 5px">
+              {{q.action}}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#af9056" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Two supporting panels, equal weight, both below the work. -->
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+
+        <div style="border: 1px solid #262626; border-radius: 12px; background: #171717; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#af9056" stroke-width="2" stroke-linecap="round"><path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a2 2 0 0 1 2 2v4M3 6v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
+            <span style="font-weight: 600; font-size: 13px">Inventory</span>
+            <div style="flex-grow: 1"></div>
+            <span style="font-size: 11px; color: #f59e0b">synced 5 weeks ago</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{stock}}" as="s" hint-placeholder-count="4">
+              <div style="background: #0f0f0f; border-radius: 8px; padding: 10px 8px; text-align: center">
+                <div style="font-size: 17px; font-weight: 700; color: {{s.tone}}">{{s.n}}</div>
+                <div style="font-size: 10px; color: #737373; margin-top: 2px">{{s.label}}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border: 1px solid #262626; border-radius: 12px; background: #171717; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#af9056" stroke-width="2" stroke-linecap="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+            <span style="font-weight: 600; font-size: 13px">Latest orders</span>
+          </div>
+          <sc-for list="{{orders}}" as="o" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid #1f1f1f">
+              <span style="font-size: 12px; font-family: ui-monospace, monospace; color: #a3a3a3; width: 106px">{{o.num}}</span>
+              <span style="flex-grow: 1; font-size: 12px; min-width: 0">{{o.who}}</span>
+              <span style="font-size: 10px; padding: 2px 8px; border-radius: 999px; background: {{o.chipBg}}; color: {{o.chipFg}}">{{o.status}}</span>
+              <span style="font-size: 12px; font-weight: 600; width: 74px; text-align: right">{{o.total}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#af9056","options":["#af9056","#1b4e53","#22c55e","#f59e0b"]}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      navSales: [{ label: 'Orders' }, { label: 'Returns' }, { label: 'Customers' }],
+      navCatalog: [{ label: 'Products' }, { label: 'Product reviews' }, { label: 'Inventory' }],
+      kpis: [
+        { label: 'Revenue · 30 days', value: '48,320 SAR', delta: '+12%', tone: '#4ade80' },
+        { label: 'Orders · 30 days', value: '176', delta: '+8%', tone: '#4ade80' },
+        { label: 'Average order', value: '275 SAR', delta: '+4%', tone: '#4ade80' },
+        { label: 'Today', value: '1,840 SAR', delta: '3 orders', tone: '#737373' },
+      ],
+      // Ordered by cost of NOT acting, which is what "urgent" actually means.
+      queue: [
+        { count: '2', label: 'Bank transfers to verify', why: 'Money already sent, order not moving', action: 'Verify', rail: '#f59e0b', numColor: '#fbbf24' },
+        { count: '1', label: 'Tamara hold expiring', why: '~11h left before the sale stops being collectable', action: 'Confirm', rail: '#f59e0b', numColor: '#fbbf24' },
+        { count: '9', label: 'Orders to confirm', why: 'Paid and waiting on a stock check', action: 'Review', rail: '#af9056', numColor: '#f5f5f5' },
+        { count: '10', label: 'Ready to ship', why: 'Confirmed, no courier booked', action: 'Ship', rail: '#404040', numColor: '#f5f5f5' },
+        { count: '2', label: 'Returns to review', why: 'Filed within the 3-day window', action: 'Open', rail: '#404040', numColor: '#f5f5f5' },
+      ],
+      stock: [
+        { n: '5', label: 'Out', tone: '#f87171' },
+        { n: '5', label: 'Low', tone: '#fbbf24' },
+        { n: '28', label: 'Active', tone: '#f5f5f5' },
+        { n: '63', label: 'Drafts', tone: '#a3a3a3' },
+      ],
+      orders: [
+        { num: 'RTB-260820-K4', who: 'نورة القحطاني', status: 'Awaiting', total: '340 SAR', chipBg: '#78350f40', chipFg: '#fbbf24' },
+        { num: 'RTB-260820-J1', who: 'Faisal Alharbi', status: 'Confirmed', total: '185 SAR', chipBg: '#14532d40', chipFg: '#4ade80' },
+        { num: 'RTB-260819-H8', who: 'محمد العتيبي', status: 'Shipped', total: '520 SAR', chipBg: '#1e3a8a40', chipFg: '#93c5fd' },
+        { num: 'RTB-260819-G2', who: 'Sara Aldossary', status: 'Delivered', total: '95 SAR', chipBg: '#26262680', chipFg: '#a3a3a3' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
