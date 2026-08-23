@@ -13,6 +13,7 @@ class CartItem extends Model
     protected $fillable = [
         'cart_id',
         'product_id',
+        'product_option_id',
         'quantity',
         'unit_price',
     ];
@@ -30,6 +31,11 @@ class CartItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function option(): BelongsTo
+    {
+        return $this->belongsTo(ProductOption::class, 'product_option_id');
     }
 
     public function lineTotal(): float

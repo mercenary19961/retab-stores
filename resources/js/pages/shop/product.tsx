@@ -3,11 +3,29 @@ import ProductGallery from '@/components/store/product-gallery';
 import { Turnstile } from '@/components/turnstile';
 import StoreLayout from '@/layouts/store-layout';
 import { useLocalized } from '@/lib/localize';
+import { round2 } from '@/lib/option-pricing';
 import { type SharedData } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Check, Gift, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+interface ProductOptionData {
+    id: number;
+    label_ar: string;
+    label_en: string | null;
+    amount: number | null;
+    price: number;
+}
+
+// A selectable choice on the product page: the original (id null) or a size.
+interface Choice {
+    id: number | null;
+    label_ar: string;
+    label_en: string | null;
+    regular: number;
+    effective: number;
+}
 
 interface Product {
     id: number;
@@ -21,9 +39,11 @@ interface Product {
     sale_price: number | null;
     effective_price: number;
     on_sale: boolean;
+    sale_applies_to_options: boolean;
     in_stock: boolean;
     coming_soon: boolean;
     purchase_count: number;
+    options: ProductOptionData[];
     category: { name_ar: string; name_en: string | null; slug: string } | null;
     images: string[];
     images_thumb: string[];
@@ -88,11 +108,53 @@ export default function ShopProduct({
     const description = localized(product, 'description');
 
     const [qty, setQty] = useState(1);
+
+    // A discount is on the ORIGINAL price by default and only reaches the sizes
+    // when the admin opted it in (sale_applies_to_options) — mirrors
+    // Product::optionSaleRatio server-side, which is what the cart charges.
+    const optionRatio = product.on_sale && product.sale_applies_to_options && product.price > 0 ? product.sale_price! / product.price : 1;
+
+    // The choices the customer can pick from, when the product has sizes: the
+    // ORIGINAL first (id null — the default the page opens on, always available),
+    // then each size. `effective` is what is charged; `regular` is the struck-through
+    // "was". The original always carries the sale; a size only if opted in.
+    const hasOptions = product.options.length > 0;
+    const choices: Choice[] = hasOptions
+        ? [
+              {
+                  id: null,
+                  label_ar: t('product.originalSize'),
+                  label_en: t('product.originalSize'),
+                  regular: product.price,
+                  effective: product.on_sale ? product.sale_price! : product.price,
+              },
+              ...product.options.map((o) => ({
+                  id: o.id,
+                  label_ar: o.label_ar,
+                  label_en: o.label_en,
+                  regular: o.price,
+                  effective: round2(o.price * optionRatio),
+              })),
+          ]
+        : [];
+    // null = the original (default). A real size sets its own id.
+    const [optionId, setOptionId] = useState<number | null>(null);
+    const selected = hasOptions ? (choices.find((c) => c.id === optionId) ?? choices[0]) : null;
+
+    // Regular vs effective for the current selection — falls back to the product's
+    // own prices for a plain (no-size) product.
+    const selectedRegular = selected ? selected.regular : product.price;
+    const selectedEffective = selected ? selected.effective : product.on_sale ? product.effective_price : product.price;
+    // A strike is shown only when this selection is genuinely discounted.
+    const discounted = selectedEffective < selectedRegular;
+    // What the shopper pays / the Tamara estimate is based on.
+    const displayPrice = selectedEffective;
+
     // ⚠️ The divisor is the SERVER's configured instalment count, not a literal.
     // This block used to hardcode 4 while checkout requested 3, so the shopper
     // was quoted "4 payments of 25" and landed on a Tamara page offering 3 of
     // 33.33. Both numbers now come from the one config value.
-    const installment = product.effective_price / Math.max(tamaraInstalments, 1);
+    const installment = displayPrice / Math.max(tamaraInstalments, 1);
 
     // Product/Offer structured data for rich results.
     const jsonLd = {
@@ -193,20 +255,53 @@ export default function ShopProduct({
 
                     {!product.coming_soon && (
                         <div className="font-heading mt-4 flex items-center gap-3">
-                            {product.on_sale ? (
+                            {discounted ? (
                                 <>
                                     <span className="text-brand-teal text-3xl font-bold">
-                                        {product.effective_price.toFixed(2)} {currency}
+                                        {selectedEffective.toFixed(2)} {currency}
                                     </span>
                                     <span className="text-brand-teal/40 text-lg line-through">
-                                        {product.price.toFixed(2)} {currency}
+                                        {selectedRegular.toFixed(2)} {currency}
                                     </span>
                                 </>
                             ) : (
                                 <span className="text-brand-teal text-3xl font-bold">
-                                    {product.price.toFixed(2)} {currency}
+                                    {displayPrice.toFixed(2)} {currency}
                                 </span>
                             )}
+                        </div>
+                    )}
+
+                    {/* Size selector — the ORIGINAL first (auto-selected), then each
+                        size. Every choice is visible and one tap away; the big price
+                        above follows the selection. */}
+                    {!product.coming_soon && hasOptions && selected && (
+                        <div className="mt-5">
+                            <p className="text-brand-teal/70 mb-2 text-sm font-medium">{t('product.chooseOption')}</p>
+                            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('product.chooseOption')}>
+                                {choices.map((c) => {
+                                    const active = c.id === selected.id;
+                                    return (
+                                        <button
+                                            key={c.id ?? 'original'}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={active}
+                                            onClick={() => setOptionId(c.id)}
+                                            className={`rounded-2xl border px-4 py-2 text-center leading-tight transition-colors ${
+                                                active
+                                                    ? 'border-brand-teal bg-brand-teal text-white'
+                                                    : 'border-brand-gold/30 text-brand-teal hover:border-brand-teal/60 bg-white'
+                                            }`}
+                                        >
+                                            <span className="block text-sm font-bold">{localized(c, 'label')}</span>
+                                            <span className={`block text-xs ${active ? 'text-white/80' : 'text-brand-teal/50'}`}>
+                                                {c.effective.toFixed(2)} {currency}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
 
@@ -259,7 +354,13 @@ export default function ShopProduct({
                             <button
                                 type="button"
                                 data-testid="add-to-cart"
-                                onClick={() => router.post('/cart', { product_id: product.id, quantity: qty }, { preserveScroll: true })}
+                                onClick={() =>
+                                    router.post(
+                                        '/cart',
+                                        { product_id: product.id, option_id: selected?.id ?? null, quantity: qty },
+                                        { preserveScroll: true },
+                                    )
+                                }
                                 className="bg-brand-teal hover:bg-brand-teal/90 inline-flex flex-1 items-center justify-center gap-2 rounded-full px-8 py-3 font-semibold text-white transition-colors"
                             >
                                 <ShoppingBag className="size-5" />

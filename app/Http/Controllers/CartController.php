@@ -65,11 +65,22 @@ class CartController
     {
         $data = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
+            'option_id' => ['nullable', 'integer', 'exists:product_options,id'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:99'],
         ]);
 
         $product = Product::where('is_active', true)->findOrFail($data['product_id']);
-        $this->cart->add($product, $data['quantity'] ?? 1);
+
+        // Resolve the chosen option, if any. It must belong to this product and be
+        // active. No option means the ORIGINAL product — always a valid choice,
+        // even when sizes exist (it is the default the page opens on).
+        $option = null;
+        if (! empty($data['option_id'])) {
+            $option = $product->activeOptions()->find($data['option_id']);
+            abort_unless($option !== null, 422, __('messages.cart.option_unavailable'));
+        }
+
+        $this->cart->add($product, $data['quantity'] ?? 1, $option);
 
         return back()->with('success', __('messages.cart.added'));
     }

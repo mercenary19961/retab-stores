@@ -41,6 +41,7 @@ class Product extends Model
         'sale_price',
         'sale_starts_at',
         'sale_ends_at',
+        'sale_applies_to_options',
         'sku',
         'smacc_sku',
         'barcode',
@@ -56,6 +57,7 @@ class Product extends Model
         'sale_price' => 'decimal:2',
         'sale_starts_at' => 'datetime',
         'sale_ends_at' => 'datetime',
+        'sale_applies_to_options' => 'boolean',
         'stock' => 'integer',
         'low_stock_threshold' => 'integer',
         'is_active' => 'boolean',
@@ -100,6 +102,52 @@ class Product extends Model
     public function requests(): HasMany
     {
         return $this->hasMany(ProductRequest::class);
+    }
+
+    /**
+     * Sellable options (sizes / packaging), cheapest first. A product with no
+     * rows here is a plain single-price product and behaves exactly as before.
+     */
+    public function options(): HasMany
+    {
+        return $this->hasMany(ProductOption::class)->orderBy('sort_order')->orderBy('amount');
+    }
+
+    /**
+     * Active options only, cheapest first — what the storefront may offer.
+     */
+    public function activeOptions(): HasMany
+    {
+        return $this->options()->where('is_active', true);
+    }
+
+    /**
+     * The cheapest active option's price, or null when the product has no
+     * options. Uses an already-loaded relation when present so lists (search
+     * index, cards) that eager-load `activeOptions` cost no extra query.
+     */
+    public function minOptionPrice(): ?float
+    {
+        foreach (['activeOptions', 'options'] as $relation) {
+            if ($this->relationLoaded($relation)) {
+                $loaded = $this->getRelation($relation)->where('is_active', true);
+
+                return $loaded->isEmpty() ? null : (float) $loaded->min('price');
+            }
+        }
+
+        $min = $this->activeOptions()->min('price');
+
+        return $min === null ? null : (float) $min;
+    }
+
+    /**
+     * Whether this product sells through a list of options rather than a single
+     * price.
+     */
+    public function hasOptions(): bool
+    {
+        return $this->minOptionPrice() !== null;
     }
 
     /**
@@ -175,11 +223,72 @@ class Product extends Model
     }
 
     /**
-     * The price the customer actually pays (sale price when on sale, else regular).
+     * The product's sale discount as a multiplier (sale ÷ regular), or 1.0 when
+     * not on sale.
+     */
+    public function saleRatio(): float
+    {
+        if ($this->isOnSale() && $this->price > 0) {
+            return (float) $this->sale_price / (float) $this->price;
+        }
+
+        return 1.0;
+    }
+
+    /**
+     * The discount multiplier that applies to SIZE OPTIONS: the sale ratio, but
+     * only when the admin opted the sale into the sizes (sale_applies_to_options).
+     * A discount is on the original price by default and does NOT cascade to the
+     * derived size prices unless that flag is set.
+     */
+    public function optionSaleRatio(): float
+    {
+        return $this->sale_applies_to_options ? $this->saleRatio() : 1.0;
+    }
+
+    /**
+     * The price of the ORIGINAL product — the always-present default choice, even
+     * once sizes are added. The discount is on the original price, so a sale
+     * always applies here (unlike the sizes, which opt in).
+     */
+    public function originalPrice(): float
+    {
+        return (float) ($this->isOnSale() ? $this->sale_price : $this->price);
+    }
+
+    /**
+     * What the customer actually pays for a chosen option: its stored (regular)
+     * price, discounted only if the sale was opted into the sizes. Used by the
+     * cart and checkout so what is charged matches what is shown.
+     */
+    public function optionEffectivePrice(ProductOption $option): float
+    {
+        return round((float) $option->price * $this->optionSaleRatio(), 2);
+    }
+
+    /**
+     * The amount charged for a purchase: a chosen size's effective price, or the
+     * ORIGINAL price when no size is chosen (the default choice). One method so
+     * the cart, checkout and product page can't disagree.
+     */
+    public function priceForOption(?ProductOption $option): float
+    {
+        return $option ? $this->optionEffectivePrice($option) : $this->originalPrice();
+    }
+
+    /**
+     * The price used for LISTINGS ("from X"): the cheapest thing a customer can
+     * actually buy — the original, or a size if one is cheaper. For a plain
+     * product this is just the original (sale price when on sale, else regular).
      */
     public function effectivePrice(): float
     {
-        return (float) ($this->isOnSale() ? $this->sale_price : $this->price);
+        $min = $this->minOptionPrice();
+        if ($min === null) {
+            return $this->originalPrice();
+        }
+
+        return min($this->originalPrice(), round($min * $this->optionSaleRatio(), 2));
     }
 
     /**

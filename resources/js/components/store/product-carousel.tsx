@@ -11,6 +11,7 @@ export interface CarouselProduct {
     price: number;
     sale_price: number | null;
     effective_price: number;
+    has_options?: boolean;
     on_sale: boolean;
     is_featured: boolean;
     image: string | null;
@@ -213,7 +214,11 @@ export default function ProductCarousel({
                                     {localized(p, 'name')}
                                 </h3>
                                 <div className="font-heading text-brand-teal mt-1 text-center">
-                                    {p.on_sale ? (
+                                    {p.has_options ? (
+                                        <span className="font-bold whitespace-nowrap">
+                                            {t('catalogue.fromPrice', { price: p.effective_price.toFixed(2), currency })}
+                                        </span>
+                                    ) : p.on_sale ? (
                                         // Stacked below `sm`, side by side above. Two prices
                                         // do not fit one line on a ~160px phone card, and the
                                         // `nowrap` is what stops an amount splitting from its

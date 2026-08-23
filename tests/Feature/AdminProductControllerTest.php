@@ -38,6 +38,59 @@ class AdminProductControllerTest extends TestCase
         ], $overrides);
     }
 
+    public function test_update_syncs_options_create_update_and_delete(): void
+    {
+        $category = $this->category();
+        $product = Product::create($this->validPayload($category, ['slug' => 'p-opt']));
+        $product->images()->create(['path' => 'products/seed.jpg', 'sort_order' => 1, 'is_primary' => true]);
+        $keep = $product->options()->create(['label_ar' => '250 جرام', 'amount' => 250, 'price' => 5, 'stock_units' => 1]);
+        $product->options()->create(['label_ar' => 'يُحذف', 'amount' => 500, 'price' => 10, 'stock_units' => 2]);
+
+        $this->actingAs($this->staff())
+            ->put("/admin/products/{$product->id}", $this->validPayload($category, [
+                'slug' => 'p-opt',
+                'sku' => $product->sku,
+                'options' => [
+                    // existing row updated (id carried)
+                    ['id' => $keep->id, 'label_ar' => '250 جرام', 'amount' => 250, 'price' => 6, 'price_overridden' => true, 'stock_units' => 1, 'is_active' => true],
+                    // brand-new carton (no weight, manual price)
+                    ['label_ar' => 'كرتون', 'amount' => null, 'price' => 69, 'price_overridden' => true, 'stock_units' => 20, 'is_active' => true],
+                ],
+            ]))
+            ->assertRedirect('/admin/products');
+
+        $product->refresh()->load('options');
+        $this->assertCount(2, $product->options); // 1 kept+updated, 1 created, 1 deleted
+        $this->assertEquals(6.0, (float) $product->options->firstWhere('id', $keep->id)->price);
+        $this->assertNotNull($product->options->firstWhere('label_ar', 'كرتون'));
+        $this->assertNull($product->options->firstWhere('label_ar', 'يُحذف'));
+        // Listing price is now the cheapest surviving option (250g at 6), not 69.
+        $this->assertSame(6.0, $product->fresh()->effectivePrice());
+    }
+
+    public function test_a_forged_option_id_cannot_hijack_another_products_option(): void
+    {
+        $category = $this->category();
+        $a = Product::create($this->validPayload($category, ['slug' => 'a', 'sku' => 'A1']));
+        $a->images()->create(['path' => 'products/a.jpg', 'sort_order' => 1, 'is_primary' => true]);
+        $b = Product::create($this->validPayload($category, ['slug' => 'b', 'sku' => 'B1']));
+        $bOption = $b->options()->create(['label_ar' => 'ب', 'amount' => 250, 'price' => 5, 'stock_units' => 1]);
+
+        // Product A submits B's option id → it must be treated as a NEW option on
+        // A (the id ignored), never as an edit of B's row.
+        $this->actingAs($this->staff())
+            ->put("/admin/products/{$a->id}", $this->validPayload($category, [
+                'slug' => 'a', 'sku' => 'A1',
+                'options' => [['id' => $bOption->id, 'label_ar' => 'مسروق', 'amount' => 250, 'price' => 99, 'stock_units' => 1, 'is_active' => true]],
+            ]))
+            ->assertRedirect('/admin/products');
+
+        // B's option is untouched; A got its own new row.
+        $this->assertEquals(5.0, (float) $bOption->fresh()->price);
+        $this->assertSame(1, $a->fresh()->options()->count());
+        $this->assertNotSame($bOption->id, $a->options()->first()->id);
+    }
+
     public function test_customers_cannot_reach_products(): void
     {
         $customer = User::factory()->create(['role' => 'customer']);

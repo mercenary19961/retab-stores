@@ -660,7 +660,7 @@ export default function ProductsIndex({
             <Modal
                 open={editing !== null}
                 onClose={() => setEditing(null)}
-                size="lg"
+                size="xl"
                 title={
                     editing && editing !== 'new'
                         ? t('admin.products.form.editHead', { name: loc(editing.name_ar, editing.name_en) })

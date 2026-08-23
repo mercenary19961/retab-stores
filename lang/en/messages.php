@@ -10,6 +10,8 @@ return [
     'cart' => [
         'added' => 'Added to cart',
         'empty' => 'Your cart is empty.',
+        'option_required' => 'Please choose an option first.',
+        'option_unavailable' => 'That option is no longer available.',
         'coupon_applied' => 'Coupon applied.',
         'coupon_removed' => 'Coupon removed.',
     ],

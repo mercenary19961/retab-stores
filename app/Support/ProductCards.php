@@ -32,7 +32,12 @@ class ProductCards
             'slug' => $product->slug,
             'price' => (float) $product->price,
             'sale_price' => $product->sale_price !== null ? (float) $product->sale_price : null,
+            // For an options product this is the cheapest option — the card shows
+            // it as "from X". `has_options` tells the card to render that prefix
+            // and to send the shopper to the product page to pick, rather than a
+            // one-click add-to-cart.
             'effective_price' => $product->effectivePrice(),
+            'has_options' => $product->hasOptions(),
             'on_sale' => $product->isOnSale(),
             'is_featured' => (bool) $product->is_featured,
             'coming_soon' => $product->isComingSoon(),
@@ -56,7 +61,7 @@ class ProductCards
         ];
 
         return Product::where('is_active', true)
-            ->with(['category:id,name_ar,name_en,slug', 'images'])
+            ->with(['category:id,name_ar,name_en,slug', 'images', 'activeOptions'])
             ->withSum(
                 ['orderItems as units_sold' => fn ($q) => $q->whereHas(
                     'order',

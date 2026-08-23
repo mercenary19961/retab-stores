@@ -10,6 +10,8 @@ return [
     'cart' => [
         'added' => 'تمت الإضافة إلى السلة',
         'empty' => 'سلتك فارغة.',
+        'option_required' => 'يرجى اختيار أحد الخيارات أولاً.',
+        'option_unavailable' => 'هذا الخيار لم يعد متاحاً.',
         'coupon_applied' => 'تم تطبيق الكوبون.',
         'coupon_removed' => 'تم إزالة الكوبون.',
     ],
