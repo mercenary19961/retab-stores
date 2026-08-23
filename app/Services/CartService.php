@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductOption;
 use App\Models\User;
 use App\Support\Media;
 use Illuminate\Support\Collection;
@@ -35,11 +36,17 @@ class CartService
         return Cart::firstOrCreate(['session_token' => $token]);
     }
 
-    public function add(Product $product, int $quantity = 1): CartItem
+    public function add(Product $product, int $quantity = 1, ?ProductOption $option = null): CartItem
     {
         $quantity = max(1, $quantity);
         $cart = $this->current();
-        $item = $cart->items()->where('product_id', $product->id)->first();
+
+        // One line per (product, option): the same product under two different
+        // sizes is two lines; a plain product (no option) is one line as before.
+        $item = $cart->items()
+            ->where('product_id', $product->id)
+            ->where('product_option_id', $option?->id)
+            ->first();
 
         if ($item) {
             $item->increment('quantity', $quantity);
@@ -49,8 +56,11 @@ class CartService
 
         return $cart->items()->create([
             'product_id' => $product->id,
+            'product_option_id' => $option?->id,
             'quantity' => $quantity,
-            'unit_price' => $product->effectivePrice(),
+            // The chosen option's price is authoritative; only a plain product
+            // falls back to its own effective price.
+            'unit_price' => $option?->price ?? $product->effectivePrice(),
         ]);
     }
 
@@ -92,14 +102,19 @@ class CartService
         if ($guest && $guest->items->isNotEmpty()) {
             $userCart = Cart::firstOrCreate(['user_id' => $user->id]);
 
-            $existing = $userCart->items()->pluck('id', 'product_id'); // product_id => item id
+            // Key on (product, option) so the same product under two sizes stays
+            // two lines through the merge, matching add().
+            $existing = $userCart->items()->get(['id', 'product_id', 'product_option_id'])
+                ->keyBy(fn (CartItem $i) => $i->product_id.':'.($i->product_option_id ?? ''));
 
             foreach ($guest->items as $item) {
-                if ($existing->has($item->product_id)) {
-                    CartItem::whereKey($existing->get($item->product_id))->increment('quantity', $item->quantity);
+                $key = $item->product_id.':'.($item->product_option_id ?? '');
+                if ($existing->has($key)) {
+                    CartItem::whereKey($existing->get($key)->id)->increment('quantity', $item->quantity);
                 } else {
                     $userCart->items()->create([
                         'product_id' => $item->product_id,
+                        'product_option_id' => $item->product_option_id,
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
                     ]);
@@ -125,11 +140,14 @@ class CartService
 
         // `images` is eager-loaded because primaryImage() reads the relation —
         // without it this would be a query per line item.
-        $cart->load('items.product.images');
+        $cart->load('items.product.images', 'items.option');
 
         $items = $cart->items->map(fn (CartItem $i) => [
             'id' => $i->id,
             'product_id' => $i->product_id,
+            'option_id' => $i->product_option_id,
+            'option_label_ar' => $i->option?->label_ar,
+            'option_label_en' => $i->option?->label_en,
             'name_ar' => $i->product?->name_ar,
             'name_en' => $i->product?->name_en,
             'slug' => $i->product?->slug,

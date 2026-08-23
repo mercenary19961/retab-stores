@@ -1,4 +1,5 @@
 import Button from '@/components/admin/button';
+import ProductOptionsEditor, { type OptionRow } from '@/components/admin/product-options-editor';
 import Select from '@/components/admin/select';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
@@ -37,6 +38,7 @@ export interface Product {
     is_featured: boolean;
     is_coming_soon: boolean;
     images?: ProductImage[];
+    options?: OptionRow[];
 }
 
 const INPUT = 'mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800';
@@ -86,6 +88,7 @@ export default function ProductFormBody({
         is_active: product?.is_active ?? true,
         is_featured: product?.is_featured ?? false,
         is_coming_soon: product?.is_coming_soon ?? false,
+        options: (product?.options ?? []) as OptionRow[],
         images: [] as File[], // create only — the new product's images, sent with the form
     });
 
@@ -100,14 +103,23 @@ export default function ProductFormBody({
         e.preventDefault();
         if (!hasImages) return;
         if (editing) {
+            // Edit is a JSON PUT — options go as a plain array (real booleans, null
+            // amounts), which Laravel parses directly.
             put(`/admin/products/${product.id}`, modal ? { preserveScroll: true, preserveState: true, onSuccess: onSaved } : {});
         } else {
-            // Booleans as '1'/'0' so they survive the multipart (FormData) encoding.
+            // Booleans as '1'/'0' so they survive the multipart (FormData) encoding —
+            // top-level and inside each option row. A null amount is sent empty.
             transform((d) => ({
                 ...d,
                 is_active: d.is_active ? '1' : '0',
                 is_featured: d.is_featured ? '1' : '0',
                 is_coming_soon: d.is_coming_soon ? '1' : '0',
+                options: (d.options as OptionRow[]).map((o) => ({
+                    ...o,
+                    amount: o.amount ?? '',
+                    price_overridden: o.price_overridden ? '1' : '0',
+                    is_active: o.is_active ? '1' : '0',
+                })),
             }));
             post('/admin/products', {
                 forceFormData: true,
@@ -209,6 +221,14 @@ export default function ProductFormBody({
                         {text('barcode', t('admin.products.form.barcode'))}
                         {text('stock', t('admin.products.form.stock'), { required: true, type: 'number' })}
                         {text('low_stock_threshold', t('admin.products.form.lowStock'), { type: 'number' })}
+                    </div>
+
+                    <div className="border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                        <ProductOptionsEditor
+                            value={data.options}
+                            onChange={(rows) => setData('options', rows)}
+                            basePrice={Number(data.price) || 0}
+                        />
                     </div>
                 </section>
 

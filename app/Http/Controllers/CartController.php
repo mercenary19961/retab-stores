@@ -65,11 +65,24 @@ class CartController
     {
         $data = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
+            'option_id' => ['nullable', 'integer', 'exists:product_options,id'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:99'],
         ]);
 
         $product = Product::where('is_active', true)->findOrFail($data['product_id']);
-        $this->cart->add($product, $data['quantity'] ?? 1);
+
+        // Resolve the chosen option, if any. It must belong to this product and
+        // be active — a stale or cross-product id is rejected, and a product that
+        // HAS options requires one to be picked.
+        $option = null;
+        if (! empty($data['option_id'])) {
+            $option = $product->activeOptions()->find($data['option_id']);
+            abort_unless($option !== null, 422, __('messages.cart.option_unavailable'));
+        } elseif ($product->hasOptions()) {
+            return back()->with('error', __('messages.cart.option_required'));
+        }
+
+        $this->cart->add($product, $data['quantity'] ?? 1, $option);
 
         return back()->with('success', __('messages.cart.added'));
     }

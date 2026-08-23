@@ -63,7 +63,11 @@ class OrderConfirmationService
             $locked->loadMissing('items');
             foreach ($locked->items as $item) {
                 if ($item->product_id) {
-                    Product::whereKey($item->product_id)->decrement('stock', $item->quantity);
+                    // Shared stock deducts by base units: an option that consumes
+                    // N base units per purchase (a 500g = 2, a carton = N) deducts
+                    // N × quantity. Plain products snapshot stock_units = 1.
+                    Product::whereKey($item->product_id)
+                        ->decrement('stock', max(1, (int) $item->stock_units) * $item->quantity);
                 }
             }
 

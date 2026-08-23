@@ -9,6 +9,14 @@ import { Check, Gift, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } f
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+interface ProductOptionData {
+    id: number;
+    label_ar: string;
+    label_en: string | null;
+    amount: number | null;
+    price: number;
+}
+
 interface Product {
     id: number;
     name_ar: string;
@@ -24,6 +32,7 @@ interface Product {
     in_stock: boolean;
     coming_soon: boolean;
     purchase_count: number;
+    options: ProductOptionData[];
     category: { name_ar: string; name_en: string | null; slug: string } | null;
     images: string[];
     images_thumb: string[];
@@ -88,11 +97,23 @@ export default function ShopProduct({
     const description = localized(product, 'description');
 
     const [qty, setQty] = useState(1);
+
+    // Size / packaging options. When present the customer must pick one; the
+    // chosen option drives the displayed price, the Tamara estimate and the
+    // add-to-cart. Default to the cheapest (options arrive cheapest-first).
+    const hasOptions = product.options.length > 0;
+    const [optionId, setOptionId] = useState<number | null>(hasOptions ? product.options[0].id : null);
+    const selectedOption = hasOptions ? (product.options.find((o) => o.id === optionId) ?? product.options[0]) : null;
+
+    // The price the shopper sees and pays: the chosen option, else the product's
+    // own (sale-aware) price.
+    const displayPrice = selectedOption ? selectedOption.price : product.on_sale ? product.effective_price : product.price;
+
     // ⚠️ The divisor is the SERVER's configured instalment count, not a literal.
     // This block used to hardcode 4 while checkout requested 3, so the shopper
     // was quoted "4 payments of 25" and landed on a Tamara page offering 3 of
     // 33.33. Both numbers now come from the one config value.
-    const installment = product.effective_price / Math.max(tamaraInstalments, 1);
+    const installment = displayPrice / Math.max(tamaraInstalments, 1);
 
     // Product/Offer structured data for rich results.
     const jsonLd = {
@@ -193,7 +214,7 @@ export default function ShopProduct({
 
                     {!product.coming_soon && (
                         <div className="font-heading mt-4 flex items-center gap-3">
-                            {product.on_sale ? (
+                            {product.on_sale && !hasOptions ? (
                                 <>
                                     <span className="text-brand-teal text-3xl font-bold">
                                         {product.effective_price.toFixed(2)} {currency}
@@ -204,9 +225,43 @@ export default function ShopProduct({
                                 </>
                             ) : (
                                 <span className="text-brand-teal text-3xl font-bold">
-                                    {product.price.toFixed(2)} {currency}
+                                    {displayPrice.toFixed(2)} {currency}
                                 </span>
                             )}
+                        </div>
+                    )}
+
+                    {/* Size / packaging selector — same product, one option at a time.
+                        Buttons: every available option is visible and one tap away, and
+                        the big price above follows the selection. Only the options this
+                        product actually has are shown. */}
+                    {!product.coming_soon && hasOptions && selectedOption && (
+                        <div className="mt-5">
+                            <p className="text-brand-teal/70 mb-2 text-sm font-medium">{t('product.chooseOption')}</p>
+                            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('product.chooseOption')}>
+                                {product.options.map((o) => {
+                                    const active = o.id === selectedOption.id;
+                                    return (
+                                        <button
+                                            key={o.id}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={active}
+                                            onClick={() => setOptionId(o.id)}
+                                            className={`rounded-2xl border px-4 py-2 text-center leading-tight transition-colors ${
+                                                active
+                                                    ? 'border-brand-teal bg-brand-teal text-white'
+                                                    : 'border-brand-gold/30 text-brand-teal hover:border-brand-teal/60 bg-white'
+                                            }`}
+                                        >
+                                            <span className="block text-sm font-bold">{localized(o, 'label')}</span>
+                                            <span className={`block text-xs ${active ? 'text-white/80' : 'text-brand-teal/50'}`}>
+                                                {o.price.toFixed(2)} {currency}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
 
@@ -259,7 +314,13 @@ export default function ShopProduct({
                             <button
                                 type="button"
                                 data-testid="add-to-cart"
-                                onClick={() => router.post('/cart', { product_id: product.id, quantity: qty }, { preserveScroll: true })}
+                                onClick={() =>
+                                    router.post(
+                                        '/cart',
+                                        { product_id: product.id, option_id: selectedOption?.id ?? null, quantity: qty },
+                                        { preserveScroll: true },
+                                    )
+                                }
                                 className="bg-brand-teal hover:bg-brand-teal/90 inline-flex flex-1 items-center justify-center gap-2 rounded-full px-8 py-3 font-semibold text-white transition-colors"
                             >
                                 <ShoppingBag className="size-5" />

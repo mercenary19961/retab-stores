@@ -166,6 +166,7 @@ class ProductController extends Controller
     public function store(Request $request, ChangeLogService $changeLog)
     {
         $data = $this->validateProduct($request);
+        $options = $this->validateOptions($request);
 
         // Every product must ship with at least one image — collected in the
         // create form and sent with it. First image becomes the primary.
@@ -175,8 +176,9 @@ class ProductController extends Controller
         ], ['images.required' => __('messages.admin.product_needs_image')]);
         $images = array_values($request->file('images'));
 
-        DB::transaction(function () use ($data, $images, $changeLog) {
+        DB::transaction(function () use ($data, $options, $images, $changeLog) {
             $product = Product::create($data);
+            $this->syncOptions($product, $options);
 
             foreach ($images as $i => $file) {
                 $product->images()->create([
@@ -214,11 +216,21 @@ class ProductController extends Controller
      */
     private function productData(Product $product): array
     {
-        $product->load('images');
+        $product->load('images', 'options');
 
         return [
             'id' => $product->id,
             'category_id' => $product->category_id,
+            'options' => $product->options->map(fn ($o) => [
+                'id' => $o->id,
+                'label_ar' => $o->label_ar,
+                'label_en' => $o->label_en,
+                'amount' => $o->amount,
+                'price' => (float) $o->price,
+                'price_overridden' => (bool) $o->price_overridden,
+                'stock_units' => $o->stock_units,
+                'is_active' => (bool) $o->is_active,
+            ])->values(),
             'name_ar' => $product->name_ar,
             'name_en' => $product->name_en,
             'slug' => $product->slug,
@@ -245,6 +257,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product, ChangeLogService $changeLog)
     {
         $data = $this->validateProduct($request, $product);
+        $options = $this->validateOptions($request);
 
         // A product can't be saved with no images (they're managed separately, so
         // check the current state rather than the request).
@@ -252,9 +265,10 @@ class ProductController extends Controller
             throw ValidationException::withMessages(['images' => __('messages.admin.product_needs_image')]);
         }
 
-        DB::transaction(function () use ($product, $data, $changeLog) {
+        DB::transaction(function () use ($product, $data, $options, $changeLog) {
             $before = $product->attributesToArray();
             $product->update($data);
+            $this->syncOptions($product, $options);
             $changeLog->logUpdated($product, $before, $product->name_ar);
         });
 
@@ -325,6 +339,67 @@ class ProductController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * Validate the size/packaging options sent alongside the product. Returns a
+     * clean array (empty when the product has no options). The client sends the
+     * FINAL per-option prices (auto-scaled + overridden there); the server trusts
+     * the numbers but re-validates shape and bounds.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function validateOptions(Request $request): array
+    {
+        $request->validate([
+            'options' => ['nullable', 'array', 'max:20'],
+            'options.*.id' => ['nullable', 'integer'],
+            'options.*.label_ar' => ['required', 'string', 'max:100'],
+            'options.*.label_en' => ['nullable', 'string', 'max:100'],
+            'options.*.amount' => ['nullable', 'integer', 'min:1'],
+            'options.*.price' => ['required', 'numeric', 'min:0'],
+            'options.*.price_overridden' => ['boolean'],
+            'options.*.stock_units' => ['required', 'integer', 'min:1'],
+            'options.*.is_active' => ['boolean'],
+        ]);
+
+        return collect($request->input('options', []))->values()->map(fn ($o, $i) => [
+            'id' => $o['id'] ?? null,
+            'label_ar' => trim($o['label_ar']),
+            'label_en' => isset($o['label_en']) && trim($o['label_en']) !== '' ? trim($o['label_en']) : null,
+            'amount' => $o['amount'] ?? null,
+            'price' => $o['price'],
+            'price_overridden' => (bool) ($o['price_overridden'] ?? false),
+            'stock_units' => $o['stock_units'] ?? 1,
+            'is_active' => (bool) ($o['is_active'] ?? true),
+            'sort_order' => $i + 1,
+        ])->all();
+    }
+
+    /**
+     * Reconcile a product's options with the submitted set: update the rows that
+     * carry an id, create the new ones, delete the rest. Ids are checked to
+     * belong to this product so a forged id can't hijack another product's option.
+     *
+     * @param  list<array<string, mixed>>  $options
+     */
+    private function syncOptions(Product $product, array $options): void
+    {
+        $keepIds = [];
+
+        foreach ($options as $o) {
+            $attributes = collect($o)->except('id')->all();
+
+            $existing = $o['id'] ? $product->options()->whereKey($o['id'])->first() : null;
+            if ($existing) {
+                $existing->update($attributes);
+                $keepIds[] = $existing->id;
+            } else {
+                $keepIds[] = $product->options()->create($attributes)->id;
+            }
+        }
+
+        $product->options()->whereKeyNot($keepIds)->delete();
     }
 
     /**

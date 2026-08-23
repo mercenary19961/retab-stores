@@ -9,6 +9,9 @@ import { useTranslation } from 'react-i18next';
 interface CartItem {
     id: number;
     product_id: number;
+    option_id: number | null;
+    option_label_ar: string | null;
+    option_label_en: string | null;
     name_ar: string;
     name_en: string | null;
     slug: string;
@@ -242,6 +245,11 @@ export default function Cart({ items, subtotal, shippingFee, freeShipping, disco
                                     >
                                         {localized(item, 'name')}
                                     </Link>
+                                    {item.option_id && (
+                                        <p className="text-brand-teal/70 mt-0.5 text-sm font-medium">
+                                            {localized({ label_ar: item.option_label_ar, label_en: item.option_label_en }, 'label')}
+                                        </p>
+                                    )}
                                     <p className="mt-1 text-xs text-gray-500">
                                         {t('cart.unitPrice')}: {money(item.unit_price)} {currency}
                                     </p>

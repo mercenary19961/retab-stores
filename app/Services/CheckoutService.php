@@ -136,18 +136,30 @@ class CheckoutService
                 throw new \RuntimeException('A product in your cart is no longer available.');
             }
 
-            $unitPrice = $product->effectivePrice();
-            $lineTotal = round($unitPrice * $item->quantity, 2);
+            // The chosen option (if any) must still be sellable and priced from
+            // the option; only a plain product uses its own effective price.
+            $option = $item->option;
+            if ($option && (! $option->is_active || $option->product_id !== $product->id)) {
+                throw new \RuntimeException('A product in your cart is no longer available.');
+            }
+
+            $unitPrice = $option?->price ?? $product->effectivePrice();
+            $lineTotal = round((float) $unitPrice * $item->quantity, 2);
             $subtotal += $lineTotal;
 
             $lines[] = [
                 'product_id' => $product->id,
+                'product_option_id' => $option?->id,
                 'product_name_ar' => $product->name_ar,
                 'product_name_en' => $product->name_en,
+                'option_label_ar' => $option?->label_ar,
+                'option_label_en' => $option?->label_en,
                 'sku' => $product->sku,
-                'smacc_sku' => $product->smacc_sku,
+                'smacc_sku' => $option?->smacc_sku ?? $product->smacc_sku,
                 'unit_price' => $unitPrice,
                 'quantity' => $item->quantity,
+                // Snapshot how many base units this line consumes, for stock.
+                'stock_units' => $option?->stock_units ?? 1,
                 'line_total' => $lineTotal,
             ];
         }

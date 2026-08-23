@@ -103,6 +103,52 @@ class Product extends Model
     }
 
     /**
+     * Sellable options (sizes / packaging), cheapest first. A product with no
+     * rows here is a plain single-price product and behaves exactly as before.
+     */
+    public function options(): HasMany
+    {
+        return $this->hasMany(ProductOption::class)->orderBy('sort_order')->orderBy('amount');
+    }
+
+    /**
+     * Active options only, cheapest first — what the storefront may offer.
+     */
+    public function activeOptions(): HasMany
+    {
+        return $this->options()->where('is_active', true);
+    }
+
+    /**
+     * The cheapest active option's price, or null when the product has no
+     * options. Uses an already-loaded relation when present so lists (search
+     * index, cards) that eager-load `activeOptions` cost no extra query.
+     */
+    public function minOptionPrice(): ?float
+    {
+        foreach (['activeOptions', 'options'] as $relation) {
+            if ($this->relationLoaded($relation)) {
+                $loaded = $this->getRelation($relation)->where('is_active', true);
+
+                return $loaded->isEmpty() ? null : (float) $loaded->min('price');
+            }
+        }
+
+        $min = $this->activeOptions()->min('price');
+
+        return $min === null ? null : (float) $min;
+    }
+
+    /**
+     * Whether this product sells through a list of options rather than a single
+     * price.
+     */
+    public function hasOptions(): bool
+    {
+        return $this->minOptionPrice() !== null;
+    }
+
+    /**
      * Everything a customer may see on the storefront: live (buyable) products PLUS
      * hidden ones flagged Coming Soon (visible, request-only). Buyability is still
      * gated purely by is_active everywhere else (cart, checkout), so this scope only
@@ -175,10 +221,18 @@ class Product extends Model
     }
 
     /**
-     * The price the customer actually pays (sale price when on sale, else regular).
+     * The price used for LISTINGS: the cheapest option ("from X") when the
+     * product has options, otherwise the sale price when on sale, else regular.
+     * The actual amount charged for an options product is the CHOSEN option's
+     * price, resolved at add-to-cart — never this.
      */
     public function effectivePrice(): float
     {
+        $min = $this->minOptionPrice();
+        if ($min !== null) {
+            return $min;
+        }
+
         return (float) ($this->isOnSale() ? $this->sale_price : $this->price);
     }
 

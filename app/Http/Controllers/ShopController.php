@@ -36,7 +36,7 @@ class ShopController
             // the section renders nothing). Featured first, then newest.
             'offers' => Product::where('is_active', true)
                 ->onSale()
-                ->with(['category:id,name_ar,name_en,slug', 'images'])
+                ->with(['category:id,name_ar,name_en,slug', 'images', 'activeOptions'])
                 ->orderByDesc('is_featured')
                 ->latest()
                 ->limit(10)
@@ -44,7 +44,7 @@ class ShopController
                 ->map(fn (Product $p) => $this->card($p))
                 ->all(),
             'newArrivals' => Product::where('is_active', true)
-                ->with(['category:id,name_ar,name_en,slug', 'images'])
+                ->with(['category:id,name_ar,name_en,slug', 'images', 'activeOptions'])
                 ->latest()
                 ->limit(10)
                 ->get()
@@ -87,7 +87,7 @@ class ShopController
         // Include Coming-Soon (hidden-but-surfaced) products alongside live ones;
         // they render as request-only cards. Buyability is still is_active-gated.
         $query = Product::visibleOnStore()
-            ->with(['category:id,name_ar,name_en,slug', 'images']);
+            ->with(['category:id,name_ar,name_en,slug', 'images', 'activeOptions']);
 
         if ($categoryId) {
             $query->where('category_id', $categoryId);
@@ -173,7 +173,7 @@ class ShopController
     {
         return Cache::remember(Product::SEARCH_INDEX_CACHE, now()->addHour(), function () {
             return Product::visibleOnStore()
-                ->with(['images', 'category:id,name_ar,name_en'])
+                ->with(['images', 'category:id,name_ar,name_en', 'activeOptions'])
                 ->orderByDesc('is_active')
                 ->get()
                 ->map(fn (Product $p) => [
@@ -215,7 +215,7 @@ class ShopController
         // Coming-Soon products are viewable (request-only); everything else hidden 404s.
         abort_unless($product->is_active || $product->is_coming_soon, 404);
 
-        $product->load('category:id,name_ar,name_en,slug', 'images');
+        $product->load('category:id,name_ar,name_en,slug', 'images', 'activeOptions');
         $user = $request->user();
 
         // Right-sized WebP per context, all aligned by index (the gallery swaps
@@ -267,6 +267,15 @@ class ShopController
                 'on_sale' => $product->isOnSale(),
                 'in_stock' => $product->stock > 0,
                 'coming_soon' => $product->isComingSoon(),
+                // Sellable size/packaging options, cheapest first. Empty for a
+                // plain single-price product (the page renders its price as before).
+                'options' => $product->activeOptions->map(fn ($o) => [
+                    'id' => $o->id,
+                    'label_ar' => $o->label_ar,
+                    'label_en' => $o->label_en,
+                    'amount' => $o->amount,
+                    'price' => (float) $o->price,
+                ])->values(),
                 'purchase_count' => $purchaseCount,
                 'category' => $product->category?->only('name_ar', 'name_en', 'slug'),
                 'images' => $images,
