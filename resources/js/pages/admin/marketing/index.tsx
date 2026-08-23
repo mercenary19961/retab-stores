@@ -2,6 +2,7 @@ import Button from '@/components/admin/button';
 import Pagination, { type Paginator } from '@/components/admin/pagination';
 import Select from '@/components/admin/select';
 import StatusBadge from '@/components/admin/status-badge';
+import { useCan } from '@/hooks/use-can';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
@@ -95,6 +96,10 @@ export default function MarketingIndex({
     rateCurrency: string;
 }) {
     const { t: tr, i18n } = useAdminT();
+    // `marketing.send` gates EVERY mutation here (both template management and
+    // campaigns — see routes/admin.php), so a view-only marketer keeps the lists
+    // and the delivery history but sees no write control.
+    const canSend = useCan()('marketing.send');
 
     // Localized display labels for enum-like values (category / status / language / delivery funnel).
     // The stored value stays English — it's what our API and Meta expect — only the label localizes;
@@ -208,225 +213,236 @@ export default function MarketingIndex({
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <StatusBadge domain="template" value={t.status} label={label('templateStatus', t.status)} />
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        icon={Pencil}
-                                        onClick={() => {
-                                            setEditing(t.id);
-                                            setTpl({
-                                                name: t.name,
-                                                language: t.language,
-                                                category: t.category,
-                                                body: t.body,
-                                                param_count: t.param_count,
-                                                status: t.status,
-                                            });
-                                        }}
-                                    >
-                                        {tr('admin.common.edit')}
-                                    </Button>
+                                    {canSend && (
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            icon={Pencil}
+                                            onClick={() => {
+                                                setEditing(t.id);
+                                                setTpl({
+                                                    name: t.name,
+                                                    language: t.language,
+                                                    category: t.category,
+                                                    body: t.body,
+                                                    param_count: t.param_count,
+                                                    status: t.status,
+                                                });
+                                            }}
+                                        >
+                                            {tr('admin.common.edit')}
+                                        </Button>
+                                    )}
                                 </div>
                             </li>
                         ))}
                     </ul>
 
-                    <form onSubmit={saveTemplate} className="space-y-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-                        <p className="text-sm font-semibold">{editing ? tr('admin.marketing.editTemplate') : tr('admin.marketing.addTemplate')}</p>
-                        <div className="grid gap-3 sm:grid-cols-2">
+                    {canSend && (
+                        <form onSubmit={saveTemplate} className="space-y-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                            <p className="text-sm font-semibold">
+                                {editing ? tr('admin.marketing.editTemplate') : tr('admin.marketing.addTemplate')}
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <label className="block text-sm">
+                                    <span className="text-neutral-500">{tr('admin.marketing.metaName')}</span>
+                                    <input
+                                        value={String(tpl.name)}
+                                        placeholder={tr('admin.marketing.namePlaceholder')}
+                                        onChange={(e) => setTpl({ ...tpl, name: e.target.value })}
+                                        className={`${inputCls} font-mono`}
+                                    />
+                                    <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.metaName')}</span>
+                                </label>
+                                <label className="block text-sm">
+                                    <span className="text-neutral-500">{tr('admin.marketing.varsCount')}</span>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={10}
+                                        value={Number(tpl.param_count)}
+                                        onChange={(e) => setTpl({ ...tpl, param_count: Number(e.target.value) })}
+                                        className={inputCls}
+                                    />
+                                    {Number(tpl.param_count) !== detected.length ? (
+                                        <span className="mt-1 block text-xs text-amber-600 dark:text-amber-400">
+                                            {tr('admin.marketing.hints.mismatch', { body: detected.length, count: Number(tpl.param_count) })}
+                                        </span>
+                                    ) : (
+                                        <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.varsCount')}</span>
+                                    )}
+                                </label>
+                                <label className="block text-sm">
+                                    <span className="text-neutral-500">{tr('admin.marketing.language')}</span>
+                                    <Select
+                                        value={String(tpl.language)}
+                                        onChange={(v) => setTpl({ ...tpl, language: v })}
+                                        options={[
+                                            { value: 'ar', label: label('lang', 'ar') },
+                                            { value: 'en', label: label('lang', 'en') },
+                                        ]}
+                                        className="mt-1 w-full"
+                                    />
+                                    <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.language')}</span>
+                                </label>
+                                <label className="block text-sm">
+                                    <span className="text-neutral-500">{tr('admin.marketing.category')}</span>
+                                    <Select
+                                        value={String(tpl.category)}
+                                        onChange={(v) => setTpl({ ...tpl, category: v })}
+                                        options={[
+                                            { value: 'marketing', label: label('categories', 'marketing') },
+                                            { value: 'utility', label: label('categories', 'utility') },
+                                        ]}
+                                        className="mt-1 w-full"
+                                    />
+                                    <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.category')}</span>
+                                </label>
+                            </div>
                             <label className="block text-sm">
-                                <span className="text-neutral-500">{tr('admin.marketing.metaName')}</span>
-                                <input
-                                    value={String(tpl.name)}
-                                    placeholder={tr('admin.marketing.namePlaceholder')}
-                                    onChange={(e) => setTpl({ ...tpl, name: e.target.value })}
-                                    className={`${inputCls} font-mono`}
-                                />
-                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.metaName')}</span>
-                            </label>
-                            <label className="block text-sm">
-                                <span className="text-neutral-500">{tr('admin.marketing.varsCount')}</span>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={10}
-                                    value={Number(tpl.param_count)}
-                                    onChange={(e) => setTpl({ ...tpl, param_count: Number(e.target.value) })}
+                                <span className="text-neutral-500">{tr('admin.marketing.bodyPreview')}</span>
+                                <textarea
+                                    dir="auto"
+                                    rows={3}
+                                    value={body}
+                                    placeholder={bodyExample}
+                                    onChange={(e) => setTpl({ ...tpl, body: e.target.value, param_count: detectPlaceholders(e.target.value).length })}
                                     className={inputCls}
                                 />
-                                {Number(tpl.param_count) !== detected.length ? (
-                                    <span className="mt-1 block text-xs text-amber-600 dark:text-amber-400">
-                                        {tr('admin.marketing.hints.mismatch', { body: detected.length, count: Number(tpl.param_count) })}
-                                    </span>
-                                ) : (
-                                    <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.varsCount')}</span>
-                                )}
+                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.body')}</span>
                             </label>
-                            <label className="block text-sm">
-                                <span className="text-neutral-500">{tr('admin.marketing.language')}</span>
-                                <Select
-                                    value={String(tpl.language)}
-                                    onChange={(v) => setTpl({ ...tpl, language: v })}
-                                    options={[
-                                        { value: 'ar', label: label('lang', 'ar') },
-                                        { value: 'en', label: label('lang', 'en') },
-                                    ]}
-                                    className="mt-1 w-full"
-                                />
-                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.language')}</span>
-                            </label>
-                            <label className="block text-sm">
-                                <span className="text-neutral-500">{tr('admin.marketing.category')}</span>
-                                <Select
-                                    value={String(tpl.category)}
-                                    onChange={(v) => setTpl({ ...tpl, category: v })}
-                                    options={[
-                                        { value: 'marketing', label: label('categories', 'marketing') },
-                                        { value: 'utility', label: label('categories', 'utility') },
-                                    ]}
-                                    className="mt-1 w-full"
-                                />
-                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.category')}</span>
-                            </label>
-                        </div>
-                        <label className="block text-sm">
-                            <span className="text-neutral-500">{tr('admin.marketing.bodyPreview')}</span>
-                            <textarea
-                                dir="auto"
-                                rows={3}
-                                value={body}
-                                placeholder={bodyExample}
-                                onChange={(e) => setTpl({ ...tpl, body: e.target.value, param_count: detectPlaceholders(e.target.value).length })}
-                                className={inputCls}
-                            />
-                            <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.body')}</span>
-                        </label>
-                        {body.trim() && (
-                            <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
-                                <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{tr('admin.marketing.livePreview')}</p>
-                                <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">
-                                    {renderTemplate(body)}
-                                </p>
-                            </div>
-                        )}
-                        <label className="block text-sm">
-                            <span className="text-neutral-500">{tr('admin.marketing.metaStatus')}</span>
-                            <Select
-                                value={String(tpl.status)}
-                                onChange={(v) => setTpl({ ...tpl, status: v })}
-                                options={['draft', 'pending', 'approved', 'rejected'].map((s) => ({ value: s, label: label('templateStatus', s) }))}
-                                className="mt-1 w-full"
-                            />
-                            <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.status')}</span>
-                        </label>
-                        <div className="flex gap-2">
-                            <Button type="submit" variant="primary" disabled={!templateDirty}>
-                                {editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}
-                            </Button>
-                            {editing && (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={() => {
-                                        setEditing(null);
-                                        setTpl(emptyTemplate);
-                                    }}
-                                >
-                                    {tr('admin.common.cancel')}
-                                </Button>
+                            {body.trim() && (
+                                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
+                                    <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{tr('admin.marketing.livePreview')}</p>
+                                    <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">
+                                        {renderTemplate(body)}
+                                    </p>
+                                </div>
                             )}
-                        </div>
-                    </form>
+                            <label className="block text-sm">
+                                <span className="text-neutral-500">{tr('admin.marketing.metaStatus')}</span>
+                                <Select
+                                    value={String(tpl.status)}
+                                    onChange={(v) => setTpl({ ...tpl, status: v })}
+                                    options={['draft', 'pending', 'approved', 'rejected'].map((s) => ({
+                                        value: s,
+                                        label: label('templateStatus', s),
+                                    }))}
+                                    className="mt-1 w-full"
+                                />
+                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.hints.status')}</span>
+                            </label>
+                            <div className="flex gap-2">
+                                <Button type="submit" variant="primary" disabled={!templateDirty}>
+                                    {editing ? tr('admin.marketing.update') : tr('admin.marketing.add')}
+                                </Button>
+                                {editing && (
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={() => {
+                                            setEditing(null);
+                                            setTpl(emptyTemplate);
+                                        }}
+                                    >
+                                        {tr('admin.common.cancel')}
+                                    </Button>
+                                )}
+                            </div>
+                        </form>
+                    )}
                 </section>
 
                 {/* Campaign composer + history */}
                 <div className="space-y-6">
-                    <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                        <h2 className="mb-1 flex items-center gap-2 font-bold">
-                            <Megaphone className="text-brand-gold h-4 w-4" /> {tr('admin.marketing.sendCampaign')}
-                        </h2>
-                        <p className="mb-4 text-sm text-neutral-500">{tr('admin.marketing.audienceNote', { count: audienceCount })}</p>
+                    {canSend && (
+                        <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                            <h2 className="mb-1 flex items-center gap-2 font-bold">
+                                <Megaphone className="text-brand-gold h-4 w-4" /> {tr('admin.marketing.sendCampaign')}
+                            </h2>
+                            <p className="mb-4 text-sm text-neutral-500">{tr('admin.marketing.audienceNote', { count: audienceCount })}</p>
 
-                        <form onSubmit={sendCampaign} className="space-y-3">
-                            <label className="block text-sm">
-                                <span className="text-neutral-500">{tr('admin.marketing.template')}</span>
-                                <Select
-                                    value={templateId ? String(templateId) : ''}
-                                    onChange={(v) => {
-                                        const id = Number(v) || '';
-                                        setTemplateId(id);
-                                        setParams([]);
-                                    }}
-                                    options={[
-                                        { value: '', label: tr('admin.marketing.pickTemplate') },
-                                        ...templates
-                                            .filter((t) => t.status === 'approved')
-                                            .map((t) => ({ value: String(t.id), label: `${t.name} (${label('lang', t.language)})` })),
-                                    ]}
-                                    className="mt-1 w-full"
-                                />
-                            </label>
+                            <form onSubmit={sendCampaign} className="space-y-3">
+                                <label className="block text-sm">
+                                    <span className="text-neutral-500">{tr('admin.marketing.template')}</span>
+                                    <Select
+                                        value={templateId ? String(templateId) : ''}
+                                        onChange={(v) => {
+                                            const id = Number(v) || '';
+                                            setTemplateId(id);
+                                            setParams([]);
+                                        }}
+                                        options={[
+                                            { value: '', label: tr('admin.marketing.pickTemplate') },
+                                            ...templates
+                                                .filter((t) => t.status === 'approved')
+                                                .map((t) => ({ value: String(t.id), label: `${t.name} (${label('lang', t.language)})` })),
+                                        ]}
+                                        className="mt-1 w-full"
+                                    />
+                                </label>
 
-                            <label className="block text-sm">
-                                <span className="text-neutral-500">{tr('admin.marketing.segment')}</span>
-                                <Select
-                                    value={segment}
-                                    onChange={(v) => setSegment(v)}
-                                    options={segments.map((s) => ({
-                                        value: s,
-                                        label: `${label('segments', s)} (${tr('admin.marketing.people', { count: segmentCounts[s] ?? 0 })})`,
-                                    }))}
-                                    className="mt-1 w-full"
-                                />
-                                <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.segmentHint')}</span>
-                            </label>
+                                <label className="block text-sm">
+                                    <span className="text-neutral-500">{tr('admin.marketing.segment')}</span>
+                                    <Select
+                                        value={segment}
+                                        onChange={(v) => setSegment(v)}
+                                        options={segments.map((s) => ({
+                                            value: s,
+                                            label: `${label('segments', s)} (${tr('admin.marketing.people', { count: segmentCounts[s] ?? 0 })})`,
+                                        }))}
+                                        className="mt-1 w-full"
+                                    />
+                                    <span className="mt-1 block text-xs text-neutral-400">{tr('admin.marketing.segmentHint')}</span>
+                                </label>
 
-                            {selected &&
-                                Array.from({ length: selected.param_count }).map((_, i) => (
-                                    <label key={i} className="block text-sm">
-                                        <span className="text-neutral-500">{tr('admin.marketing.variable', { n: i + 1 })}</span>
-                                        <input
-                                            dir="auto"
-                                            value={params[i] ?? ''}
-                                            onChange={(e) => {
-                                                const next = [...params];
-                                                next[i] = e.target.value;
-                                                setParams(next);
-                                            }}
-                                            className={inputCls}
-                                        />
-                                    </label>
-                                ))}
+                                {selected &&
+                                    Array.from({ length: selected.param_count }).map((_, i) => (
+                                        <label key={i} className="block text-sm">
+                                            <span className="text-neutral-500">{tr('admin.marketing.variable', { n: i + 1 })}</span>
+                                            <input
+                                                dir="auto"
+                                                value={params[i] ?? ''}
+                                                onChange={(e) => {
+                                                    const next = [...params];
+                                                    next[i] = e.target.value;
+                                                    setParams(next);
+                                                }}
+                                                className={inputCls}
+                                            />
+                                        </label>
+                                    ))}
 
-                            {selected && selected.body && (
-                                <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
-                                    <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{tr('admin.marketing.customerPreview')}</p>
-                                    {/* dir="auto" must sit on the message itself, not the wrapper: on the wrapper it
+                                {selected && selected.body && (
+                                    <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-sm dark:border-neutral-800 dark:bg-neutral-950">
+                                        <p className="mb-1 text-xs font-medium text-neutral-400 uppercase">{tr('admin.marketing.customerPreview')}</p>
+                                        {/* dir="auto" must sit on the message itself, not the wrapper: on the wrapper it
                                         would detect direction from the English label above and force the whole box LTR,
                                         misplacing Arabic punctuation. On the message it mirrors WhatsApp's own
                                         first-strong-character direction detection. */}
-                                    <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">
-                                        {renderTemplate(selected.body, params)}
-                                    </p>
-                                </div>
-                            )}
+                                        <p dir="auto" className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-200">
+                                            {renderTemplate(selected.body, params)}
+                                        </p>
+                                    </div>
+                                )}
 
-                            {audienceCount > 0 && (
-                                <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm dark:border-neutral-800 dark:bg-neutral-950">
-                                    <span className="text-neutral-600 dark:text-neutral-300">
-                                        {tr('admin.marketing.estCost', { cost: estCost, currency: rateCurrency })}
-                                    </span>
-                                    <span className="mt-0.5 block text-xs text-neutral-400">
-                                        {tr('admin.marketing.estCostHint', { count: audienceCount, rate: messageRate, currency: rateCurrency })}
-                                    </span>
-                                </div>
-                            )}
+                                {audienceCount > 0 && (
+                                    <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm dark:border-neutral-800 dark:bg-neutral-950">
+                                        <span className="text-neutral-600 dark:text-neutral-300">
+                                            {tr('admin.marketing.estCost', { cost: estCost, currency: rateCurrency })}
+                                        </span>
+                                        <span className="mt-0.5 block text-xs text-neutral-400">
+                                            {tr('admin.marketing.estCostHint', { count: audienceCount, rate: messageRate, currency: rateCurrency })}
+                                        </span>
+                                    </div>
+                                )}
 
-                            <Button type="submit" variant="primary" icon={Send} disabled={!selected || audienceCount === 0}>
-                                {tr('admin.marketing.sendTo', { count: audienceCount })}
-                            </Button>
-                        </form>
-                    </section>
+                                <Button type="submit" variant="primary" icon={Send} disabled={!selected || audienceCount === 0}>
+                                    {tr('admin.marketing.sendTo', { count: audienceCount })}
+                                </Button>
+                            </form>
+                        </section>
+                    )}
 
                     <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
                         <h2 className="mb-3 flex items-center gap-2 font-bold">

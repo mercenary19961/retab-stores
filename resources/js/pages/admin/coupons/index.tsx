@@ -7,6 +7,7 @@ import Select from '@/components/admin/select';
 import { statusEntry } from '@/components/admin/status-badge';
 import StatusToggle from '@/components/admin/status-toggle';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import { useCan } from '@/hooks/use-can';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -252,6 +253,7 @@ function CouponForm({ coupon, onClose }: { coupon: CouponRow | null; onClose: ()
 
 export default function CouponsIndex({ coupons, activeCount }: { coupons: Paginator<CouponRow>; activeCount: number }) {
     const { t } = useAdminT();
+    const can = useCan();
     const rc = useResizableColumns({ tableKey: 'coupons', columns: COLUMNS });
     const [editing, setEditing] = useState<CouponRow | 'new' | null>(null);
 
@@ -385,7 +387,7 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                                         <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(c)}>
                                             {t('admin.common.edit')}
                                         </Button>
-                                        {c.used_count === 0 && (
+                                        {can('coupons.delete') && c.used_count === 0 && (
                                             <ConfirmDeleteButton
                                                 itemName={c.code}
                                                 reversible={false}

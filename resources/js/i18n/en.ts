@@ -5,6 +5,35 @@
  */
 const en = {
     brand: 'Retab Dates',
+    // Branded HTTP error page (resources/js/pages/errors/error.tsx).
+    errors: {
+        back: 'Go back',
+        home: 'Home',
+        generic: {
+            title: 'Something went wrong',
+            message: 'An unexpected error occurred. Please try again, or head back to where you were.',
+        },
+        '403': {
+            title: 'You don’t have access to this',
+            message: 'Your account doesn’t have permission for this page or action. If you think you should, ask an administrator to grant it.',
+        },
+        '404': {
+            title: 'Page not found',
+            message: 'The page you’re looking for doesn’t exist or may have moved.',
+        },
+        '419': {
+            title: 'Your session expired',
+            message: 'For your security the page timed out. Please go back and try again.',
+        },
+        '500': {
+            title: 'Something went wrong',
+            message: 'A problem on our side stopped this from loading. Please try again in a moment.',
+        },
+        '503': {
+            title: 'Down for maintenance',
+            message: 'The site is briefly unavailable while we make some changes. Please check back shortly.',
+        },
+    },
     common: {
         home: 'Home',
         cart: 'Cart',
