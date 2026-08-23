@@ -394,6 +394,7 @@ const en = {
     product: {
         addToCart: 'Add to cart',
         chooseOption: 'Choose an option',
+        originalSize: 'Original',
         outOfStock: 'Currently unavailable',
         wishlistAdd: 'Add to wishlist',
         wishlistRemove: 'Remove from wishlist',

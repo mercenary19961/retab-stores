@@ -413,6 +413,7 @@ const ar = {
     product: {
         addToCart: 'أضف إلى السلة',
         chooseOption: 'اختر أحد الخيارات',
+        originalSize: 'الأصلي',
         outOfStock: 'غير متوفر حالياً',
         wishlistAdd: 'أضف إلى المفضلة',
         wishlistRemove: 'إزالة من المفضلة',

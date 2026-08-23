@@ -18,6 +18,15 @@ interface ProductOptionData {
     price: number;
 }
 
+// A selectable choice on the product page: the original (id null) or a size.
+interface Choice {
+    id: number | null;
+    label_ar: string;
+    label_en: string | null;
+    regular: number;
+    effective: number;
+}
+
 interface Product {
     id: number;
     name_ar: string;
@@ -100,23 +109,42 @@ export default function ShopProduct({
 
     const [qty, setQty] = useState(1);
 
-    // Size / packaging options. When present the customer must pick one; the
-    // chosen option drives the displayed price, the Tamara estimate and the
-    // add-to-cart. Default to the cheapest (options arrive cheapest-first).
-    const hasOptions = product.options.length > 0;
-    const [optionId, setOptionId] = useState<number | null>(hasOptions ? product.options[0].id : null);
-    const selectedOption = hasOptions ? (product.options.find((o) => o.id === optionId) ?? product.options[0]) : null;
-
     // A discount is on the ORIGINAL price by default and only reaches the sizes
     // when the admin opted it in (sale_applies_to_options) — mirrors
     // Product::optionSaleRatio server-side, which is what the cart charges.
     const optionRatio = product.on_sale && product.sale_applies_to_options && product.price > 0 ? product.sale_price! / product.price : 1;
-    const optionEffective = (o: ProductOptionData) => round2(o.price * optionRatio);
 
-    // Regular vs effective for the current selection — works for a plain product
-    // too (no option → the product's own prices).
-    const selectedRegular = selectedOption ? selectedOption.price : product.price;
-    const selectedEffective = selectedOption ? optionEffective(selectedOption) : product.on_sale ? product.effective_price : product.price;
+    // The choices the customer can pick from, when the product has sizes: the
+    // ORIGINAL first (id null — the default the page opens on, always available),
+    // then each size. `effective` is what is charged; `regular` is the struck-through
+    // "was". The original always carries the sale; a size only if opted in.
+    const hasOptions = product.options.length > 0;
+    const choices: Choice[] = hasOptions
+        ? [
+              {
+                  id: null,
+                  label_ar: t('product.originalSize'),
+                  label_en: t('product.originalSize'),
+                  regular: product.price,
+                  effective: product.on_sale ? product.sale_price! : product.price,
+              },
+              ...product.options.map((o) => ({
+                  id: o.id,
+                  label_ar: o.label_ar,
+                  label_en: o.label_en,
+                  regular: o.price,
+                  effective: round2(o.price * optionRatio),
+              })),
+          ]
+        : [];
+    // null = the original (default). A real size sets its own id.
+    const [optionId, setOptionId] = useState<number | null>(null);
+    const selected = hasOptions ? (choices.find((c) => c.id === optionId) ?? choices[0]) : null;
+
+    // Regular vs effective for the current selection — falls back to the product's
+    // own prices for a plain (no-size) product.
+    const selectedRegular = selected ? selected.regular : product.price;
+    const selectedEffective = selected ? selected.effective : product.on_sale ? product.effective_price : product.price;
     // A strike is shown only when this selection is genuinely discounted.
     const discounted = selectedEffective < selectedRegular;
     // What the shopper pays / the Tamara estimate is based on.
@@ -244,32 +272,31 @@ export default function ShopProduct({
                         </div>
                     )}
 
-                    {/* Size / packaging selector — same product, one option at a time.
-                        Buttons: every available option is visible and one tap away, and
-                        the big price above follows the selection. Only the options this
-                        product actually has are shown. */}
-                    {!product.coming_soon && hasOptions && selectedOption && (
+                    {/* Size selector — the ORIGINAL first (auto-selected), then each
+                        size. Every choice is visible and one tap away; the big price
+                        above follows the selection. */}
+                    {!product.coming_soon && hasOptions && selected && (
                         <div className="mt-5">
                             <p className="text-brand-teal/70 mb-2 text-sm font-medium">{t('product.chooseOption')}</p>
                             <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('product.chooseOption')}>
-                                {product.options.map((o) => {
-                                    const active = o.id === selectedOption.id;
+                                {choices.map((c) => {
+                                    const active = c.id === selected.id;
                                     return (
                                         <button
-                                            key={o.id}
+                                            key={c.id ?? 'original'}
                                             type="button"
                                             role="radio"
                                             aria-checked={active}
-                                            onClick={() => setOptionId(o.id)}
+                                            onClick={() => setOptionId(c.id)}
                                             className={`rounded-2xl border px-4 py-2 text-center leading-tight transition-colors ${
                                                 active
                                                     ? 'border-brand-teal bg-brand-teal text-white'
                                                     : 'border-brand-gold/30 text-brand-teal hover:border-brand-teal/60 bg-white'
                                             }`}
                                         >
-                                            <span className="block text-sm font-bold">{localized(o, 'label')}</span>
+                                            <span className="block text-sm font-bold">{localized(c, 'label')}</span>
                                             <span className={`block text-xs ${active ? 'text-white/80' : 'text-brand-teal/50'}`}>
-                                                {optionEffective(o).toFixed(2)} {currency}
+                                                {c.effective.toFixed(2)} {currency}
                                             </span>
                                         </button>
                                     );
@@ -330,7 +357,7 @@ export default function ShopProduct({
                                 onClick={() =>
                                     router.post(
                                         '/cart',
-                                        { product_id: product.id, option_id: selectedOption?.id ?? null, quantity: qty },
+                                        { product_id: product.id, option_id: selected?.id ?? null, quantity: qty },
                                         { preserveScroll: true },
                                     )
                                 }

@@ -71,15 +71,13 @@ class CartController
 
         $product = Product::where('is_active', true)->findOrFail($data['product_id']);
 
-        // Resolve the chosen option, if any. It must belong to this product and
-        // be active — a stale or cross-product id is rejected, and a product that
-        // HAS options requires one to be picked.
+        // Resolve the chosen option, if any. It must belong to this product and be
+        // active. No option means the ORIGINAL product — always a valid choice,
+        // even when sizes exist (it is the default the page opens on).
         $option = null;
         if (! empty($data['option_id'])) {
             $option = $product->activeOptions()->find($data['option_id']);
             abort_unless($option !== null, 422, __('messages.cart.option_unavailable'));
-        } elseif ($product->hasOptions()) {
-            return back()->with('error', __('messages.cart.option_required'));
         }
 
         $this->cart->add($product, $data['quantity'] ?? 1, $option);

@@ -143,7 +143,7 @@ class CheckoutService
                 throw new \RuntimeException('A product in your cart is no longer available.');
             }
 
-            $unitPrice = $option ? $product->optionEffectivePrice($option) : $product->effectivePrice();
+            $unitPrice = $product->priceForOption($option);
             $lineTotal = round((float) $unitPrice * $item->quantity, 2);
             $subtotal += $lineTotal;
 

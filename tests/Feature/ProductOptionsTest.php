@@ -110,7 +110,8 @@ class ProductOptionsTest extends TestCase
 
         // Default: the discount is on the original price only — sizes are unaffected.
         $this->assertSame(10.0, $p->optionEffectivePrice($half));
-        $this->assertSame(5.0, $p->effectivePrice()); // "from" = cheapest regular
+        // "From" = the cheapest buyable = the ORIGINAL discounted (5 → 4).
+        $this->assertSame(4.0, $p->effectivePrice());
         app(CartService::class)->add($p, 1, $half);
         $this->assertEquals(10.0, (float) app(CartService::class)->summary()['items']->first()['unit_price']);
 
@@ -120,6 +121,20 @@ class ProductOptionsTest extends TestCase
         $this->assertSame(8.0, $p->fresh()->optionEffectivePrice($half));
         $this->assertSame(55.2, $p->fresh()->optionEffectivePrice($carton));
         $this->assertSame(4.0, $p->fresh()->effectivePrice()); // cheapest (5) discounted
+    }
+
+    public function test_the_original_product_is_still_buyable_when_it_has_sizes(): void
+    {
+        $p = $this->product(); // price 5, plus size options
+        $p->update(['sale_price' => 4]); // discount is on the original
+
+        // No option = the ORIGINAL, at the (discounted) original price.
+        $this->assertSame(4.0, $p->priceForOption(null));
+
+        app(CartService::class)->add($p, 1, null); // keep the default
+        $item = app(CartService::class)->summary()['items']->first();
+        $this->assertNull($item['option_id']);
+        $this->assertEquals(4.0, (float) $item['unit_price']);
     }
 
     public function test_checkout_rejects_a_deactivated_option(): void

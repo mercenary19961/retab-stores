@@ -247,6 +247,16 @@ class Product extends Model
     }
 
     /**
+     * The price of the ORIGINAL product — the always-present default choice, even
+     * once sizes are added. The discount is on the original price, so a sale
+     * always applies here (unlike the sizes, which opt in).
+     */
+    public function originalPrice(): float
+    {
+        return (float) ($this->isOnSale() ? $this->sale_price : $this->price);
+    }
+
+    /**
      * What the customer actually pays for a chosen option: its stored (regular)
      * price, discounted only if the sale was opted into the sizes. Used by the
      * cart and checkout so what is charged matches what is shown.
@@ -257,19 +267,28 @@ class Product extends Model
     }
 
     /**
-     * The price used for LISTINGS: the cheapest option ("from X"), discounted only
-     * if the sale was opted into the sizes; otherwise the sale price when on sale,
-     * else regular. The amount charged for an options product is the CHOSEN
-     * option's effective price (optionEffectivePrice), resolved at add-to-cart.
+     * The amount charged for a purchase: a chosen size's effective price, or the
+     * ORIGINAL price when no size is chosen (the default choice). One method so
+     * the cart, checkout and product page can't disagree.
+     */
+    public function priceForOption(?ProductOption $option): float
+    {
+        return $option ? $this->optionEffectivePrice($option) : $this->originalPrice();
+    }
+
+    /**
+     * The price used for LISTINGS ("from X"): the cheapest thing a customer can
+     * actually buy — the original, or a size if one is cheaper. For a plain
+     * product this is just the original (sale price when on sale, else regular).
      */
     public function effectivePrice(): float
     {
         $min = $this->minOptionPrice();
-        if ($min !== null) {
-            return round($min * $this->optionSaleRatio(), 2);
+        if ($min === null) {
+            return $this->originalPrice();
         }
 
-        return (float) ($this->isOnSale() ? $this->sale_price : $this->price);
+        return min($this->originalPrice(), round($min * $this->optionSaleRatio(), 2));
     }
 
     /**

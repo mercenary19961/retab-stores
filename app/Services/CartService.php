@@ -58,9 +58,9 @@ class CartService
             'product_id' => $product->id,
             'product_option_id' => $option?->id,
             'quantity' => $quantity,
-            // The chosen option's price WITH any product sale applied; a plain
-            // product falls back to its own effective price.
-            'unit_price' => $option ? $product->optionEffectivePrice($option) : $product->effectivePrice(),
+            // The chosen size's effective price, or the original price when the
+            // customer keeps the default (no size).
+            'unit_price' => $product->priceForOption($option),
         ]);
     }
 
