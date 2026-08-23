@@ -37,6 +37,7 @@ export interface Product {
     is_active: boolean;
     is_featured: boolean;
     is_coming_soon: boolean;
+    sale_applies_to_options?: boolean;
     images?: ProductImage[];
     options?: OptionRow[];
 }
@@ -88,6 +89,7 @@ export default function ProductFormBody({
         is_active: product?.is_active ?? true,
         is_featured: product?.is_featured ?? false,
         is_coming_soon: product?.is_coming_soon ?? false,
+        sale_applies_to_options: product?.sale_applies_to_options ?? false,
         options: (product?.options ?? []) as OptionRow[],
         images: [] as File[], // create only — the new product's images, sent with the form
     });
@@ -114,6 +116,7 @@ export default function ProductFormBody({
                 is_active: d.is_active ? '1' : '0',
                 is_featured: d.is_featured ? '1' : '0',
                 is_coming_soon: d.is_coming_soon ? '1' : '0',
+                sale_applies_to_options: d.sale_applies_to_options ? '1' : '0',
                 options: (d.options as OptionRow[]).map((o) => ({
                     ...o,
                     amount: o.amount ?? '',
@@ -230,6 +233,26 @@ export default function ProductFormBody({
                             onChange={(rows) => setData('options', rows)}
                             basePrice={Number(data.price) || 0}
                         />
+
+                        {/* A discount is on the original price by default; this opts it
+                            into the sizes. Only meaningful once there are options AND a
+                            sale price is set. */}
+                        {data.options.length > 0 && (
+                            <label
+                                className={`mt-3 flex items-start gap-2 text-sm ${data.sale_price === '' || data.sale_price === null ? 'opacity-50' : ''}`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={data.sale_applies_to_options}
+                                    onChange={(e) => setData('sale_applies_to_options', e.target.checked)}
+                                    className="accent-brand-gold mt-0.5"
+                                />
+                                <span>
+                                    {t('admin.products.options.saleApplies')}
+                                    <span className="mt-0.5 block text-xs text-neutral-500">{t('admin.products.options.saleAppliesHint')}</span>
+                                </span>
+                            </label>
+                        )}
                     </div>
                 </section>
 

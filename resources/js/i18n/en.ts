@@ -1163,6 +1163,8 @@ const en = {
                 custom: 'Custom',
                 active: 'Available',
                 resetAuto: 'Reset to auto price',
+                saleApplies: 'Apply the discount to all sizes',
+                saleAppliesHint: 'By default the discount is on the original price only. Turn this on to discount every size by the same percentage.',
             },
             form: {
                 editTitle: 'Edit product',

@@ -247,6 +247,7 @@ class ProductController extends Controller
             'is_active' => $product->is_active,
             'is_featured' => $product->is_featured,
             'is_coming_soon' => $product->is_coming_soon,
+            'sale_applies_to_options' => (bool) $product->sale_applies_to_options,
             'images' => $product->images->sortBy('sort_order')->values()->map(fn ($img) => [
                 'id' => $img->id,
                 'url' => Media::url($img->path, 'card'),
@@ -325,6 +326,7 @@ class ProductController extends Controller
             'description_en' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
+            'sale_applies_to_options' => ['boolean'],
             'sku' => ['required', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($id)],
             'smacc_sku' => ['nullable', 'string', 'max:100', Rule::unique('products', 'smacc_sku')->ignore($id)],
             'barcode' => ['nullable', 'string', 'max:100'],

@@ -265,6 +265,8 @@ class ShopController
                 'sale_price' => $product->sale_price !== null ? (float) $product->sale_price : null,
                 'effective_price' => $product->effectivePrice(),
                 'on_sale' => $product->isOnSale(),
+                // Whether the sale reaches the size options (opt-in per product).
+                'sale_applies_to_options' => (bool) $product->sale_applies_to_options,
                 'in_stock' => $product->stock > 0,
                 'coming_soon' => $product->isComingSoon(),
                 // Sellable size/packaging options, cheapest first. Empty for a

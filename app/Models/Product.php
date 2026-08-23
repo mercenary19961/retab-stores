@@ -41,6 +41,7 @@ class Product extends Model
         'sale_price',
         'sale_starts_at',
         'sale_ends_at',
+        'sale_applies_to_options',
         'sku',
         'smacc_sku',
         'barcode',
@@ -56,6 +57,7 @@ class Product extends Model
         'sale_price' => 'decimal:2',
         'sale_starts_at' => 'datetime',
         'sale_ends_at' => 'datetime',
+        'sale_applies_to_options' => 'boolean',
         'stock' => 'integer',
         'low_stock_threshold' => 'integer',
         'is_active' => 'boolean',
@@ -222,8 +224,7 @@ class Product extends Model
 
     /**
      * The product's sale discount as a multiplier (sale ÷ regular), or 1.0 when
-     * not on sale. Option prices are stored at the REGULAR level and this ratio
-     * is what carries the sale onto them, so a sale applies to every size too.
+     * not on sale.
      */
     public function saleRatio(): float
     {
@@ -235,26 +236,37 @@ class Product extends Model
     }
 
     /**
-     * What the customer actually pays for a chosen option: its stored (regular)
-     * price with the product's sale applied. Used by the cart and checkout, so a
-     * size on a discounted product is genuinely discounted, not just visually.
+     * The discount multiplier that applies to SIZE OPTIONS: the sale ratio, but
+     * only when the admin opted the sale into the sizes (sale_applies_to_options).
+     * A discount is on the original price by default and does NOT cascade to the
+     * derived size prices unless that flag is set.
      */
-    public function optionEffectivePrice(ProductOption $option): float
+    public function optionSaleRatio(): float
     {
-        return round((float) $option->price * $this->saleRatio(), 2);
+        return $this->sale_applies_to_options ? $this->saleRatio() : 1.0;
     }
 
     /**
-     * The price used for LISTINGS: the cheapest option ("from X"), with the sale
-     * applied, when the product has options; otherwise the sale price when on
-     * sale, else regular. The amount charged for an options product is the CHOSEN
+     * What the customer actually pays for a chosen option: its stored (regular)
+     * price, discounted only if the sale was opted into the sizes. Used by the
+     * cart and checkout so what is charged matches what is shown.
+     */
+    public function optionEffectivePrice(ProductOption $option): float
+    {
+        return round((float) $option->price * $this->optionSaleRatio(), 2);
+    }
+
+    /**
+     * The price used for LISTINGS: the cheapest option ("from X"), discounted only
+     * if the sale was opted into the sizes; otherwise the sale price when on sale,
+     * else regular. The amount charged for an options product is the CHOSEN
      * option's effective price (optionEffectivePrice), resolved at add-to-cart.
      */
     public function effectivePrice(): float
     {
         $min = $this->minOptionPrice();
         if ($min !== null) {
-            return round($min * $this->saleRatio(), 2);
+            return round($min * $this->optionSaleRatio(), 2);
         }
 
         return (float) ($this->isOnSale() ? $this->sale_price : $this->price);

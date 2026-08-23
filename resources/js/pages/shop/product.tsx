@@ -30,6 +30,7 @@ interface Product {
     sale_price: number | null;
     effective_price: number;
     on_sale: boolean;
+    sale_applies_to_options: boolean;
     in_stock: boolean;
     coming_soon: boolean;
     purchase_count: number;
@@ -106,18 +107,20 @@ export default function ShopProduct({
     const [optionId, setOptionId] = useState<number | null>(hasOptions ? product.options[0].id : null);
     const selectedOption = hasOptions ? (product.options.find((o) => o.id === optionId) ?? product.options[0]) : null;
 
-    // A product sale applies to options too: option prices are stored at the
-    // REGULAR level and this ratio carries the discount onto them (mirrors
-    // Product::saleRatio server-side, which is what the cart actually charges).
-    const saleRatio = product.on_sale && product.price > 0 ? product.sale_price! / product.price : 1;
-    const optionEffective = (o: ProductOptionData) => round2(o.price * saleRatio);
+    // A discount is on the ORIGINAL price by default and only reaches the sizes
+    // when the admin opted it in (sale_applies_to_options) — mirrors
+    // Product::optionSaleRatio server-side, which is what the cart charges.
+    const optionRatio = product.on_sale && product.sale_applies_to_options && product.price > 0 ? product.sale_price! / product.price : 1;
+    const optionEffective = (o: ProductOptionData) => round2(o.price * optionRatio);
 
-    // Regular vs effective (sale-applied) for the current selection — works for a
-    // plain product too (no option → the product's own prices).
+    // Regular vs effective for the current selection — works for a plain product
+    // too (no option → the product's own prices).
     const selectedRegular = selectedOption ? selectedOption.price : product.price;
-    const selectedEffective = selectedOption ? optionEffective(selectedOption) : product.effective_price;
+    const selectedEffective = selectedOption ? optionEffective(selectedOption) : product.on_sale ? product.effective_price : product.price;
+    // A strike is shown only when this selection is genuinely discounted.
+    const discounted = selectedEffective < selectedRegular;
     // What the shopper pays / the Tamara estimate is based on.
-    const displayPrice = product.on_sale ? selectedEffective : selectedRegular;
+    const displayPrice = selectedEffective;
 
     // ⚠️ The divisor is the SERVER's configured instalment count, not a literal.
     // This block used to hardcode 4 while checkout requested 3, so the shopper
@@ -224,7 +227,7 @@ export default function ShopProduct({
 
                     {!product.coming_soon && (
                         <div className="font-heading mt-4 flex items-center gap-3">
-                            {product.on_sale ? (
+                            {discounted ? (
                                 <>
                                     <span className="text-brand-teal text-3xl font-bold">
                                         {selectedEffective.toFixed(2)} {currency}

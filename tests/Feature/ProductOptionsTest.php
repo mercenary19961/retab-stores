@@ -102,24 +102,24 @@ class ProductOptionsTest extends TestCase
         $this->assertSame(60, $p->fresh()->stock);
     }
 
-    public function test_a_product_sale_applies_to_its_options(): void
+    public function test_a_discount_reaches_the_sizes_only_when_opted_in(): void
     {
         $p = $this->product(); // price 5, options 5 / 10 / carton 69
-        // 20% off the whole product.
-        $p->update(['sale_price' => 4]); // 4/5 = 0.8
-
+        $p->update(['sale_price' => 4]); // 20% off, but NOT opted into sizes yet
         $half = $p->options()->where('amount', 500)->first();  // regular 10
-        $carton = $p->options()->where('amount', null)->first(); // regular 69
 
-        // Effective = regular × 0.8, so the sale reaches every size.
-        $this->assertSame(8.0, $p->optionEffectivePrice($half));
-        $this->assertSame(55.2, $p->optionEffectivePrice($carton));
-        // Listing "from" = cheapest (5) discounted.
-        $this->assertSame(4.0, $p->effectivePrice());
-
-        // The cart charges the DISCOUNTED price, not just the display.
+        // Default: the discount is on the original price only — sizes are unaffected.
+        $this->assertSame(10.0, $p->optionEffectivePrice($half));
+        $this->assertSame(5.0, $p->effectivePrice()); // "from" = cheapest regular
         app(CartService::class)->add($p, 1, $half);
-        $this->assertEquals(8.0, (float) app(CartService::class)->summary()['items']->first()['unit_price']);
+        $this->assertEquals(10.0, (float) app(CartService::class)->summary()['items']->first()['unit_price']);
+
+        // Opt in → every size is discounted by the same ratio (×0.8).
+        $p->update(['sale_applies_to_options' => true]);
+        $carton = $p->options()->where('amount', null)->first(); // regular 69
+        $this->assertSame(8.0, $p->fresh()->optionEffectivePrice($half));
+        $this->assertSame(55.2, $p->fresh()->optionEffectivePrice($carton));
+        $this->assertSame(4.0, $p->fresh()->effectivePrice()); // cheapest (5) discounted
     }
 
     public function test_checkout_rejects_a_deactivated_option(): void
