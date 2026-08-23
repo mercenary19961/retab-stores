@@ -52,6 +52,10 @@ return [
         'password_updated' => 'Your password has been changed.',
     ],
 
+    'errors' => [
+        'page_expired' => 'The page expired. Please try again.',
+    ],
+
     'security' => [
         'verify_failed' => 'We couldn’t verify you’re not a robot. Please try again.',
         'reset_not_available' => 'This address cannot receive email, so no reset link can be sent to it. Staff passwords are reset by an administrator from the admin panel.',

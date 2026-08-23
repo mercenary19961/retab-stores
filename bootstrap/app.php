@@ -12,7 +12,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -69,5 +71,41 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // Turn raw framework error responses into the store's own UI.
         //
+        // 🔑 Skipped entirely in local + testing: dev keeps Laravel's detailed
+        // trace page, and the test suite keeps asserting the real status codes
+        // (assertForbidden(), assertNotFound(), …) instead of a 200-rendered page.
+        // So this shapes PRODUCTION responses only.
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
+            if (app()->environment(['local', 'testing'])) {
+                return $response;
+            }
+
+            $status = $response->getStatusCode();
+
+            // A refused INLINE action (a stale write button that client-side
+            // gating should have hidden — a race, or a direct poke). Keep the
+            // user on their page with a flash the admin toast layer renders,
+            // never a jarring full-page swap to the error screen.
+            if ($request->header('X-Inertia') && ! $request->isMethod('GET') && $status === 403) {
+                return back()->with('error', __('messages.admin.no_permission'));
+            }
+
+            // Expired CSRF token: the conventional recovery is to bounce back so
+            // the freshly-issued token is picked up, rather than show an error.
+            if ($status === 419) {
+                return back()->with('error', __('messages.errors.page_expired'));
+            }
+
+            // Everything else with a friendly page → the branded full-page error.
+            // JSON/API clients keep the machine-readable response.
+            if (! $request->expectsJson() && in_array($status, [403, 404, 500, 503], true)) {
+                return Inertia::render('errors/error', ['status' => $status])
+                    ->toResponse($request)
+                    ->setStatusCode($status);
+            }
+
+            return $response;
+        });
     })->create();

@@ -42,3 +42,4 @@ yarn-error.log
 # keeps every version, so committing it would add another 2.2 MB blob per edit.
 /design/*.html
 !/design/*.dc.html
+.db-backups/
