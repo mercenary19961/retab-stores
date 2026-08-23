@@ -66,7 +66,7 @@ class Permission
     /**
      * Named starting points for the permission grid, by SECTION.
      *
-     * 15 sections × 35 actions is a lot of switches to set one at a time, and the
+     * Several dozen switches is a lot to set one at a time, and the
      * realistic staff roles are few: someone who runs the daily order desk, someone
      * who looks after the catalogue, a trusted second-in-command, or a read-only
      * account for a bookkeeper. Presets are a starting point the admin then

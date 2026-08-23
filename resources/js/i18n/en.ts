@@ -1630,7 +1630,6 @@ const en = {
                 newPassword: 'New password',
                 canSelfRecover: 'They can reset this themselves by email. Only do this if they have asked you to.',
                 noSelfRecovery: 'This account has no email it can be reached at, so a reset here is the only way back in.',
-                selfBlocked: 'To change your own password, use the key icon in the top bar.',
                 adminBlocked: 'Only an admin can reset another admin’s password.',
                 confirmTitle: 'Set a new password?',
                 confirmBody:

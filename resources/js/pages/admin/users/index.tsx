@@ -169,9 +169,6 @@ export default function UsersIndex({
      * same order. The server still enforces them — this is the hint, not the rule.
      */
     const resetBlockedReason = (s: Staff): string | null => {
-        // Your own password is changed where the current one is asked for, which
-        // is the whole reason this action is not offered on your own row.
-        if (s.id === auth.user?.id) return t('admin.users.passwordReset.selfBlocked');
         // 🔴 The escalation guard: an editor who could set an admin's password
         // could simply sign in as that admin.
         if (s.role === 'admin' && !can.manageStaff) return t('admin.users.passwordReset.adminBlocked');
@@ -268,6 +265,11 @@ export default function UsersIndex({
      */
     const passwordCard = (s: Staff) => {
         if (!can.resetPasswords) return null;
+        // Never on your OWN row. The real self-service form (which asks for the
+        // current password) is already rendered just below, so a card here would
+        // be a second password control describing you in the third person and
+        // pointing at a button it does not offer.
+        if (s.id === auth.user?.id) return null;
         const blocked = resetBlockedReason(s);
 
         return (
@@ -580,7 +582,7 @@ export default function UsersIndex({
                                         </div>
                                     </div>
 
-                                    {/* Presets: 14 sections and 33 switches is a lot to set
+                                    {/* Presets: several dozen switches is a lot to set
                                     one at a time, and the real staff roles are few.
                                     These only fill the grid — nothing is saved until
                                     the admin presses Save — so the stored value is
