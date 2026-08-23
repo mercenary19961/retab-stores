@@ -17,7 +17,7 @@ export default function ProductForm({ product, categories }: { product: Product 
             </Link>
             <h1 className="mt-1 mb-6 text-2xl font-bold">{editing ? t('admin.products.form.editTitle') : t('admin.products.form.newTitle')}</h1>
 
-            <div className="max-w-3xl">
+            <div className="max-w-6xl">
                 <ProductFormBody product={product} categories={categories} />
             </div>
         </AdminLayout>
