@@ -54,6 +54,7 @@ return [
 
     'security' => [
         'verify_failed' => 'We couldn’t verify you’re not a robot. Please try again.',
+        'reset_not_available' => 'This address cannot receive email, so no reset link can be sent to it. Staff passwords are reset by an administrator from the admin panel.',
     ],
 
     'otp' => [
@@ -102,6 +103,9 @@ return [
         'role_demoted' => ':name is now an editor. Set their permissions below.',
         'role_self' => 'You cannot change your own role.',
         'role_last_admin' => 'This is the only admin account. Promote someone else before changing this one.',
+        'password_reset_for' => 'New password set for :name. Send it to them, then ask them to keep it safe.',
+        'password_reset_self' => 'To change your own password, use the key icon in the top bar — it asks for your current password.',
+        'password_reset_admin_only' => 'Only an admin can reset another admin’s password.',
         'page_saved' => 'Page saved.',
         'review_saved' => 'Review saved.',
         'review_deleted' => 'Review deleted.',

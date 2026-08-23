@@ -143,9 +143,23 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::get('contact-messages', [ContactMessageController::class, 'index'])->middleware('permission:contact_messages.view')->name('contact-messages.index');
     Route::post('contact-messages/{contactMessage}/handle', [ContactMessageController::class, 'markHandled'])->middleware('permission:contact_messages.manage')->name('contact-messages.handle');
 
-    // Staff & access control — admin only.
+    // Staff & access control.
+    //
+    // Reading the directory and resetting a colleague's password are permissions
+    // an admin can hand to a trusted editor, because a staff account created on a
+    // non-routable address has no reset-by-email and someone has to be able to let
+    // them back in. Both are denied by default (Permission::DEFAULTS).
+    //
+    // 🔴 Everything that changes WHO HAS ACCESS — creating staff, removing them,
+    // changing a role, editing the permission grid — stays `admin` only. An editor
+    // able to edit the grid could grant themselves every section, so that one is
+    // not a permission, it is a role.
+    Route::get('users', [UserController::class, 'index'])->middleware('permission:staff.view')->name('users.index');
+    Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])
+        ->middleware(['permission:staff.reset_password', 'throttle:10,1,staff-password-reset'])
+        ->name('users.reset-password');
+
     Route::middleware('admin')->group(function () {
-        Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
         Route::put('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.permissions');
         Route::put('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');

@@ -96,7 +96,10 @@ const NAV_GROUPS: { key: string; items: NavItem[] }[] = [
 // Pinned to the bottom of the sidebar, in this order (top → bottom).
 const NAV_BOTTOM: NavItem[] = [
     { key: 'changeLog', href: '/admin/change-log', icon: History, perm: 'change_log' },
-    { key: 'users', href: '/admin/users', icon: ShieldCheck, adminOnly: true },
+    // Not adminOnly any more: an editor granted `staff.view` can read the
+    // directory so they can reset a colleague's password. Every write on that
+    // page is still admin-gated server-side (routes/admin.php).
+    { key: 'users', href: '/admin/users', icon: ShieldCheck, perm: 'staff' },
     { key: 'settings', href: '/admin/settings', icon: Settings, perm: 'settings' },
 ];
 

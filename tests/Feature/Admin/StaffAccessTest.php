@@ -25,10 +25,23 @@ class StaffAccessTest extends TestCase
         $this->actingAs($editor)->get('/admin/orders/export?format=csv')->assertForbidden();
     }
 
-    public function test_only_admins_reach_the_staff_page(): void
+    /**
+     * The staff page used to be flatly admin-only. It is now readable by anyone
+     * holding `staff.view`, so that a trusted editor can reset a colleague's
+     * password — but that permission is denied by default, so an editor still
+     * cannot reach it unless an admin has said so. Every WRITE on the page is
+     * still admin-only (see StaffPasswordResetTest).
+     */
+    public function test_the_staff_page_needs_admin_or_an_explicit_grant(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/users')->assertOk();
         $this->actingAs(User::factory()->create(['role' => 'editor']))->get('/admin/users')->assertForbidden();
+
+        $permissions = Permission::DEFAULTS;
+        $permissions['staff']['view'] = true;
+        $granted = User::factory()->create(['role' => 'editor', 'permissions' => $permissions]);
+
+        $this->actingAs($granted)->get('/admin/users')->assertOk();
     }
 
     public function test_admin_creates_an_editor_with_default_permissions(): void

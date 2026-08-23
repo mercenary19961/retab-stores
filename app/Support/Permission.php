@@ -30,6 +30,10 @@ class Permission
         'contact_messages' => ['view', 'manage'],
         'settings' => ['view', 'edit'],
         'change_log' => ['view', 'revert'],
+        // Read the staff directory, and set another staff member's password
+        // without knowing the old one. See DEFAULTS for why both start denied,
+        // and Admin\UserController::resetPassword for the escalation guard.
+        'staff' => ['view', 'reset_password'],
     ];
 
     /**
@@ -53,12 +57,16 @@ class Permission
         'contact_messages' => ['view' => true, 'manage' => true],
         'settings' => ['view' => false, 'edit' => false],
         'change_log' => ['view' => true, 'revert' => false],
+        // 🔑 Both DENIED by default, and deliberately absent from every preset
+        // below. Setting a colleague's password is a trust-level action, not an
+        // operational one — an admin turns it on per person, on purpose.
+        'staff' => ['view' => false, 'reset_password' => false],
     ];
 
     /**
      * Named starting points for the permission grid, by SECTION.
      *
-     * 14 sections × 33 actions is a lot of switches to set one at a time, and the
+     * 15 sections × 35 actions is a lot of switches to set one at a time, and the
      * realistic staff roles are few: someone who runs the daily order desk, someone
      * who looks after the catalogue, a trusted second-in-command, or a read-only
      * account for a bookkeeper. Presets are a starting point the admin then

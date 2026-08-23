@@ -1606,6 +1606,10 @@ const en = {
                 content_pages: 'Content pages',
                 settings: 'Settings',
                 change_log: 'Change log',
+                // These three were missing, so the grid rendered their raw keys.
+                product_requests: 'Product requests',
+                contact_messages: 'Contact messages',
+                staff: 'Staff & access',
             },
             actions: {
                 view: 'View',
@@ -1618,6 +1622,20 @@ const en = {
                 resolve: 'Resolve',
                 send: 'Send',
                 revert: 'Revert',
+                reset_password: 'Reset passwords',
+            },
+            passwordReset: {
+                label: 'Password',
+                reset: 'Reset password',
+                newPassword: 'New password',
+                canSelfRecover: 'They can reset this themselves by email. Only do this if they have asked you to.',
+                noSelfRecovery: 'This account has no email it can be reached at, so a reset here is the only way back in.',
+                selfBlocked: 'To change your own password, use the key icon in the top bar.',
+                adminBlocked: 'Only an admin can reset another admin’s password.',
+                confirmTitle: 'Set a new password?',
+                confirmBody:
+                    '{{name}} will be signed out everywhere and will need this password to get back in. Copy it before you confirm — it is not shown again.',
+                signsOutHint: 'Send it over WhatsApp or read it out, then ask them to change it once they are back in.',
             },
         },
         changeLog: {

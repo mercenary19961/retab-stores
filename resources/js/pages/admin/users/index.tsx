@@ -8,7 +8,7 @@ import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { type SharedData } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { RefreshCw, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
+import { KeyRound, RefreshCw, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
 type Perms = Record<string, Record<string, boolean>>;
@@ -38,18 +38,31 @@ interface Staff {
     email: string;
     role: Role;
     created_at: string | null;
-    permissions: Perms;
+    // Whether a reset link could ever reach them. False for the staff accounts
+    // deliberately created on a non-routable address, which is exactly who this
+    // page's reset action exists for.
+    can_self_recover: boolean;
+    // Null for a non-admin viewer — only an admin is sent the grid.
+    permissions: Perms | null;
+}
+
+/** What the VIEWER may do here, resolved server-side from their permissions. */
+interface Can {
+    manageStaff: boolean;
+    resetPasswords: boolean;
 }
 
 export default function UsersIndex({
     staff,
     schema,
     presets,
+    can,
 }: {
     staff: Staff[];
-    schema: Record<string, string[]>;
-    defaults: Perms;
-    presets: Record<string, Perms>;
+    schema: Record<string, string[]> | null;
+    defaults: Perms | null;
+    presets: Record<string, Perms> | null;
+    can: Can;
 }) {
     const { t } = useAdminT();
 
@@ -60,6 +73,11 @@ export default function UsersIndex({
     // The staff member whose role is being changed, held while the confirm dialog
     // is open (null = closed).
     const [roleTarget, setRoleTarget] = useState<Staff | null>(null);
+    // Same pattern for the password reset. The password is generated when the
+    // dialog opens and held here so Regenerate can replace it.
+    const [resetTarget, setResetTarget] = useState<Staff | null>(null);
+    const [resetPw, setResetPw] = useState('');
+    const [resetting, setResetting] = useState(false);
 
     const selected = staff.find((s) => s.id === selectedId) ?? null;
     const addForm = useForm<{ name: string; email: string; password: string; role: Role }>({
@@ -77,7 +95,9 @@ export default function UsersIndex({
     // Everyone with back-office access is on this page, so the count is exact.
     const adminCount = staff.filter((s) => s.role === 'admin').length;
 
-    const permsFor = (s: Staff): Perms => edits[s.id] ?? s.permissions;
+    // `permissions` is null for a non-admin viewer; the grid that reads this is
+    // admin-only, so an empty map is only ever a type-level fallback.
+    const permsFor = (s: Staff): Perms => edits[s.id] ?? s.permissions ?? {};
 
     const toggle = (section: string, action: string) => {
         if (!selected) return;
@@ -98,9 +118,9 @@ export default function UsersIndex({
      * GRANT where the preset means to deny).
      */
     const applyPreset = (name: string) => {
-        if (!selected) return;
+        if (!selected || !schema) return;
         const map =
-            presets[name] ??
+            presets?.[name] ??
             // "none" isn't a server preset — it's every switch off, which is the
             // useful starting point when granting only one or two sections.
             Object.fromEntries(Object.entries(schema).map(([s, actions]) => [s, Object.fromEntries(actions.map((a) => [a, false]))]));
@@ -143,6 +163,42 @@ export default function UsersIndex({
     };
 
     /**
+     * Why setting this person's password is refused, or null when it is allowed.
+     *
+     * Mirrors the server's guards in Admin\UserController::resetPassword, in the
+     * same order. The server still enforces them — this is the hint, not the rule.
+     */
+    const resetBlockedReason = (s: Staff): string | null => {
+        // Your own password is changed where the current one is asked for, which
+        // is the whole reason this action is not offered on your own row.
+        if (s.id === auth.user?.id) return t('admin.users.passwordReset.selfBlocked');
+        // 🔴 The escalation guard: an editor who could set an admin's password
+        // could simply sign in as that admin.
+        if (s.role === 'admin' && !can.manageStaff) return t('admin.users.passwordReset.adminBlocked');
+
+        return null;
+    };
+
+    const openReset = (s: Staff) => {
+        setResetPw(newPassword());
+        setResetTarget(s);
+    };
+
+    const confirmReset = () => {
+        if (!resetTarget) return;
+        setResetting(true);
+        router.post(
+            `/admin/users/${resetTarget.id}/reset-password`,
+            { password: resetPw },
+            {
+                preserveScroll: true,
+                onSuccess: () => setResetTarget(null),
+                onFinish: () => setResetting(false),
+            },
+        );
+    };
+
+    /**
      * Open with a clean slate and a fresh password, so the credential is ready to
      * copy and a cancelled attempt never leaks into the next one.
      */
@@ -181,6 +237,9 @@ export default function UsersIndex({
      * worse than a sentence saying why.
      */
     const roleCard = (s: Staff) => {
+        // Changing a role changes who has access, so it is admin-only. A viewer
+        // who is merely permitted to reset passwords never sees this row.
+        if (!can.manageStaff) return null;
         const blocked = roleBlockedReason(s);
 
         return (
@@ -200,15 +259,48 @@ export default function UsersIndex({
         );
     };
 
+    /**
+     * The "set a new password for this person" row.
+     *
+     * Rendered only for a viewer holding `staff.reset_password`, and it states
+     * WHY the action is theirs to do: an account on a non-routable address has
+     * no reset-by-email at all, so this page is the only way back in for them.
+     */
+    const passwordCard = (s: Staff) => {
+        if (!can.resetPasswords) return null;
+        const blocked = resetBlockedReason(s);
+
+        return (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-900 px-5 py-4">
+                <div className="min-w-0">
+                    <p className="text-xs text-neutral-500">{t('admin.users.passwordReset.label')}</p>
+                    <p className="max-w-md text-sm text-neutral-300">
+                        {t(s.can_self_recover ? 'admin.users.passwordReset.canSelfRecover' : 'admin.users.passwordReset.noSelfRecovery')}
+                    </p>
+                </div>
+                {blocked ? (
+                    <p className="max-w-xs text-xs text-neutral-500">{blocked}</p>
+                ) : (
+                    <Button size="sm" variant="secondary" icon={KeyRound} onClick={() => openReset(s)}>
+                        {t('admin.users.passwordReset.reset')}
+                    </Button>
+                )}
+            </div>
+        );
+    };
+
     return (
         <AdminLayout title={t('admin.users.title')}>
             <Head title={t('admin.users.title')} />
 
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <p className="text-sm text-neutral-400">{t('admin.users.subtitle')}</p>
-                <Button variant="primary" icon={UserPlus} onClick={openAdd}>
-                    {t('admin.users.addStaff')}
-                </Button>
+                {/* Creating staff is a role, not a permission — see routes/admin.php. */}
+                {can.manageStaff && (
+                    <Button variant="primary" icon={UserPlus} onClick={openAdd}>
+                        {t('admin.users.addStaff')}
+                    </Button>
+                )}
             </div>
 
             {/* In a dialog rather than inline: opening the form used to push the whole
@@ -350,6 +442,59 @@ export default function UsersIndex({
                 )}
             </Modal>
 
+            {/* Reset another staff member's password.
+                A confirm step rather than a one-click flip, because unlike the
+                reversible toggles elsewhere in the panel this locks the person
+                out of their current session until someone hands them the new
+                password. */}
+            <Modal open={resetTarget !== null} onClose={() => setResetTarget(null)} title={t('admin.users.passwordReset.confirmTitle')}>
+                {resetTarget && (
+                    <>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                            {t('admin.users.passwordReset.confirmBody', { name: resetTarget.name ?? resetTarget.email })}
+                        </p>
+
+                        {/* Generated, never typed — same reasoning as the add form:
+                            an admin should not be inventing a password for someone
+                            else, and it has to be readable to be passed on. */}
+                        <label className="mt-4 block">
+                            <span className="text-xs text-neutral-400">{t('admin.users.passwordReset.newPassword')}</span>
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={resetPw}
+                                    autoComplete="new-password"
+                                    className={`${inputCls} mt-0 flex-1 font-mono tracking-wide`}
+                                    dir="ltr"
+                                />
+                                <Button type="button" variant="secondary" icon={RefreshCw} onClick={() => setResetPw(newPassword())}>
+                                    {t('admin.users.regenerate')}
+                                </Button>
+                                <CopyText
+                                    value={resetPw}
+                                    display={t('admin.users.copyPassword')}
+                                    copyLabel={t('admin.users.copyPassword')}
+                                    copiedLabel={t('admin.users.copied')}
+                                    className="rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold text-neutral-200 transition-colors hover:bg-neutral-800"
+                                />
+                            </div>
+                        </label>
+
+                        <p className="mt-3 text-xs text-neutral-500">{t('admin.users.passwordReset.signsOutHint')}</p>
+
+                        <div className="mt-6 flex items-center justify-end gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
+                            <Button variant="secondary" onClick={() => setResetTarget(null)}>
+                                {t('admin.users.cancel')}
+                            </Button>
+                            <Button variant="primary" onClick={confirmReset} disabled={resetting}>
+                                {t('admin.users.passwordReset.reset')}
+                            </Button>
+                        </div>
+                    </>
+                )}
+            </Modal>
+
             <div className="flex flex-col gap-6 lg:flex-row">
                 {/* Staff list */}
                 <div className="w-full shrink-0 space-y-1 lg:w-64">
@@ -395,6 +540,7 @@ export default function UsersIndex({
                                 <p className="mt-1 text-sm text-neutral-500">{t('admin.users.adminFullAccess')}</p>
                             </div>
                             {roleCard(selected)}
+                            {passwordCard(selected)}
                             {isMe && (
                                 <div className="rounded-xl border border-neutral-800 bg-neutral-900">
                                     <ChangePasswordForm />
@@ -404,61 +550,74 @@ export default function UsersIndex({
                     ) : (
                         <div className="space-y-6">
                             {roleCard(selected)}
-                            <div className="rounded-xl border border-neutral-800 bg-neutral-900">
-                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 px-5 py-3">
-                                    <div className="min-w-0">
-                                        <h2 className="truncate font-semibold text-neutral-100">{selected.name}</h2>
-                                        <p className="text-xs text-neutral-500">{t('admin.users.hint')}</p>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <Button size="sm" variant="secondary" onClick={savePerms}>
-                                            {t('admin.users.save')}
-                                        </Button>
-                                        <ConfirmDeleteButton
-                                            itemName={selected.name ?? selected.email}
-                                            label={t('admin.users.remove')}
-                                            onConfirm={() => removeEditor(selected)}
-                                        />
-                                    </div>
+                            {/* Without the grid (a non-admin viewer) nothing else
+                                would name the person being looked at. */}
+                            {!can.manageStaff && (
+                                <div className="rounded-xl border border-neutral-800 bg-neutral-900 px-5 py-4">
+                                    <h2 className="truncate font-semibold text-neutral-100">{selected.name ?? selected.email}</h2>
+                                    <p className="truncate text-xs text-neutral-500" dir="ltr">
+                                        {selected.email}
+                                    </p>
                                 </div>
+                            )}
+                            {passwordCard(selected)}
+                            {can.manageStaff && schema && (
+                                <div className="rounded-xl border border-neutral-800 bg-neutral-900">
+                                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 px-5 py-3">
+                                        <div className="min-w-0">
+                                            <h2 className="truncate font-semibold text-neutral-100">{selected.name}</h2>
+                                            <p className="text-xs text-neutral-500">{t('admin.users.hint')}</p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            <Button size="sm" variant="secondary" onClick={savePerms}>
+                                                {t('admin.users.save')}
+                                            </Button>
+                                            <ConfirmDeleteButton
+                                                itemName={selected.name ?? selected.email}
+                                                label={t('admin.users.remove')}
+                                                onConfirm={() => removeEditor(selected)}
+                                            />
+                                        </div>
+                                    </div>
 
-                                {/* Presets: 14 sections and 33 switches is a lot to set
+                                    {/* Presets: 14 sections and 33 switches is a lot to set
                                     one at a time, and the real staff roles are few.
                                     These only fill the grid — nothing is saved until
                                     the admin presses Save — so the stored value is
                                     always the map they actually confirmed. */}
-                                <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800 px-5 py-3">
-                                    <span className="text-xs text-neutral-500">{t('admin.users.presetsLabel')}</span>
-                                    {Object.keys(presets).map((name) => (
-                                        <button key={name} type="button" onClick={() => applyPreset(name)} className={chip(false)}>
-                                            {t(`admin.users.presets.${name}`)}
+                                    <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800 px-5 py-3">
+                                        <span className="text-xs text-neutral-500">{t('admin.users.presetsLabel')}</span>
+                                        {Object.keys(presets ?? {}).map((name) => (
+                                            <button key={name} type="button" onClick={() => applyPreset(name)} className={chip(false)}>
+                                                {t(`admin.users.presets.${name}`)}
+                                            </button>
+                                        ))}
+                                        <button type="button" onClick={() => applyPreset('none')} className={chip(false)}>
+                                            {t('admin.users.presets.none')}
                                         </button>
-                                    ))}
-                                    <button type="button" onClick={() => applyPreset('none')} className={chip(false)}>
-                                        {t('admin.users.presets.none')}
-                                    </button>
-                                </div>
+                                    </div>
 
-                                <div className="divide-y divide-neutral-800">
-                                    {Object.entries(schema).map(([section, actions]) => (
-                                        <div key={section} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-                                            <span className="font-medium text-neutral-200">{t(`admin.users.sections.${section}`)}</span>
-                                            <div className="flex flex-wrap gap-2">
-                                                {actions.map((action) => (
-                                                    <button
-                                                        key={action}
-                                                        type="button"
-                                                        onClick={() => toggle(section, action)}
-                                                        className={chip(!!permsFor(selected)[section]?.[action])}
-                                                    >
-                                                        {t(`admin.users.actions.${action}`)}
-                                                    </button>
-                                                ))}
+                                    <div className="divide-y divide-neutral-800">
+                                        {Object.entries(schema).map(([section, actions]) => (
+                                            <div key={section} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                                                <span className="font-medium text-neutral-200">{t(`admin.users.sections.${section}`)}</span>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {actions.map((action) => (
+                                                        <button
+                                                            key={action}
+                                                            type="button"
+                                                            onClick={() => toggle(section, action)}
+                                                            className={chip(!!permsFor(selected)[section]?.[action])}
+                                                        >
+                                                            {t(`admin.users.actions.${action}`)}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                             {isMe && (
                                 <div className="rounded-xl border border-neutral-800 bg-neutral-900">
                                     <ChangePasswordForm />
