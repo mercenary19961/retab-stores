@@ -11,15 +11,22 @@ export interface OptionRow {
     price_overridden: boolean;
     stock_units: number; // kept for the DB; stock handling is deferred, so hidden here
     is_active: boolean;
-    is_box?: boolean; // a box is priced by hand and its size is optional
+    is_box: boolean; // a box is priced by hand, its size is optional, and there is at most one
 }
 
 const INPUT = 'w-full rounded border border-neutral-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-800';
+
+// The header and every row use the SAME 5-column template so the two separate
+// grids line up. A fixed last column (not `auto`) is what keeps them aligned:
+// with `auto`, the header's empty actions cell and a row's filled one size
+// differently, which shifts every other column. Literal strings — Tailwind scans
+// source text, so this can't be a variable.
 
 const baseRow = (): Omit<OptionRow, 'label_ar' | 'label_en' | 'amount' | 'price'> => ({
     price_overridden: false,
     stock_units: 1,
     is_active: true,
+    is_box: false,
 });
 
 /**
@@ -67,9 +74,11 @@ export default function ProductOptionsEditor({
 
     const addBox = () => {
         // Manual price (starts 0, marked overridden so it is never auto-touched),
-        // optional size.
+        // optional size, and only one per product.
         onChange([...value, { ...baseRow(), label_ar: 'كرتون', label_en: 'Box', amount: null, price: 0, price_overridden: true, is_box: true }]);
     };
+
+    const hasBox = value.some((r) => r.is_box);
 
     const addCustom = () => {
         onChange([...value, { ...baseRow(), label_ar: '', label_en: '', amount: null, price: 0, price_overridden: false }]);
@@ -99,13 +108,13 @@ export default function ProductOptionsEditor({
             </div>
 
             <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => addWeight(500, '500 جرام', '500g')} disabled={hasAmount(500)} className={presetBtn}>
+                <button type="button" onClick={() => addWeight(500, '500غم', '500g')} disabled={hasAmount(500)} className={presetBtn}>
                     + 500g
                 </button>
-                <button type="button" onClick={() => addWeight(1000, '1 كيلو', '1kg')} disabled={hasAmount(1000)} className={presetBtn}>
+                <button type="button" onClick={() => addWeight(1000, '1كجم', '1kg')} disabled={hasAmount(1000)} className={presetBtn}>
                     + 1kg
                 </button>
-                <button type="button" onClick={addBox} className={presetBtn}>
+                <button type="button" onClick={addBox} disabled={hasBox} className={presetBtn}>
                     + {t('admin.products.options.box')}
                 </button>
                 <button type="button" onClick={addCustom} className={presetBtn}>
@@ -119,7 +128,7 @@ export default function ProductOptionsEditor({
                 </p>
             ) : (
                 <div className="space-y-2">
-                    <div className="hidden grid-cols-[1fr_1fr_5rem_6rem_auto] gap-2 px-1 text-xs text-neutral-500 sm:grid">
+                    <div className="hidden grid-cols-[1fr_1fr_5rem_6rem_7rem] gap-2 text-xs text-neutral-500 sm:grid">
                         <span>{t('admin.products.options.labelAr')}</span>
                         <span>{t('admin.products.options.labelEn')}</span>
                         <span>{t('admin.products.options.grams')}</span>
@@ -129,7 +138,7 @@ export default function ProductOptionsEditor({
                     {value.map((row, i) => (
                         <div
                             key={row.id ?? `new-${i}`}
-                            className="grid grid-cols-2 gap-2 rounded-lg border border-neutral-200 p-2 sm:grid-cols-[1fr_1fr_5rem_6rem_auto] sm:items-center sm:border-0 sm:p-0 dark:border-neutral-800"
+                            className="grid grid-cols-2 gap-2 rounded-lg border border-neutral-200 p-2 sm:grid-cols-[1fr_1fr_5rem_6rem_7rem] sm:items-center sm:border-0 sm:p-0 dark:border-neutral-800"
                         >
                             <input
                                 className={INPUT}

@@ -119,6 +119,7 @@ export default function ProductFormBody({
                     amount: o.amount ?? '',
                     price_overridden: o.price_overridden ? '1' : '0',
                     is_active: o.is_active ? '1' : '0',
+                    is_box: o.is_box ? '1' : '0',
                 })),
             }));
             post('/admin/products', {

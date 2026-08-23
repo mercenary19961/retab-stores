@@ -18,6 +18,7 @@ class ProductOption extends Model
         'label_ar',
         'label_en',
         'amount',
+        'is_box',
         'price',
         'price_overridden',
         'stock_units',
@@ -28,6 +29,7 @@ class ProductOption extends Model
 
     protected $casts = [
         'amount' => 'integer',
+        'is_box' => 'boolean',
         'price' => 'decimal:2',
         'price_overridden' => 'boolean',
         'stock_units' => 'integer',

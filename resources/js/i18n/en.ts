@@ -1153,7 +1153,7 @@ const en = {
                 empty: 'No options — this product is sold at a single price.',
                 labelAr: 'Label (Arabic)',
                 labelEn: 'Label (English)',
-                labelArPh: 'e.g. 500 جرام',
+                labelArPh: 'e.g. 500غم',
                 labelEnPh: 'e.g. 500g',
                 grams: 'Grams',
                 gramsPh: 'e.g. 500',
