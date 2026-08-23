@@ -3,6 +3,7 @@ import ProductGallery from '@/components/store/product-gallery';
 import { Turnstile } from '@/components/turnstile';
 import StoreLayout from '@/layouts/store-layout';
 import { useLocalized } from '@/lib/localize';
+import { round2 } from '@/lib/option-pricing';
 import { type SharedData } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Check, Gift, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
@@ -105,9 +106,18 @@ export default function ShopProduct({
     const [optionId, setOptionId] = useState<number | null>(hasOptions ? product.options[0].id : null);
     const selectedOption = hasOptions ? (product.options.find((o) => o.id === optionId) ?? product.options[0]) : null;
 
-    // The price the shopper sees and pays: the chosen option, else the product's
-    // own (sale-aware) price.
-    const displayPrice = selectedOption ? selectedOption.price : product.on_sale ? product.effective_price : product.price;
+    // A product sale applies to options too: option prices are stored at the
+    // REGULAR level and this ratio carries the discount onto them (mirrors
+    // Product::saleRatio server-side, which is what the cart actually charges).
+    const saleRatio = product.on_sale && product.price > 0 ? product.sale_price! / product.price : 1;
+    const optionEffective = (o: ProductOptionData) => round2(o.price * saleRatio);
+
+    // Regular vs effective (sale-applied) for the current selection — works for a
+    // plain product too (no option → the product's own prices).
+    const selectedRegular = selectedOption ? selectedOption.price : product.price;
+    const selectedEffective = selectedOption ? optionEffective(selectedOption) : product.effective_price;
+    // What the shopper pays / the Tamara estimate is based on.
+    const displayPrice = product.on_sale ? selectedEffective : selectedRegular;
 
     // ⚠️ The divisor is the SERVER's configured instalment count, not a literal.
     // This block used to hardcode 4 while checkout requested 3, so the shopper
@@ -214,13 +224,13 @@ export default function ShopProduct({
 
                     {!product.coming_soon && (
                         <div className="font-heading mt-4 flex items-center gap-3">
-                            {product.on_sale && !hasOptions ? (
+                            {product.on_sale ? (
                                 <>
                                     <span className="text-brand-teal text-3xl font-bold">
-                                        {product.effective_price.toFixed(2)} {currency}
+                                        {selectedEffective.toFixed(2)} {currency}
                                     </span>
                                     <span className="text-brand-teal/40 text-lg line-through">
-                                        {product.price.toFixed(2)} {currency}
+                                        {selectedRegular.toFixed(2)} {currency}
                                     </span>
                                 </>
                             ) : (
@@ -256,7 +266,7 @@ export default function ShopProduct({
                                         >
                                             <span className="block text-sm font-bold">{localized(o, 'label')}</span>
                                             <span className={`block text-xs ${active ? 'text-white/80' : 'text-brand-teal/50'}`}>
-                                                {o.price.toFixed(2)} {currency}
+                                                {optionEffective(o).toFixed(2)} {currency}
                                             </span>
                                         </button>
                                     );

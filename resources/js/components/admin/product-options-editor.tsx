@@ -1,6 +1,7 @@
 import { useAdminT } from '@/i18n/use-admin-t';
-import { applyAutoScaling, baseOption, scaledPrice, type ScalableOption } from '@/lib/option-pricing';
+import { scaleFromBasePrice } from '@/lib/option-pricing';
 import { RotateCcw, Trash2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 export interface OptionRow {
     id?: number;
@@ -52,24 +53,24 @@ export default function ProductOptionsEditor({
 }) {
     const { t } = useAdminT();
 
-    const scalable = (rows: OptionRow[]): ScalableOption[] =>
-        rows.map((r) => ({ amount: r.amount, price: r.price, price_overridden: r.price_overridden }));
+    // Recompute non-overridden weight prices from the PRODUCT price (the anchor):
+    // the smallest size equals the product price, the rest scale up by weight.
+    const rescale = (rows: OptionRow[]): OptionRow[] => scaleFromBasePrice(rows, basePrice);
 
-    // Recompute non-overridden weight prices from the smallest size.
-    const rescale = (rows: OptionRow[]): OptionRow[] => {
-        const scaled = applyAutoScaling(scalable(rows));
-        return rows.map((r, i) => ({ ...r, price: scaled[i].price }));
-    };
-
-    // Auto price for a new weight option: scaled from the current smallest, or —
-    // when it's the first weight option — seeded from the product's own price.
-    const seedPrice = (amount: number): number => {
-        const base = baseOption(scalable(value));
-        return base ? (scaledPrice(base, { amount, price: 0, price_overridden: false }) ?? basePrice) : basePrice;
-    };
+    // Keep option prices in step when the PRODUCT price changes — otherwise a size
+    // added before the price was set (or before it was corrected) stays frozen at
+    // the old value. A ref holds the latest rows so this fires only on basePrice.
+    const latest = useRef({ value, onChange });
+    latest.current = { value, onChange };
+    useEffect(() => {
+        const { value: rows, onChange: cb } = latest.current;
+        const next = scaleFromBasePrice(rows, basePrice);
+        if (next.some((r, i) => r.price !== rows[i].price)) cb(next);
+    }, [basePrice]);
 
     const addWeight = (amount: number, label_ar: string, label_en: string) => {
-        onChange(rescale([...value, { ...baseRow(), label_ar, label_en, amount, price: seedPrice(amount) }]));
+        // The price is filled in by rescale from the product price.
+        onChange(rescale([...value, { ...baseRow(), label_ar, label_en, amount, price: 0 }]));
     };
 
     const addBox = () => {

@@ -58,9 +58,9 @@ class CartService
             'product_id' => $product->id,
             'product_option_id' => $option?->id,
             'quantity' => $quantity,
-            // The chosen option's price is authoritative; only a plain product
-            // falls back to its own effective price.
-            'unit_price' => $option?->price ?? $product->effectivePrice(),
+            // The chosen option's price WITH any product sale applied; a plain
+            // product falls back to its own effective price.
+            'unit_price' => $option ? $product->optionEffectivePrice($option) : $product->effectivePrice(),
         ]);
     }
 

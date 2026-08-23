@@ -45,6 +45,27 @@ export function scaledPrice(base: ScalableOption | null, option: ScalableOption)
 }
 
 /**
+ * Recompute every non-overridden weight option from the PRODUCT price, treating
+ * that price as the price of the smallest size. The smallest weight option comes
+ * out equal to the product price; the rest scale up by weight. Overridden options
+ * and non-weight options (a box) are left untouched.
+ *
+ * This is what makes the product price the live anchor: change it and every
+ * non-overridden size follows, which is the behaviour the admin expects ("all
+ * based on the original price for the smallest amount").
+ */
+export function scaleFromBasePrice<T extends ScalableOption>(options: T[], basePrice: number): T[] {
+    const amounts = options.filter((o) => o.amount != null && o.amount > 0).map((o) => o.amount!);
+    if (amounts.length === 0) return options.map((o) => ({ ...o }));
+    const baseAmount = Math.min(...amounts);
+
+    return options.map((o) => {
+        if (o.price_overridden || o.amount == null || o.amount <= 0) return { ...o };
+        return { ...o, price: round2((basePrice * o.amount) / baseAmount) };
+    });
+}
+
+/**
  * Recompute every non-overridden weight option from the current base, leaving
  * overridden ones and the base itself untouched. Returns a new array.
  */

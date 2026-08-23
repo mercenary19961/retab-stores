@@ -102,6 +102,26 @@ class ProductOptionsTest extends TestCase
         $this->assertSame(60, $p->fresh()->stock);
     }
 
+    public function test_a_product_sale_applies_to_its_options(): void
+    {
+        $p = $this->product(); // price 5, options 5 / 10 / carton 69
+        // 20% off the whole product.
+        $p->update(['sale_price' => 4]); // 4/5 = 0.8
+
+        $half = $p->options()->where('amount', 500)->first();  // regular 10
+        $carton = $p->options()->where('amount', null)->first(); // regular 69
+
+        // Effective = regular × 0.8, so the sale reaches every size.
+        $this->assertSame(8.0, $p->optionEffectivePrice($half));
+        $this->assertSame(55.2, $p->optionEffectivePrice($carton));
+        // Listing "from" = cheapest (5) discounted.
+        $this->assertSame(4.0, $p->effectivePrice());
+
+        // The cart charges the DISCOUNTED price, not just the display.
+        app(CartService::class)->add($p, 1, $half);
+        $this->assertEquals(8.0, (float) app(CartService::class)->summary()['items']->first()['unit_price']);
+    }
+
     public function test_checkout_rejects_a_deactivated_option(): void
     {
         $p = $this->product();

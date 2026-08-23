@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyAutoScaling, baseOption, scaledPrice, type ScalableOption } from './option-pricing';
+import { applyAutoScaling, baseOption, scaledPrice, scaleFromBasePrice, type ScalableOption } from './option-pricing';
 
 const opt = (amount: number | null, price: number, price_overridden = false): ScalableOption => ({ amount, price, price_overridden });
 
@@ -32,6 +32,27 @@ describe('scaledPrice', () => {
 
     it('does not scale a non-weight option', () => {
         expect(scaledPrice(opt(250, 5), opt(null, 0))).toBeNull();
+    });
+});
+
+describe('scaleFromBasePrice', () => {
+    it('makes the smallest size equal the product price and scales the rest', () => {
+        const out = scaleFromBasePrice([opt(500, 0), opt(1000, 0)], 40);
+        expect(out.map((o) => o.price)).toEqual([40, 80]); // 500g = product price, 1kg = 2×
+    });
+
+    it('is the fix for the reported bug: a size added at price 0 follows a later product price', () => {
+        const frozen = [opt(500, 0)]; // added while product price was 0
+        expect(scaleFromBasePrice(frozen, 40).map((o) => o.price)).toEqual([40]);
+    });
+
+    it('leaves overridden sizes and the box untouched', () => {
+        const out = scaleFromBasePrice([opt(500, 0), opt(1000, 15, true), opt(null, 69, true)], 40);
+        expect(out.map((o) => o.price)).toEqual([40, 15, 69]); // 500g follows, 1kg pinned, box manual
+    });
+
+    it('does nothing when there is no weight option', () => {
+        expect(scaleFromBasePrice([opt(null, 69, true)], 40).map((o) => o.price)).toEqual([69]);
     });
 });
 
