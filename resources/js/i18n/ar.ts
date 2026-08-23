@@ -1547,6 +1547,7 @@ const ar = {
             copyPassword: 'نسخ كلمة المرور',
             copied: 'تم النسخ',
             presetsLabel: 'ابدأ من:',
+            presetsMatches: 'الصلاحيات الحالية مطابقة لهذه المجموعة.',
             presets: {
                 default: 'محرّر جديد',
                 operations: 'العمليات',

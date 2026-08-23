@@ -6,9 +6,10 @@ import CopyText from '@/components/copy-text';
 import StatusPill from '@/components/status-pill';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
+import { emptyMap, matchingPreset, type PermissionMap } from '@/lib/permissions';
 import { type SharedData } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { KeyRound, RefreshCw, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
+import { Check, KeyRound, RefreshCw, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
 type Perms = Record<string, Record<string, boolean>>;
@@ -112,21 +113,27 @@ export default function UsersIndex({
     };
 
     /**
-     * Load a preset into the grid. Built server-side from the same SCHEMA the grid
-     * renders, so a section added later is included automatically rather than
-     * silently missing (a missing section falls back to DEFAULTS, i.e. it would
-     * GRANT where the preset means to deny).
+     * Every chip's map, keyed by chip name. The named ones are expanded
+     * server-side from the same SCHEMA the grid renders, so a section added later
+     * is included automatically rather than silently missing (a missing section
+     * falls back to DEFAULTS, i.e. it would GRANT where the preset means to deny).
+     * "Clear all" is derived here because it needs no server knowledge.
      */
-    const applyPreset = (name: string) => {
-        if (!selected || !schema) return;
-        const map =
-            presets?.[name] ??
-            // "none" isn't a server preset — it's every switch off, which is the
-            // useful starting point when granting only one or two sections.
-            Object.fromEntries(Object.entries(schema).map(([s, actions]) => [s, Object.fromEntries(actions.map((a) => [a, false]))]));
+    const chipMaps: Record<string, PermissionMap> = schema ? { ...(presets ?? {}), none: emptyMap(schema) } : {};
 
-        setEdits((prev) => ({ ...prev, [selected.id]: map }));
+    const applyPreset = (name: string) => {
+        if (!selected || !chipMaps[name]) return;
+        setEdits((prev) => ({ ...prev, [selected.id]: chipMaps[name] }));
     };
+
+    /**
+     * Which chip the grid currently EQUALS, so the highlight describes the live
+     * state rather than remembering a click. Pressing a chip lights it, drifting
+     * away by hand puts it out, and hand-toggling back onto a preset lights it
+     * again. Null when the grid is a combination no chip describes, which is the
+     * normal case once an admin has fine-tuned anything.
+     */
+    const activePreset = selected && schema ? matchingPreset(schema, permsFor(selected), chipMaps) : null;
 
     const savePerms = () => {
         if (!selected) return;
@@ -589,14 +596,28 @@ export default function UsersIndex({
                                     always the map they actually confirmed. */}
                                     <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800 px-5 py-3">
                                         <span className="text-xs text-neutral-500">{t('admin.users.presetsLabel')}</span>
-                                        {Object.keys(presets ?? {}).map((name) => (
-                                            <button key={name} type="button" onClick={() => applyPreset(name)} className={chip(false)}>
-                                                {t(`admin.users.presets.${name}`)}
-                                            </button>
-                                        ))}
-                                        <button type="button" onClick={() => applyPreset('none')} className={chip(false)}>
-                                            {t('admin.users.presets.none')}
-                                        </button>
+                                        {Object.keys(chipMaps).map((name) => {
+                                            const active = name === activePreset;
+
+                                            return (
+                                                <button
+                                                    key={name}
+                                                    type="button"
+                                                    onClick={() => applyPreset(name)}
+                                                    className={`${chip(active)} inline-flex items-center gap-1.5`}
+                                                    // Reflects the grid, not the last click, so a screen
+                                                    // reader hears what the colour is saying.
+                                                    aria-pressed={active}
+                                                    title={active ? t('admin.users.presetsMatches') : undefined}
+                                                >
+                                                    {/* The tick is what separates "this is what you
+                                                        currently have" from the identically-styled
+                                                        permission switches in the rows below. */}
+                                                    {active && <Check className="h-3.5 w-3.5" />}
+                                                    {t(`admin.users.presets.${name}`)}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
 
                                     <div className="divide-y divide-neutral-800">

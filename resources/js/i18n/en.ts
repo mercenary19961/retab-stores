@@ -1555,6 +1555,7 @@ const en = {
             copyPassword: 'Copy password',
             copied: 'Copied',
             presetsLabel: 'Start from:',
+            presetsMatches: 'These permissions currently match this preset.',
             presets: {
                 default: 'New editor',
                 operations: 'Operations',
