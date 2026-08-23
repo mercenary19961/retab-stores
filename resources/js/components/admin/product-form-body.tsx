@@ -178,53 +178,61 @@ export default function ProductFormBody({
                     <h2 className="flex items-center gap-2 font-bold">
                         <Info className="text-brand-gold h-4 w-4" /> {t('admin.products.form.details')}
                     </h2>
-                    <label className="block" id="field-category_id">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')} *</span>
-                        <Select
-                            value={String(data.category_id)}
-                            onChange={(v) => setData('category_id', Number(v))}
-                            options={categories.map((c) => ({ value: String(c.id), label: catLabel(c) }))}
-                            className="mt-1 w-full"
-                        />
-                        {errors.category_id && <span className="text-xs text-red-500">{errors.category_id}</span>}
-                    </label>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <label className="block" id="field-category_id">
+                            <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')} *</span>
+                            <Select
+                                value={String(data.category_id)}
+                                onChange={(v) => setData('category_id', Number(v))}
+                                options={categories.map((c) => ({ value: String(c.id), label: catLabel(c) }))}
+                                className="mt-1 w-full"
+                            />
+                            {errors.category_id && <span className="text-xs text-red-500">{errors.category_id}</span>}
+                        </label>
+                        {text('slug', t('admin.products.form.slug'), { placeholder: t('admin.products.form.slugPlaceholder') })}
+                    </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                         {text('name_ar', t('admin.products.form.nameAr'), { required: true })}
                         {text('name_en', t('admin.products.form.nameEn'))}
                     </div>
-                    {text('slug', t('admin.products.form.slug'), { placeholder: t('admin.products.form.slugPlaceholder') })}
-                    <label className="block" id="field-description_ar">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descAr')}</span>
-                        <textarea
-                            value={data.description_ar}
-                            onChange={(e) => setData('description_ar', e.target.value)}
-                            rows={3}
-                            className={INPUT}
-                        />
-                    </label>
-                    <label className="block" id="field-description_en">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descEn')}</span>
-                        <textarea
-                            value={data.description_en}
-                            onChange={(e) => setData('description_en', e.target.value)}
-                            rows={3}
-                            className={INPUT}
-                        />
-                    </label>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <label className="block" id="field-description_ar">
+                            <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descAr')}</span>
+                            <textarea
+                                value={data.description_ar}
+                                onChange={(e) => setData('description_ar', e.target.value)}
+                                rows={4}
+                                className={INPUT}
+                            />
+                        </label>
+                        <label className="block" id="field-description_en">
+                            <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descEn')}</span>
+                            <textarea
+                                value={data.description_en}
+                                onChange={(e) => setData('description_en', e.target.value)}
+                                rows={4}
+                                className={INPUT}
+                            />
+                        </label>
+                    </div>
                 </section>
 
                 <section className={CARD}>
                     <h2 className="flex items-center gap-2 font-bold">
                         <Tag className="text-brand-gold h-4 w-4" /> {t('admin.products.form.pricingInventory')}
                     </h2>
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    {/* Numbers grouped into one narrow 4-across row, identifiers into
+                        a 3-across row — smaller fields, cleaner alignment. */}
+                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                         {text('price', t('admin.products.form.priceSar'), { required: true, type: 'number' })}
                         {text('sale_price', t('admin.products.form.salePriceSar'), { type: 'number' })}
+                        {text('stock', t('admin.products.form.stock'), { required: true, type: 'number' })}
+                        {text('low_stock_threshold', t('admin.products.form.lowStock'), { type: 'number' })}
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         {text('sku', t('admin.products.form.sku'), { required: true })}
                         {text('smacc_sku', t('admin.products.form.smaccSku'))}
                         {text('barcode', t('admin.products.form.barcode'))}
-                        {text('stock', t('admin.products.form.stock'), { required: true, type: 'number' })}
-                        {text('low_stock_threshold', t('admin.products.form.lowStock'), { type: 'number' })}
                     </div>
 
                     <div className="border-t border-neutral-100 pt-4 dark:border-neutral-800">
