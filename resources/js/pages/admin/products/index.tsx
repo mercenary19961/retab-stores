@@ -12,6 +12,7 @@ import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import CopyText from '@/components/copy-text';
 import ImageLightbox from '@/components/image-lightbox';
 import StatusPill from '@/components/status-pill';
+import { useCan } from '@/hooks/use-can';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -142,6 +143,7 @@ export default function ProductsIndex({
     undoMeta?: UndoMeta | null;
 }) {
     const { t, i18n } = useAdminT();
+    const can = useCan();
     const [search, setSearch] = useState(filters.search ?? '');
     // EN-first admin: show the English name/label when set, else the Arabic.
     const loc = (ar: string, en: string | null) => (i18n.language === 'en' && en ? en : ar);
@@ -294,11 +296,13 @@ export default function ProductsIndex({
             <Button size="sm" variant="secondary" icon={Pencil} onClick={() => setEditing(p)}>
                 {t('admin.common.edit')}
             </Button>
-            <ConfirmDeleteButton
-                itemName={loc(p.name_ar, p.name_en)}
-                reversible
-                onConfirm={() => router.delete(`/admin/products/${p.id}`, { preserveScroll: true })}
-            />
+            {can('products.delete') && (
+                <ConfirmDeleteButton
+                    itemName={loc(p.name_ar, p.name_en)}
+                    reversible
+                    onConfirm={() => router.delete(`/admin/products/${p.id}`, { preserveScroll: true })}
+                />
+            )}
         </>
     );
 

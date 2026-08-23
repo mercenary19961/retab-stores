@@ -3,6 +3,7 @@ import ConfirmDialog from '@/components/admin/confirm-dialog';
 import Pagination from '@/components/admin/pagination';
 import StatusBadge from '@/components/admin/status-badge';
 import StatusPill from '@/components/status-pill';
+import { useCan } from '@/hooks/use-can';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { THEAD } from '@/lib/admin-ui';
@@ -40,6 +41,7 @@ interface Paginated {
 
 export default function ChangeLogIndex({ logs, highlight = null }: { logs: Paginated; highlight?: number | null }) {
     const { t } = useAdminT();
+    const can = useCan();
     // Scroll to and briefly flag the entry linked from a conflict banner.
     const [flagged, setFlagged] = useState<number | null>(highlight);
     useEffect(() => {
@@ -142,7 +144,7 @@ export default function ChangeLogIndex({ logs, highlight = null }: { logs: Pagin
                                                 >
                                                     {t('admin.changeLog.reverted')}
                                                 </StatusPill>
-                                            ) : row.revertable ? (
+                                            ) : row.revertable && can('change_log.revert') ? (
                                                 <Button size="sm" variant="danger" icon={RotateCcw} onClick={() => revert(row)}>
                                                     {t('admin.changeLog.revert')}
                                                 </Button>

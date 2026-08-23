@@ -7,6 +7,7 @@ import Pagination from '@/components/admin/pagination';
 import ResizableTh from '@/components/admin/resizable-th';
 import StatusBadge from '@/components/admin/status-badge';
 import StickyScrollWrapper from '@/components/admin/sticky-scroll-wrapper';
+import { useCan } from '@/hooks/use-can';
 import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-columns';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
@@ -106,6 +107,7 @@ export default function OrdersIndex({
     counts: Record<string, number>;
 }) {
     const { t } = useAdminT();
+    const can = useCan();
     const rc = useResizableColumns({ tableKey: 'orders', columns: COLUMNS });
     const [viewing, setViewing] = useState<OrderRow | null>(null);
 
@@ -163,7 +165,7 @@ export default function OrdersIndex({
                         </Button>
                     )}
                 </div>
-                <ExportButtons base="/admin/orders/export" params={exportParams} />
+                {can('orders.export') && <ExportButtons base="/admin/orders/export" params={exportParams} />}
             </div>
 
             <StickyScrollWrapper className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">

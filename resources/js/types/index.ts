@@ -2,6 +2,13 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
     user: User;
+    /**
+     * The signed-in editor's resolved section→action grants, shared on every
+     * page by HandleInertiaRequests. Null for admins (full access) and for
+     * signed-out / customer requests. Read it through `useCan()` rather than
+     * poking at it directly, so client gating mirrors the server's hasPermission.
+     */
+    permissions?: Record<string, Record<string, boolean>> | null;
 }
 
 export interface BreadcrumbItem {
@@ -42,6 +49,8 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
+    /** 'admin' | 'editor' | 'customer'. Drives admin access; see useCan(). */
+    role?: string;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
