@@ -1,6 +1,15 @@
 import { useAdminT } from '@/i18n/use-admin-t';
 import { X } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+
+/**
+ * The dialog header's action area, exposed to the body so a deeply nested form
+ * can put its primary button (usually Save) up on the title row beside the close
+ * button, without the page in between having to know about the form's state.
+ * Null outside a Modal, and on the server, so a portal is simply skipped.
+ */
+const ModalActionsContext = createContext<HTMLElement | null>(null);
+export const useModalActionsSlot = () => useContext(ModalActionsContext);
 
 /**
  * A centered modal dialog for the admin panel. Closes on backdrop click or Esc.
@@ -20,6 +29,7 @@ export default function Modal({
     children: ReactNode;
 }) {
     const { t } = useAdminT();
+    const [actionsEl, setActionsEl] = useState<HTMLDivElement | null>(null);
 
     useEffect(() => {
         if (!open) return;
@@ -42,8 +52,10 @@ export default function Modal({
                     size === 'xl' ? 'max-w-6xl' : size === 'lg' ? 'max-w-4xl' : size === 'sm' ? 'max-w-md' : 'max-w-2xl'
                 }`}
             >
-                <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
-                    <h2 className="min-w-0 truncate font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
+                <div className="flex items-center gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
+                    <h2 className="min-w-0 flex-1 truncate font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
+                    {/* Filled by the body via useModalActionsSlot(); empty otherwise. */}
+                    <div ref={setActionsEl} className="flex shrink-0 flex-wrap items-center justify-end gap-3" />
                     <button
                         type="button"
                         onClick={onClose}
@@ -53,7 +65,9 @@ export default function Modal({
                         <X className="h-5 w-5" />
                     </button>
                 </div>
-                <div className="px-5 py-5">{children}</div>
+                <div className="px-5 py-5">
+                    <ModalActionsContext.Provider value={actionsEl}>{children}</ModalActionsContext.Provider>
+                </div>
             </div>
         </div>
     );

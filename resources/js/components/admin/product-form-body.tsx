@@ -1,4 +1,5 @@
 import Button from '@/components/admin/button';
+import { useModalActionsSlot } from '@/components/admin/modal';
 import PageHeader from '@/components/admin/page-header';
 import ProductOptionsEditor, { type OptionRow } from '@/components/admin/product-options-editor';
 import Select from '@/components/admin/select';
@@ -7,6 +8,7 @@ import { useAdminT } from '@/i18n/use-admin-t';
 import { router, useForm } from '@inertiajs/react';
 import { Eye, Image as ImageIcon, Info, Star, Tag, Trash2, Upload } from 'lucide-react';
 import { type FormEvent, type ReactNode, useEffect, useId, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface Category {
     id: number;
@@ -78,6 +80,7 @@ export default function ProductFormBody({
     useHighlightFields();
     // Ties the header's Save button to the <form> it sits outside of.
     const formId = useId();
+    const modalSlot = useModalActionsSlot();
 
     // EN-first admin: show a category's English name when set, else the Arabic.
     const catLabel = (c: Category) => (i18n.language === 'en' && c.name_en ? c.name_en : c.name_ar);
@@ -204,12 +207,16 @@ export default function ProductFormBody({
                     }
                 />
             ) : (
-                // In a modal the dialog's own title bar sits directly above this row,
-                // so Save still lands at the top rather than below a tall form.
-                <div className="flex flex-wrap items-center justify-end gap-3 border-b border-neutral-100 pb-4 dark:border-neutral-800">
-                    {imageWarning}
-                    {saveButton}
-                </div>
+                // In a modal, Save is portalled up onto the dialog's own title row,
+                // beside the close button, rather than taking a row of its own.
+                modalSlot &&
+                createPortal(
+                    <>
+                        {imageWarning}
+                        {saveButton}
+                    </>,
+                    modalSlot,
+                )
             )}
 
             {/* Two columns on wide screens: the main form on the left, visibility +
