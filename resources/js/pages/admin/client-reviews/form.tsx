@@ -1,9 +1,10 @@
 import Button from '@/components/admin/button';
+import PageHeader from '@/components/admin/page-header';
 import Select from '@/components/admin/select';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 interface ReviewData {
@@ -54,13 +55,18 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
         <AdminLayout title={review ? t('admin.reviews.form.editTitle', { name: review.author_name }) : t('admin.reviews.form.newTitle')}>
             <Head title={review ? t('admin.reviews.form.editHead') : t('admin.reviews.form.newTitle')} />
 
-            <div className="mb-4">
-                <Link href="/admin/client-reviews" className="inline-flex items-center gap-1 text-sm text-neutral-500 underline">
-                    <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('admin.reviews.title')}
-                </Link>
-            </div>
+            <PageHeader
+                back="/admin/client-reviews"
+                backLabel={t('admin.reviews.title')}
+                actions={
+                    <Button type="submit" form="client-review-form" variant="primary" disabled={processing || !isDirty}>
+                        {t('admin.reviews.form.save')}
+                    </Button>
+                }
+            />
 
             <form
+                id="client-review-form"
                 onSubmit={submit}
                 className="max-w-2xl space-y-4 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
             >
@@ -108,16 +114,14 @@ export default function ClientReviewForm({ review }: { review: ReviewData | null
                     {t('admin.reviews.form.activeLabel')}
                 </label>
 
-                <div className="flex items-center justify-between pt-2">
-                    <Button type="submit" variant="primary" disabled={processing || !isDirty}>
-                        {t('admin.reviews.form.save')}
-                    </Button>
-                    {review && (
+                {/* Save lives in the page header; Delete stays down here, away from it. */}
+                {review && (
+                    <div className="flex justify-end pt-2">
                         <Button type="button" variant="danger" icon={Trash2} onClick={destroy}>
                             {t('admin.common.delete')}
                         </Button>
-                    )}
-                </div>
+                    </div>
+                )}
             </form>
         </AdminLayout>
     );

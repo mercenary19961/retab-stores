@@ -1,4 +1,5 @@
 import Button from '@/components/admin/button';
+import PageHeader from '@/components/admin/page-header';
 import UndoButton, { type UndoMeta } from '@/components/admin/undo-button';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
@@ -160,13 +161,24 @@ export default function SettingsIndex({
         <AdminLayout title={t('admin.settings.title')}>
             <Head title={t('admin.settings.title')} />
 
+            <PageHeader
+                actions={
+                    <>
+                        <span className="text-xs text-neutral-400">{t('admin.settings.saveHint')}</span>
+                        <Button type="submit" form="settings-form" variant="primary" disabled={processing || !isDirty}>
+                            {t('admin.settings.save')}
+                        </Button>
+                    </>
+                }
+            />
+
             {undoMeta && (
                 <div className="mb-4">
                     <UndoButton section="settings" undoMeta={undoMeta} />
                 </div>
             )}
 
-            <form onSubmit={submit} className="space-y-6">
+            <form id="settings-form" onSubmit={submit} className="space-y-6">
                 <div className="gap-6 xl:columns-2">
                     {SECTIONS.map((s) => (
                         <section key={s.key} className={CARD}>
@@ -263,14 +275,6 @@ export default function SettingsIndex({
                             </div>
                         </section>
                     )}
-                </div>
-
-                {/* Just the save button — disabled until something actually changes. */}
-                <div className="flex items-center gap-3">
-                    <Button type="submit" variant="primary" disabled={processing || !isDirty}>
-                        {t('admin.settings.save')}
-                    </Button>
-                    <span className="text-xs text-neutral-400">{t('admin.settings.saveHint')}</span>
                 </div>
             </form>
         </AdminLayout>

@@ -1,11 +1,12 @@
 import Button from '@/components/admin/button';
+import PageHeader from '@/components/admin/page-header';
 import ProductOptionsEditor, { type OptionRow } from '@/components/admin/product-options-editor';
 import Select from '@/components/admin/select';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
 import { router, useForm } from '@inertiajs/react';
 import { Eye, Image as ImageIcon, Info, Star, Tag, Trash2, Upload } from 'lucide-react';
-import { type FormEvent, useEffect, useMemo } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useId, useMemo } from 'react';
 
 export interface Category {
     id: number;
@@ -58,16 +59,25 @@ export default function ProductFormBody({
     modal = false,
     onSaved,
     onImageChanged,
+    title,
+    back,
+    backLabel,
 }: {
     product: Product | null;
     categories: Category[];
     modal?: boolean;
     onSaved?: () => void;
     onImageChanged?: () => void;
+    /** Page-mode header. Ignored in `modal` mode, which has its own chrome. */
+    title?: ReactNode;
+    back?: string;
+    backLabel?: ReactNode;
 }) {
     const { t, i18n } = useAdminT();
     const editing = product !== null;
     useHighlightFields();
+    // Ties the header's Save button to the <form> it sits outside of.
+    const formId = useId();
 
     // EN-first admin: show a category's English name when set, else the Arabic.
     const catLabel = (c: Category) => (i18n.language === 'en' && c.name_en ? c.name_en : c.name_ar);
@@ -171,12 +181,41 @@ export default function ProductFormBody({
         </label>
     );
 
+    // One button, rendered either in the page header or, in a modal, under the form.
+    const saveButton = (
+        <Button type="submit" form={formId} variant="primary" disabled={processing || !isDirty || !hasImages}>
+            {editing ? t('admin.products.form.saveChanges') : t('admin.products.form.createProduct')}
+        </Button>
+    );
+    const imageWarning = !hasImages ? <span className="text-xs text-red-500">{t('admin.products.form.imageRequired')}</span> : null;
+
     return (
         <div className="space-y-6">
+            {!modal ? (
+                <PageHeader
+                    title={title}
+                    back={back}
+                    backLabel={backLabel}
+                    actions={
+                        <>
+                            {imageWarning}
+                            {saveButton}
+                        </>
+                    }
+                />
+            ) : (
+                // In a modal the dialog's own title bar sits directly above this row,
+                // so Save still lands at the top rather than below a tall form.
+                <div className="flex flex-wrap items-center justify-end gap-3 border-b border-neutral-100 pb-4 dark:border-neutral-800">
+                    {imageWarning}
+                    {saveButton}
+                </div>
+            )}
+
             {/* Two columns on wide screens: the main form on the left, visibility +
                 images on the right. Stacks on narrow / mobile. */}
             <div className="grid gap-6 lg:grid-cols-[1.7fr_1fr] lg:items-start">
-                <form onSubmit={submit} className="space-y-6">
+                <form id={formId} onSubmit={submit} className="space-y-6">
                     <section className={CARD}>
                         <h2 className="flex items-center gap-2 font-bold">
                             <Info className="text-brand-gold h-4 w-4" /> {t('admin.products.form.details')}
@@ -266,13 +305,6 @@ export default function ProductFormBody({
                             )}
                         </div>
                     </section>
-
-                    <div className="space-y-2">
-                        <Button type="submit" variant="primary" disabled={processing || !isDirty || !hasImages}>
-                            {editing ? t('admin.products.form.saveChanges') : t('admin.products.form.createProduct')}
-                        </Button>
-                        {!hasImages && <p className="text-xs text-red-500">{t('admin.products.form.imageRequired')}</p>}
-                    </div>
                 </form>
 
                 {/* Right column: visibility + images. These live OUTSIDE the <form>

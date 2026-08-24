@@ -32,6 +32,9 @@ interface Props {
     href?: string;
     method?: 'get' | 'post' | 'put' | 'delete';
     type?: 'button' | 'submit';
+    /** id of the <form> to submit. Lets a submit button sit outside its form —
+     *  used by the page header so Save can live at the top of a long page. */
+    form?: string;
     onClick?: () => void;
     disabled?: boolean;
 }
@@ -46,6 +49,7 @@ export default function Button({
     href,
     method,
     type = 'button',
+    form,
     onClick,
     disabled,
 }: Props) {
@@ -66,7 +70,7 @@ export default function Button({
     }
 
     return (
-        <button type={type} onClick={onClick} disabled={disabled} className={cls}>
+        <button type={type} form={form} onClick={onClick} disabled={disabled} className={cls}>
             {inner}
         </button>
     );

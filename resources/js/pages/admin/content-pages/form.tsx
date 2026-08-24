@@ -1,9 +1,9 @@
 import Button from '@/components/admin/button';
+import PageHeader from '@/components/admin/page-header';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { Head, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
 
 interface PageData {
@@ -51,13 +51,18 @@ export default function ContentPageForm({ page }: { page: PageData | null }) {
         <AdminLayout title={page ? t('admin.contentPages.form.editTitle', { slug: page.slug }) : t('admin.contentPages.form.newTitle')}>
             <Head title={page ? t('admin.contentPages.form.editHead', { slug: page.slug }) : t('admin.contentPages.form.newTitle')} />
 
-            <div className="mb-4">
-                <Link href="/admin/content-pages" className="inline-flex items-center gap-1 text-sm text-neutral-500 underline">
-                    <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('admin.contentPages.title')}
-                </Link>
-            </div>
+            <PageHeader
+                back="/admin/content-pages"
+                backLabel={t('admin.contentPages.title')}
+                actions={
+                    <Button type="submit" form="content-page-form" variant="primary" disabled={processing || !isDirty}>
+                        {t('admin.contentPages.form.save')}
+                    </Button>
+                }
+            />
 
             <form
+                id="content-page-form"
                 onSubmit={submit}
                 className="max-w-3xl space-y-4 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
             >
@@ -100,10 +105,6 @@ export default function ContentPageForm({ page }: { page: PageData | null }) {
                     <input type="checkbox" checked={data.is_published} onChange={(e) => setData('is_published', e.target.checked)} />
                     {t('admin.contentPages.form.publishedLabel')}
                 </label>
-
-                <Button type="submit" variant="primary" disabled={processing || !isDirty}>
-                    {t('admin.contentPages.form.save')}
-                </Button>
             </form>
         </AdminLayout>
     );
