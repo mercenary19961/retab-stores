@@ -109,4 +109,35 @@ return [
         'RTB-0090' => [['retab-08'], []],   // كيكة دخن — name read off the pack's label
         'RTB-0091' => [['retab-21'], []],   // دخيني درجة أولى 250 جرام
     ],
+
+    /*
+     * Client rusk (شابورة) re-shoot received 2026-08-30 — the "more angles later"
+     * promised when RTB-0064 was replaced above. Seven shots, one per live rusk,
+     * on the same grey stone backdrop with the tea glass, so the whole الشوابير
+     * category finally reads as one set instead of a mix of Zid flats, bare
+     * slices and wrapped sleeves.
+     *
+     * Sources live in database/data/rusk-photos/ as <SKU>.webp — IN the repo
+     * deliberately, because this import also has to run on production, where the
+     * container has nowhere else to read them from (same reason as the
+     * photoshoot-2026-08 and preview-products sets).
+     *
+     * 🔑 FILES ARE NAMED FOR THE SKU THEY BELONG TO, so every matcher is the key
+     * itself and no include/exclude juggling is needed. The `rusks` group above
+     * had to disambiguate بر / قمح / حبوب / نخالة / عسل by substring, which is
+     * exactly the fiddly part this avoids — a re-delivery just overwrites a file.
+     *
+     * ⚠️ This SUPERSEDES both the `rusks` group and RTB-0064's retab-19 entry.
+     * Running any of those afterwards would put the old photos back, so this
+     * group is the only one to run for الشوابير from here on.
+     */
+    'rusks-2026-08' => [
+        'RTB-0061' => [['RTB-0061'], []],   // شابورة بالبر — red bag, Retab Brown Rusk
+        'RTB-0062' => [['RTB-0062'], []],   // شابورة بالقمح — brown bag, Retab Wheat Rusk
+        'RTB-0063' => [['RTB-0063'], []],   // شابورة بالقمح الكامل بر — box, whole wheat
+        'RTB-0064' => [['RTB-0064'], []],   // شابورة بالقمح — box, Al Rashaqa (replaces retab-19)
+        'RTB-0065' => [['RTB-0065'], []],   // شابورة بالحبوب و النخالة — box, grains + bran
+        'RTB-0066' => [['RTB-0066'], []],   // شابورة بالحبوب — box, grains
+        'RTB-0067' => [['RTB-0067'], []],   // شابورة أصل الرشاقة — box, grains + honey + milk
+    ],
 ];
