@@ -73,23 +73,58 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         // Turn raw framework error responses into the store's own UI.
         //
-        // 🔑 Skipped entirely in local + testing: dev keeps Laravel's detailed
-        // trace page, and the test suite keeps asserting the real status codes
-        // (assertForbidden(), assertNotFound(), …) instead of a 200-rendered page.
-        // So this shapes PRODUCTION responses only.
+        // 🔑 Never in `testing`: the suite asserts the real status codes
+        // (assertForbidden(), assertNotFound(), …), not a rendered page.
+        //
+        // In `local` only SERVER errors keep the framework's page, because that
+        // stack trace is the whole point in dev. A 403/404/419/429 carries no
+        // trace worth reading, so those render branded in dev too — otherwise the
+        // storefront's most common error states could only ever be seen in prod.
         $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
-            if (app()->environment(['local', 'testing'])) {
+            if (app()->environment('testing')) {
                 return $response;
             }
 
             $status = $response->getStatusCode();
 
-            // A refused INLINE action (a stale write button that client-side
-            // gating should have hidden — a race, or a direct poke). Keep the
+            if ($status >= 500 && app()->environment('local')) {
+                return $response;
+            }
+
+            // 🔴 Re-resolve the visitor's language before rendering ANYTHING below.
+            // SetLocale lives in the `web` group, but a 404 is thrown by the router
+            // before group middleware runs and a 429 by ThrottleRequests, which
+            // middleware priority sorts ahead of it — so at this point the locale is
+            // still the AR default and, worse, Inertia has no shared props at all
+            // (HandleInertiaRequests never ran), which is why `locale` has to be
+            // passed explicitly below rather than relying on the shared prop.
+            // Measured in a browser: an English visitor got an Arabic error page.
+            $locale = SetLocale::resolve($request);
+            app()->setLocale($locale);
+
+            // A refused or too-fast INLINE action: a stale write button that
+            // client-side gating should have hidden (a race, or a direct poke),
+            // or a form submitted faster than its rate limit allows. Keep the
             // user on their page with a flash the admin toast layer renders,
             // never a jarring full-page swap to the error screen.
-            if ($request->header('X-Inertia') && ! $request->isMethod('GET') && $status === 403) {
-                return back()->with('error', __('messages.admin.no_permission'));
+            //
+            // ⚠️ Scoped to the ADMIN deliberately. The storefront has no global
+            // flash renderer (only admin-layout mounts <AdminToasts/>), so bouncing
+            // a shopper back would make the button silently do nothing — worse than
+            // an error page. They get the branded page below instead, which at
+            // least says what happened and, for a 429, when they can retry.
+            // `password.update` is named explicitly because the admin submits it
+            // from a modal and its path is `settings/password`, not `admin/*`.
+            $inAdmin = $request->is('admin/*') || $request->routeIs('password.update');
+
+            if ($inAdmin && $request->header('X-Inertia') && ! $request->isMethod('GET')) {
+                if ($status === 403) {
+                    return back()->with('error', __('messages.admin.no_permission'));
+                }
+
+                if ($status === 429) {
+                    return back()->with('error', __('messages.errors.too_many_requests'));
+                }
             }
 
             // Expired CSRF token: the conventional recovery is to bounce back so
@@ -100,10 +135,33 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // Everything else with a friendly page → the branded full-page error.
             // JSON/API clients keep the machine-readable response.
-            if (! $request->expectsJson() && in_array($status, [403, 404, 500, 503], true)) {
-                return Inertia::render('errors/error', ['status' => $status])
+            if (! $request->expectsJson() && in_array($status, [403, 404, 429, 500, 503], true)) {
+                // `locale` is passed explicitly because app.tsx seeds the i18n
+                // instance from it, and the shared prop does not exist here.
+                $props = ['status' => $status, 'locale' => $locale];
+
+                // Seconds until the limit clears, so the page can count down
+                // rather than vaguely say "later". Laravel's ThrottleRequests puts
+                // it on Retry-After; when it is absent the page simply omits the
+                // timer instead of inventing a number.
+                if ($status === 429 && ($retryAfter = (int) $response->headers->get('Retry-After')) > 0) {
+                    $props['retryAfter'] = $retryAfter;
+                }
+
+                $branded = Inertia::render('errors/error', $props)
                     ->toResponse($request)
                     ->setStatusCode($status);
+
+                // Inertia builds a FRESH response, so the rate-limit headers a
+                // client (or a crawler backing off) may act on are lost unless
+                // they are carried across by hand.
+                foreach (['Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'] as $header) {
+                    if ($response->headers->has($header)) {
+                        $branded->headers->set($header, $response->headers->get($header));
+                    }
+                }
+
+                return $branded;
             }
 
             return $response;

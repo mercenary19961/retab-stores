@@ -25,6 +25,15 @@ const en = {
             title: 'Your session expired',
             message: 'For your security the page timed out. Please go back and try again.',
         },
+        // Rate limited. The wait is only rendered when the server could read a
+        // Retry-After header; `retryNow` replaces it once the countdown lands.
+        '429': {
+            title: 'Too many requests',
+            message:
+                'A lot of requests came from here in a short time, so we’ve paused things for a moment. Nothing is wrong with your order or your account.',
+            retryIn: 'You can try again in',
+            retryNow: 'You can try again now.',
+        },
         '500': {
             title: 'Something went wrong',
             message: 'A problem on our side stopped this from loading. Please try again in a moment.',

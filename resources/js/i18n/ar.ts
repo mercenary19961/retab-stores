@@ -26,6 +26,14 @@ const ar = {
             title: 'انتهت صلاحية الجلسة',
             message: 'انتهت مهلة الصفحة حفاظاً على أمانك. يُرجى الرجوع والمحاولة مرة أخرى.',
         },
+        // Rate limited. The wait is only rendered when the server could read a
+        // Retry-After header; `retryNow` replaces it once the countdown lands.
+        '429': {
+            title: 'طلبات كثيرة جداً',
+            message: 'وصلنا عدد كبير من الطلبات خلال وقت قصير، لذا أوقفنا الأمر مؤقتاً. لا توجد مشكلة في طلبك أو في حسابك.',
+            retryIn: 'يمكنك المحاولة مجدداً بعد',
+            retryNow: 'يمكنك المحاولة مجدداً الآن.',
+        },
         '500': {
             title: 'حدث خطأ ما',
             message: 'واجهنا مشكلة من جانبنا منعت تحميل هذه الصفحة. يُرجى المحاولة بعد قليل.',

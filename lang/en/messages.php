@@ -56,6 +56,7 @@ return [
 
     'errors' => [
         'page_expired' => 'The page expired. Please try again.',
+        'too_many_requests' => 'Too many attempts in a short time. Please wait a moment and try again.',
     ],
 
     'security' => [
