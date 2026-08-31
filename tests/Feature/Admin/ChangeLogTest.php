@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CheckoutService;
+use App\Services\Smacc\SmaccImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -345,7 +346,7 @@ class ChangeLogTest extends TestCase
         $staff = $this->staff();
         $import = ActivityLog::create([
             'user_id' => $staff->id,
-            'action' => \App\Services\Smacc\SmaccImportService::ACTION,
+            'action' => SmaccImportService::ACTION,
             'changes' => ['summary' => ['updated' => 3]],
         ]);
         $ordinary = ActivityLog::create(['user_id' => $staff->id, 'action' => 'updated', 'label' => 'x']);
@@ -364,7 +365,7 @@ class ChangeLogTest extends TestCase
         $staff = $this->staff();
         $import = ActivityLog::create([
             'user_id' => $staff->id,
-            'action' => \App\Services\Smacc\SmaccImportService::ACTION,
+            'action' => SmaccImportService::ACTION,
             'changes' => ['summary' => ['updated' => 1]],
         ]);
 
