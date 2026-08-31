@@ -168,6 +168,12 @@ return [
         'change_reverted' => 'Change reverted.',
         'change_revert_conflict' => 'Cannot revert: :fields changed again after this entry. Review the current values instead.',
         'change_revert_blocked' => 'This change can no longer be reverted.',
+        'bulk_reverted' => 'Reverted :count of :total selected entries.',
+        'bulk_revert_partial' => ':blocked blocked by a later change, :failed could not be reverted.',
+        'bulk_revert_none' => 'Nothing was reverted. Later changes have to be undone first.',
+        'bulk_logs_deleted' => 'Deleted :count log entries.',
+        'bulk_delete_skipped_imports' => ':count stock imports were kept, so the Inventory page can still undo them.',
+        'bulk_delete_none' => 'Nothing was deleted. Stock imports can only be undone from the Inventory page.',
     ],
 
 ];

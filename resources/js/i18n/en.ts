@@ -1715,6 +1715,20 @@ const en = {
             revertedTooltip: 'Reverted by {{user}} at {{at}}',
             revert: 'Revert',
             revertConfirm: 'Revert this change? A new entry will record the revert.',
+            // Bulk selection. `{{n}}` not `{{count}}` — i18next reserves `count`
+            // for pluralization, which under Arabic means six suffixed variants
+            // these keys do not define.
+            select: 'Select entry',
+            selectAll: 'Select all on this page',
+            selected: '{{n}} selected',
+            clearSelection: 'Clear',
+            revertSelected: 'Revert selected',
+            deleteSelected: 'Delete selected',
+            bulkRevertConfirm:
+                'Revert {{n}} selected entries? They are applied newest first, and any blocked by a later change are reported rather than forced.',
+            // Names what is being deleted inside ConfirmDeleteButton's modal,
+            // which owns the rest of that copy and the type-to-confirm guard.
+            bulkDeleteItem: '{{n}} log entries',
             revertOf: 'revert of #{{id}}',
             actions: {
                 created: 'created',

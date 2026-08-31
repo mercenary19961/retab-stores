@@ -198,6 +198,14 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
 
     // Change log — audit history + per-entry revert.
     Route::get('change-log', [ChangeLogController::class, 'index'])->middleware('permission:change_log.view')->name('change-log.index');
+    // Bulk actions sit on their own paths, declared before the per-entry routes.
+    // No collision is possible here (the per-entry routes carry a trailing
+    // segment, so they differ in length), but keeping the literal paths first is
+    // the habit that prevents `bulk-destroy` ever being read as an entry id.
+    Route::post('change-log/bulk-revert', [ChangeLogController::class, 'bulkRevert'])->middleware('permission:change_log.revert')->name('change-log.bulk-revert');
+    // 🔑 Deleting audit history is admin-only, deliberately NOT a grantable
+    // permission: erasing the record of who changed what stays with the owner.
+    Route::delete('change-log/bulk-destroy', [ChangeLogController::class, 'bulkDestroy'])->middleware('admin')->name('change-log.bulk-destroy');
     Route::post('change-log/{activityLog}/revert', [ChangeLogController::class, 'revert'])->middleware('permission:change_log.revert')->name('change-log.revert');
     Route::delete('change-log/undo/{section}', [ChangeLogController::class, 'dismissUndo'])->middleware('permission:change_log.view')->name('change-log.dismiss-undo');
 });

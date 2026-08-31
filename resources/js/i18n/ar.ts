@@ -1703,6 +1703,19 @@ const ar = {
             revertedTooltip: 'تراجع عنه {{user}} في {{at}}',
             revert: 'تراجع',
             revertConfirm: 'التراجع عن هذا التغيير؟ سيُسجَّل التراجع كإدخال جديد.',
+            // Bulk selection. `{{n}}` not `{{count}}` — i18next reserves `count`
+            // for pluralization, which under Arabic means six suffixed variants
+            // these keys do not define.
+            select: 'تحديد السجل',
+            selectAll: 'تحديد كل ما في هذه الصفحة',
+            selected: 'تم تحديد {{n}}',
+            clearSelection: 'إلغاء التحديد',
+            revertSelected: 'التراجع عن المحدد',
+            deleteSelected: 'حذف المحدد',
+            bulkRevertConfirm: 'التراجع عن {{n}} من السجلات المحددة؟ تُطبَّق من الأحدث إلى الأقدم، وأي سجل محجوب بتغيير لاحق سيُبلَّغ عنه بدل فرضه.',
+            // Names what is being deleted inside ConfirmDeleteButton's modal,
+            // which owns the rest of that copy and the type-to-confirm guard.
+            bulkDeleteItem: '{{n}} من سجلات التغيير',
             revertOf: 'تراجع عن #{{id}}',
             actions: {
                 created: 'إنشاء',

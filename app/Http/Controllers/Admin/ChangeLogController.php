@@ -90,6 +90,129 @@ class ChangeLogController extends Controller
         return back()->with('error', __('messages.admin.change_revert_blocked'));
     }
 
+    /**
+     * Revert several selected entries in one action.
+     *
+     * 🔴 NEWEST-FIRST is mandatory, not tidiness. A revert writes the entry's
+     * `old_data` back, so for two entries A (older) and B (newer) on one record:
+     *   oldest first — revert A, record returns to pre-A. Then revert B writes
+     *                  pre-B, which is the state A had already produced. A's
+     *                  revert is silently undone.
+     *   newest first — revert B, then A. The record lands at pre-A, which is
+     *                  what selecting both promised.
+     * It matters more here than in a simpler log because revert() also does
+     * per-field conflict detection: oldest-first would see the newer entry as a
+     * conflict and refuse nearly every row. Do NOT reorder into a bare whereIn.
+     *
+     * Each entry goes through the SAME ChangeLogService::revert() the single-row
+     * button uses, so the two can never drift, and each is transactional on its
+     * own — a partial result is a legitimate outcome here, and rolling back the
+     * reverts that did succeed would be worse than reporting honestly.
+     */
+    public function bulkRevert(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $logs = ActivityLog::whereIn('id', $validated['ids'])
+            ->orderByDesc('id')
+            ->get();
+
+        $reverted = 0;
+        $blocked = 0;
+        $failed = 0;
+
+        foreach ($logs as $log) {
+            $result = $this->changeLog->revert($log);
+
+            if ($result->ok) {
+                $reverted++;
+
+                // Same housekeeping as the single revert: the section's quick
+                // "undo last save" pointer has served its purpose.
+                if ($section = $this->changeLog->sectionKey($log)) {
+                    $this->changeLog->clearUndo($section);
+                }
+
+                continue;
+            }
+
+            $result->reason === RevertResult::REASON_CONFLICT ? $blocked++ : $failed++;
+        }
+
+        // Ids matching no row (deleted meanwhile) are counted as failures rather
+        // than dropped, so the totals the admin reads always add up.
+        $failed += count($validated['ids']) - $logs->count();
+
+        if ($reverted === 0) {
+            return back()->with('error', __('messages.admin.bulk_revert_none'));
+        }
+
+        $message = __('messages.admin.bulk_reverted', [
+            'count' => $reverted,
+            'total' => count($validated['ids']),
+        ]);
+
+        if ($blocked > 0 || $failed > 0) {
+            $message .= ' '.__('messages.admin.bulk_revert_partial', [
+                'blocked' => $blocked,
+                'failed' => $failed,
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Permanently delete several selected entries. Admin-only (route middleware).
+     *
+     * ⚠️ There is NO undo: activity_logs does not soft-delete, so the
+     * type-to-confirm prompt is the only safety net.
+     *
+     * 🔴 SMACC stock-import entries are EXCLUDED and reported as skipped. The
+     * Inventory page lists the last 10 of them and offers Undo on each, so
+     * deleting one here would destroy that undo permanently with nothing on
+     * either page explaining where it went.
+     *
+     * ⚠️ `reverts_log_id` is nullOnDelete, so deleting an entry that a later
+     * revert points at silently strips that entry's "revert of #N" link. It
+     * cannot fail or orphan a row, but the history reads thinner afterwards.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:200'],
+            'ids.*' => ['integer'],
+        ]);
+
+        // Partitioned in PHP rather than with a `!=` where clause: `action` is
+        // compared by value and a SQL inequality would also drop NULL rows,
+        // silently protecting entries this guard was never meant to cover.
+        $ids = ActivityLog::whereIn('id', $validated['ids'])
+            ->get(['id', 'action'])
+            ->partition(fn (ActivityLog $log) => $log->action === SmaccImportService::ACTION);
+
+        [$protected, $deletable] = [$ids[0], $ids[1]];
+
+        $deleted = $deletable->isEmpty()
+            ? 0
+            : ActivityLog::whereIn('id', $deletable->pluck('id'))->delete();
+
+        if ($deleted === 0) {
+            return back()->with('error', __('messages.admin.bulk_delete_none'));
+        }
+
+        $message = __('messages.admin.bulk_logs_deleted', ['count' => $deleted]);
+
+        if ($protected->isNotEmpty()) {
+            $message .= ' '.__('messages.admin.bulk_delete_skipped_imports', ['count' => $protected->count()]);
+        }
+
+        return back()->with('success', $message);
+    }
+
     /** Dismiss a section's "undo last save" pointer without reverting anything. */
     public function dismissUndo(string $section)
     {

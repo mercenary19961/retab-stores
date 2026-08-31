@@ -269,6 +269,112 @@ class ChangeLogTest extends TestCase
         $this->actingAs($customer)->post("/admin/change-log/{$log->id}/revert")->assertForbidden();
     }
 
+    /**
+     * The load-bearing property of bulk revert: entries are applied NEWEST FIRST.
+     *
+     * Two updates to the same field, A then B. Reverting oldest-first would put
+     * the record back to pre-A and then B's revert would write pre-B over it,
+     * which is the value A had already produced — A's revert silently undone.
+     * Newest-first lands on pre-A, which is what selecting both promised.
+     *
+     * Asserting the final price is what makes this a real test: a wrong order
+     * still returns 200 and still reports a success, so only the value tells you.
+     */
+    public function test_bulk_revert_applies_newest_first(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product(['price' => 10]);
+
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 20]));
+        $logA = $this->latestLog();
+
+        $product->refresh();
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 30]));
+        $logB = $this->latestLog();
+
+        $this->assertSame(30.0, (float) $product->fresh()->price);
+
+        $this->actingAs($staff)
+            ->post('/admin/change-log/bulk-revert', ['ids' => [$logA->id, $logB->id]])
+            ->assertSessionHas('success');
+
+        // Back to the price before the OLDEST selected entry.
+        $this->assertSame(10.0, (float) $product->fresh()->price);
+    }
+
+    /** A selection whose entries cannot all be reverted reports what actually happened. */
+    public function test_bulk_revert_reports_a_partial_result(): void
+    {
+        $staff = $this->staff();
+        $product = $this->product(['price' => 10]);
+
+        $this->actingAs($staff)->put("/admin/products/{$product->id}", $this->payload($product, ['price' => 20]));
+        $log = $this->latestLog();
+
+        // Revert it once, so the second attempt inside the bulk run is refused
+        // as already-reverted rather than silently counted as a success.
+        $this->actingAs($staff)->post("/admin/change-log/{$log->id}/revert")->assertSessionHas('success');
+
+        $this->actingAs($staff)
+            ->post('/admin/change-log/bulk-revert', ['ids' => [$log->id]])
+            ->assertSessionHas('error');
+    }
+
+    /** Erasing audit history is admin-only, and not reachable by a granted editor. */
+    public function test_an_editor_cannot_bulk_delete_log_entries(): void
+    {
+        $editor = User::factory()->create(['role' => 'editor']);
+        $log = ActivityLog::create(['user_id' => $editor->id, 'action' => 'updated', 'label' => 'x']);
+
+        $this->actingAs($editor)
+            ->delete('/admin/change-log/bulk-destroy', ['ids' => [$log->id]])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('activity_logs', ['id' => $log->id]);
+    }
+
+    /**
+     * SMACC stock imports survive a bulk delete that names them.
+     *
+     * The Inventory page lists the last 10 import logs and offers Undo on each,
+     * so deleting one here would destroy that undo with nothing explaining where
+     * it went. The rest of the selection is still deleted, and the count says so.
+     */
+    public function test_bulk_delete_keeps_stock_imports_and_deletes_the_rest(): void
+    {
+        $staff = $this->staff();
+        $import = ActivityLog::create([
+            'user_id' => $staff->id,
+            'action' => \App\Services\Smacc\SmaccImportService::ACTION,
+            'changes' => ['summary' => ['updated' => 3]],
+        ]);
+        $ordinary = ActivityLog::create(['user_id' => $staff->id, 'action' => 'updated', 'label' => 'x']);
+
+        $this->actingAs($staff)
+            ->delete('/admin/change-log/bulk-destroy', ['ids' => [$import->id, $ordinary->id]])
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('activity_logs', ['id' => $import->id]);
+        $this->assertDatabaseMissing('activity_logs', ['id' => $ordinary->id]);
+    }
+
+    /** A selection of nothing but stock imports deletes nothing and says so. */
+    public function test_bulk_delete_of_only_stock_imports_deletes_nothing(): void
+    {
+        $staff = $this->staff();
+        $import = ActivityLog::create([
+            'user_id' => $staff->id,
+            'action' => \App\Services\Smacc\SmaccImportService::ACTION,
+            'changes' => ['summary' => ['updated' => 1]],
+        ]);
+
+        $this->actingAs($staff)
+            ->delete('/admin/change-log/bulk-destroy', ['ids' => [$import->id]])
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('activity_logs', ['id' => $import->id]);
+    }
+
     public function test_the_change_log_page_renders(): void
     {
         $p = $this->product();
