@@ -1,4 +1,5 @@
 import Button from '@/components/admin/button';
+import CityInput from '@/components/admin/city-input';
 import FilterChips from '@/components/admin/filter-chips';
 import Modal from '@/components/admin/modal';
 import StatusToggle from '@/components/admin/status-toggle';
@@ -17,7 +18,6 @@ import {
     Globe,
     LifeBuoy,
     Mail,
-    MapPin,
     Package,
     Pencil,
     Phone,
@@ -242,20 +242,14 @@ export default function ShippingIndex({
             <div className={`${CARD} mb-4 p-4`}>
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                     <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
-                        <label className="block sm:w-56">
-                            <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-neutral-400">
-                                <MapPin className="h-3.5 w-3.5" />
-                                {t('admin.shipping.destination')}
-                            </span>
-                            <input
-                                className={INPUT}
-                                value={cityInput}
-                                onChange={(e) => setCityInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && repriceTo(cityInput)}
-                                placeholder={originCity}
-                                dir="ltr"
-                            />
-                        </label>
+                        <CityInput
+                            className="sm:w-64"
+                            label={t('admin.shipping.destination')}
+                            value={cityInput}
+                            onChange={setCityInput}
+                            onSubmit={repriceTo}
+                            placeholder={originCity}
+                        />
                         <Button variant="secondary" icon={Zap} onClick={() => repriceTo(cityInput)}>
                             {t('admin.shipping.reprice')}
                         </Button>
