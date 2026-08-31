@@ -36,6 +36,20 @@ interface ShippingGateway
     public function cancelShipment(Order $order): bool;
 
     /**
+     * Every shipping service the aggregator can currently offer this account,
+     * with prices and terms — the catalogue behind /admin/shipping.
+     *
+     * Distinct from getDeliveryOptions(): that quotes ONE order and is filtered
+     * to what the store will actually ship with, whereas this lists everything
+     * available so the admin can decide what to switch on. Never filtered, or the
+     * portal could not show a disabled carrier at all.
+     *
+     * @param  string|null  $city  Destination to price against; null = the origin city.
+     * @return CarrierOption[]
+     */
+    public function listServices(?string $city = null): array;
+
+    /**
      * Constant-time check that a webhook secret matches ours.
      */
     public function verifyWebhookToken(?string $token): bool;

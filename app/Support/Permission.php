@@ -20,6 +20,7 @@ class Permission
         'product_requests' => ['view', 'manage'],
         'inventory' => ['view', 'import'],
         'returns' => ['view', 'resolve'],
+        'shipping' => ['view', 'manage'],
         'customers' => ['view'],
         'marketing' => ['view', 'send'],
         'coupons' => ['view', 'create', 'edit', 'delete'],
@@ -47,6 +48,7 @@ class Permission
         'product_requests' => ['view' => true, 'manage' => true],
         'inventory' => ['view' => true, 'import' => true],
         'returns' => ['view' => true, 'resolve' => true],
+        'shipping' => ['view' => true, 'manage' => false],
         'customers' => ['view' => true],
         'marketing' => ['view' => true, 'send' => false],
         'coupons' => ['view' => true, 'create' => true, 'edit' => true, 'delete' => false],
@@ -81,12 +83,12 @@ class Permission
      */
     public const PRESETS = [
         // The daily fulfilment desk: take orders out of the door, handle returns.
-        'operations' => ['orders', 'returns', 'product_requests', 'customers', 'inventory', 'contact_messages'],
+        'operations' => ['orders', 'returns', 'shipping', 'product_requests', 'customers', 'inventory', 'contact_messages'],
         // Looks after what the store sells and how it reads.
         'catalogue' => ['products', 'coupons', 'discounts', 'reviews', 'product_reviews', 'content_pages'],
         // Everything except the settings that can reconfigure the business itself.
         'manager' => [
-            'orders', 'returns', 'product_requests', 'customers', 'inventory', 'contact_messages',
+            'orders', 'returns', 'shipping', 'product_requests', 'customers', 'inventory', 'contact_messages',
             'products', 'coupons', 'discounts', 'reviews', 'product_reviews', 'content_pages', 'marketing', 'change_log',
         ],
     ];

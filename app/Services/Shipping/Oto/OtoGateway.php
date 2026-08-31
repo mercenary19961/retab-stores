@@ -3,9 +3,12 @@
 namespace App\Services\Shipping\Oto;
 
 use App\Models\Order;
+use App\Models\ShippingCarrier;
+use App\Services\Shipping\CarrierOption;
 use App\Services\Shipping\DeliveryOption;
 use App\Services\Shipping\NormalizedShipment;
 use App\Services\Shipping\ShippingGateway;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
@@ -82,8 +85,19 @@ class OtoGateway implements ShippingGateway
             }
             $carrier = $row['deliveryCompanyName'] ?? $row['name'] ?? 'Carrier';
 
-            // No Aramex (business decision).
-            if (stripos($carrier, 'aramex') !== false) {
+            // Which couriers the store will ship with is a business decision the
+            // client now owns, at /admin/shipping.
+            //
+            // 🔑 This replaces a hardcoded `stripos($carrier, 'aramex')`. That was
+            // only half the recorded decision — "no Aramex, no DHL" — so DHL was
+            // being quoted and could win the automatic cheapest-carrier pick, and
+            // neither exclusion could be changed without a deploy.
+            //
+            // Filtering HERE rather than in the picker is deliberate: this is the
+            // one path both the manual picker and the automatic choice go through
+            // (ShippingService::resolveOption re-quotes even for a manual pick), so
+            // a disabled carrier cannot be reached by either route.
+            if (! ShippingCarrier::allows($carrier)) {
                 continue;
             }
 
@@ -137,6 +151,98 @@ class OtoGateway implements ShippingGateway
         $this->client->cancelShipment(['orderId' => $order->order_number]);
 
         return true;
+    }
+
+    /**
+     * Everything OTO can currently offer this account, for the admin portal.
+     *
+     * Two endpoints, tried in order, because they are not equally available:
+     *
+     *  1. GET /getDeliveryOptions — the real catalogue. Rich (logo, pickup cut-off,
+     *     weight allowance, return fee) but gated on the account's OTO plan tier.
+     *  2. POST /checkOTODeliveryFee — the rate check we already use for shipping.
+     *     Thinner, but it works on every plan.
+     *
+     * ⚠️ The fallback matters more than it looks. OTO documents (1) as available to
+     * "Starter Package, Scale Package, Enterprise Package, Marketplaces" — i.e. NOT
+     * the Free package — and this account's tier is unconfirmed, so (1) may simply
+     * refuse. Treating that refusal as "no carriers available" would show the client
+     * an empty portal and imply their shipping was broken, when in fact orders ship
+     * fine. Degrading to a shorter list is the honest failure.
+     *
+     * Deliberately UNFILTERED by the enable flags: the portal has to show a
+     * disabled carrier in order to offer the switch that turns it back on.
+     *
+     * @return CarrierOption[]
+     */
+    public function listServices(?string $city = null): array
+    {
+        $city = $city !== null && trim($city) !== '' ? trim($city) : $this->originCity;
+
+        try {
+            return $this->parseServices($this->client->deliveryOptions(['city' => $city]));
+        } catch (\Throwable $e) {
+            Log::info('OTO getDeliveryOptions unavailable, falling back to rate check', [
+                'city' => $city,
+                'reason' => $e->getMessage(),
+            ]);
+        }
+
+        return $this->parseServices($this->client->checkDeliveryFee([
+            'originCity' => $this->originCity,
+            'destinationCity' => $city,
+            'weight' => 1,
+            'codAmount' => 0,
+            'currency' => 'SAR',
+        ]));
+    }
+
+    /**
+     * Normalise either endpoint's body into CarrierOption[].
+     *
+     * Both wrap their rows differently and neither is documented as stable, so the
+     * container key is probed rather than assumed — the same defensive shape the
+     * rest of this class uses. A row with no carrier name is dropped: it could not
+     * be matched to the register, so it could be neither enabled nor disabled.
+     *
+     * @return CarrierOption[]
+     */
+    private function parseServices(array $data): array
+    {
+        $rows = $data['deliveryOptions'] ?? $data['deliveryCompany'] ?? $data['data'] ?? $data['options'] ?? (array_is_list($data) ? $data : []);
+
+        $options = [];
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $carrier = $row['deliveryCompanyName'] ?? $row['deliveryCompany'] ?? $row['name'] ?? null;
+            if (! $carrier) {
+                continue;
+            }
+
+            $options[] = new CarrierOption(
+                id: isset($row['deliveryOptionId']) ? (int) $row['deliveryOptionId'] : (isset($row['id']) ? (int) $row['id'] : null),
+                carrier: (string) $carrier,
+                // The listing names the SERVICE separately from the company; the rate
+                // check does not, so this is often null and the portal shows the
+                // company alone rather than inventing a service name.
+                service: $row['deliveryOptionName'] ?? null,
+                price: isset($row['price']) ? (float) $row['price'] : (isset($row['shippingFee']) ? (float) $row['shippingFee'] : null),
+                currency: $row['currency'] ?? 'SAR',
+                estimatedDelivery: $row['avgDeliveryTime'] ?? $row['deliveryTime'] ?? $row['estimatedDeliveryTime'] ?? null,
+                pickupCutOff: $row['pickupCutOffTime'] ?? null,
+                logo: $row['logo'] ?? null,
+                maxOrderValue: isset($row['maxOrderValue']) ? (float) $row['maxOrderValue'] : null,
+                maxFreeWeight: isset($row['maxFreeWeight']) ? (float) $row['maxFreeWeight'] : null,
+                extraWeightPerKg: isset($row['extraWeightPerKg']) ? (float) $row['extraWeightPerKg'] : null,
+                returnFee: isset($row['returnFee']) ? (float) $row['returnFee'] : null,
+                pickupDropoff: isset($row['pickupDropoff']) ? (bool) $row['pickupDropoff'] : null,
+            );
+        }
+
+        return $options;
     }
 
     public function verifyWebhookToken(?string $token): bool

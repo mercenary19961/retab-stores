@@ -121,6 +121,28 @@ class OtoClient
     }
 
     /**
+     * Carriers currently available to this account, with prices and service terms.
+     *
+     * Read-only and order-free (pass a `city`, or an `orderId` to price a real
+     * one), which is what makes it safe to call from an admin screen: unlike
+     * createOrder it creates nothing and dispatches no courier.
+     *
+     * ⚠️ OTO gates this endpoint on the account's plan tier. On a plan that does
+     * not include it the call fails, which is why listServices() falls back to the
+     * rate-check endpoint rather than treating a failure here as "no carriers".
+     */
+    public function deliveryOptions(array $query): array
+    {
+        $response = $this->send('get', '/getDeliveryOptions', $query);
+
+        if (! $response->successful()) {
+            throw new RuntimeException('OTO getDeliveryOptions failed: '.$response->status().' '.$response->body());
+        }
+
+        return $response->json() ?? [];
+    }
+
+    /**
      * Issue a request, and on an auth rejection mint a fresh access token and
      * try once more.
      *

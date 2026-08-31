@@ -31,6 +31,7 @@ import {
     Sparkles,
     Star,
     TicketPercent,
+    Truck,
     Users,
     X,
     type LucideIcon,
@@ -63,6 +64,7 @@ const NAV_GROUPS: { key: string; items: NavItem[] }[] = [
         items: [
             { key: 'orders', href: '/admin/orders', icon: ShoppingBag, perm: 'orders' },
             { key: 'returns', href: '/admin/returns', icon: RotateCcw, perm: 'returns' },
+            { key: 'shipping', href: '/admin/shipping', icon: Truck, perm: 'shipping' },
             { key: 'customers', href: '/admin/customers', icon: Users, perm: 'customers' },
         ],
     },

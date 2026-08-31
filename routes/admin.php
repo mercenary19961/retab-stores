@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\ProductRequestController;
 use App\Http\Controllers\Admin\ProductReviewController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\StockImportController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -185,6 +186,22 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
         Route::post('returns/{orderReturn}/reject', [ReturnController::class, 'reject'])->name('returns.reject');
         Route::post('returns/{orderReturn}/exchange', [ReturnController::class, 'exchange'])->name('returns.exchange');
         Route::post('returns/{orderReturn}/refund', [ReturnController::class, 'refund'])->name('returns.refund');
+    });
+
+    // Shipping carriers portal.
+    //
+    // 🔑 `manage` is what decides whether Retab will quote and ship with a carrier
+    // (OtoGateway filters every rate lookup through it), so it is a real operational
+    // switch rather than a display preference — hence a separate action from `view`,
+    // which is only "see who to phone and what it costs".
+    //
+    // `refresh` is a POST despite reading nothing: it spends a live OTO API call, so
+    // it must not be reachable by a link, a prefetch or a back button.
+    Route::get('shipping', [ShippingController::class, 'index'])->middleware('permission:shipping.view')->name('shipping.index');
+    Route::middleware('permission:shipping.manage')->group(function () {
+        Route::post('shipping/refresh', [ShippingController::class, 'refresh'])->name('shipping.refresh');
+        Route::patch('shipping/{carrier}/toggle', [ShippingController::class, 'toggle'])->name('shipping.toggle');
+        Route::put('shipping/{carrier}', [ShippingController::class, 'update'])->name('shipping.update');
     });
 
     // Inventory (SMACC stock import).

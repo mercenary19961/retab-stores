@@ -137,6 +137,14 @@ return [
         'shipment_missing' => 'This order has no shipment to cancel.',
         'no_delivery_options' => 'No delivery options are available for this destination.',
         'delivery_option_unavailable' => 'That carrier is no longer available for this order. Reopen the carrier list and choose again.',
+        // Shipping carriers portal. `carrier_last_enabled` is the one that prevents
+        // a silent failure days later: with every carrier off, the next shipment
+        // fails at resolveOption() with nothing pointing back to this page.
+        'carriers_refreshed' => 'Carrier list refreshed from OTO.',
+        'carrier_enabled' => ':name is on. It can now be chosen when shipping an order.',
+        'carrier_disabled' => ':name is off. It will no longer be offered or auto-selected when shipping.',
+        'carrier_last_enabled' => 'This is the only carrier still available, so switching it off would leave no way to ship an order. Turn another one on first.',
+        'carrier_saved' => 'Saved the details for :name.',
         'order_cancelled' => 'Order cancelled.',
         'images_uploaded' => 'Images uploaded.',
         'image_deleted' => 'Image deleted.',
