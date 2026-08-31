@@ -43,3 +43,10 @@ yarn-error.log
 /design/*.html
 !/design/*.dc.html
 .db-backups/
+
+# Personal Claude Code overrides. Deliberately NOT committed: this repo
+# dual-pushes to the client's repo, and this file carries per-machine
+# permission grants (e.g. production `railway ssh` access) that must not
+# follow the code to anyone else's checkout. `.claude/settings.json` stays
+# tracked for team-wide settings.
+/.claude/settings.local.json
