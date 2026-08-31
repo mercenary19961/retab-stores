@@ -147,9 +147,13 @@ class OtoClient
      *
      * Read-only and side-effect free, which is what makes it safe to call from an
      * admin screen. The portal shows it because the collection address is the one
-     * piece of the shipping setup that lives entirely on OTO's side: nothing here
-     * can write it, so the only honest thing to do is display what OTO says and let
-     * a human check it against the real shop.
+     * piece of the shipping setup that lives on OTO's side rather than ours.
+     *
+     * ⚠️ OTO DOES expose `createPickupLocation` and `updatePickupLocation`; we
+     * deliberately do not call them. Setting where a courier turns up is a one-time
+     * account decision, not day-to-day admin work, and a panel that can silently
+     * move the collection address is a worse failure than one that only reports it.
+     * Read it here, change it in OTO.
      */
     public function pickupLocations(): array
     {

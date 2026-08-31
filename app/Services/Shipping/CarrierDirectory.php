@@ -143,9 +143,8 @@ class CarrierDirectory
             'city' => $live['city'],
             'error' => $live['error'],
             'fetched_at' => $live['fetched_at'],
-            // Where couriers collect. Shown because nothing in this app can write
-            // it: it lives in OTO, so the only honest thing is to display what OTO
-            // reports and let a human check it against the real shop.
+            // Where couriers collect. Read-only by choice, not by necessity: OTO
+            // has update endpoints we deliberately do not call (see OtoClient).
             'pickup' => $live['pickup'] ?? [],
             // True when OTO answered with the full catalogue rather than the plain
             // rate check. Derived from the data itself rather than claimed, so it

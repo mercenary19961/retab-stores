@@ -294,9 +294,9 @@ export default function ShippingIndex({
                 </div>
             </div>
 
-            {/* Where couriers collect. Shown because nothing in this panel can WRITE
-                it — the address lives in OTO — so the only honest thing is to display
-                what OTO reports and let a human check it against the real shop.
+            {/* Where couriers collect. Read-only by choice: OTO has update endpoints
+                we deliberately do not call, because moving the collection address is a
+                one-time account decision rather than day-to-day admin work.
                 🔑 The count matters as much as the address: with exactly one location
                 OTO assigns it automatically, and more than one makes that choice
                 ambiguous. */}

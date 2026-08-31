@@ -26,10 +26,10 @@ class BranchController
      * (maps.google.com → رطاب للتمور), so Directions lands exactly where the
      * customer would land searching for the shop by name.
      *
-     * ⚠️ This is also the address the courier collects from. OTO holds the pickup
-     * location on its side (Settings → Pickup Locations), so the two have to be
-     * kept in step BY HAND — nothing here can write it. See the shipping notes in
-     * CLAUDE.md.
+     * ⚠️ This is also the address the courier collects from, but OTO holds ITS OWN
+     * copy of that (its pickup location), and this app only reads it. So the two
+     * have to be kept in step by hand; /admin/shipping shows what OTO currently
+     * holds so the drift is visible. See the shipping notes in CLAUDE.md.
      *
      * The page still renders a list, so putting a second shop back is one entry.
      */
