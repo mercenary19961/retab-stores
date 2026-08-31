@@ -143,6 +143,26 @@ class OtoClient
     }
 
     /**
+     * The addresses couriers collect from on this account.
+     *
+     * Read-only and side-effect free, which is what makes it safe to call from an
+     * admin screen. The portal shows it because the collection address is the one
+     * piece of the shipping setup that lives entirely on OTO's side: nothing here
+     * can write it, so the only honest thing to do is display what OTO says and let
+     * a human check it against the real shop.
+     */
+    public function pickupLocations(): array
+    {
+        $response = $this->send('get', '/getPickupLocationList', []);
+
+        if (! $response->successful()) {
+            throw new RuntimeException('OTO getPickupLocationList failed: '.$response->status());
+        }
+
+        return $response->json() ?? [];
+    }
+
+    /**
      * Issue a request, and on an auth rejection mint a fresh access token and
      * try once more.
      *

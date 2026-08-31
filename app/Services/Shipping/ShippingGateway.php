@@ -50,6 +50,13 @@ interface ShippingGateway
     public function listServices(?string $city = null): array;
 
     /**
+     * Where the aggregator will send a courier to collect. Display only.
+     *
+     * @return list<array{name: string, address: string|null, city: string|null, contact: string|null}>
+     */
+    public function pickupLocations(): array;
+
+    /**
      * Constant-time check that a webhook secret matches ours.
      */
     public function verifyWebhookToken(?string $token): bool;

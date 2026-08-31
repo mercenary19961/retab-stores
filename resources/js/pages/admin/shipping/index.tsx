@@ -25,6 +25,7 @@ import {
     RefreshCw,
     Search,
     Truck,
+    Warehouse,
     X,
     Zap,
 } from 'lucide-react';
@@ -64,6 +65,13 @@ interface Carrier {
     services: Service[];
     cheapest: number | null;
     currency: string;
+}
+
+interface PickupLocation {
+    name: string;
+    address: string | null;
+    city: string | null;
+    contact: string | null;
 }
 
 type Money = (amount: number | null, currency?: string) => string | null;
@@ -130,6 +138,7 @@ export default function ShippingIndex({
     error,
     fetched_at: fetchedAt,
     detailed,
+    pickup,
     originCity,
     otoUrl,
 }: {
@@ -138,6 +147,7 @@ export default function ShippingIndex({
     error: string | null;
     fetched_at: string | null;
     detailed: boolean;
+    pickup: PickupLocation[];
     originCity: string;
     otoUrl: string;
 }) {
@@ -283,6 +293,25 @@ export default function ShippingIndex({
                     </div>
                 </div>
             </div>
+
+            {/* Where couriers collect. Shown because nothing in this panel can WRITE
+                it — the address lives in OTO — so the only honest thing is to display
+                what OTO reports and let a human check it against the real shop.
+                🔑 The count matters as much as the address: with exactly one location
+                OTO assigns it automatically, and more than one makes that choice
+                ambiguous. */}
+            {pickup.length > 0 && (
+                <div className="mb-4 flex flex-wrap items-start gap-x-2 gap-y-1 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-xs text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900">
+                    <Warehouse className="mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-500" />
+                    <span className="text-neutral-500">{t('admin.shipping.collectFrom')}</span>
+                    {pickup.map((p) => (
+                        <span key={p.name} className="text-neutral-200" dir="auto">
+                            {[p.name, p.address, p.city].filter(Boolean).join(' · ')}
+                        </span>
+                    ))}
+                    {pickup.length > 1 && <span className="text-amber-400">{t('admin.shipping.multiplePickups')}</span>}
+                </div>
+            )}
 
             {/* OTO could not be reached. Deliberately not an empty page: the switches
                 and the phone numbers below are still exactly what someone needs. */}

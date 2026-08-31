@@ -367,10 +367,10 @@ const en = {
     },
 
     branches: {
-        headTitle: 'Our Branches | Retab Dates',
-        metaDescription: 'Visit Retab Dates in Riyadh: Al Malqa and Al Aziziyah. Get directions and store hours.',
-        heading: 'Our Branches',
-        subtitle: 'Visit us in Riyadh. Tap Directions to navigate straight to the shop.',
+        headTitle: 'Our Store | Retab Dates',
+        metaDescription: 'Visit Retab Dates in Al Malqa, Riyadh. Get directions and store hours.',
+        heading: 'Our Store',
+        subtitle: 'Visit us in Al Malqa, Riyadh. Tap Directions to navigate straight to the shop.',
         directions: 'Directions',
         call: 'Call',
     },
@@ -688,6 +688,8 @@ const en = {
             neverSeen: 'OTO has not offered this carrier since it was added.',
 
             filterPlaceholder: 'Search carriers',
+            collectFrom: 'Couriers collect from',
+            multiplePickups: 'More than one pickup location: OTO chooses which courier collects from. Pin one in OTO to be sure.',
             noMatch: 'No carrier matches that name.',
             railCount: '{{n}} carriers',
             backToAll: 'Back to all carriers',
@@ -1953,7 +1955,7 @@ const en = {
             about: 'About Us',
             returnPolicy: 'Return & Exchange Policy',
             contact: 'Contact Us',
-            branches: 'Our Branches',
+            branches: 'Our Store',
             dates: 'Dates',
         },
     },

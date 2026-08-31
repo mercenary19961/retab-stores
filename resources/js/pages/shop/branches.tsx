@@ -33,7 +33,9 @@ export default function Branches({ branches }: { branches: Branch[] }) {
             <h1 className="font-heading text-brand-teal mb-2 text-center text-[clamp(1.75rem,4vw,2.75rem)] font-black">{t('branches.heading')}</h1>
             <p className="text-brand-teal/70 mb-10 text-center">{t('branches.subtitle')}</p>
 
-            <div className="grid gap-8 md:grid-cols-2">
+            {/* One shop centres at a readable width; the two-column grid is kept
+                for the day a second one is added back. */}
+            <div className={`grid gap-8 ${branches.length > 1 ? 'md:grid-cols-2' : 'mx-auto max-w-2xl'}`}>
                 {branches.map((b) => {
                     // Keyless Google Maps embed + a directions deep link (opens navigation).
                     const embed = `https://maps.google.com/maps?q=${b.lat},${b.lng}&z=15&hl=${lang}&output=embed`;

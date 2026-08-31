@@ -245,6 +245,53 @@ class OtoGateway implements ShippingGateway
         return $options;
     }
 
+    /**
+     * Where OTO will send a courier to collect, normalised for display.
+     *
+     * ⚠️ The response is shaped differently depending on whether the account keeps
+     * warehouses, branches or both, so every container is probed rather than
+     * assumed — the same defensive style as the rest of this class. A row with no
+     * usable name is dropped: it could not tell an admin anything.
+     *
+     * 🔑 With exactly ONE location OTO assigns it automatically, which is the only
+     * reason `pushOrder()` can omit `pickupLocationCode` safely. If this ever
+     * returns more than one, that omission becomes a real ambiguity and the code
+     * should be sent explicitly — which is precisely why the portal shows the count.
+     */
+    public function pickupLocations(): array
+    {
+        $data = $this->client->pickupLocations();
+
+        $rows = array_merge(
+            is_array($data['warehouses'] ?? null) ? $data['warehouses'] : [],
+            is_array($data['branches'] ?? null) ? $data['branches'] : [],
+            is_array($data['pickupLocations'] ?? null) ? $data['pickupLocations'] : [],
+            is_array($data['data'] ?? null) ? $data['data'] : [],
+            array_is_list($data) ? $data : [],
+        );
+
+        $locations = [];
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $name = $row['name'] ?? $row['locationName'] ?? $row['code'] ?? $row['pickupLocationCode'] ?? null;
+            if (! $name) {
+                continue;
+            }
+
+            $locations[] = [
+                'name' => (string) $name,
+                'address' => $row['address'] ?? $row['addressLine'] ?? $row['street'] ?? null,
+                'city' => $row['city'] ?? $row['cityName'] ?? null,
+                'contact' => $row['contactName'] ?? $row['contactPerson'] ?? $row['contact'] ?? null,
+            ];
+        }
+
+        return $locations;
+    }
+
     public function verifyWebhookToken(?string $token): bool
     {
         if ($this->webhookSecret === '' || $token === null) {

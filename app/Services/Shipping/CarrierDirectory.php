@@ -143,6 +143,10 @@ class CarrierDirectory
             'city' => $live['city'],
             'error' => $live['error'],
             'fetched_at' => $live['fetched_at'],
+            // Where couriers collect. Shown because nothing in this app can write
+            // it: it lives in OTO, so the only honest thing is to display what OTO
+            // reports and let a human check it against the real shop.
+            'pickup' => $live['pickup'] ?? [],
             // True when OTO answered with the full catalogue rather than the plain
             // rate check. Derived from the data itself rather than claimed, so it
             // cannot drift from what is actually on screen.
@@ -162,7 +166,7 @@ class CarrierDirectory
      * over a network blip, exactly when someone is most likely trying to phone a
      * courier.
      *
-     * @return array{services: list<array<string, mixed>>, error: string|null, city: string|null, fetched_at: string|null}
+     * @return array{services: list<array<string, mixed>>, error: string|null, city: string|null, fetched_at: string|null, pickup: list<array<string, mixed>>}
      */
     public function live(?string $city = null, bool $refresh = false): array
     {
@@ -182,14 +186,23 @@ class CarrierDirectory
                 fn (CarrierOption $option) => $option->toArray(),
                 $this->gateway->listServices($city),
             );
-            $payload = ['services' => $services, 'error' => null, 'city' => $city, 'fetched_at' => now()->toIso8601String()];
+            $payload = [
+                'services' => $services,
+                'error' => null,
+                'city' => $city,
+                'fetched_at' => now()->toIso8601String(),
+                // Best-effort and cached alongside the rates, so showing the
+                // collection address costs no extra round trip. A failure here must
+                // not lose a good carrier listing.
+                'pickup' => $this->safePickupLocations(),
+            ];
 
             // Only on a real fetch — this is what keeps the write out of the common
             // cached page load, so browsing the portal costs no database writes.
             $this->sync($services);
         } catch (\Throwable $e) {
             report($e);
-            $payload = ['services' => [], 'error' => $e->getMessage(), 'city' => $city, 'fetched_at' => null];
+            $payload = ['services' => [], 'error' => $e->getMessage(), 'city' => $city, 'fetched_at' => null, 'pickup' => []];
         }
 
         // Cached either way, including the failure: without that, a page left open
@@ -198,6 +211,16 @@ class CarrierDirectory
         Cache::put($key, $payload, $payload['error'] === null ? self::TTL : 60);
 
         return $payload;
+    }
+
+    /** Never lets a pickup-location failure cost us a good carrier listing. */
+    private function safePickupLocations(): array
+    {
+        try {
+            return $this->gateway->pickupLocations();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

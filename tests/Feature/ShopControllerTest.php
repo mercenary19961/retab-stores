@@ -64,13 +64,22 @@ class ShopControllerTest extends TestCase
         );
     }
 
-    public function test_branches_page_renders_the_two_locations(): void
+    /**
+     * Retab trades from ONE shop (Al Malqa). Al Aziziyah closed, so this asserts a
+     * single location rather than the two it used to — the honest signal that the
+     * contract changed, instead of loosening the count and letting a stale branch
+     * creep back unnoticed.
+     */
+    public function test_branches_page_renders_the_single_location(): void
     {
         $this->get('/pages/branches')->assertOk()->assertInertia(
             fn (Assert $page) => $page->component('shop/branches')
-                ->has('branches', 2)
+                ->has('branches', 1)
                 ->where('branches.0.key', 'malqa')
-                ->where('branches.1.key', 'aziziyah'),
+                // The Google Business listing's own coordinates, so Directions lands
+                // where a customer searching the shop by name would land.
+                ->where('branches.0.lat', 24.8016265)
+                ->where('branches.0.lng', 46.6263008),
         );
     }
 

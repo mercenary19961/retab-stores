@@ -89,7 +89,7 @@ class ShippingCarriersTest extends TestCase
     }
 
     /** @return Mockery\MockInterface&ShippingGateway */
-    private function fakeGateway(array $services = [], ?\Throwable $throws = null)
+    private function fakeGateway(array $services = [], ?\Throwable $throws = null, ?array $pickup = null)
     {
         $gateway = Mockery::mock(ShippingGateway::class);
 
@@ -98,6 +98,13 @@ class ShippingCarriersTest extends TestCase
         } else {
             $gateway->shouldReceive('listServices')->andReturn($services);
         }
+
+        // Stubbed explicitly rather than left to Mockery. safePickupLocations()
+        // catches everything, so an unmocked call would be silently swallowed and
+        // every assertion about the collection address would pass vacuously.
+        $gateway->shouldReceive('pickupLocations')->andReturn($pickup ?? [
+            ['name' => 'Retab Dates, Al Malqa', 'address' => 'King Fahd Branch Rd', 'city' => 'Riyadh', 'contact' => 'Saud'],
+        ]);
 
         $this->app->instance(ShippingGateway::class, $gateway);
 
@@ -374,6 +381,50 @@ class ShippingCarriersTest extends TestCase
             $carrier->trackingLink('ABC123'),
             'the {tracking} placeholder should build a real parcel link',
         );
+    }
+
+    // ---------------------------------------------------------------------
+    // Where the courier collects. Read-only: the address lives in OTO.
+    // ---------------------------------------------------------------------
+
+    /**
+     * The collection address is the one part of the shipping setup nothing in this
+     * app can write, so the portal has to show what OTO reports and let a human
+     * check it against the real shop.
+     */
+    public function test_the_portal_shows_where_couriers_collect(): void
+    {
+        $this->fakeGateway([$this->service('SMSA', 23.0)]);
+
+        $this->actingAs($this->admin())
+            ->get('/admin/shipping')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('pickup', 1)
+                ->where('pickup.0.name', 'Retab Dates, Al Malqa')
+                ->where('pickup.0.city', 'Riyadh'));
+    }
+
+    /**
+     * 🔴 A pickup-location failure must never cost a good carrier listing. It is a
+     * separate OTO call folded into the same cached payload, so without the guard a
+     * blip on the less important half would blank the more important one.
+     */
+    public function test_a_pickup_location_failure_does_not_lose_the_carrier_listing(): void
+    {
+        $gateway = Mockery::mock(ShippingGateway::class);
+        $gateway->shouldReceive('listServices')->andReturn([$this->service('SMSA', 23.0)]);
+        $gateway->shouldReceive('pickupLocations')->andThrow(new \RuntimeException('OTO getPickupLocationList failed: 500'));
+        $this->app->instance(ShippingGateway::class, $gateway);
+
+        $this->actingAs($this->admin())
+            ->get('/admin/shipping')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('error', null)
+                ->has('pickup', 0)
+                // The carriers still arrived, which is the whole point.
+                ->where('carriers.0.available', true));
     }
 
     // ---------------------------------------------------------------------
