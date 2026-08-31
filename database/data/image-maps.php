@@ -140,4 +140,58 @@ return [
         'RTB-0066' => [['RTB-0066'], []],   // شابورة بالحبوب — box, grains
         'RTB-0067' => [['RTB-0067'], []],   // شابورة أصل الرشاقة — box, grains + honey + milk
     ],
+
+    /*
+     * Light-background re-shoot of the premium lines, received 2026-08-31. Same
+     * products, same props and same framing as `photoshoot-2026-08` above — only
+     * the backdrop changed, from grey stone to a pale stone/plaster.
+     *
+     * Sources live in database/data/product-photos-light/ as light-NN.webp,
+     * converted from the client's 1254x1254 PNGs (22.5 MB → 1.6 MB at WebP q82,
+     * the same quality the rusks set uses; measured mean deviation 2.5/255 on
+     * photographic texture). Native size is kept because 1254 is BELOW the
+     * `detail` variant's 1400px and upscaling would invent detail.
+     *
+     * 🔑 FILENAMES NAME THE SHOT THEY REPLACE, not a SKU. Three of these serve
+     * two SKUs each (the كرتون/حبة duplicate pairs), so a SKU filename could
+     * never be 1:1 — and naming them for the retab-NN they supersede makes the
+     * substitution readable straight off the map. They sit in their own folder,
+     * so `light-20` cannot collide with the retab-NN matchers even though both
+     * are two digits.
+     *
+     * ⚠️ The client's files arrived as `dates image (1..11).png`, i.e. GENERIC
+     * names, unlike the SKU-keyed rusks delivery. Each was matched to the shot it
+     * replaces by pack, prop placement and framing against the existing sources.
+     * The pairing that needed the most care: `dates image (6)` and `(7)` are the
+     * SAME yellow-label vacuum packaging for two DIFFERENT varieties, separable
+     * only by composition — (7) reproduces retab-20 exactly (label upright, green
+     * table to its left, squarer pack) and (6) reproduces retab-21 (label tilted,
+     * taller pack). If دخيني and خلاص photos ever look swapped, start here.
+     *
+     * ⚠️ `dates image (2)` is deliberately UNUSED: it is the same سكري فاخر shot
+     * as (3) in a warmer treatment. Client chose the lighter one (3) on 2026-08-31.
+     *
+     * ⚠️ This covers 10 of the 24 photoshoot shots, so the other premium lines
+     * (اقط، دبس، طحينة، قهوة، مكسرات، مقلوبة، تمرية، الذهبية، قدوع،
+     * the cakes) keep their dark backdrop until a further delivery arrives.
+     */
+    'photoshoot-light-2026-08' => [
+        'RTB-0050' => [['light-12'], []],   // بوكس سكري محشي لوز — purple box
+        'RTB-0019' => [['light-14'], []],   // بوكس تمر محشي مشكل — white box, pistachio
+        'RTB-0016' => [['light-16'], []],   // صينية تمر محشي — large tray
+        'RTB-0057' => [['light-17'], []],   // سكري يدوي مجروش فاخر — pressed block
+        'RTB-0091' => [['light-21'], []],   // دخيني درجة أولى ٢٥٠ جرام
+        'RTB-0042' => [['light-23'], []],   // عجوة المدينة
+        'RTB-0082' => [['light-22'], []],   // صقعي فاخر
+
+        // Each of the three pairs below is one physical product the Zid variant
+        // flattening left as two rows, so both members share the shot — exactly
+        // as they do in `photoshoot-2026-08`.
+        'RTB-0055' => [['light-24'], []],   // سكري فاخر ١ كيلو — كرتون
+        'RTB-0056' => [['light-24'], []],   // سكري فاخر ١ كيلو — حبة
+        'RTB-0004' => [['light-20'], []],   // خلاص أشيقر ٢٥٠ جرام — الحبة (5.00)
+        'RTB-0044' => [['light-20'], []],   // خلاص أشيقر ٢٥٠ جرام — حبة (5.75)
+        'RTB-0005' => [['light-18'], []],   // خلاص أشيقر ٢٥٠ جرام — الكرتون (120.00)
+        'RTB-0043' => [['light-18'], []],   // خلاص أشيقر ٢٥٠ جرام — كرتون (69.00)
+    ],
 ];
