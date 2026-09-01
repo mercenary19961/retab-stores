@@ -16,8 +16,16 @@ Artisan::command('inspire', function () {
 | 🔴 DEPLOY PREREQUISITE: nothing here runs without a `php artisan schedule:work`
 | service on Railway — a THIRD service off the same image, alongside web and
 | queue-worker. No domain and no healthcheck path (it listens on no port, so a
-| healthcheck would crash-loop it). This is the first scheduled task in the
-| project, so that service does not exist yet.
+| healthcheck would crash-loop it). That service now EXISTS in production, named
+| "Schedular".
+|
+| ⚠️ It needs the Tamara credentials, not just the database ones. The command
+| below does not merely read local rows: reconcileLapsed() asks Tamara about each
+| aged hold, and the call is deliberately un-caught (Tamara's answer, never our
+| clock, decides a hold is dead). So a missing TAMARA_API_TOKEN on the scheduler
+| throws and takes the ALERTING down with it, since reconciliation runs first.
+| Verified 2026-09-02: the scheduler service was missing TAMARA_API_TOKEN. It is
+| latent only because production currently has zero orders to reconcile.
 |
 */
 
