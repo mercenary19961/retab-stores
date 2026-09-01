@@ -53,6 +53,20 @@ class MergeVariantProducts extends Command
     /** Name suffixes that mark a row as the SINGLE (per-unit) half. */
     private const SINGLE_SUFFIXES = ['single', 'unit', 'حبة', 'حبه', 'الحبة', 'الحبه'];
 
+    /**
+     * Words that mark a flattened half even when they sit in the MIDDLE of a name
+     * rather than as a trailing " - <suffix>" (the Zid export is inconsistent:
+     * "سكري درجة اولى كرتون ١،٥٠٠ كيلو" carries no dash at all).
+     *
+     * 🔴 Deliberately NOT the full suffix lists. "بوكس" / "box" are how this
+     * catalogue names NINE real gift-box products — "بوكس عجوة المدينة",
+     * "Golden Date Box" — which are products in their own right, not packaging
+     * variants of something else. "كرتون" is only ever the shipping carton.
+     * Treating a mid-name "box" as a marker would rename all nine and strip the
+     * word that identifies them.
+     */
+    private const MIDNAME_MARKERS = ['carton', 'كرتون', 'الكرتون'];
+
     public function handle(): int
     {
         $apply = (bool) $this->option('apply');
@@ -282,7 +296,11 @@ class MergeVariantProducts extends Command
 
     /**
      * Split "Sukkari 500g - Carton" into its base name and which half it is.
-     * Returns kind = null when the name carries no packaging suffix at all.
+     * Returns kind = null when the name carries no packaging marker at all.
+     *
+     * Two passes, and the order matters: a trailing " - <suffix>" is the reliable
+     * signal and accepts the full vocabulary, while the mid-name fallback accepts
+     * only MIDNAME_MARKERS because "box" is a legitimate product word.
      *
      * @return array{base: string, kind: string|null}
      */
@@ -292,17 +310,50 @@ class MergeVariantProducts extends Command
 
         // Anchored to a trailing " - <suffix>" so a product whose NAME merely
         // contains the word (a gift box, say) is never treated as a carton half.
-        if (! preg_match('/^(.*?)\s*[-–]\s*(\S+)$/u', $name, $m)) {
+        if (preg_match('/^(.*?)\s*[-–]\s*(\S+)$/u', $name, $m)) {
+            $suffix = mb_strtolower($m[2]);
+
+            if (in_array($suffix, self::CARTON_SUFFIXES, true)) {
+                return ['base' => trim($m[1]), 'kind' => 'carton'];
+            }
+            if (in_array($suffix, self::SINGLE_SUFFIXES, true)) {
+                return ['base' => trim($m[1]), 'kind' => 'single'];
+            }
+        }
+
+        // Fallback: the marker is loose in the middle of the name. Only ever a
+        // carton — see MIDNAME_MARKERS for why "box" is excluded.
+        $tokens = $this->tokens($name);
+        $kept = array_values(array_filter(
+            $tokens,
+            fn (string $token) => ! in_array(mb_strtolower($token), self::MIDNAME_MARKERS, true),
+        ));
+
+        if (count($kept) === count($tokens)) {
             return ['base' => $name, 'kind' => null];
         }
 
-        $suffix = mb_strtolower($m[2]);
+        return ['base' => implode(' ', $kept), 'kind' => 'carton'];
+    }
 
-        return match (true) {
-            in_array($suffix, self::CARTON_SUFFIXES, true) => ['base' => trim($m[1]), 'kind' => 'carton'],
-            in_array($suffix, self::SINGLE_SUFFIXES, true) => ['base' => trim($m[1]), 'kind' => 'single'],
-            default => ['base' => $name, 'kind' => null],
-        };
+    /**
+     * A name split into comparable words, with separator-only fragments dropped so
+     * removing a trailing marker cannot strand a dangling "-".
+     *
+     * Token matching rather than a `\b` regex on purpose: PHP's /u modifier does
+     * not imply PCRE_UCP, so `\w` and `\b` stay ASCII-only and a word boundary
+     * lands in the wrong place in Arabic.
+     *
+     * @return list<string>
+     */
+    private function tokens(string $name): array
+    {
+        $parts = preg_split('/\s+/u', trim($name)) ?: [];
+
+        return array_values(array_filter(
+            array_map(fn (string $part) => trim($part, '-–—'), $parts),
+            fn (string $part) => $part !== '',
+        ));
     }
 
     /**
@@ -360,13 +411,21 @@ class MergeVariantProducts extends Command
         $this->info(count($orphans).' unpaired product(s) — only the leftover suffix is removed:');
         $this->table(
             ['SKU', 'Was', 'Becomes', 'Price', 'Live'],
-            array_map(fn ($o) => [
-                $o['product']->sku,
-                mb_substr((string) ($o['product']->name_en ?: $o['product']->name_ar), 0, 40),
-                mb_substr((string) ($o['base_en'] ?? $o['base_ar']), 0, 34),
-                number_format((float) $o['product']->price, 2),
-                $o['product']->is_active ? 'LIVE' : '',
-            ], $orphans),
+            array_map(function ($o) {
+                // Show whichever name actually changes. Preferring English
+                // unconditionally makes a row whose only change is the Arabic
+                // name (a mid-name "كرتون" with a clean English name) print
+                // identical "was" and "becomes" values and read as a no-op.
+                $arabicChanged = $o['product']->name_ar !== $o['base_ar'];
+
+                return [
+                    $o['product']->sku,
+                    mb_substr($arabicChanged ? $o['product']->name_ar : (string) $o['product']->name_en, 0, 40),
+                    mb_substr($arabicChanged ? $o['base_ar'] : (string) ($o['base_en'] ?? $o['base_ar']), 0, 34),
+                    number_format((float) $o['product']->price, 2),
+                    $o['product']->is_active ? 'LIVE' : '',
+                ];
+            }, $orphans),
         );
         $this->warn('These keep a carton-scale price with no unit price to compare against — set a unit price and a Box option by hand before publishing them.');
     }

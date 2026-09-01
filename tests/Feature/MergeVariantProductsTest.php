@@ -173,14 +173,47 @@ class MergeVariantProductsTest extends TestCase
 
     public function test_a_product_merely_containing_the_word_box_is_left_alone(): void
     {
-        // Only a trailing " - <suffix>" marks a flattened half; a gift box is a
-        // product in its own right.
+        // 🔴 Nine real products are named this way ("بوكس عجوة المدينة",
+        // "Golden Date Box"). They are products in their own right, not packaging
+        // halves, and the word is what identifies them — so "box" is deliberately
+        // not a mid-name marker.
         $gift = $this->product('G-1', 'Luxury Gift Box', 'بوكس هدايا فاخر', 250.00);
+        $wooden = $this->product('G-2', 'Premium Sagai Wooden Box', 'بوكس خشبي صقعي فاخر', 120.00);
 
         $this->artisan('catalog:merge-variants --apply')
             ->expectsOutputToContain('Nothing to do')
             ->assertSuccessful();
 
         $this->assertSame('Luxury Gift Box', $gift->fresh()->name_en);
+        $this->assertSame('بوكس هدايا فاخر', $gift->fresh()->name_ar);
+        $this->assertSame('بوكس خشبي صقعي فاخر', $wooden->fresh()->name_ar);
+        $this->assertDatabaseCount('product_options', 0);
+    }
+
+    public function test_a_carton_marker_in_the_middle_of_a_name_is_cleaned_too(): void
+    {
+        // The Zid export is inconsistent: this row's English carries a trailing
+        // "- Carton" while its Arabic has "كرتون" loose in the middle with no dash
+        // at all. Cleaning only the English half leaves the two languages
+        // disagreeing, and Arabic is the storefront default.
+        $orphan = $this->product('C-1', 'Grade 1 Sukkari 1.5kg - Carton', 'سكري درجة اولى كرتون ١،٥٠٠ كيلو', 56.52);
+
+        $this->artisan('catalog:merge-variants --apply')->assertSuccessful();
+
+        $orphan->refresh();
+        $this->assertSame('Grade 1 Sukkari 1.5kg', $orphan->name_en);
+        $this->assertSame('سكري درجة اولى ١،٥٠٠ كيلو', $orphan->name_ar);
+    }
+
+    public function test_a_mid_name_carton_is_detected_even_with_no_dash_anywhere(): void
+    {
+        // Re-running after a partial clean must still finish the job: the English
+        // name no longer carries a suffix, so the Arabic marker is the only signal
+        // left that this row was ever a carton half.
+        $orphan = $this->product('C-2', 'Grade 1 Sukkari 1.5kg', 'سكري درجة اولى كرتون ١،٥٠٠ كيلو', 56.52);
+
+        $this->artisan('catalog:merge-variants --apply')->assertSuccessful();
+
+        $this->assertSame('سكري درجة اولى ١،٥٠٠ كيلو', $orphan->fresh()->name_ar);
     }
 }
