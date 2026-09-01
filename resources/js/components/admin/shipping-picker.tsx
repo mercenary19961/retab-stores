@@ -1,19 +1,29 @@
 import Button from '@/components/admin/button';
 import Modal from '@/components/admin/modal';
 import { useAdminT } from '@/i18n/use-admin-t';
-import { AlertCircle, Loader2, Truck } from 'lucide-react';
+import { AlertCircle, Loader2, MapPin, Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export interface DeliveryOption {
     id: number;
     carrier: string;
+    /** The service within the carrier — one company can quote several. */
+    service: string | null;
     price: number;
     currency: string;
     estimated_delivery: string | null;
+    /** The customer collects this one; it is not delivered to their door. */
+    pickup_dropoff: boolean;
 }
 
 interface QuoteResponse {
     options: DeliveryOption[];
+    /**
+     * The row automatic mode would actually ship, decided on the server. Not the
+     * first row: automatic skips pickup points, so the cheapest option is not
+     * always the one it takes.
+     */
+    auto_option_id: number | null;
     error: string | null;
 }
 
@@ -70,7 +80,7 @@ export default function ShippingPicker({
                 if (!cancelled) setQuote(data);
             })
             .catch(() => {
-                if (!cancelled) setQuote({ options: [], error: t('admin.orders.shipping.quoteFailed') });
+                if (!cancelled) setQuote({ options: [], auto_option_id: null, error: t('admin.orders.shipping.quoteFailed') });
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -126,7 +136,7 @@ export default function ShippingPicker({
                         </span>
                     </label>
 
-                    {quote?.options.map((option, index) => (
+                    {quote?.options.map((option) => (
                         <label
                             key={option.id}
                             className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
@@ -137,20 +147,42 @@ export default function ShippingPicker({
                         >
                             <input type="radio" name="delivery-option" checked={choice === option.id} onChange={() => setChoice(option.id)} />
                             <span className="flex-1">
-                                <span className="flex items-center gap-2 text-sm font-medium">
-                                    <Truck className="h-3.5 w-3.5 text-neutral-400" />
+                                <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
+                                    <Truck className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
                                     {option.carrier}
-                                    {/* Options arrive price-sorted, so the first is the one
-                                        automatic mode would choose. Labelling it stops the
-                                        operator wondering how the two relate. */}
-                                    {index === 0 && (
+                                    {/* One company can quote several services at
+                                        different prices under the same name, so without
+                                        this the rows are indistinguishable. */}
+                                    {option.service && <span className="text-neutral-400">· {option.service}</span>}
+                                    {/* Loud on purpose: this is the one attribute that
+                                        changes what the CUSTOMER receives, not just what
+                                        the store pays. */}
+                                    {option.pickup_dropoff && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
+                                            <MapPin className="h-3 w-3" />
+                                            {t('admin.orders.shipping.pickupPoint')}
+                                        </span>
+                                    )}
+                                    {/* Named by the server, never inferred from sort
+                                        order — automatic skips pickup points, so the
+                                        cheapest row is not always the one it takes. */}
+                                    {option.id === quote.auto_option_id && (
                                         <span className="text-brand-gold rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] dark:bg-neutral-800">
-                                            {t('admin.orders.shipping.cheapest')}
+                                            {t('admin.orders.shipping.autoPick')}
                                         </span>
                                     )}
                                 </span>
                                 <span className="block text-xs text-neutral-500">
-                                    {option.estimated_delivery ?? t('admin.orders.shipping.noEta')}
+                                    {/* dir="auto" and not "ltr": OTO's raw estimate is
+                                        Latin ("1 to 5 Working Days") and its leading digit
+                                        is bidi-neutral, so on the Arabic panel the run
+                                        reorders to "to 5 Working Days 1". Scoped to this
+                                        span so the Arabic hint beside it still reads RTL,
+                                        and safe only because it carries no `ltr:` utility
+                                        — that variant resolves against the element's own
+                                        direction. */}
+                                    <span dir="auto">{option.estimated_delivery ?? t('admin.orders.shipping.noEta')}</span>
+                                    {option.pickup_dropoff && <> · {t('admin.orders.shipping.pickupPointHint')}</>}
                                 </span>
                             </span>
                             <span className="text-sm font-semibold tabular-nums">{money(option)}</span>

@@ -33,7 +33,12 @@ class CarrierOption
         public readonly ?float $maxFreeWeight = null,
         public readonly ?float $extraWeightPerKg = null,
         public readonly ?float $returnFee = null,
-        /** True when the parcel is dropped at / collected from a pickup point. */
+        /**
+         * True when the customer collects the parcel from a branch, counter or
+         * locker instead of it being delivered to their door. Derived by
+         * PickupPoint from OTO's flag AND the service name, because the flag is
+         * missing from some payloads — never read raw from one field.
+         */
         public readonly ?bool $pickupDropoff = null,
     ) {}
 

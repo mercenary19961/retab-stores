@@ -124,6 +124,76 @@ class OrderShippingActionsTest extends TestCase
         $this->assertSame(OrderStatus::Shipped, $order->refresh()->status);
     }
 
+    /**
+     * 🔴 The customer paid the flat HOME-DELIVERY fee, so a cheaper collection
+     * point must never be chosen on their behalf. Proven to fail against the old
+     * `$options[0]`: id 33 reached the provider instead of 22.
+     */
+    public function test_shipping_without_a_choice_never_uses_a_pickup_point(): void
+    {
+        $order = $this->makeOrder();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn([
+            ...$this->carrierOptions(),
+            new DeliveryOption(id: 33, carrier: 'smsaV2', price: 13.92, service: 'SMSA PUDO', pickupDropoff: true),
+        ]);
+        $gateway->shouldReceive('createShipment')
+            ->once()
+            ->with(Mockery::type(Order::class), 22) // SMSA @ 19.50 — cheapest DOOR delivery
+            ->andReturn($this->shipment());
+
+        $this->actingAs($this->admin())
+            ->post("/admin/orders/{$order->order_number}/ship")
+            ->assertSessionHas('success');
+    }
+
+    /** Staff can still send one deliberately, for a customer who asked to collect. */
+    public function test_a_pickup_point_can_still_be_chosen_by_hand(): void
+    {
+        $order = $this->makeOrder();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn([
+            ...$this->carrierOptions(),
+            new DeliveryOption(id: 33, carrier: 'smsaV2', price: 13.92, service: 'SMSA PUDO', pickupDropoff: true),
+        ]);
+        $gateway->shouldReceive('createShipment')
+            ->once()
+            ->with(Mockery::type(Order::class), 33)
+            ->andReturn($this->shipment());
+
+        $this->actingAs($this->admin())
+            ->post("/admin/orders/{$order->order_number}/ship", ['delivery_option_id' => 33])
+            ->assertSessionHas('success');
+    }
+
+    /**
+     * The dialog badges the row automatic would ship. It has to be told which,
+     * not infer it from sort order: the cheapest row is no longer always the one
+     * automatic takes, and a dialog badging the wrong row is worse than none.
+     */
+    public function test_the_quote_endpoint_names_the_option_automatic_would_ship(): void
+    {
+        $order = $this->makeOrder();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn([
+            ...$this->carrierOptions(),
+            new DeliveryOption(id: 33, carrier: 'smsaV2', price: 13.92, service: 'SMSA PUDO', pickupDropoff: true),
+        ]);
+
+        $body = $this->actingAs($this->admin())
+            ->getJson("/admin/orders/{$order->order_number}/shipping-quotes")
+            ->assertOk()
+            ->json();
+
+        $this->assertSame([33, 22, 11], array_column($body['options'], 'id'), 'still price-sorted');
+        $this->assertSame(22, $body['auto_option_id'], 'the cheapest row is not the automatic one here');
+        $this->assertTrue($body['options'][0]['pickup_dropoff']);
+        $this->assertSame('SMSA PUDO', $body['options'][0]['service']);
+    }
+
     /** An explicit choice must override the cheapest, even when it costs more. */
     public function test_an_explicitly_chosen_carrier_is_used(): void
     {

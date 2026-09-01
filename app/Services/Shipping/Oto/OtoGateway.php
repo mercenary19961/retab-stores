@@ -7,6 +7,7 @@ use App\Models\ShippingCarrier;
 use App\Services\Shipping\CarrierOption;
 use App\Services\Shipping\DeliveryOption;
 use App\Services\Shipping\NormalizedShipment;
+use App\Services\Shipping\PickupPoint;
 use App\Services\Shipping\ShippingGateway;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -101,6 +102,14 @@ class OtoGateway implements ShippingGateway
                 continue;
             }
 
+            // One company can quote SEVERAL services at different prices under a
+            // single company name — SMSA returns door delivery and a collection
+            // point, ~10 SAR apart, both named "smsaV2". Carrying the service
+            // name is what lets the picker tell them apart, and the pickup flag
+            // is what stops the automatic cheapest pick silently choosing the
+            // one the customer would have to go and collect.
+            $service = $row['deliveryOptionName'] ?? $row['serviceName'] ?? null;
+
             $options[] = new DeliveryOption(
                 id: (int) $id,
                 carrier: $carrier,
@@ -108,6 +117,12 @@ class OtoGateway implements ShippingGateway
                 currency: $row['currency'] ?? 'SAR',
                 estimatedDelivery: $row['deliveryTime'] ?? $row['estimatedDeliveryTime'] ?? null,
                 raw: $row,
+                service: $service,
+                pickupDropoff: PickupPoint::detect(
+                    isset($row['pickupDropoff']) ? (bool) $row['pickupDropoff'] : null,
+                    $service,
+                    $carrier,
+                ),
             );
         }
 
@@ -238,7 +253,15 @@ class OtoGateway implements ShippingGateway
                 maxFreeWeight: isset($row['maxFreeWeight']) ? (float) $row['maxFreeWeight'] : null,
                 extraWeightPerKg: isset($row['extraWeightPerKg']) ? (float) $row['extraWeightPerKg'] : null,
                 returnFee: isset($row['returnFee']) ? (float) $row['returnFee'] : null,
-                pickupDropoff: isset($row['pickupDropoff']) ? (bool) $row['pickupDropoff'] : null,
+                // Derived, not raw: OTO's flag is missing from some payloads, so
+                // the service name is read too. Same rule the quote path applies,
+                // so the badge in the portal and the option skipped by the
+                // automatic pick can never describe different services.
+                pickupDropoff: PickupPoint::detect(
+                    isset($row['pickupDropoff']) ? (bool) $row['pickupDropoff'] : null,
+                    $row['deliveryOptionName'] ?? null,
+                    (string) $carrier,
+                ),
             );
         }
 

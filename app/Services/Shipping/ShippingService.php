@@ -180,8 +180,48 @@ class ShippingService
     }
 
     /**
-     * The carrier option to ship with: the admin's explicit choice, or the
-     * cheapest when they left it on automatic.
+     * The option automatic mode ships with: the cheapest DOOR DELIVERY, not the
+     * cheapest outright.
+     *
+     * 🔑 Public and static because the Ship dialog has to badge the row this
+     * returns. Letting the UI re-derive it — as it did, by labelling whichever
+     * row sorted first — is how the two would drift apart the moment the rule
+     * gained a nuance, which is exactly what happened here.
+     *
+     * 🔴 A pickup-point service is materially cheaper because the customer
+     * fetches the parcel themselves. Retab charges one flat rate for delivery,
+     * so choosing it automatically would pocket the difference and hand the
+     * customer an errand they never agreed to. Staff can still select one
+     * deliberately, for a customer who asked to collect.
+     *
+     * ⚠️ Falls back to the cheapest overall when EVERY option is a pickup point.
+     * Refusing there would surface as "no delivery options" days later on
+     * somebody else's shipment — the same fail-open reasoning as the carrier
+     * register: a surprising service on a label is recoverable, an order that
+     * cannot ship at all is not.
+     *
+     * @param  DeliveryOption[]  $options
+     */
+    public static function preferredOption(array $options): ?DeliveryOption
+    {
+        if ($options === []) {
+            return null;
+        }
+
+        usort($options, fn (DeliveryOption $a, DeliveryOption $b) => $a->price <=> $b->price);
+
+        foreach ($options as $option) {
+            if (! $option->pickupDropoff) {
+                return $option;
+            }
+        }
+
+        return $options[0];
+    }
+
+    /**
+     * The carrier option to ship with: the admin's explicit choice, or
+     * preferredOption() when they left it on automatic.
      *
      * Returns the whole DeliveryOption rather than its id so the caller gets the
      * price with it — that figure is only available from a quote and is what
@@ -195,10 +235,9 @@ class ShippingService
             throw new \RuntimeException(__('messages.admin.no_delivery_options'));
         }
 
-        usort($options, fn (DeliveryOption $a, DeliveryOption $b) => $a->price <=> $b->price);
-
         if ($deliveryOptionId === null) {
-            return $options[0];
+            // Non-null, because $options is non-empty by the guard above.
+            return self::preferredOption($options);
         }
 
         foreach ($options as $option) {

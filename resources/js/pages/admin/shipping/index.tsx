@@ -18,6 +18,7 @@ import {
     Globe,
     LifeBuoy,
     Mail,
+    MapPin,
     Package,
     Pencil,
     Phone,
@@ -665,7 +666,18 @@ function CarrierDetail({
                         key={`${service.id ?? 'x'}-${i}`}
                         className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-neutral-100 px-3.5 py-2.5 text-sm last:border-b-0 dark:border-neutral-800"
                     >
-                        <span className="flex-1 text-neutral-200">{service.service ?? prettyName(carrier.name)}</span>
+                        <span className="flex flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-neutral-200">
+                            {service.service ?? prettyName(carrier.name)}
+                            {/* "PUDO" is OTO's word and means nothing to the client.
+                                Spelling out that the customer collects it is the
+                                whole point — it is why the price is lower. */}
+                            {service.pickup_dropoff && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
+                                    <MapPin className="h-3 w-3" />
+                                    {t('admin.shipping.pickupPoint')}
+                                </span>
+                            )}
+                        </span>
                         {service.estimated_delivery && <span className="text-xs text-neutral-500">{delivery(service.estimated_delivery)}</span>}
                         {service.pickup_cut_off && (
                             <span className="inline-flex items-center gap-1 text-xs text-neutral-500">
@@ -679,6 +691,18 @@ function CarrierDetail({
                     </div>
                 ))}
             </div>
+
+            {/* Shown only when it applies, so it reads as an explanation of the
+                badge above rather than as general shipping advice. The reassurance
+                that automatic will not pick one is the part that matters: without
+                it, seeing a cheaper row invites the assumption that Retab is
+                already using it. */}
+            {carrier.services.some((s) => s.pickup_dropoff) && (
+                <p className="mt-2 flex items-start gap-1.5 text-xs text-neutral-500">
+                    <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                    <span>{t('admin.shipping.pickupPointNote')}</span>
+                </p>
+            )}
 
             {terms.length > 0 && (
                 <>

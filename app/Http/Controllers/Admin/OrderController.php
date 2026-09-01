@@ -136,17 +136,28 @@ class OrderController extends Controller
     public function shippingQuotes(Order $order): JsonResponse
     {
         try {
-            $options = collect($this->shipping->quote($order))
+            $quoted = $this->shipping->quote($order);
+
+            $options = collect($quoted)
                 ->sortBy('price')
                 ->values()
                 ->map(fn ($option) => $option->toArray())
                 ->all();
 
-            return response()->json(['options' => $options, 'error' => null]);
+            return response()->json([
+                'options' => $options,
+                // Which row automatic would actually ship. Asked of the service
+                // rather than assumed to be the first: the cheapest option is
+                // not always the one automatic takes (it skips pickup points),
+                // and a dialog that badges the wrong row is worse than one that
+                // badges none.
+                'auto_option_id' => ShippingService::preferredOption($quoted)?->id,
+                'error' => null,
+            ]);
         } catch (\Throwable $e) {
             report($e);
 
-            return response()->json(['options' => [], 'error' => $e->getMessage()]);
+            return response()->json(['options' => [], 'auto_option_id' => null, 'error' => $e->getMessage()]);
         }
     }
 

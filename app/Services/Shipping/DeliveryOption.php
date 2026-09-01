@@ -16,6 +16,15 @@ class DeliveryOption
         public readonly string $currency = 'SAR',
         public readonly ?string $estimatedDelivery = null,
         public readonly array $raw = [],
+        /**
+         * The specific service within the carrier, e.g. "SMSA PUDO" vs "SMSA".
+         * Load-bearing rather than decorative: one company can quote several
+         * services at different prices under a single company name, so without
+         * this the picker shows rows that are indistinguishable to the operator.
+         */
+        public readonly ?string $service = null,
+        /** True when the customer must collect the parcel — see PickupPoint. */
+        public readonly bool $pickupDropoff = false,
     ) {}
 
     public function toArray(): array
@@ -23,9 +32,11 @@ class DeliveryOption
         return [
             'id' => $this->id,
             'carrier' => $this->carrier,
+            'service' => $this->service,
             'price' => $this->price,
             'currency' => $this->currency,
             'estimated_delivery' => $this->estimatedDelivery,
+            'pickup_dropoff' => $this->pickupDropoff,
         ];
     }
 }
