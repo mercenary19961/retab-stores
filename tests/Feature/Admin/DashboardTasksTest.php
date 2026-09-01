@@ -92,7 +92,7 @@ class DashboardTasksTest extends TestCase
     public function test_an_admin_sees_every_tile(): void
     {
         $this->assertSame(
-            ['awaitingConfirmation', 'bankTransfers', 'returnsToReview', 'readyToShip', 'tamaraExpiring'],
+            ['awaitingConfirmation', 'bankTransfers', 'returnsToReview', 'readyToShip', 'tamaraExpiring', 'productsIncomplete'],
             $this->taskKeys($this->admin()),
         );
     }
@@ -102,7 +102,10 @@ class DashboardTasksTest extends TestCase
         // Previously this editor received all six and four of them 403'd on click.
         $keys = $this->taskKeys($this->editor(Permission::preset('catalogue')));
 
-        $this->assertSame([], $keys, 'a catalogue-only editor should be offered nothing here');
+        // They DO get the incomplete-products tile — it is catalogue work, and it
+        // leads to a page they can open. What they must never see is anything
+        // about orders or returns.
+        $this->assertSame(['productsIncomplete'], $keys);
     }
 
     public function test_an_operations_editor_sees_orders_and_returns(): void

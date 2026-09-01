@@ -16,7 +16,7 @@ class ProductRedirectTest extends TestCase
     {
         $category = Category::firstOrCreate(['slug' => 'dates'], ['name_ar' => 'تمور', 'is_active' => true]);
 
-        return Product::create(array_merge([
+        $product = Product::create(array_merge([
             'category_id' => $category->id,
             'name_ar' => 'تمر سكري',
             'slug' => 'sukkari',
@@ -25,6 +25,14 @@ class ProductRedirectTest extends TestCase
             'stock' => 10,
             'is_active' => true,
         ], $overrides));
+
+        // These tests re-slug the product, and the publish guard re-checks on
+        // every save — without an image the update would hide it and the
+        // redirect target would 404.
+        $product->images()->create(['path' => 'products/r.jpg', 'sort_order' => 1, 'is_primary' => true]);
+        $product->unsetRelation('images');
+
+        return $product;
     }
 
     /** GET the storefront product URL for a (possibly Arabic) slug. */

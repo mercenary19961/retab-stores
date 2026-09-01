@@ -155,6 +155,16 @@ return [
         'product_activated' => 'Product is now visible on the store.',
         'product_deactivated' => 'Product hidden from the store.',
         'product_needs_image' => 'A product must have at least one image.',
+        // The publish guard: what a product still needs before it can be shown.
+        'product_publish_blocked' => 'Saved, but this product stays hidden until it has: :missing.',
+        'product_hidden_no_image' => 'Last image removed, so this product is now hidden until you add one.',
+        'publish_requirement' => [
+            'separator' => ', ',
+            'price' => 'a price',
+            'name_ar' => 'an Arabic name',
+            'name_en' => 'an English name',
+            'image' => 'at least one image',
+        ],
         'message_handled' => 'Message marked as handled.',
         'request_handled' => 'Request marked as handled.',
         'review_hidden' => 'Review hidden from the storefront.',

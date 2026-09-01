@@ -353,6 +353,12 @@ class ShopControllerTest extends TestCase
     {
         $this->makeProduct(['slug' => 'older', 'sku' => 'OLD-1']);
         $newest = $this->makeProduct(['slug' => 'newer', 'sku' => 'NEW-1']);
+        // The publish guard re-checks on every save, and this fixture saves again
+        // below — so the product needs an image or it would be hidden by the time
+        // the assertion runs.
+        $newest->images()->create(['path' => 'products/n.jpg', 'sort_order' => 1, 'is_primary' => true]);
+        $newest->unsetRelation('images');
+
         // Force a later timestamp so ordering is deterministic on fast machines.
         $newest->forceFill(['created_at' => now()->addMinute()])->save();
 

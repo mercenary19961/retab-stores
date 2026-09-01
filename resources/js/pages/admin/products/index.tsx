@@ -26,6 +26,7 @@ import {
     Eye,
     EyeOff,
     ImageOff,
+    Languages,
     LayoutGrid,
     MoveHorizontal,
     Pencil,
@@ -69,6 +70,7 @@ interface ProductRow {
     needs_price: boolean;
     needs_image: boolean;
     needs_description: boolean;
+    needs_name_en: boolean;
 }
 
 interface Category {
@@ -240,8 +242,11 @@ export default function ProductsIndex({
                     icon={EyeOff}
                     label={t('admin.products.hidden')}
                     url={`/admin/products/${p.id}/toggle-active`}
-                    disabled={p.needs_image}
-                    hint={p.needs_image ? t('admin.products.activateBlockedNoImage') : t('admin.products.activateHint')}
+                    // Blocking requirements only. A missing English name is an
+                    // advisory (the storefront falls back to the Arabic name),
+                    // so it is badged below but must not gate the toggle.
+                    disabled={p.needs_image || p.needs_price}
+                    hint={p.needs_image || p.needs_price ? t('admin.products.activateBlocked') : t('admin.products.activateHint')}
                 />
             )}
             {!p.is_active && p.is_coming_soon && (
@@ -252,7 +257,7 @@ export default function ProductsIndex({
             {/* What a draft still needs. Deliberately `idle` rather than amber: the
                 row already says Hidden and the page has a Drafts filter, so three
                 tinted chips per row across 63 drafts would only be wallpaper. */}
-            {!p.is_active && (p.needs_price || p.needs_image || p.needs_description) && (
+            {!p.is_active && (p.needs_price || p.needs_image || p.needs_description || p.needs_name_en) && (
                 <span className="flex flex-wrap gap-1">
                     {p.needs_price && (
                         <StatusPill tone="idle" icon={Tag}>
@@ -262,6 +267,11 @@ export default function ProductsIndex({
                     {p.needs_image && (
                         <StatusPill tone="idle" icon={ImageOff}>
                             {t('admin.products.needsImage')}
+                        </StatusPill>
+                    )}
+                    {p.needs_name_en && (
+                        <StatusPill tone="idle" icon={Languages}>
+                            {t('admin.products.needsNameEn')}
                         </StatusPill>
                     )}
                     {p.needs_description && (
@@ -358,6 +368,7 @@ export default function ProductsIndex({
                             label: draftCount > 0 ? `${t('admin.products.hidden')} (${draftCount})` : t('admin.products.hidden'),
                         },
                         { value: 'coming_soon', label: t('admin.products.comingSoon') },
+                        { value: 'incomplete', label: t('admin.products.statusIncomplete') },
                     ]}
                     className="w-full sm:w-auto"
                 />

@@ -58,6 +58,15 @@ class ProductImageController extends Controller
             $next?->update(['is_primary' => true]);
         }
 
+        // 🔑 Images live on their own endpoint, so removing the last one leaves
+        // the product row untouched and nothing would otherwise re-evaluate it —
+        // a live product would keep selling with no picture. Re-check, and say
+        // so plainly if that just pulled it off the storefront.
+        $product->unsetRelation('images');
+        if ($product->syncPublishability()) {
+            return back()->with('error', __('messages.admin.product_hidden_no_image'));
+        }
+
         return back()->with('success', __('messages.admin.image_deleted'));
     }
 

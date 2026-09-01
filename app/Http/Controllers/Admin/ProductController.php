@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 /**
@@ -61,6 +60,7 @@ class ProductController extends Controller
                 // Completeness flags — what a draft still needs before it can go live.
                 'needs_price' => (float) $p->price <= 0,
                 'needs_image' => $p->images->isEmpty(),
+                'needs_name_en' => trim((string) $p->name_en) === '',
                 'needs_description' => trim((string) $p->description_ar) === '' && trim((string) $p->short_description_ar) === '',
             ]);
 
@@ -69,7 +69,7 @@ class ProductController extends Controller
             'filters' => [
                 'search' => $request->query('search'),
                 'category' => $request->query('category') ? (int) $request->query('category') : null,
-                'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon'], true) ? $request->query('status') : null,
+                'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon', 'incomplete'], true) ? $request->query('status') : null,
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
                 'per_page' => $perPage,
@@ -104,7 +104,10 @@ class ProductController extends Controller
             // Drafts = hidden products (the workspace to finish + optionally flag Coming Soon).
             ->when($status === 'active', fn ($q) => $q->where('products.is_active', true))
             ->when($status === 'draft', fn ($q) => $q->where('products.is_active', false))
-            ->when($status === 'coming_soon', fn ($q) => $q->where('products.is_coming_soon', true));
+            ->when($status === 'coming_soon', fn ($q) => $q->where('products.is_coming_soon', true))
+            // Blocked by the publish guard — same definition the dashboard tile
+            // counts, so the number there and this list can never disagree.
+            ->when($status === 'incomplete', fn ($q) => $q->incompleteForPublish());
 
         if ($sort === 'category') {
             $query->leftJoin('categories', 'categories.id', '=', 'products.category_id')
@@ -188,6 +191,14 @@ class ProductController extends Controller
                 ]);
             }
 
+            // The row is created before its images exist, so the publish guard
+            // will have forced it hidden. Re-apply what the admin actually asked
+            // for now the images are attached — the guard runs again on this save
+            // and still refuses if anything else is missing.
+            if (($data['is_active'] ?? false) && ! $product->is_active) {
+                $product->forceFill(['is_active' => true])->save();
+            }
+
             $changeLog->logCreated($product, $product->name_ar);
         });
 
@@ -261,11 +272,12 @@ class ProductController extends Controller
         $data = $this->validateProduct($request, $product);
         $options = $this->validateOptions($request);
 
-        // A product can't be saved with no images (they're managed separately, so
-        // check the current state rather than the request).
-        if (! $product->images()->exists()) {
-            throw ValidationException::withMessages(['images' => __('messages.admin.product_needs_image')]);
-        }
+        // 🔑 Deliberately NOT refusing the save when something is missing. This
+        // used to throw when a product had no images, which meant the incomplete
+        // products — precisely the ones needing attention — could not be edited
+        // at all. The publish guard on the model hides them instead, so work in
+        // progress is always saveable.
+        $wanted = (bool) ($data['is_active'] ?? false);
 
         DB::transaction(function () use ($product, $data, $options, $changeLog) {
             $before = $product->attributesToArray();
@@ -274,18 +286,28 @@ class ProductController extends Controller
             $changeLog->logUpdated($product, $before, $product->name_ar);
         });
 
+        // Say so when the guard overrode the request, rather than letting the
+        // admin believe the product went live.
+        if ($wanted && ! $product->is_active) {
+            return redirect()->route('admin.products.index')
+                ->with('error', $this->blockedMessage($product));
+        }
+
         return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_updated'));
     }
 
     /**
-     * Quick show/hide from the list — flips is_active. Activation mirrors the
-     * update() invariant: a live product must have at least one image. Logged +
-     * revertable like a normal edit.
+     * Quick show/hide from the list — flips is_active. Logged + revertable like
+     * a normal edit.
+     *
+     * Refuses up front when the product is not publishable, so the admin gets a
+     * message naming what is missing rather than clicking a toggle that silently
+     * springs back (which is what the model guard alone would look like).
      */
     public function toggleActive(Product $product, ChangeLogService $changeLog)
     {
-        if (! $product->is_active && ! $product->images()->exists()) {
-            return back()->with('error', __('messages.admin.product_needs_image'));
+        if (! $product->is_active && ! $product->isPublishable()) {
+            return back()->with('error', $this->blockedMessage($product));
         }
 
         DB::transaction(function () use ($product, $changeLog) {
@@ -313,6 +335,26 @@ class ProductController extends Controller
      *
      * @return array<string, mixed>
      */
+    /**
+     * "Can't be shown yet — still needs: a price, an English name."
+     *
+     * Names every missing item in one message rather than reporting them one at
+     * a time: an admin fixing a product should learn the whole list on the first
+     * attempt, not discover a second problem after fixing the first.
+     */
+    private function blockedMessage(Product $product): string
+    {
+        $missing = array_map(
+            fn (string $key) => __("messages.admin.publish_requirement.{$key}"),
+            $product->missingForPublish(),
+        );
+
+        return __('messages.admin.product_publish_blocked', [
+            // Separator is localized: Arabic uses ، where English uses a comma.
+            'missing' => implode(__('messages.admin.publish_requirement.separator'), $missing),
+        ]);
+    }
+
     private function validateProduct(Request $request, ?Product $product = null): array
     {
         $id = $product?->id;

@@ -20,12 +20,182 @@ class Product extends Model
     /** Cache key for the storefront typeahead index (see ShopController::searchIndex). */
     public const SEARCH_INDEX_CACHE = 'shop.search_index';
 
+    /**
+     * What a product must have before the storefront may show it.
+     *
+     * 🔑 An ENGLISH NAME is deliberately not here (decided 2026-09-01). The
+     * storefront is Arabic-first and `useLocalized()` falls back to the Arabic
+     * name, so an English visitor sees a correctly-named product either way —
+     * blocking on it would be stricter than this app's own bilingual contract
+     * ("AR required, EN nullable, falls back to AR"). It is still surfaced: the
+     * products list badges it and it counts toward the dashboard's
+     * needs-completing tile, so it gets filled in without holding a sale up.
+     *
+     * A description is excluded for the same reason — worth prompting for, but a
+     * missing one does not mislead a shopper the way a nameless, priceless or
+     * pictureless listing does.
+     */
+    public const PUBLISH_REQUIREMENTS = ['price', 'name_ar', 'image'];
+
+    /** Surfaced to staff and counted on the dashboard, but never blocking. */
+    public const PUBLISH_ADVISORIES = ['name_en'];
+
     protected static function booted(): void
     {
         // Any product change invalidates the cached search index (ProductImage
         // busts it too, since a primary-image change alters an index thumbnail).
         static::saved(fn () => Cache::forget(self::SEARCH_INDEX_CACHE));
         static::deleted(fn () => Cache::forget(self::SEARCH_INDEX_CACHE));
+
+        // 🔴 THE SAFETY GUARD. An incomplete product can never be live, whatever
+        // route the write came in on.
+        //
+        // Enforced on the MODEL rather than in the controller on purpose: the
+        // admin form is only one of several ways `is_active` gets written —
+        // there is also the one-click list toggle, a change-log revert (which
+        // writes a whole old row back and would otherwise re-publish a product
+        // that has since lost its image), the catalogue importers, and tinker.
+        // A controller-side check would cover the first and silently miss the
+        // rest.
+        //
+        // It DOWNGRADES rather than throwing: the point is that staff can always
+        // save their work in progress and the storefront simply does not show it
+        // until it is finished. Refusing the save instead is what made the five
+        // image-less products uneditable.
+        static::saving(function (self $product): void {
+            if ($product->is_active && $product->missingForPublish() !== []) {
+                $product->is_active = false;
+            }
+        });
+    }
+
+    /**
+     * Which of PUBLISH_REQUIREMENTS this product still fails. Empty ⇒ publishable.
+     *
+     * ⚠️ The image check hits the database unless `images` is already loaded, so
+     * callers listing many products should eager-load or use withCount to avoid
+     * a query per row. The saving hook only reaches it for products that are
+     * being made active, so an ordinary hidden-product save costs nothing.
+     *
+     * ⚠️ A product that does not exist yet cannot have images — `store()` creates
+     * the row first and attaches images after — so this reports `image` as
+     * missing on a brand-new record. That is why the create path re-applies the
+     * requested visibility once the images are on (see Admin\ProductController).
+     *
+     * @return list<string>
+     */
+    public function missingForPublish(): array
+    {
+        $missing = [];
+
+        if ((float) $this->price <= 0) {
+            $missing[] = 'price';
+        }
+        if (trim((string) $this->name_ar) === '') {
+            $missing[] = 'name_ar';
+        }
+        if (! $this->hasAnyImage()) {
+            $missing[] = 'image';
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Things worth fixing that do NOT stop the product being sold — currently
+     * just a missing English name. Kept separate from missingForPublish() so the
+     * two can never be confused: one is a gate, the other is a nudge.
+     *
+     * @return list<string>
+     */
+    public function publishAdvisories(): array
+    {
+        return trim((string) $this->name_en) === '' ? ['name_en'] : [];
+    }
+
+    public function isPublishable(): bool
+    {
+        return $this->missingForPublish() === [];
+    }
+
+    /**
+     * Products that fail at least one publish requirement — the SQL twin of
+     * missingForPublish().
+     *
+     * 🔴 The two MUST agree. A product this scope omits but the guard rejects
+     * would be invisible on the "needs attention" list while refusing to go
+     * live, which reads as the toggle being broken. Pinned by a test that walks
+     * every product and asserts the scope's result equals the set whose
+     * missingForPublish() is non-empty — change one, change both.
+     *
+     * TRIM/COALESCE rather than `= ''` because a name of only spaces is just as
+     * unusable as an empty one, and both MySQL and SQLite support them.
+     */
+    public function scopeIncompleteForPublish(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            // Mirrors PUBLISH_REQUIREMENTS exactly — blocking only. A missing
+            // English name is an advisory and deliberately absent, so the
+            // dashboard tile and this filter count the same set: products that
+            // genuinely cannot be shown.
+            $q->where('price', '<=', 0)
+                ->orWhereRaw("TRIM(COALESCE(name_ar, '')) = ''")
+                ->orWhereDoesntHave('images');
+        });
+    }
+
+    /**
+     * Re-check a saved product and hide it if it is no longer publishable.
+     *
+     * Needed because images live on their own endpoints: deleting the last one
+     * leaves the product row untouched, so nothing would otherwise re-evaluate
+     * it. Returns true when it actually changed something, so the caller can
+     * tell the admin what happened instead of silently pulling a live product.
+     */
+    public function syncPublishability(): bool
+    {
+        if (! $this->is_active || $this->isPublishable()) {
+            return false;
+        }
+
+        // The saving hook does the actual downgrade; this only triggers a save.
+        $this->is_active = true;
+        $this->save();
+
+        return true;
+    }
+
+    /**
+     * Uses the loaded relation when there is one, so lists don't re-query.
+     *
+     * 🔑 A record that does not exist yet is treated as SATISFYING this rule.
+     * Images are a separate table, so they can only ever be attached after the
+     * insert — judging a brand-new product on them would make
+     * `Product::create([... 'is_active' => true])` impossible to satisfy in one
+     * statement, for every seeder, importer and test in the codebase, and the
+     * only way back would be a second save that looks like a mistake.
+     *
+     * The rule still bites where it matters: the admin create form requires
+     * images before it will accept the request, every later save re-checks, and
+     * deleting the last image re-checks explicitly. What is deliberately NOT
+     * covered is a script that inserts an active product and never attaches an
+     * image — trusted code, and the dashboard tile lists it if it happens.
+     */
+    private function hasAnyImage(): bool
+    {
+        if (! $this->exists) {
+            return true;
+        }
+
+        if ($this->relationLoaded('images')) {
+            return $this->images->isNotEmpty();
+        }
+
+        if (isset($this->attributes['images_count'])) {
+            return (int) $this->attributes['images_count'] > 0;
+        }
+
+        return $this->images()->exists();
     }
 
     protected $fillable = [

@@ -166,6 +166,18 @@ class DashboardController extends Controller
             fn () => ExpiringAuthorizations::approaching()->count(),
             '/admin/orders?status=awaiting_confirmation', urgent: true);
 
+        // Products the publish guard is holding back: no price, no Arabic or
+        // English name, or no image. Unlike the draft backlog — which was moved
+        // out of this queue precisely because it never reaches zero — this one
+        // does, and each entry is a specific thing to type in. The tile hides
+        // itself at zero (the page filters count > 0).
+        //
+        // Not `urgent`: that tint is reserved for the queues where waiting costs
+        // money. An unpublished product is lost sales, but no money is at risk.
+        $add('products.view', 'productsIncomplete',
+            fn () => Product::incompleteForPublish()->count(),
+            '/admin/products?status=incomplete');
+
         return $tasks;
     }
 

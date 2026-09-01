@@ -160,16 +160,24 @@ class AdminProductControllerTest extends TestCase
         $this->assertSame(0, Product::count());
     }
 
-    public function test_update_is_rejected_when_the_product_has_no_images(): void
+    /**
+     * Contract CHANGED 2026-09-01: an image-less product used to be un-saveable,
+     * which meant the incomplete products — the ones needing attention — could
+     * not be edited at all. The publish guard now hides them instead, so the edit
+     * always lands and the storefront simply does not show it.
+     */
+    public function test_update_is_allowed_without_images_but_the_product_stays_hidden(): void
     {
         $category = $this->category();
         $product = Product::create($this->validPayload($category, ['slug' => 'p-noimg', 'sku' => 'NOIMG-1']));
 
         $this->actingAs($this->staff())
             ->put("/admin/products/{$product->id}", $this->validPayload($category, ['slug' => 'p-noimg', 'sku' => $product->sku, 'stock' => 3]))
-            ->assertSessionHasErrors('images');
+            ->assertSessionHasNoErrors();
 
-        $this->assertSame(100, $product->fresh()->stock); // save was blocked
+        $product->refresh();
+        $this->assertSame(3, $product->stock, 'the edit must be saved');
+        $this->assertFalse($product->is_active, 'but it cannot be live without an image');
     }
 
     public function test_store_rejects_sale_price_not_below_price(): void
