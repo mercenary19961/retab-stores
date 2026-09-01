@@ -2,7 +2,7 @@
 
 > Quick reference for AI assistants and developers
 
-> **📍 Doc sync:** CLAUDE.md last synced to commit `5798ae0` — 2026-08-31 16:02 (Mon) [`deployment_phase`].
+> **📍 Doc sync:** CLAUDE.md last synced to commit `92cc45b` — 2026-09-01 10:24 (Tue) [`deployment_phase`].
 > _Convention: whenever you edit this file, refresh this line to the current commit — run_ `git log -1 --format="%h %cd" --date=format:"%Y-%m-%d %H:%M (%a)"` _and paste the hash + date + time. Anchors the doc to a known code state; pairs with the prose `> Last updated:` log at the bottom of Build Progress._
 
 > **📌 Log the tricky stuff.** Whenever you hit an **issue, blocker, non-obvious behavior, or anything that cost real debugging time**, write it down with its **symptom → root cause → fix** — inline near the relevant section (retab's style, e.g. the MariaDB `db:show` and dual-push `--add --push` notes) and/or a one-liner in the `> Last updated:` log. The same stack is reused across projects (Sky Amman, HardRock, hardrock-ecom-demo), so a gotcha captured once saves the next project too. Traps → document as a gotcha; reusable patterns → note under Architecture/Decisions. When in doubt, over-document.
@@ -504,6 +504,25 @@ database/migrations/            → starter-kit defaults only so far
 - Guard no-op operations (short-circuit when nothing changed).
 - If a method returns a meaningful value (bool/count/status), use it — don't call-and-ignore.
 - Match the surrounding code's style, naming, and comment density.
+
+---
+
+## Off-Repo Asset & Backup Archive — `Desktop\Project files\retab\`
+
+Everything the project needs that is **not in git** and could not be recreated lives in one place (consolidated 2026-09-01 from the scattered `Downloads\Retab`). **Look here before asking the client to re-send anything.** The folder carries its own `README.md`.
+
+| Folder | Contents |
+|---|---|
+| `backups/` | Production MySQL dumps + demo seed/rollback SQL. **`retab-prod-20260901-110115.sql` = the full 43-table dump taken immediately before the demo orders/customers were deleted from prod on 2026-09-01.** |
+| `data/` | **`products_export_*.xlsx` — the Zid catalogue export** (the migration source of record) + `retab-products-clean.csv` |
+| `design/` | Designer hand-offs: navbar / homepage / footer / footer-banner / favicon / about-us / misc. For several sections this is the ONLY copy of the composite that shipped code was measured against (see Architecture → "Building a designed section from a Figma composite") |
+| `docs/` | Registration certificate, invoices, Zid WhatsApp pricing, integrations guide, and **`googlee5b4a3ebe46a90cc.html`** (Search Console domain verification) |
+| `fonts/` | **Thmanyah Sans + `LICENSE.pdf`** — the licence home this file's Bilingual section points at |
+| `photography/` | `product-shots/` (13 full-res), `rusks/`, `category-tiles/` — originals; the repo carries only downscaled WebP |
+
+- 🔴 **It is NOT a backup, and the distinction matters.** `Desktop` is local only (it is *not* inside `OneDrive`), so this archive shares a disk — and a failure — with the working copy. The git remotes are the only offsite copies and they carry none of this. Copy the folder to OneDrive or an external drive to make it real. ⚠️ **Never push `fonts/` anywhere public** — the Thmanyah licence forbids redistribution (see Architecture → Bilingual for the full terms).
+- **Taking a fresh prod dump:** `mysqldump` is unavailable (the XAMPP MariaDB client can't auth to MySQL 8's `caching_sha2_password`), so use PHP PDO or TablePlus over the public proxy — `railway variables --service "MySQL" --kv | grep MYSQL_PUBLIC_URL`. ⚠️ The Railway service is **`MySQL`**; `mysql` answers "Service not found", and the internal `mysql.railway.internal` host is unreachable from a laptop. Name dumps `retab-prod-<YYYYMMDD-HHMMSS>.sql`. **Always take one before any destructive production change.**
+- Originals were **copied, not moved**, so `Downloads\Retab` still holds a duplicate — but Downloads is where files get cleared, so treat the archive as canonical.
 
 ---
 
