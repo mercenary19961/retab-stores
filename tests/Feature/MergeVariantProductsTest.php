@@ -76,6 +76,32 @@ class MergeVariantProductsTest extends TestCase
         $this->assertSoftDeleted('products', ['id' => $carton->id]);
     }
 
+    public function test_the_box_option_inherits_the_cartons_visibility(): void
+    {
+        // 🔴 The two halves do NOT always agree in production:
+        // catalog:hide-unphotographed hides on photography, so a photographed
+        // single can be live while its carton is hidden. Forcing the option
+        // active would put a carton back on sale that staff had taken down.
+        [$single, $carton] = $this->pair('Premium Sukkari 1kg', 'سكري فاخر ١ كيلو', 20.00, 160.00);
+        $single->update(['is_active' => false]); // guard runs on save; state set below
+        $carton->update(['is_active' => false]);
+
+        $this->artisan('catalog:merge-variants --apply')->assertSuccessful();
+
+        $this->assertFalse($single->fresh()->options()->sole()->is_active);
+    }
+
+    public function test_a_visible_carton_stays_on_sale_as_an_option(): void
+    {
+        [$single, $carton] = $this->pair('Khalas Ushaiger 250g', 'خلاص أشيقر 250 جرام', 5.75, 69.00);
+        ProductImage::create(['product_id' => $carton->id, 'path' => 'products/c.jpg', 'is_primary' => true]);
+        $carton->update(['is_active' => true]);
+
+        $this->artisan('catalog:merge-variants --apply')->assertSuccessful();
+
+        $this->assertTrue($single->fresh()->options()->sole()->is_active);
+    }
+
     public function test_the_absorbed_carton_url_redirects_to_the_survivor(): void
     {
         [$single, $carton] = $this->pair('Sukkari 500g', 'سكري 500جم', 11.50, 138.00);

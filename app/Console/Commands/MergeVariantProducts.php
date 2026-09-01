@@ -185,7 +185,15 @@ class MergeVariantProducts extends Command
             'price' => $carton->price,
             'price_overridden' => true,
             'stock_units' => $pair['units'],
-            'is_active' => true,
+            // 🔴 INHERIT the carton's visibility, never assume true. On production
+            // the two halves do NOT always agree: `catalog:hide-unphotographed`
+            // hides on photography, so a photographed single can be live while its
+            // carton is hidden. Forcing the option active would put a carton back
+            // on sale that staff had taken down, at eight times the unit price,
+            // with nothing in the output saying so. An option that should have
+            // been available is one checkbox in the editor; one that should not
+            // have been is a wrong order.
+            'is_active' => (bool) $carton->is_active,
             'sort_order' => 1,
             // SEAM: the carton had its own SMACC code; keep it on the option
             // rather than dropping it, since per-option sync is the plan.
@@ -367,7 +375,7 @@ class MergeVariantProducts extends Command
 
         $this->info(count($pairs).' pair(s) to merge — the single survives, the carton becomes a Box option:');
         $this->table(
-            ['Keep', 'Product', 'Unit', 'Box', 'Units/box', 'Absorbs (→301)'],
+            ['Keep', 'Product', 'Unit', 'Box', 'Units/box', 'Absorbs (→301)', 'Box sold?'],
             array_map(fn ($p) => [
                 $p['single']->sku,
                 mb_substr((string) ($p['base_en'] ?? $p['base_ar']), 0, 38),
@@ -375,6 +383,9 @@ class MergeVariantProducts extends Command
                 number_format((float) $p['carton']->price, 2),
                 $p['units'].($this->isClean($p['ratio']) ? '' : ' (?)'),
                 $p['carton']->sku,
+                // The option inherits the carton's visibility, so say which
+                // cartons stay off sale rather than leaving it to be discovered.
+                $p['carton']->is_active ? 'yes' : 'no (carton hidden)',
             ], $pairs),
         );
 
