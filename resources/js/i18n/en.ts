@@ -1265,6 +1265,8 @@ const en = {
                 gramsPh: 'e.g. 500',
                 optional: 'Optional',
                 price: 'Price',
+                units: 'Units/box',
+                unitsHint: 'How many singles are in one box. Selling a box takes this many off the stock count.',
                 box: 'Box',
                 custom: 'Custom',
                 active: 'Available',

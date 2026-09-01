@@ -10,7 +10,7 @@ export interface OptionRow {
     amount: number | null; // grams; null = box / non-weight (priced manually)
     price: number;
     price_overridden: boolean;
-    stock_units: number; // kept for the DB; stock handling is deferred, so hidden here
+    stock_units: number; // how many base units one purchase takes off stock — editable on a box only
     is_active: boolean;
     is_box: boolean; // a box is priced by hand, its size is optional, and there is at most one
 }
@@ -39,8 +39,13 @@ const baseRow = (): Omit<OptionRow, 'label_ar' | 'label_en' | 'amount' | 'price'
  *   - a Box is priced BY HAND (mandatory) with an OPTIONAL manual size, and is
  *     never auto-scaled.
  *
- * The first weight option seeds its price from the product's own price. Stock is
- * deferred (the `stock_units` column stays at 1 and is not shown here).
+ * The first weight option seeds its price from the product's own price.
+ *
+ * 🔑 A BOX also declares how many units it contains (`stock_units`), because that
+ * is what a box sale takes off the shared stock — OrderConfirmationService
+ * decrements by stock_units × quantity, so leaving it at 1 would sell a carton of
+ * twelve and deduct one. It is editable here for the box alone; a weight option
+ * still consumes 1 (stock handling for sizes is still deferred).
  */
 export default function ProductOptionsEditor({
     value,
@@ -129,17 +134,18 @@ export default function ProductOptionsEditor({
                 </p>
             ) : (
                 <div className="space-y-2">
-                    <div className="hidden grid-cols-[1fr_1fr_5rem_6rem_7rem] gap-2 text-xs text-neutral-500 sm:grid">
+                    <div className="hidden grid-cols-[1fr_1fr_5rem_6rem_5rem_7rem] gap-2 text-xs text-neutral-500 sm:grid">
                         <span>{t('admin.products.options.labelAr')}</span>
                         <span>{t('admin.products.options.labelEn')}</span>
                         <span>{t('admin.products.options.grams')}</span>
                         <span>{t('admin.products.options.price')}</span>
+                        <span>{t('admin.products.options.units')}</span>
                         <span />
                     </div>
                     {value.map((row, i) => (
                         <div
                             key={row.id ?? `new-${i}`}
-                            className="grid grid-cols-2 gap-2 rounded-lg border border-neutral-200 p-2 sm:grid-cols-[1fr_1fr_5rem_6rem_7rem] sm:items-center sm:border-0 sm:p-0 dark:border-neutral-800"
+                            className="grid grid-cols-2 gap-2 rounded-lg border border-neutral-200 p-2 sm:grid-cols-[1fr_1fr_5rem_6rem_5rem_7rem] sm:items-center sm:border-0 sm:p-0 dark:border-neutral-800"
                         >
                             <input
                                 className={INPUT}
@@ -184,6 +190,24 @@ export default function ProductOptionsEditor({
                                     </button>
                                 )}
                             </div>
+                            {/* How many base units this option takes off stock. Only a
+                                box carries a real count — a weight option stays at 1
+                                until size stock handling is built — so the others show
+                                a dash rather than an input nobody should touch. */}
+                            {row.is_box ? (
+                                <input
+                                    className={INPUT}
+                                    type="number"
+                                    min={1}
+                                    step={1}
+                                    value={row.stock_units}
+                                    title={t('admin.products.options.unitsHint')}
+                                    aria-label={t('admin.products.options.units')}
+                                    onChange={(e) => update(i, { stock_units: Math.max(1, Number(e.target.value) || 1) })}
+                                />
+                            ) : (
+                                <span className="hidden text-center text-xs text-neutral-400 sm:block">—</span>
+                            )}
                             <div className="col-span-2 flex items-center justify-end gap-3 sm:col-span-1">
                                 <label className="inline-flex items-center gap-1 text-xs text-neutral-500">
                                     <input type="checkbox" checked={row.is_active} onChange={(e) => update(i, { is_active: e.target.checked })} />
