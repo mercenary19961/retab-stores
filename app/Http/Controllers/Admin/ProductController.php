@@ -7,7 +7,10 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Media;
+use App\Support\ProductDescriptionWriter;
+use App\Support\ProductNameTranslator;
 use App\Support\TableExport;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -335,6 +338,45 @@ class ProductController extends Controller
      *
      * @return array<string, mixed>
      */
+    /**
+     * Suggestions for the product form: an English name from the Arabic one, and
+     * a bilingual description from the product's own attributes.
+     *
+     * 🔑 A server endpoint rather than porting the dictionaries to TypeScript.
+     * They would then exist twice and drift — the exact failure this codebase
+     * has already been bitten by (see the duplicated search `normalize`, which
+     * needs a shared 18-case table to stay honest).
+     *
+     * Works for an UNSAVED product: nothing here is persisted, the description
+     * writer is handed a transient model built from what the form has typed so
+     * far. Both answers are suggestions the admin edits before saving.
+     */
+    public function suggest(Request $request, ProductNameTranslator $names, ProductDescriptionWriter $descriptions): JsonResponse
+    {
+        $data = $request->validate([
+            'name_ar' => ['nullable', 'string', 'max:255'],
+            'name_en' => ['nullable', 'string', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
+        ]);
+
+        $suggestedEn = $names->translate($data['name_ar'] ?? null);
+
+        $transient = new Product([
+            'name_ar' => $data['name_ar'] ?? '',
+            // Prefer what the admin has already typed; fall back to the suggestion
+            // so the description reads naturally even before the name is filled in.
+            'name_en' => ($data['name_en'] ?? '') ?: ($suggestedEn ?? ''),
+        ]);
+        $transient->setRelation('category', isset($data['category_id']) ? Category::find($data['category_id']) : null);
+
+        return response()->json([
+            // null when a word is not in the dictionary — the UI says so rather
+            // than pasting a confidently-wrong name into the field.
+            'name_en' => $suggestedEn,
+            'description' => $descriptions->write($transient),
+        ]);
+    }
+
     /**
      * "Can't be shown yet — still needs: a price, an English name."
      *

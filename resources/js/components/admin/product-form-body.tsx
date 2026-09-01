@@ -6,8 +6,8 @@ import Select from '@/components/admin/select';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
 import { router, useForm } from '@inertiajs/react';
-import { Eye, Image as ImageIcon, Info, Star, Tag, Trash2, Upload } from 'lucide-react';
-import { type FormEvent, type ReactNode, useEffect, useId, useMemo } from 'react';
+import { Eye, Image as ImageIcon, Info, Sparkles, Star, Tag, Trash2, Upload } from 'lucide-react';
+import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export interface Category {
@@ -84,6 +84,51 @@ export default function ProductFormBody({
 
     // EN-first admin: show a category's English name when set, else the Arabic.
     const catLabel = (c: Category) => (i18n.language === 'en' && c.name_en ? c.name_en : c.name_ar);
+
+    // ---- form helpers: suggest an English name / a description ---------------
+    // Both are computed server-side so the dictionaries live in exactly one
+    // place (app/Support/ProductNameTranslator + ProductDescriptionWriter).
+    // Porting them here would duplicate them, which is the drift this codebase
+    // has already been bitten by with the search `normalize`.
+    const [suggesting, setSuggesting] = useState<null | 'name' | 'description'>(null);
+    const [suggestFailed, setSuggestFailed] = useState<null | 'name' | 'description'>(null);
+
+    const suggest = async (what: 'name' | 'description') => {
+        setSuggesting(what);
+        setSuggestFailed(null);
+        try {
+            const res = await fetch('/admin/products/suggest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // ⚠️ This app has NO <meta name="csrf-token"> — the token comes
+                    // from the XSRF-TOKEN cookie, as in LanguageContext. Reading a
+                    // meta tag that does not exist sends an empty token and the
+                    // request 419s silently.
+                    'X-XSRF-TOKEN': decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? ''),
+                    Accept: 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ name_ar: data.name_ar, name_en: data.name_en, category_id: data.category_id || null }),
+            });
+            if (!res.ok) throw new Error(String(res.status));
+            const json = await res.json();
+
+            if (what === 'name') {
+                // null when a word is not in the dictionary — say so rather than
+                // pasting a confidently-wrong name the admin might not re-read.
+                if (json.name_en) setData('name_en', json.name_en);
+                else setSuggestFailed('name');
+            } else {
+                setData('description_ar', json.description.ar);
+                setData('description_en', json.description.en);
+            }
+        } catch {
+            setSuggestFailed(what);
+        } finally {
+            setSuggesting(null);
+        }
+    };
 
     const { data, setData, post, put, processing, errors, isDirty, transform } = useForm({
         category_id: product?.category_id ?? categories[0]?.id ?? '',
@@ -242,8 +287,43 @@ export default function ProductFormBody({
                         </div>
                         <div className="grid gap-4 sm:grid-cols-2">
                             {text('name_ar', t('admin.products.form.nameAr'), { required: true })}
-                            {text('name_en', t('admin.products.form.nameEn'))}
+                            <div>
+                                {text('name_en', t('admin.products.form.nameEn'))}
+                                {/* Offered only while the field is EMPTY. A form has no
+                                    undo, so a suggestion must never overwrite typed copy. */}
+                                {!data.name_en.trim() && (
+                                    <button
+                                        type="button"
+                                        onClick={() => suggest('name')}
+                                        disabled={!data.name_ar.trim() || suggesting !== null}
+                                        className="text-brand-gold mt-1.5 inline-flex items-center gap-1 text-xs hover:underline disabled:cursor-not-allowed disabled:text-neutral-500 disabled:no-underline"
+                                    >
+                                        <Sparkles className="h-3 w-3" />
+                                        {suggesting === 'name' ? t('admin.products.form.suggesting') : t('admin.products.form.suggestNameEn')}
+                                    </button>
+                                )}
+                                {suggestFailed === 'name' && (
+                                    <span className="mt-1.5 block text-xs text-amber-600 dark:text-amber-400">
+                                        {t('admin.products.form.suggestNameFailed')}
+                                    </span>
+                                )}
+                            </div>
                         </div>
+                        {/* Same rule: only while BOTH boxes are empty. */}
+                        {!data.description_ar.trim() && !data.description_en.trim() && (
+                            <button
+                                type="button"
+                                onClick={() => suggest('description')}
+                                disabled={!data.name_ar.trim() || suggesting !== null}
+                                className="text-brand-gold -mb-1 inline-flex items-center gap-1 self-start text-xs hover:underline disabled:cursor-not-allowed disabled:text-neutral-500 disabled:no-underline"
+                            >
+                                <Sparkles className="h-3 w-3" />
+                                {suggesting === 'description' ? t('admin.products.form.suggesting') : t('admin.products.form.suggestDescription')}
+                            </button>
+                        )}
+                        {suggestFailed === 'description' && (
+                            <span className="text-xs text-amber-600 dark:text-amber-400">{t('admin.products.form.suggestFailed')}</span>
+                        )}
                         <div className="grid gap-4 sm:grid-cols-2">
                             <label className="block" id="field-description_ar">
                                 <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.descAr')}</span>

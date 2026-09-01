@@ -66,6 +66,14 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     // Products.
     Route::get('products/export', [ProductController::class, 'export'])->middleware('permission:products.view')->name('products.export');
     Route::get('products', [ProductController::class, 'index'])->middleware('permission:products.view')->name('products.index');
+    // Form helpers: an English name from the Arabic one, and a description from
+    // the product's attributes.
+    //
+    // Gated on products.VIEW, not create/edit: it is reachable from both forms,
+    // and `products.create` and `products.edit` are separately grantable — an
+    // editor with one but not the other would 403 on a button they can see. It
+    // leaks nothing either way, only transforming text the caller supplied.
+    Route::post('products/suggest', [ProductController::class, 'suggest'])->middleware('permission:products.view')->name('products.suggest');
     Route::get('products/create', [ProductController::class, 'create'])->middleware('permission:products.create')->name('products.create');
     Route::post('products', [ProductController::class, 'store'])->middleware('permission:products.create')->name('products.store');
     Route::get('products/{product}/detail', [ProductController::class, 'detail'])->middleware('permission:products.edit')->name('products.detail');
