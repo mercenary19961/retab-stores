@@ -518,11 +518,14 @@ Everything the project needs that is **not in git** and could not be recreated l
 | `design/` | Designer hand-offs: navbar / homepage / footer / footer-banner / favicon / about-us / misc. For several sections this is the ONLY copy of the composite that shipped code was measured against (see Architecture → "Building a designed section from a Figma composite") |
 | `docs/` | Registration certificate, invoices, Zid WhatsApp pricing, integrations guide, and **`googlee5b4a3ebe46a90cc.html`** (Search Console domain verification) |
 | `fonts/` | **Thmanyah Sans + `LICENSE.pdf`** — the licence home this file's Bilingual section points at |
-| `photography/` | `product-shots/` (13 full-res), `rusks/`, `category-tiles/` — originals; the repo carries only downscaled WebP |
+| `photography/` | Raw client photo deliveries: `rusks/`, `category-tiles/`, `product-shots/`. ⚠️ Not all of it is in use — see the note below |
 
 - 🔴 **It is NOT a backup, and the distinction matters.** `Desktop` is local only (it is *not* inside `OneDrive`), so this archive shares a disk — and a failure — with the working copy. The git remotes are the only offsite copies and they carry none of this. Copy the folder to OneDrive or an external drive to make it real. ⚠️ **Never push `fonts/` anywhere public** — the Thmanyah licence forbids redistribution (see Architecture → Bilingual for the full terms).
 - **Taking a fresh prod dump:** `mysqldump` is unavailable (the XAMPP MariaDB client can't auth to MySQL 8's `caching_sha2_password`), so use PHP PDO or TablePlus over the public proxy — `railway variables --service "MySQL" --kv | grep MYSQL_PUBLIC_URL`. ⚠️ The Railway service is **`MySQL`**; `mysql` answers "Service not found", and the internal `mysql.railway.internal` host is unreachable from a laptop. Name dumps `retab-prod-<YYYYMMDD-HHMMSS>.sql`. **Always take one before any destructive production change.**
 - Originals were **copied, not moved**, so `Downloads\Retab` still holds a duplicate — but Downloads is where files get cleared, so treat the archive as canonical.
+- ⚠️ **Photography status, corrected 2026-09-01 (client-flagged) — do not assume the archive mirrors the live catalogue.** The images the importer actually uses are **committed to the repo** (`database/data/product-photos` 24 · `product-photos-light` 10 · `rusk-photos` 7, all compressed WebP), so the live set is covered by git, not by this archive. What the archive holds is the raw high-res deliveries, and they do **not** line up 1:1:
+  - 🔴 **`photography/product-shots/` (13 × `prod (N).png`, 83 MB) feeds NOTHING** — grepped, it matches no matcher in any `database/data/image-maps.php` group. An older delivery, kept pending review rather than deleted.
+  - **Not yet archived:** the raw masters behind the *current* photos — `Downloads\products imgs\` (the `retab-NN` dark set) and `Downloads\light imgs\` (`dates image (N).png`, the light set). Deliberately left for later: the client is still delivering replacement photography, so archiving now would capture a half-finished set. Sweep both into `photography/` once the re-shoot is done.
 
 ---
 
