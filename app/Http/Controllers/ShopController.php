@@ -271,6 +271,9 @@ class ShopController
                 'coming_soon' => $product->isComingSoon(),
                 // Sellable size/packaging options, cheapest first. Empty for a
                 // plain single-price product (the page renders its price as before).
+                // What the product's own price is for, so the picker can name the
+                // default choice by its size instead of a generic "Original".
+                'base_weight_grams' => $product->base_weight_grams,
                 'options' => $product->activeOptions->map(fn ($o) => [
                     'id' => $o->id,
                     'label_ar' => $o->label_ar,

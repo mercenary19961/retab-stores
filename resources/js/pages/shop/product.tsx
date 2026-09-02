@@ -40,6 +40,9 @@ interface Product {
     description_ar: string | null;
     description_en: string | null;
     price: number;
+    // What `price` is for, in grams. Null = unknown, so the base choice keeps
+    // its generic label.
+    base_weight_grams: number | null;
     sale_price: number | null;
     effective_price: number;
     on_sale: boolean;
@@ -122,13 +125,26 @@ export default function ShopProduct({
     // ORIGINAL first (id null — the default the page opens on, always available),
     // then each size. `effective` is what is charged; `regular` is the struck-through
     // "was". The original always carries the sale; a size only if opted in.
+    // Grams below a kilo read as grams; a kilo or more reads in kilos with any
+    // trailing ".0" dropped, so 1000 is "1kg" and never "1.0kg". One number, one
+    // key per unit, so both languages format identically.
+    const baseSizeLabel = (() => {
+        const g = product.base_weight_grams;
+        if (!g || g <= 0) return null;
+        return g < 1000 ? t('product.sizeGrams', { n: g }) : t('product.sizeKg', { n: Number((g / 1000).toFixed(2)) });
+    })();
+
     const hasOptions = product.options.length > 0;
     const choices: Choice[] = hasOptions
         ? [
               {
                   id: null,
-                  label_ar: t('product.originalSize'),
-                  label_en: t('product.originalSize'),
+                  // 🔑 Name the default choice by its actual size when the product
+                  // declares one. "الأصلي" says nothing about what a shopper is
+                  // buying, which is why the weight had to stay in the product
+                  // name; with this it can leave.
+                  label_ar: baseSizeLabel ?? t('product.originalSize'),
+                  label_en: baseSizeLabel ?? t('product.originalSize'),
                   regular: product.price,
                   effective: product.on_sale ? product.sale_price! : product.price,
                   // The original is a single pack, so there is no count to give.

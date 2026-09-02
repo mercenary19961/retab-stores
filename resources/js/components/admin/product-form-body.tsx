@@ -31,6 +31,7 @@ export interface Product {
     description_ar: string | null;
     description_en: string | null;
     price: number;
+    base_weight_grams: number | null;
     sale_price: number | null;
     sku: string;
     smacc_sku: string | null;
@@ -138,6 +139,7 @@ export default function ProductFormBody({
         description_ar: product?.description_ar ?? '',
         description_en: product?.description_en ?? '',
         price: product?.price ?? '',
+        base_weight_grams: product?.base_weight_grams ?? '',
         sale_price: product?.sale_price ?? '',
         sku: product?.sku ?? '',
         smacc_sku: product?.smacc_sku ?? '',
@@ -352,8 +354,12 @@ export default function ProductFormBody({
                         </h2>
                         {/* Numbers grouped into one narrow 4-across row, identifiers into
                         a 3-across row — smaller fields, cleaner alignment. */}
-                        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
                             {text('price', t('admin.products.form.priceSar'), { required: true, type: 'number' })}
+                            {/* Sits beside Price because it says what that price is FOR.
+                                Optional: empty leaves the storefront's first choice
+                                labelled generically, as it was before. */}
+                            {text('base_weight_grams', t('admin.products.form.baseSize'), { type: 'number' })}
                             {text('sale_price', t('admin.products.form.salePriceSar'), { type: 'number' })}
                             {text('stock', t('admin.products.form.stock'), { required: true, type: 'number' })}
                             {text('low_stock_threshold', t('admin.products.form.lowStock'), { type: 'number' })}

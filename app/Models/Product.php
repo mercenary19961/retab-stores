@@ -208,6 +208,7 @@ class Product extends Model
         'short_description_ar',
         'short_description_en',
         'price',
+        'base_weight_grams',
         'sale_price',
         'sale_starts_at',
         'sale_ends_at',
@@ -224,6 +225,7 @@ class Product extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'base_weight_grams' => 'integer',
         'sale_price' => 'decimal:2',
         'sale_starts_at' => 'datetime',
         'sale_ends_at' => 'datetime',

@@ -196,4 +196,34 @@ class ProductOptionsTest extends TestCase
 
         $this->assertNull(collect($options)->firstWhere('label_ar', 'كرتون')['pieces']);
     }
+
+    public function test_the_base_choice_is_named_by_its_size_when_the_product_declares_one(): void
+    {
+        // 🔑 Without this the picker's default choice reads «الأصلي», which tells a
+        // shopper nothing — the reason the weight had to stay in the product name.
+        $product = $this->product();
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/x.jpg', 'is_primary' => true]);
+        $product->update(['is_active' => true, 'base_weight_grams' => 250]);
+
+        $props = $this->get(route('shop.product', $product->slug))
+            ->assertSuccessful()
+            ->viewData('page')['props']['product'];
+
+        $this->assertSame(250, $props['base_weight_grams']);
+    }
+
+    public function test_a_product_with_no_declared_size_ships_null_and_keeps_the_generic_label(): void
+    {
+        // Null is what makes the field optional: plenty of products (nuts, boxes,
+        // pastes) have no single meaningful weight, and they must keep working.
+        $product = $this->product();
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/y.jpg', 'is_primary' => true]);
+        $product->update(['is_active' => true]);
+
+        $props = $this->get(route('shop.product', $product->slug))
+            ->assertSuccessful()
+            ->viewData('page')['props']['product'];
+
+        $this->assertNull($props['base_weight_grams']);
+    }
 }
