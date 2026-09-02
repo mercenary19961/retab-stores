@@ -34,6 +34,7 @@ import {
     Sparkles,
     Table,
     Tag,
+    X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -205,6 +206,11 @@ export default function ProductsIndex({
     // thing they were looking for and dump them on page 1 of everything.
     const widen = Boolean(filters.search) && narrowing;
 
+    const clearFilters = () => {
+        setSearch('');
+        query({ search: undefined, category: undefined, status: undefined, page: undefined });
+    };
+
     const emptyState = (
         <div className="space-y-3">
             <p>{hasFilters ? t('admin.products.emptyFiltered') : t('admin.products.empty')}</p>
@@ -212,8 +218,14 @@ export default function ProductsIndex({
                 <button
                     type="button"
                     onClick={() => {
-                        if (!widen) setSearch('');
-                        query({ search: widen ? filters.search : undefined, category: undefined, status: undefined });
+                        // Widening keeps the query and only drops the filters;
+                        // otherwise fall through to the same clear the toolbar
+                        // button uses, so the two can never diverge.
+                        if (widen) {
+                            query({ category: undefined, status: undefined, page: undefined });
+                        } else {
+                            clearFilters();
+                        }
                     }}
                     className="text-brand-teal text-sm font-medium underline underline-offset-4 hover:opacity-80"
                 >
@@ -403,6 +415,16 @@ export default function ProductsIndex({
                     ]}
                     className="w-full sm:w-auto"
                 />
+
+                {/* Visible escape hatch. Without it the only way back to the full
+                    list is to reset three controls one at a time, and the
+                    "Hidden (63)" status in particular is easy to leave on and
+                    then wonder where everything went. */}
+                {hasFilters && (
+                    <Button size="sm" variant="secondary" icon={X} onClick={clearFilters} className="w-full sm:w-auto">
+                        {t('admin.products.clearFilters')}
+                    </Button>
+                )}
 
                 <div className="sm:ms-auto">
                     <Button variant="primary" icon={Plus} className="w-full sm:w-auto" onClick={() => setEditing('new')}>

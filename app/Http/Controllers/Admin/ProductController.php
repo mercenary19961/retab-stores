@@ -11,6 +11,7 @@ use App\Support\ProductDescriptionWriter;
 use App\Support\ProductNameTranslator;
 use App\Support\TableExport;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,6 +25,9 @@ use Inertia\Inertia;
  */
 class ProductController extends Controller
 {
+    /** Session key holding the admin's last product-list query. */
+    private const LIST_VIEW_KEY = 'admin.products.last_view';
+
     /** Columns the table may be sorted by (whitelist — never trust the raw param).
      *  'category' is virtual (sorts by the joined category name). */
     private const SORTABLE = ['name_ar', 'sku', 'smacc_sku', 'category', 'price', 'stock', 'is_active'];
@@ -39,6 +43,15 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $perPage = $this->perPage($request, 20);
+
+        // Remember this list view so create/edit/delete can return the admin to
+        // it. Only the whitelisted keys, so a stray query param can never be
+        // replayed into a later redirect.
+        $request->session()->put(self::LIST_VIEW_KEY, array_filter(
+            $request->only(['search', 'category', 'status', 'sort', 'direction', 'per_page', 'page']),
+            fn ($v) => $v !== null && $v !== '',
+        ));
+
         $products = $this->filteredQuery($request)
             ->with(['category:id,name_ar,name_en', 'images'])
             ->paginate($perPage)
@@ -205,7 +218,7 @@ class ProductController extends Controller
             $changeLog->logCreated($product, $product->name_ar);
         });
 
-        return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_created'));
+        return $this->listRedirect()->with('success', __('messages.admin.product_created'));
     }
 
     public function edit(Product $product)
@@ -293,11 +306,11 @@ class ProductController extends Controller
         // Say so when the guard overrode the request, rather than letting the
         // admin believe the product went live.
         if ($wanted && ! $product->is_active) {
-            return redirect()->route('admin.products.index')
+            return $this->listRedirect()
                 ->with('error', $this->blockedMessage($product));
         }
 
-        return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_updated'));
+        return $this->listRedirect()->with('success', __('messages.admin.product_updated'));
     }
 
     /**
@@ -323,6 +336,29 @@ class ProductController extends Controller
         return back()->with('success', __($product->is_active ? 'messages.admin.product_activated' : 'messages.admin.product_deactivated'));
     }
 
+    /**
+     * Where to send an admin after creating, editing or deleting a product:
+     * back to the list AS THEY LEFT IT.
+     *
+     * 🔑 A bare redirect to the index drops the query string, so an admin who
+     * filtered to "Hidden · Premium Dates", opened a product and saved it landed
+     * on an unfiltered page 1 and had to set the filters up again for every
+     * single row they were working through.
+     *
+     * The last list view is remembered in the SESSION rather than threaded
+     * through every form, because the edit screen is also reached from the
+     * dashboard and from global search, where there is no filter state to carry.
+     *
+     * ⚠️ It is a mirror of the last list request, not a sticky preference:
+     * index() overwrites it on every visit, so arriving from the sidebar with no
+     * query string records none and the admin is never surprised by filters they
+     * did not just set.
+     */
+    private function listRedirect(): RedirectResponse
+    {
+        return redirect()->route('admin.products.index', session(self::LIST_VIEW_KEY, []));
+    }
+
     public function destroy(Product $product, ChangeLogService $changeLog)
     {
         DB::transaction(function () use ($product, $changeLog) {
@@ -330,7 +366,7 @@ class ProductController extends Controller
             $changeLog->logDeleted($product, $product->name_ar);
         });
 
-        return redirect()->route('admin.products.index')->with('success', __('messages.admin.product_deleted'));
+        return $this->listRedirect()->with('success', __('messages.admin.product_deleted'));
     }
 
     /**
