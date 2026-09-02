@@ -192,6 +192,37 @@ export default function ProductsIndex({
         );
     };
 
+    // 🔑 An exact SKU search that returns nothing is almost always a category or
+    // status filter still being applied, because searching does not clear them.
+    // Saying "No products." there is technically true and completely unhelpful,
+    // so the empty state names the cause and offers the way out.
+    const narrowing = Boolean(filters.category || filters.status);
+    const hasFilters = Boolean(filters.search || narrowing);
+
+    // 🔑 When a SEARCH came back empty while a category or status filter is on,
+    // the useful action keeps the query and widens the scope — one click and the
+    // SKU they typed is found. Clearing the search too would throw away the
+    // thing they were looking for and dump them on page 1 of everything.
+    const widen = Boolean(filters.search) && narrowing;
+
+    const emptyState = (
+        <div className="space-y-3">
+            <p>{hasFilters ? t('admin.products.emptyFiltered') : t('admin.products.empty')}</p>
+            {hasFilters && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (!widen) setSearch('');
+                        query({ search: widen ? filters.search : undefined, category: undefined, status: undefined });
+                    }}
+                    className="text-brand-teal text-sm font-medium underline underline-offset-4 hover:opacity-80"
+                >
+                    {widen ? t('admin.products.searchEverywhere') : t('admin.products.clearFilters')}
+                </button>
+            )}
+        </div>
+    );
+
     const toggleSort = (col: string) => {
         const direction = filters.sort === col && filters.direction === 'asc' ? 'desc' : 'asc';
         query({ sort: col, direction });
@@ -550,7 +581,7 @@ export default function ProductsIndex({
                             {products.data.length === 0 && (
                                 <tr>
                                     <td colSpan={8} className="px-4 py-8 text-center text-neutral-400">
-                                        {t('admin.products.empty')}
+                                        {emptyState}
                                     </td>
                                 </tr>
                             )}
@@ -601,7 +632,7 @@ export default function ProductsIndex({
                 </StickyScrollWrapper>
             ) : products.data.length === 0 ? (
                 <div className="rounded-xl border border-neutral-200 bg-white px-4 py-10 text-center text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900">
-                    {t('admin.products.empty')}
+                    {emptyState}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
