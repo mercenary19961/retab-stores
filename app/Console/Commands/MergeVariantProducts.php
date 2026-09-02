@@ -32,10 +32,17 @@ use Illuminate\Support\Facades\DB;
  *
  * ⚠️ STOCK. The two rows each carried their own count of the same physical dates,
  * so only the single's survives, as the shared base-unit pool. The Box option then
- * consumes `stock_units` per sale — derived from the price ratio (carton ÷ single),
- * which is the only evidence in the data of how many units are in a carton. It is
- * a DERIVED number, not a known one: some pairs do not divide cleanly, so every
- * non-integer ratio is reported for the client to correct in the admin.
+ * consumes `stock_units` per sale, seeded from the price ratio (carton ÷ single),
+ * which is the only evidence in the data of how many units are in a carton.
+ *
+ * 🔴 THAT SEED IS A LOWER BOUND, NOT THE PACK COUNT, and it is wrong wherever the
+ * carton carries a BULK DISCOUNT. Proven against the client's live Zid store on
+ * 2026-09-02: Khalas Ushaiger 1kg quotes 140.00 against a 20.00 unit, so the ratio
+ * says 7, but the carton really holds 8 (8 × 20 = 160 list, sold at 140). Under-
+ * deducting stock is the expensive direction, so a non-integer ratio is EVIDENCE
+ * OF A DISCOUNT rather than of bad data, and even a clean integer can undercount.
+ * Every ratio is reported for the client to confirm; the admin's Units/box field
+ * is where the real count is entered.
  *
  * Safe to re-run: merged names no longer carry a suffix, and a survivor that
  * already has a box option is skipped.
@@ -395,7 +402,7 @@ class MergeVariantProducts extends Command
             return;
         }
 
-        $this->warn(count($unclear).' box price(s) are not a whole multiple of the unit price, so units/box is a guess:');
+        $this->warn(count($unclear).' box price(s) are not a whole multiple of the unit price, which usually means a BULK DISCOUNT — the real pack count is probably HIGHER than shown:');
         foreach ($unclear as $p) {
             $this->line(sprintf(
                 '  %s  %s / %s = %s -> rounded to %d units per box',
