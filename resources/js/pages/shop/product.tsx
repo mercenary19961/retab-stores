@@ -6,7 +6,7 @@ import { useLocalized } from '@/lib/localize';
 import { round2 } from '@/lib/option-pricing';
 import { type SharedData } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Check, Gift, Heart, Link2, Minus, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
+import { Check, Gift, Heart, Link2, Minus, PackageOpen, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -16,6 +16,9 @@ interface ProductOptionData {
     label_en: string | null;
     amount: number | null;
     price: number;
+    // Packs inside a box. Null = nothing to tell the shopper (not a box, or the
+    // count was never entered), which is how the admin turns the note off.
+    pieces: number | null;
 }
 
 // A selectable choice on the product page: the original (id null) or a size.
@@ -25,6 +28,7 @@ interface Choice {
     label_en: string | null;
     regular: number;
     effective: number;
+    pieces: number | null;
 }
 
 interface Product {
@@ -127,6 +131,8 @@ export default function ShopProduct({
                   label_en: t('product.originalSize'),
                   regular: product.price,
                   effective: product.on_sale ? product.sale_price! : product.price,
+                  // The original is a single pack, so there is no count to give.
+                  pieces: null,
               },
               ...product.options.map((o) => ({
                   id: o.id,
@@ -134,6 +140,7 @@ export default function ShopProduct({
                   label_en: o.label_en,
                   regular: o.price,
                   effective: round2(o.price * optionRatio),
+                  pieces: o.pieces,
               })),
           ]
         : [];
@@ -302,6 +309,19 @@ export default function ShopProduct({
                                     );
                                 })}
                             </div>
+
+                            {/* What is actually inside the selected box. Appears only
+                                when the admin has entered a count, so a product whose
+                                packing is unknown says nothing rather than guessing.
+                                ⚠️ `n`, NOT `count`: i18next reserves `count` for
+                                pluralization, which in Arabic means six suffixed
+                                variants this key does not define. */}
+                            {selected.pieces !== null && (
+                                <p className="text-brand-teal/70 mt-2 flex items-center gap-1.5 text-xs">
+                                    <PackageOpen className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                    {t('product.piecesPerBox', { n: selected.pieces })}
+                                </p>
+                            )}
                         </div>
                     )}
 

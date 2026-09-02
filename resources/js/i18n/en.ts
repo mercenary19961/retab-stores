@@ -403,6 +403,7 @@ const en = {
     product: {
         addToCart: 'Add to cart',
         chooseOption: 'Choose an option',
+        piecesPerBox: 'The box contains {{n}} packs',
         originalSize: 'Original',
         outOfStock: 'Currently unavailable',
         wishlistAdd: 'Add to wishlist',
@@ -1266,7 +1267,8 @@ const en = {
                 optional: 'Optional',
                 price: 'Price',
                 units: 'Units/box',
-                unitsHint: 'How many singles are in one box. Selling a box takes this many off the stock count.',
+                unitsHint:
+                    'How many singles are in one box. Selling a box takes this many off the stock count, and the number is shown to customers on the product page. Leave it at 1 to show nothing.',
                 box: 'Box',
                 custom: 'Custom',
                 active: 'Available',

@@ -277,6 +277,20 @@ class ShopController
                     'label_en' => $o->label_en,
                     'amount' => $o->amount,
                     'price' => (float) $o->price,
+                    // How many packs are inside a box, shown to the shopper.
+                    //
+                    // 🔑 Deliberately NOT a second column: this IS `stock_units`,
+                    // the count a box sale deducts from the shared pool, so the
+                    // number the customer reads and the number the shop deducts
+                    // cannot drift apart. A separate "pieces per box" field would
+                    // be two records of one fact.
+                    //
+                    // Null means "do not show", which is what makes it optional:
+                    // 1 is the default for a new box and means the count has not
+                    // been entered yet, and "contains 1 pack" says nothing worth
+                    // reading. Only a box carries one — a weight option's
+                    // stock_units is an inventory figure, not a pack count.
+                    'pieces' => $o->is_box && $o->stock_units > 1 ? (int) $o->stock_units : null,
                 ])->values(),
                 'purchase_count' => $purchaseCount,
                 'category' => $product->category?->only('name_ar', 'name_en', 'slug'),

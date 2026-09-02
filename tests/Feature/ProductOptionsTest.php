@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use App\Services\OrderConfirmationService;
@@ -32,7 +33,7 @@ class ProductOptionsTest extends TestCase
         $product->options()->createMany([
             ['label_ar' => '250 جرام', 'amount' => 250, 'price' => 5, 'stock_units' => 1, 'sort_order' => 1],
             ['label_ar' => '500 جرام', 'amount' => 500, 'price' => 10, 'stock_units' => 2, 'sort_order' => 2],
-            ['label_ar' => 'كرتون', 'amount' => null, 'price' => 69, 'stock_units' => 20, 'sort_order' => 3],
+            ['label_ar' => 'كرتون', 'amount' => null, 'is_box' => true, 'price' => 69, 'stock_units' => 20, 'sort_order' => 3],
         ]);
 
         return $product;
@@ -151,5 +152,48 @@ class ProductOptionsTest extends TestCase
         app(CheckoutService::class)->placeOrder(
             $cart, ['name' => 'Zaid', 'phone' => '+966500000000'], ['country' => 'SA', 'city' => 'Riyadh'],
         );
+    }
+
+    public function test_the_box_pack_count_reaches_the_product_page_only_when_it_is_worth_showing(): void
+    {
+        // 🔑 The shopper-facing "pieces in a box" note IS stock_units, not a second
+        // column, so the number a customer reads and the number a box sale deducts
+        // can never drift apart.
+        $product = $this->product();
+        // The publish guard hides a product with no image, which would 404 here.
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/x.jpg', 'is_primary' => true]);
+        $product->update(['is_active' => true]);
+
+        $options = $this->get(route('shop.product', $product->slug))
+            ->assertSuccessful()
+            ->viewData('page')['props']['product']['options'];
+
+        $byLabel = collect($options)->keyBy('label_ar');
+
+        // The carton consumes 20 base units, so that is what the page is told.
+        $this->assertSame(20, $byLabel['كرتون']['pieces']);
+
+        // A weight option is not a box: its stock_units is an inventory figure,
+        // never a pack count, so it must not be advertised as one.
+        $this->assertNull($byLabel['500 جرام']['pieces']);
+        $this->assertNull($byLabel['250 جرام']['pieces']);
+    }
+
+    public function test_a_box_left_at_one_unit_shows_no_pack_count(): void
+    {
+        // This is what makes the note optional: 1 is the default for a new box and
+        // means the count was never entered, and "contains 1 pack" tells nobody
+        // anything. No extra toggle column needed.
+        $product = $this->product();
+        // The publish guard hides a product with no image, which would 404 here.
+        ProductImage::create(['product_id' => $product->id, 'path' => 'products/x.jpg', 'is_primary' => true]);
+        $product->update(['is_active' => true]);
+        $product->options()->where('label_ar', 'كرتون')->update(['stock_units' => 1]);
+
+        $options = $this->get(route('shop.product', $product->slug))
+            ->assertSuccessful()
+            ->viewData('page')['props']['product']['options'];
+
+        $this->assertNull(collect($options)->firstWhere('label_ar', 'كرتون')['pieces']);
     }
 }
