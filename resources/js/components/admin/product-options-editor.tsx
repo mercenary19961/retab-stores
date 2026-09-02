@@ -120,6 +120,11 @@ export default function ProductOptionsEditor({
                 <button type="button" onClick={() => addWeight(1000, '1كجم', '1kg')} disabled={hasAmount(1000)} className={presetBtn}>
                     + 1kg
                 </button>
+                {/* 1.5kg is a real pack size in this catalogue (RTB-0046), so it earns
+                    a preset rather than being reached through Custom. */}
+                <button type="button" onClick={() => addWeight(1500, '1.5كجم', '1.5kg')} disabled={hasAmount(1500)} className={presetBtn}>
+                    + 1.5kg
+                </button>
                 <button type="button" onClick={addBox} disabled={hasBox} className={presetBtn}>
                     + {t('admin.products.options.box')}
                 </button>

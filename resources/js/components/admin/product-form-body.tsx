@@ -215,18 +215,25 @@ export default function ProductFormBody({
     const deleteImage = (imageId: number) => product && router.delete(`/admin/products/${product.id}/images/${imageId}`, imgOpts);
 
     const text = (name: keyof typeof data, label: string, opts: { required?: boolean; type?: string; placeholder?: string } = {}) => (
-        <label className="block" id={`field-${name}`}>
+        <label className="flex h-full flex-col" id={`field-${name}`}>
             <span className="text-sm text-neutral-600 dark:text-neutral-300">
                 {label}
                 {opts.required && <span className="text-red-500"> *</span>}
             </span>
-            <input
-                type={opts.type ?? 'text'}
-                value={data[name] as string | number}
-                placeholder={opts.placeholder}
-                onChange={(e) => setData(name, e.target.value)}
-                className={INPUT}
-            />
+            {/* 🔑 `mt-auto` pins every box to the BOTTOM of its grid cell, so a label
+                that wraps to two lines ("Low-stock threshold" at narrow widths) no
+                longer shoves its input out of line with the rest of the row. The
+                wrapper carries the push while the input keeps its own top margin,
+                which guarantees a gap even when the label is the tallest in the row. */}
+            <div className="mt-auto">
+                <input
+                    type={opts.type ?? 'text'}
+                    value={data[name] as string | number}
+                    placeholder={opts.placeholder}
+                    onChange={(e) => setData(name, e.target.value)}
+                    className={INPUT}
+                />
+            </div>
             {errors[name] && <span className="text-xs text-red-500">{errors[name]}</span>}
         </label>
     );
