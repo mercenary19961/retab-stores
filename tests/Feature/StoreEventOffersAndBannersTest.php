@@ -77,6 +77,19 @@ class StoreEventOffersAndBannersTest extends TestCase
         ], $overrides));
     }
 
+    /**
+     * An event with one live offer, so an unlinked banner has a real page to open.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    private function eventWithOffer(array $overrides = []): StoreEvent
+    {
+        $event = $this->event($overrides);
+        $event->products()->attach($this->product()->id);
+
+        return $event;
+    }
+
     /** @param array<string, mixed> $overrides */
     private function banner(StoreEvent $event, array $overrides = []): EventHeroBanner
     {
@@ -226,23 +239,28 @@ class StoreEventOffersAndBannersTest extends TestCase
 
     public function test_a_banner_stays_off_the_homepage_whenever_it_should(): void
     {
+        // Every scenario's event HAS a live offer, so each one is hidden for its
+        // own stated reason and not merely because the event is empty.
         $scenarios = [
-            'event paused' => fn () => $this->banner($this->event(['is_active' => false])),
-            'event over' => fn () => $this->banner($this->event(['starts_at' => now()->subWeek(), 'ends_at' => now()->subMinute()])),
-            'banner off' => fn () => $this->banner($this->event(), ['is_active' => false]),
-            'own window not started' => fn () => $this->banner($this->event(), ['starts_at' => now()->addDay()]),
-            'own window over' => fn () => $this->banner($this->event(), ['ends_at' => now()->subMinute()]),
-            'offer hidden' => fn () => $this->banner($this->event(), ['product_id' => $this->product(['is_active' => false])->id]),
+            'event paused' => fn () => $this->banner($this->eventWithOffer(['is_active' => false])),
+            'event over' => fn () => $this->banner($this->eventWithOffer(['starts_at' => now()->subWeek(), 'ends_at' => now()->subMinute()])),
+            'banner off' => fn () => $this->banner($this->eventWithOffer(), ['is_active' => false]),
+            'own window not started' => fn () => $this->banner($this->eventWithOffer(), ['starts_at' => now()->addDay()]),
+            'own window over' => fn () => $this->banner($this->eventWithOffer(), ['ends_at' => now()->subMinute()]),
+            'offer hidden' => fn () => $this->banner($this->eventWithOffer(), ['product_id' => $this->product(['is_active' => false])->id]),
             'offer deleted' => function () {
                 $product = $this->product();
                 $product->delete();
 
-                return $this->banner($this->event(), ['product_id' => $product->id]);
+                return $this->banner($this->eventWithOffer(), ['product_id' => $product->id]);
             },
+            // The production case: an unlinked banner opens its event's page, which
+            // would show "0 products" for an event with nothing on sale.
+            'unlinked, and the event has no live offer' => fn () => $this->banner($this->event()),
         ];
 
         // Control first, so the loop below cannot pass vacuously.
-        $this->banner($this->event());
+        $this->banner($this->eventWithOffer());
         $this->get('/')->assertInertia(fn (Assert $page) => $page->has('heroBanners', 1));
 
         foreach ($scenarios as $label => $setup) {

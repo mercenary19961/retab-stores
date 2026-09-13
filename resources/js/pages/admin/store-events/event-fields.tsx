@@ -2,6 +2,8 @@ import { Check } from 'lucide-react';
 
 import { useAdminT } from '@/i18n/use-admin-t';
 
+import { riyadhLabel } from './time';
+
 export interface EventForm {
     name_ar: string;
     name_en: string;
@@ -67,7 +69,7 @@ export default function EventFields({
     onChange: (form: EventForm) => void;
     accentPresets: Record<string, string>;
 }) {
-    const { t } = useAdminT();
+    const { t, i18n } = useAdminT();
     const set = <K extends keyof EventForm>(key: K, value: EventForm[K]) => onChange({ ...form, [key]: value });
 
     // Empty means "use the brand default", which is a real choice rather than a
@@ -96,10 +98,24 @@ export default function EventFields({
                 <input className={INPUT} value={form.subtitle_en} onChange={(e) => set('subtitle_en', e.target.value)} dir="ltr" />
             </Field>
 
-            <Field label={t('admin.storeEvents.fields.startsAt')}>
+            {/* ⚠️ These inputs are UTC (the app's timezone). The Riyadh reading under
+                each one is what keeps "30/09 21:00" from being "corrected" to midnight,
+                which would end the campaign three hours late. */}
+            <p className="-mb-2 text-[11px] text-amber-200/80 sm:col-span-2">{t('admin.storeEvents.fields.utcHint')}</p>
+            <Field
+                label={t('admin.storeEvents.fields.startsAt')}
+                hint={form.starts_at ? t('admin.storeEvents.fields.riyadhEquals', { date: riyadhLabel(form.starts_at, i18n.language) }) : undefined}
+            >
                 <input type="datetime-local" className={INPUT} value={form.starts_at} onChange={(e) => set('starts_at', e.target.value)} />
             </Field>
-            <Field label={t('admin.storeEvents.fields.endsAt')} hint={t('admin.storeEvents.fields.endsHint')}>
+            <Field
+                label={t('admin.storeEvents.fields.endsAt')}
+                hint={
+                    form.ends_at
+                        ? `${t('admin.storeEvents.fields.riyadhEquals', { date: riyadhLabel(form.ends_at, i18n.language) })} · ${t('admin.storeEvents.fields.endsHint')}`
+                        : t('admin.storeEvents.fields.endsHint')
+                }
+            >
                 <input type="datetime-local" className={INPUT} value={form.ends_at} onChange={(e) => set('ends_at', e.target.value)} />
             </Field>
 

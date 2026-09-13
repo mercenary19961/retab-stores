@@ -37,7 +37,7 @@ class StoreEventController extends Controller
     public function index()
     {
         return Inertia::render('admin/store-events/index', [
-            'events' => StoreEvent::withCount('products')
+            'events' => StoreEvent::withCount(['products', 'heroBanners'])
                 ->orderByDesc('starts_at')
                 ->paginate($this->perPage(request(), 20))
                 ->through(fn (StoreEvent $e) => $this->row($e)),
@@ -428,6 +428,7 @@ class StoreEventController extends Controller
             'sort_order' => $event->sort_order,
             'state' => $event->state(),
             'offer_count' => $event->products_count ?? $event->products()->count(),
+            'banner_count' => $event->hero_banners_count ?? $event->heroBanners()->count(),
         ];
     }
 

@@ -64,13 +64,19 @@ class EventHeroBanner extends Model
             ->whereHas('event', fn (Builder $e) => $e->running())
             ->where(fn (Builder $w) => $w->whereNull($query->qualifyColumn('starts_at'))->orWhere($query->qualifyColumn('starts_at'), '<=', $now))
             ->where(fn (Builder $w) => $w->whereNull($query->qualifyColumn('ends_at'))->orWhere($query->qualifyColumn('ends_at'), '>=', $now))
-            ->where(fn (Builder $w) => $w->whereNull($query->qualifyColumn('product_id'))
+            // Linked to an offer → that offer must be live. Linked to nothing → the
+            // banner opens its event's own page, so the EVENT must have a live
+            // offer, or the click lands on "0 products". Found on production: a
+            // hand-made duplicate event with no offers had a banner scheduled.
+            ->where(fn (Builder $w) => $w
+                ->where(fn (Builder $x) => $x->whereNull($query->qualifyColumn('product_id'))
+                    ->whereHas('event.products', fn (Builder $p) => $p->where('is_active', true)))
                 ->orWhereHas('product', fn (Builder $p) => $p->where('is_active', true)));
     }
 
     /**
      * Why a banner is or is not showing, for the admin: live / scheduled / ended /
-     * off / event_paused / offer_hidden. Mirrors scopeLive() so the panel never
+     * off / event_paused / offer_hidden / no_offers. Mirrors scopeLive() so the panel never
      * calls a banner live that the storefront is not showing.
      *
      * ⚠️ Reads `event` and `product`; the caller should have both loaded.
@@ -85,6 +91,9 @@ class EventHeroBanner extends Model
         }
         if ($this->product_id !== null && (! $this->product || ! $this->product->is_active)) {
             return 'offer_hidden';
+        }
+        if ($this->product_id === null && ! $this->event->products()->where('is_active', true)->exists()) {
+            return 'no_offers';
         }
 
         $start = $this->starts_at ?? $this->event->starts_at;
