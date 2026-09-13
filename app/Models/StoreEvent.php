@@ -24,6 +24,13 @@ class StoreEvent extends Model
     public const DEFAULT_ACCENT = '#1b4e53';
 
     /**
+     * The Special Offers category: home of campaign-only products (seeded by the
+     * store-events migration). Its navbar item hides while a running event covers
+     * everything in it — see `navCategories` in HandleInertiaRequests.
+     */
+    public const OFFERS_CATEGORY_SLUG = 'special-offers';
+
+    /**
      * Accent presets offered in the admin. A free colour picker is a licence to
      * pick a colour that fights the rest of the page, so the admin picks from
      * these; the stored column is still a plain hex, so a one-off is possible
@@ -131,7 +138,7 @@ class StoreEvent extends Model
     public static function offersCategory(): Category
     {
         return Category::firstOrCreate(
-            ['slug' => 'special-offers'],
+            ['slug' => self::OFFERS_CATEGORY_SLUG],
             ['name_ar' => 'العروض الخاصة', 'name_en' => 'Special Offers', 'sort_order' => 90, 'is_active' => true],
         );
     }

@@ -405,6 +405,10 @@ class Product extends Model
      *      item, the mobile drawer entry and the cart's empty-state link
      * Miss the third and the nav offers a link to a page with nothing on it.
      *
+     * A fourth use, for a different reason: `navCategories` hides the Special
+     * Offers bucket while every product in it is covered by a running event's own
+     * navbar item, so the navbar never carries two links to the same products.
+     *
      * Deliberately scoped to the on-sale surfaces only: an event product is still
      * an ordinary product everywhere else, so it keeps its category and still
      * appears in normal browsing and search.

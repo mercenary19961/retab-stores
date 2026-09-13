@@ -295,6 +295,30 @@ class StoreEventOffersAndBannersTest extends TestCase
         $this->assertTrue($foreign->fresh()->is_active);
     }
 
+    // ----------------------------------------------------------------- navbar
+
+    public function test_the_special_offers_nav_item_hides_while_a_running_event_covers_it(): void
+    {
+        $bucket = StoreEvent::offersCategory();
+        $bundle = $this->product(['category_id' => $bucket->id]);
+        $event = $this->event();
+        $event->products()->attach($bundle->id);
+
+        $navSlugs = fn () => collect($this->get('/')->viewData('page')['props']['navCategories'])->pluck('slug')->all();
+
+        // Everything in the bucket is the event's → the event's own item covers it.
+        $this->assertNotContains(StoreEvent::OFFERS_CATEGORY_SLUG, $navSlugs());
+
+        // The event ends → the bucket is the only way to reach the bundle again.
+        $event->update(['is_active' => false]);
+        $this->assertContains(StoreEvent::OFFERS_CATEGORY_SLUG, $navSlugs());
+
+        // Running again, plus a bundle no event covers → the bucket has its own content.
+        $event->update(['is_active' => true]);
+        $this->product(['category_id' => $bucket->id]);
+        $this->assertContains(StoreEvent::OFFERS_CATEGORY_SLUG, $navSlugs());
+    }
+
     // ----------------------------------------------------- National Day setup
 
     public function test_the_national_day_setup_builds_the_campaign_once(): void

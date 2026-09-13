@@ -99,6 +99,15 @@ class HandleInertiaRequests extends Middleware
                 ->where(fn ($q) => $q
                     ->whereHas('products', fn ($p) => $p->visibleOnStore())
                     ->orWhereHas('children.products', fn ($p) => $p->visibleOnStore()))
+                // 🔑 Special Offers is where campaign bundles live, and a running event
+                // already gets its own navbar item for them. While everything in the
+                // bucket belongs to a running event the two items lead to the same
+                // products (client-flagged, 2026-09-13), so it shows only when it holds
+                // something no event item covers — e.g. a bundle kept on after its
+                // campaign. It comes back by itself when the event ends.
+                ->where(fn ($q) => $q
+                    ->where('slug', '!=', StoreEvent::OFFERS_CATEGORY_SLUG)
+                    ->orWhereHas('products', fn ($p) => $p->visibleOnStore()->notInRunningEvent()))
                 ->with(['children' => fn ($q) => $q->where('is_active', true)
                     ->whereHas('products', fn ($p) => $p->visibleOnStore())
                     ->orderBy('sort_order')])
