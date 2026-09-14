@@ -68,6 +68,11 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     // Products.
     Route::get('products/export', [ProductController::class, 'export'])->middleware('permission:products.view')->name('products.export');
     Route::get('products', [ProductController::class, 'index'])->middleware('permission:products.view')->name('products.index');
+    // Bulk actions on the ticked rows of the list. Two path segments, so they can
+    // never be read as a `products/{product}` id.
+    Route::post('products/bulk/category', [ProductController::class, 'bulkCategory'])->middleware('permission:products.edit')->name('products.bulk.category');
+    Route::post('products/bulk/visibility', [ProductController::class, 'bulkVisibility'])->middleware('permission:products.edit')->name('products.bulk.visibility');
+    Route::post('products/bulk/destroy', [ProductController::class, 'bulkDestroy'])->middleware('permission:products.delete')->name('products.bulk.destroy');
     // Form helpers: an English name from the Arabic one, and a description from
     // the product's attributes.
     //

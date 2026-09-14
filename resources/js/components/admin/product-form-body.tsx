@@ -24,7 +24,7 @@ export interface ProductImage {
 
 export interface Product {
     id: number;
-    category_id: number;
+    category_id: number | null;
     name_ar: string;
     name_en: string | null;
     slug: string | null;
@@ -134,7 +134,9 @@ export default function ProductFormBody({
     };
 
     const { data, setData, post, put, processing, errors, isDirty, transform } = useForm({
-        category_id: product?.category_id ?? categories[0]?.id ?? '',
+        // 🔴 An existing product with NO category keeps none. Falling back to the
+        // first category here would silently re-file it on its next save.
+        category_id: (product ? (product.category_id ?? '') : (categories[0]?.id ?? '')) as number | '',
         name_ar: product?.name_ar ?? '',
         name_en: product?.name_en ?? '',
         slug: product?.slug ?? '',
@@ -288,11 +290,14 @@ export default function ProductFormBody({
                         </h2>
                         <div className="grid gap-4 sm:grid-cols-2">
                             <label className="block" id="field-category_id">
-                                <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')} *</span>
+                                <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.products.form.category')}</span>
                                 <Select
                                     value={String(data.category_id)}
-                                    onChange={(v) => setData('category_id', Number(v))}
-                                    options={categories.map((c) => ({ value: String(c.id), label: catLabel(c) }))}
+                                    onChange={(v) => setData('category_id', v ? Number(v) : '')}
+                                    options={[
+                                        { value: '', label: t('admin.products.noCategory') },
+                                        ...categories.map((c) => ({ value: String(c.id), label: catLabel(c) })),
+                                    ]}
                                     className="mt-1 w-full"
                                 />
                                 {errors.category_id && <span className="text-xs text-red-500">{errors.category_id}</span>}

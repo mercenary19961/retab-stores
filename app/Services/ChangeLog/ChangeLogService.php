@@ -50,10 +50,11 @@ class ChangeLogService
         ],
         // Content pages have no admin delete route — created stays audit-only.
         ContentPage::class => [ActivityLog::ACTION_UPDATED],
-        // 🔴 Edits only. Undoing a CREATE means deleting the row, and
-        // products.category_id cascades, so it would take with it every product
-        // filed there since. A deleted category is not soft-deleted, so there is
-        // nothing for undoing a DELETE to restore. Both stay audit-only.
+        // Edits only. Undoing a CREATE means deleting the row, which would pull
+        // every product filed there since out of its category behind the admin's
+        // back; a delete deserves the explicit dialog on the Categories page. A
+        // deleted category is not soft-deleted, so there is nothing for undoing a
+        // DELETE to restore. Both stay audit-only.
         Category::class => [ActivityLog::ACTION_UPDATED],
         ActivityLog::SUBJECT_SETTINGS => [ActivityLog::ACTION_UPDATED],
     ];

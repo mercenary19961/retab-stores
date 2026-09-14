@@ -1,5 +1,6 @@
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
+import ConfirmDialog from '@/components/admin/confirm-dialog';
 import ExportButtons from '@/components/admin/export-buttons';
 import Modal from '@/components/admin/modal';
 import Pagination from '@/components/admin/pagination';
@@ -25,6 +26,7 @@ import {
     Columns3,
     Eye,
     EyeOff,
+    Folder,
     ImageOff,
     Languages,
     LayoutGrid,
@@ -82,7 +84,8 @@ interface Category {
 
 interface Filters {
     search: string | null;
-    category: number | null;
+    /** A category id, or 'none' for products left without a category. */
+    category: number | 'none' | null;
     status: string | null;
     sort: string | null;
     direction: 'asc' | 'desc';
@@ -137,12 +140,14 @@ export default function ProductsIndex({
     filters,
     categories,
     draftCount = 0,
+    uncategorizedCount = 0,
     undoMeta = null,
 }: {
     products: Paginator<ProductRow>;
     filters: Filters;
     categories: Category[];
     draftCount?: number;
+    uncategorizedCount?: number;
     undoMeta?: UndoMeta | null;
 }) {
     const { t, i18n } = useAdminT();
@@ -153,6 +158,35 @@ export default function ProductsIndex({
     const rc = useResizableColumns({ tableKey: 'products', columns: COLUMNS });
     const [editing, setEditing] = useState<ProductRow | 'new' | null>(null);
     const [view, setView] = useState<'table' | 'cards'>('table');
+
+    // Bulk selection. A Set keyed by id, never by index (the list re-renders after
+    // every action), and cleared whenever the visible page changes, so an action
+    // can never reach products the admin can no longer see.
+    const canEdit = can('products.edit');
+    const canDelete = can('products.delete');
+    const selectable = canEdit || canDelete;
+    const [selected, setSelected] = useState<Set<number>>(new Set());
+    const [moveTarget, setMoveTarget] = useState<string | null>(null);
+    useEffect(() => setSelected((prev) => (prev.size ? new Set() : prev)), [products.data]);
+    const pageIds = products.data.map((p) => p.id);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+    const toggleAll = () => setSelected(allSelected ? new Set() : new Set(pageIds));
+    const toggleOne = (id: number) =>
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    const bulk = (action: 'category' | 'visibility' | 'destroy', payload: Record<string, unknown> = {}) =>
+        router.post(
+            `/admin/products/bulk/${action}`,
+            { ids: [...selected], ...payload },
+            { preserveScroll: true, onSuccess: () => setSelected(new Set()) },
+        );
+    const moveTargetCategory = moveTarget && moveTarget !== 'none' ? categories.find((c) => String(c.id) === moveTarget) : null;
+    // The checkbox column sits outside the resizable set, so its width is added on top.
+    const SELECT_W = 44;
 
     // Persist the table/card choice so it survives navigation + reloads.
     useEffect(() => {
@@ -388,6 +422,10 @@ export default function ProductsIndex({
                     options={[
                         { value: '', label: t('admin.products.allCategories') },
                         ...categories.map((c) => ({ value: String(c.id), label: loc(c.name_ar, c.name_en) })),
+                        // Products whose category was deleted: one click from being filed again.
+                        ...(uncategorizedCount > 0 || filters.category === 'none'
+                            ? [{ value: 'none', label: `${t('admin.products.noCategory')} (${uncategorizedCount})` }]
+                            : []),
                     ]}
                     className="w-full sm:w-auto"
                 />
@@ -439,6 +477,13 @@ export default function ProductsIndex({
             {/* Count + undo + reset/hint + sort + view toggle + export */}
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
+                    {/* The card view has no header row, so its select-all lives here. */}
+                    {selectable && view === 'cards' && products.data.length > 0 && (
+                        <label className="inline-flex items-center gap-2 text-sm text-neutral-400">
+                            <input type="checkbox" checked={allSelected} onChange={toggleAll} className="accent-brand-teal h-4 w-4" />
+                            {t('admin.products.bulk.selectAll')}
+                        </label>
+                    )}
                     <span className="text-sm text-neutral-400">{t('admin.products.count', { n: products.total })}</span>
                     <UndoButton section="products" undoMeta={undoMeta} />
                     {view === 'table' &&
@@ -502,11 +547,60 @@ export default function ProductsIndex({
                 </div>
             </div>
 
+            {/* Shown only once something is ticked, so the page is unchanged otherwise. */}
+            {selectable && selected.size > 0 && (
+                <div className="border-brand-teal/40 bg-brand-teal/10 mb-3 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-2.5">
+                    <span className="me-2 text-sm font-medium">{t('admin.products.bulk.selected', { n: selected.size })}</span>
+                    {canEdit && (
+                        <>
+                            <Select
+                                value=""
+                                onChange={(v) => v && setMoveTarget(v)}
+                                placeholder={t('admin.products.bulk.moveTo')}
+                                options={[
+                                    { value: 'none', label: t('admin.products.noCategory') },
+                                    ...categories.map((c) => ({ value: String(c.id), label: loc(c.name_ar, c.name_en) })),
+                                ]}
+                                className="w-full sm:w-56"
+                            />
+                            <Button size="sm" variant="secondary" icon={Eye} onClick={() => bulk('visibility', { visible: true })}>
+                                {t('admin.products.bulk.show')}
+                            </Button>
+                            <Button size="sm" variant="secondary" icon={EyeOff} onClick={() => bulk('visibility', { visible: false })}>
+                                {t('admin.products.bulk.hide')}
+                            </Button>
+                        </>
+                    )}
+                    {canDelete && (
+                        <ConfirmDeleteButton
+                            reversible
+                            label={t('admin.products.bulk.delete')}
+                            itemName={t('admin.products.bulk.deleteItem', { n: selected.size })}
+                            onConfirm={() => bulk('destroy')}
+                        />
+                    )}
+                    <Button size="sm" variant="ghost" icon={X} onClick={() => setSelected(new Set())}>
+                        {t('admin.products.bulk.clear')}
+                    </Button>
+                </div>
+            )}
+
             {view === 'table' ? (
                 <StickyScrollWrapper className="rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-                    <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth }}>
+                    <table className="min-w-full table-fixed text-sm" style={{ width: rc.tableWidth + (selectable ? SELECT_W : 0) }}>
                         <thead className={THEAD}>
                             <tr>
+                                {selectable && (
+                                    <th className="px-3 py-3" style={{ width: SELECT_W }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            onChange={toggleAll}
+                                            aria-label={t('admin.products.bulk.selectAll')}
+                                            className="accent-brand-teal h-4 w-4"
+                                        />
+                                    </th>
+                                )}
                                 <ResizableTh
                                     colKey="product"
                                     width={rc.widths.product}
@@ -605,13 +699,27 @@ export default function ProductsIndex({
                         <tbody>
                             {products.data.length === 0 && (
                                 <tr>
-                                    <td colSpan={8} className="px-4 py-8 text-center text-neutral-400">
+                                    <td colSpan={selectable ? 9 : 8} className="px-4 py-8 text-center text-neutral-400">
                                         {emptyState}
                                     </td>
                                 </tr>
                             )}
                             {products.data.map((p) => (
-                                <tr key={p.id} className="border-b border-neutral-100 last:border-0 dark:border-neutral-800">
+                                <tr
+                                    key={p.id}
+                                    className={`border-b border-neutral-100 last:border-0 dark:border-neutral-800 ${selected.has(p.id) ? 'bg-brand-teal/5' : ''}`}
+                                >
+                                    {selectable && (
+                                        <td className="px-3 py-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={selected.has(p.id)}
+                                                onChange={() => toggleOne(p.id)}
+                                                aria-label={t('admin.products.bulk.selectRow', { name: loc(p.name_ar, p.name_en) })}
+                                                className="accent-brand-teal h-4 w-4"
+                                            />
+                                        </td>
+                                    )}
                                     <td className="px-4 py-3">
                                         <div className="flex min-w-0 items-center gap-2">
                                             {thumb(p, 'h-9 w-9', 'text-sm')}
@@ -636,7 +744,11 @@ export default function ProductsIndex({
                                         )}
                                     </td>
                                     <td className="truncate px-4 py-3" dir="auto">
-                                        {p.category ? loc(p.category.name_ar, p.category.name_en) : '—'}
+                                        {p.category ? (
+                                            loc(p.category.name_ar, p.category.name_en)
+                                        ) : (
+                                            <span className="text-neutral-500">{t('admin.products.noCategory')}</span>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3">{renderPrice(p)}</td>
                                     <td className="px-4 py-3">
@@ -667,6 +779,15 @@ export default function ProductsIndex({
                             className="flex flex-col rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
                         >
                             <div className="flex items-start gap-3">
+                                {selectable && (
+                                    <input
+                                        type="checkbox"
+                                        checked={selected.has(p.id)}
+                                        onChange={() => toggleOne(p.id)}
+                                        aria-label={t('admin.products.bulk.selectRow', { name: loc(p.name_ar, p.name_en) })}
+                                        className="accent-brand-teal mt-1 h-4 w-4 shrink-0"
+                                    />
+                                )}
                                 {thumb(p, 'h-16 w-16', 'text-xl')}
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-start gap-1.5">
@@ -680,7 +801,11 @@ export default function ProductsIndex({
                                         )}
                                     </div>
                                     <p dir="auto" className="mt-0.5 truncate text-xs text-neutral-500">
-                                        {p.category ? loc(p.category.name_ar, p.category.name_en) : '—'}
+                                        {p.category ? (
+                                            loc(p.category.name_ar, p.category.name_en)
+                                        ) : (
+                                            <span className="text-neutral-500">{t('admin.products.noCategory')}</span>
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -739,6 +864,23 @@ export default function ProductsIndex({
                     <ProductEditor key={editing.id} productId={editing.id} categories={categories} onSaved={() => setEditing(null)} />
                 )}
             </Modal>
+
+            <ConfirmDialog
+                open={moveTarget !== null}
+                onClose={() => setMoveTarget(null)}
+                onConfirm={() => bulk('category', { category_id: moveTarget === 'none' ? null : Number(moveTarget) })}
+                title={t('admin.products.bulk.moveTitle')}
+                message={
+                    moveTarget === 'none'
+                        ? t('admin.products.bulk.moveConfirmNone', { n: selected.size })
+                        : t('admin.products.bulk.moveConfirm', {
+                              n: selected.size,
+                              name: moveTargetCategory ? loc(moveTargetCategory.name_ar, moveTargetCategory.name_en) : '',
+                          })
+                }
+                confirmLabel={t('admin.products.bulk.move')}
+                icon={Folder}
+            />
 
             <ImageLightbox
                 open={lightbox !== null}

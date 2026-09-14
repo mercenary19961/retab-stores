@@ -1,11 +1,11 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, CornerDownRight, Eye, EyeOff, FolderTree, ImageOff, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowUp, CornerDownRight, Eye, EyeOff, FolderTree, ImageOff, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
 import Button from '@/components/admin/button';
-import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import HintTooltip from '@/components/admin/hint-tooltip';
 import Modal from '@/components/admin/modal';
+import Select from '@/components/admin/select';
 import StatusToggle from '@/components/admin/status-toggle';
 import StatusPill from '@/components/status-pill';
 import { useCan } from '@/hooks/use-can';
@@ -24,7 +24,7 @@ import { CARD, THEAD } from '@/lib/admin-ui';
  * the delete button explains why it is off instead of failing on click.
  */
 
-type Blocker = 'category_not_empty' | 'category_has_children' | 'category_protected';
+type Blocker = 'category_has_children' | 'category_protected';
 
 export interface CategoryRow {
     id: number;
@@ -39,6 +39,8 @@ export interface CategoryRow {
     children_count: number;
     is_offers_bucket: boolean;
     delete_blocker: Blocker | null;
+    /** Whether shoppers can reach it: hidden by staff, live, or switched on but empty. */
+    store_state: 'live' | 'empty' | 'hidden';
 }
 
 interface TreeRow {
@@ -285,12 +287,108 @@ function CategoryDialog({ category, rows, onClose }: { category: CategoryRow | n
     );
 }
 
+/**
+ * Delete confirmation with a choice of where the products go.
+ *
+ * 🔑 Deleting a category never deletes its products. The admin either moves them
+ * to another category, or leaves them without one: they stay on sale and are
+ * listed under the "No category" filter on Products. Typing the confirm word is
+ * kept from ConfirmDeleteButton, since a category itself cannot be restored.
+ */
+function CategoryDeleteDialog({ category, rows, onClose }: { category: CategoryRow; rows: CategoryRow[]; onClose: () => void }) {
+    const { t } = useAdminT();
+    const confirmWord = t('admin.deleteModal.confirmWord');
+    const [target, setTarget] = useState('');
+    const [text, setText] = useState('');
+    const [busy, setBusy] = useState(false);
+
+    const ready = text.trim().toLowerCase() === confirmWord.toLowerCase();
+    const hasProducts = category.products_count > 0;
+    // Products only live in a leaf: never a menu group, never this category.
+    const targets = rows.filter((r) => r.children_count === 0 && r.id !== category.id);
+
+    const confirm = () => {
+        if (!ready || busy) return;
+        setBusy(true);
+        router.delete(`/admin/categories/${category.id}`, {
+            data: { move_to: target || null },
+            preserveScroll: true,
+            onSuccess: onClose,
+            onFinish: () => setBusy(false),
+        });
+    };
+
+    return (
+        <Modal open onClose={onClose} size="sm" title={t('admin.categories.deleteDialog.title')}>
+            <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
+                        <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    {/* No dir="auto": the sentence follows the panel's language. With
+                        auto, an Arabic category name at the start flipped the whole
+                        English sentence right-to-left and scrambled it. */}
+                    <p className="text-sm text-neutral-700 dark:text-neutral-200">
+                        {hasProducts
+                            ? t('admin.categories.deleteDialog.lead', { name: category.name_ar, n: category.products_count })
+                            : t('admin.categories.deleteDialog.leadEmpty', { name: category.name_ar })}
+                    </p>
+                </div>
+
+                {hasProducts && (
+                    <div>
+                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                            {t('admin.categories.deleteDialog.moveTo')}
+                        </span>
+                        <Select
+                            value={target}
+                            onChange={setTarget}
+                            options={[
+                                { value: '', label: t('admin.categories.deleteDialog.leaveUncategorized') },
+                                ...targets.map((r) => ({ value: String(r.id), label: r.name_en ? `${r.name_ar} · ${r.name_en}` : r.name_ar })),
+                            ]}
+                            className="mt-1 w-full"
+                        />
+                        <p className="mt-1.5 text-xs text-neutral-500">
+                            {t(target ? 'admin.categories.deleteDialog.movedHint' : 'admin.categories.deleteDialog.uncategorizedHint')}
+                        </p>
+                    </div>
+                )}
+
+                <label className="block">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.deleteModal.prompt', { word: confirmWord })}</span>
+                    <input
+                        dir="auto"
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && confirm()}
+                        placeholder={confirmWord}
+                        autoComplete="off"
+                        autoFocus
+                        className="mt-1 w-full rounded-lg border border-red-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500/40 focus:outline-none dark:border-red-900 dark:bg-neutral-950"
+                    />
+                </label>
+
+                <div className="flex justify-end gap-2 pt-1">
+                    <Button variant="secondary" onClick={onClose}>
+                        {t('admin.common.cancel')}
+                    </Button>
+                    <Button variant="danger" icon={Trash2} disabled={!ready || busy} onClick={confirm}>
+                        {t('admin.categories.deleteDialog.confirm')}
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
 export default function CategoriesIndex({ categories }: { categories: CategoryRow[] }) {
     const { t } = useAdminT();
     const can = useCan();
     const canManage = can('categories.manage');
     const canSeeProducts = can('products.view');
     const [dialog, setDialog] = useState<{ category: CategoryRow | null } | null>(null);
+    const [deleting, setDeleting] = useState<CategoryRow | null>(null);
 
     const tree = useMemo(() => toTree(categories), [categories]);
 
@@ -437,6 +535,13 @@ export default function CategoriesIndex({ categories }: { categories: CategoryRo
                                                         {t(row.is_active ? 'admin.categories.visible' : 'admin.categories.hidden')}
                                                     </StatusPill>
                                                 )}
+                                                {/* Switched on, but kept off the store until it holds a
+                                                    visible product. Said in words so it does not look broken. */}
+                                                {row.store_state === 'empty' && (
+                                                    <p className="mt-1 max-w-[12rem] text-xs text-amber-500/80">
+                                                        {t(isGroup ? 'admin.categories.notOnStoreGroup' : 'admin.categories.notOnStore')}
+                                                    </p>
+                                                )}
                                             </td>
                                             {canManage && (
                                                 <td className="px-4 py-3">
@@ -463,12 +568,9 @@ export default function CategoriesIndex({ categories }: { categories: CategoryRo
                                                                 </button>
                                                             </HintTooltip>
                                                         ) : (
-                                                            <ConfirmDeleteButton
-                                                                itemName={row.name_ar}
-                                                                onConfirm={() =>
-                                                                    router.delete(`/admin/categories/${row.id}`, { preserveScroll: true })
-                                                                }
-                                                            />
+                                                            <Button size="sm" variant="danger" icon={Trash2} onClick={() => setDeleting(row)}>
+                                                                {t('admin.common.delete')}
+                                                            </Button>
                                                         )}
                                                     </div>
                                                 </td>
@@ -494,6 +596,8 @@ export default function CategoriesIndex({ categories }: { categories: CategoryRo
                     )}
                 </div>
             )}
+
+            {deleting && <CategoryDeleteDialog key={deleting.id} category={deleting} rows={categories} onClose={() => setDeleting(null)} />}
 
             {dialog && (
                 <CategoryDialog key={dialog.category?.id ?? 'new'} category={dialog.category} rows={categories} onClose={() => setDialog(null)} />

@@ -20,6 +20,9 @@ use Illuminate\Support\Facades\Cache;
  * offers leaves only, so the rule is what keeps the navbar from growing a third
  * level it cannot render and a product from being filed under a dropdown heading.
  *
+ * A product may also have NO category (products.category_id is nullable and
+ * nulls on delete): deleting a category never deletes the products in it.
+ *
  * @mixin IdeHelperCategory
  */
 class Category extends Model
@@ -113,30 +116,21 @@ class Category extends Model
      * Why this category cannot be deleted, as a `messages.admin.*` key, or null
      * when it can.
      *
-     * 🔴 `products.category_id` is `cascadeOnDelete`, so deleting a category that
-     * still holds products would delete the PRODUCTS with it. The product count
-     * therefore includes soft-deleted ones: a trashed product is still restorable
-     * from the change log, and the cascade would hard-delete it out from under that.
+     * Products do NOT block a delete: the controller moves them to another
+     * category or leaves them without one. A group still does, because deleting
+     * it would silently promote its subcategories to the top of the menu.
      *
-     * Counts can be passed in from a list that already loaded them, so the index
+     * The count can be passed in from a list that already loaded it, so the index
      * page does not query per row.
      */
-    public function deletionBlocker(?int $allProducts = null, ?int $children = null): ?string
+    public function deletionBlocker(?int $children = null): ?string
     {
         if ($this->isOffersBucket()) {
             return 'category_protected';
         }
 
         $children ??= $this->children()->count();
-        if ($children > 0) {
-            return 'category_has_children';
-        }
 
-        $allProducts ??= Product::withTrashed()->where('category_id', $this->id)->count();
-        if ($allProducts > 0) {
-            return 'category_not_empty';
-        }
-
-        return null;
+        return $children > 0 ? 'category_has_children' : null;
     }
 }

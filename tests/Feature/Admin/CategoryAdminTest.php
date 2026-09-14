@@ -75,7 +75,8 @@ class CategoryAdminTest extends TestCase
 
         $rows = collect($response->viewData('page')['props']['categories'])->keyBy('slug');
         $this->assertSame('category_has_children', $rows['group']['delete_blocker']);
-        $this->assertSame('category_not_empty', $rows['leaf']['delete_blocker']);
+        // Products never block a delete any more; they are moved or left uncategorized.
+        $this->assertNull($rows['leaf']['delete_blocker']);
         $this->assertSame('category_protected', $rows[StoreEvent::OFFERS_CATEGORY_SLUG]['delete_blocker']);
         $this->assertNull($rows['empty']['delete_blocker']);
         $this->assertSame(1, $rows['leaf']['products_count']);
@@ -117,21 +118,65 @@ class CategoryAdminTest extends TestCase
     }
 
     /**
-     * 🔴 products.category_id cascades on delete, so deleting a category with
-     * products would delete the products. That includes a soft-deleted one,
-     * which is still restorable from the change log until the cascade hits it.
+     * 🔴 Deleting a category never deletes its products — trashed ones included,
+     * which are still restorable from the change log. They are left without a
+     * category, where they stay on sale.
      */
-    public function test_a_category_holding_even_a_trashed_product_cannot_be_deleted(): void
+    public function test_deleting_a_category_leaves_its_products_without_one(): void
+    {
+        $category = $this->category();
+        $kept = $this->product($category);
+        $trashed = $this->product($category);
+        $trashed->delete();
+
+        $this->actingAs($this->admin())->delete("/admin/categories/{$category->id}")
+            ->assertSessionHas('success', __('messages.admin.category_deleted_orphaned', ['count' => 1]));
+
+        $this->assertModelMissing($category);
+        $this->assertNull($kept->fresh()->category_id);
+        $this->assertNull(Product::withTrashed()->find($trashed->id)->category_id);
+    }
+
+    public function test_deleting_can_move_the_products_to_another_category(): void
+    {
+        $category = $this->category();
+        $target = $this->category(['name_ar' => 'البوكسات']);
+        $product = $this->product($category);
+
+        $this->actingAs($this->admin())->delete("/admin/categories/{$category->id}", ['move_to' => $target->id])
+            ->assertSessionHas('success', __('messages.admin.category_deleted_moved', ['count' => 1, 'name' => 'البوكسات']));
+
+        $this->assertSame($target->id, $product->fresh()->category_id);
+    }
+
+    /** A menu group holds subcategories, never products, so it cannot receive them. */
+    public function test_products_cannot_be_moved_into_a_group_on_delete(): void
+    {
+        $category = $this->category();
+        $group = $this->category();
+        $this->category(['parent_id' => $group->id]);
+        $product = $this->product($category);
+
+        $this->actingAs($this->admin())->delete("/admin/categories/{$category->id}", ['move_to' => $group->id])
+            ->assertSessionHas('error', __('messages.admin.category_move_target_invalid'));
+
+        $this->assertModelExists($category);
+        $this->assertSame($category->id, $product->fresh()->category_id);
+    }
+
+    /**
+     * The foreign key itself no longer cascades, so a delete from ANY path
+     * (tinker, a seeder) leaves the products standing.
+     */
+    public function test_the_foreign_key_nulls_instead_of_cascading(): void
     {
         $category = $this->category();
         $product = $this->product($category);
-        $product->delete();
 
-        $this->actingAs($this->admin())->delete("/admin/categories/{$category->id}")
-            ->assertSessionHas('error', __('messages.admin.category_not_empty'));
+        $category->delete();
 
-        $this->assertModelExists($category);
-        $this->assertNotNull(Product::withTrashed()->find($product->id));
+        $this->assertNotNull($product->fresh());
+        $this->assertNull($product->fresh()->category_id);
     }
 
     public function test_a_group_with_subcategories_and_the_offers_bucket_cannot_be_deleted(): void

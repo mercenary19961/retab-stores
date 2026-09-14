@@ -9,6 +9,7 @@ use App\Services\ChangeLog\ChangeLogService;
 use App\Support\ArabicSlug;
 use App\Support\Media;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -29,17 +30,18 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::withCount(['products', 'children'])
+        $categories = Category::withCount([
+            'products',
+            'children',
+            // What a shopper can actually reach, which is what decides whether the
+            // category appears in the menu and the filter chips at all.
+            'products as visible_products_count' => fn ($q) => $q->visibleOnStore(),
+        ])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
 
-        // Soft-deleted products still block a delete (see deletionBlocker), but
-        // withCount leaves them out, so they are counted once for the whole list.
-        $allProducts = Product::withTrashed()
-            ->selectRaw('category_id, count(*) as aggregate')
-            ->groupBy('category_id')
-            ->pluck('aggregate', 'category_id');
+        $byParent = $categories->groupBy('parent_id');
 
         return Inertia::render('admin/categories/index', [
             'categories' => $categories->map(fn (Category $c) => [
@@ -53,10 +55,37 @@ class CategoryController extends Controller
                 'image' => $c->imageUrl(),
                 'products_count' => $c->products_count,
                 'children_count' => $c->children_count,
+                'store_state' => $this->storeState($c, $byParent),
                 'is_offers_bucket' => $c->isOffersBucket(),
-                'delete_blocker' => $c->deletionBlocker((int) ($allProducts[$c->id] ?? 0), $c->children_count),
+                'delete_blocker' => $c->deletionBlocker($c->children_count),
             ])->values(),
         ]);
+    }
+
+    /**
+     * Whether shoppers see this category, and if not why.
+     *
+     * 🔑 A visible category with nothing in it is deliberately kept OFF the
+     * storefront (a menu item leading to "No products" is worse than none). That
+     * is correct but looks broken from here, so the page says it in words:
+     * `empty` means "switched on, but not on the store until it holds a visible
+     * product". A group counts as live when any of its subcategories is.
+     *
+     * @param  Collection<int|string, Collection<int, Category>>  $byParent
+     */
+    private function storeState(Category $category, Collection $byParent): string
+    {
+        if (! $category->is_active) {
+            return 'hidden';
+        }
+
+        if ($category->children_count > 0) {
+            return $byParent->get($category->id, collect())
+                ->contains(fn (Category $child) => $child->is_active && $child->visible_products_count > 0)
+                ? 'live' : 'empty';
+        }
+
+        return $category->visible_products_count > 0 ? 'live' : 'empty';
     }
 
     public function store(Request $request, ChangeLogService $changeLog)
@@ -143,13 +172,35 @@ class CategoryController extends Controller
         return back();
     }
 
-    public function destroy(Category $category, ChangeLogService $changeLog)
+    /**
+     * Delete a category. Its products are NEVER deleted with it: they move to the
+     * category the admin picked (`move_to`), or are left without a category, where
+     * they stay on sale and can be found by search and the "No category" filter.
+     */
+    public function destroy(Request $request, Category $category, ChangeLogService $changeLog)
     {
         if ($blocker = $category->deletionBlocker()) {
             return back()->with('error', __('messages.admin.'.$blocker));
         }
 
-        DB::transaction(function () use ($category, $changeLog) {
+        $request->validate(['move_to' => ['nullable', 'integer', Rule::exists('categories', 'id')]]);
+        $target = $request->filled('move_to') ? Category::find((int) $request->input('move_to')) : null;
+
+        // Products only ever live in a leaf: never a menu group, never the
+        // category that is about to disappear.
+        if ($target && ($target->id === $category->id || $target->children()->exists())) {
+            return back()->with('error', __('messages.admin.category_move_target_invalid'));
+        }
+
+        // Counted before the move, and without trashed products, so the number
+        // in the message is the one the admin saw on the page.
+        $count = $category->products()->count();
+
+        DB::transaction(function () use ($category, $target, $changeLog) {
+            // withTrashed: a soft-deleted product is still restorable from the
+            // change log, and should come back filed where its siblings went.
+            Product::withTrashed()->where('category_id', $category->id)->update(['category_id' => $target?->id]);
+
             $changeLog->logDeleted($category, $category->name_ar);
             $category->delete();
         });
@@ -161,7 +212,13 @@ class CategoryController extends Controller
             Media::delete($category->image);
         }
 
-        return back()->with('success', __('messages.admin.category_deleted'));
+        $message = match (true) {
+            $count === 0 => __('messages.admin.category_deleted'),
+            $target !== null => __('messages.admin.category_deleted_moved', ['count' => $count, 'name' => $target->name_ar]),
+            default => __('messages.admin.category_deleted_orphaned', ['count' => $count]),
+        };
+
+        return back()->with('success', $message);
     }
 
     /** @return array<string, mixed> */
@@ -246,8 +303,8 @@ class CategoryController extends Controller
             throw ValidationException::withMessages(['parent_id' => __('messages.admin.category_parent_depth')]);
         }
 
-        // withTrashed for the same reason as the delete guard: a trashed product
-        // restored later would land in a dropdown heading.
+        // withTrashed: a trashed product restored later would land in a
+        // dropdown heading.
         if (Product::withTrashed()->where('category_id', $parent->id)->exists()) {
             throw ValidationException::withMessages(['parent_id' => __('messages.admin.category_parent_has_products')]);
         }

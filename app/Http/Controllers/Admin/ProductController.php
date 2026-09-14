@@ -10,6 +10,7 @@ use App\Support\Media;
 use App\Support\ProductDescriptionWriter;
 use App\Support\ProductNameTranslator;
 use App\Support\TableExport;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -84,13 +85,16 @@ class ProductController extends Controller
             'products' => $products,
             'filters' => [
                 'search' => $request->query('search'),
-                'category' => $request->query('category') ? (int) $request->query('category') : null,
+                'category' => $this->categoryFilter($request),
                 'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon', 'incomplete', 'out_of_stock', 'low_stock'], true) ? $request->query('status') : null,
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
                 'per_page' => $perPage,
             ],
             'draftCount' => Product::where('is_active', false)->count(),
+            // Products left without a category (their category was deleted). Drives
+            // the "No category" filter, so they are one click from being filed again.
+            'uncategorizedCount' => Product::whereNull('category_id')->count(),
             'categories' => $this->categoryOptions(),
             'undoMeta' => session('undo:products'),
         ]);
@@ -103,7 +107,7 @@ class ProductController extends Controller
     private function filteredQuery(Request $request)
     {
         $search = $request->query('search');
-        $categoryId = $request->query('category');
+        $categoryId = $this->categoryFilter($request);
         $status = $request->query('status');
         $sort = in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null;
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
@@ -116,7 +120,8 @@ class ProductController extends Controller
                 ->orWhere('products.name_en', 'like', "%{$search}%")
                 ->orWhere('products.sku', 'like', "%{$search}%")
                 ->orWhere('products.smacc_sku', 'like', "%{$search}%")))
-            ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId))
+            ->when($categoryId === 'none', fn ($q) => $q->whereNull('products.category_id'))
+            ->when(is_int($categoryId), fn ($q) => $q->where('products.category_id', $categoryId))
             // Drafts = hidden products (the workspace to finish + optionally flag Coming Soon).
             ->when($status === 'active', fn ($q) => $q->where('products.is_active', true))
             ->when($status === 'draft', fn ($q) => $q->where('products.is_active', false))
@@ -374,6 +379,154 @@ class ProductController extends Controller
         return $this->listRedirect()->with('success', __('messages.admin.product_deleted'));
     }
 
+    /** The list's category filter: a category id, `'none'` for uncategorized, or null. */
+    private function categoryFilter(Request $request): int|string|null
+    {
+        $value = $request->query('category');
+
+        if ($value === 'none') {
+            return 'none';
+        }
+
+        return $value ? (int) $value : null;
+    }
+
+    /** Most products one bulk action may touch; each is saved and logged on its own. */
+    private const BULK_MAX = 200;
+
+    /**
+     * The selected products for a bulk action.
+     *
+     * Ids matching no row (deleted meanwhile) are simply absent, so the counts
+     * reported back are what actually changed.
+     *
+     * @return Collection<int, Product>
+     */
+    private function bulkSelection(Request $request)
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:'.self::BULK_MAX],
+            'ids.*' => ['integer'],
+        ])['ids'];
+
+        return Product::with('images')->whereIn('id', $ids)->get();
+    }
+
+    /**
+     * Every product in a bulk action is logged individually, so each stays
+     * revertable from the change log. The quick "undo last save" pointer would
+     * only undo the LAST of them, which reads as undoing the whole action, so it
+     * is cleared rather than left to mislead.
+     */
+    private function clearBulkUndo(ChangeLogService $changeLog): void
+    {
+        $changeLog->clearUndo('products');
+        session()->forget('undo');
+    }
+
+    /** Move the selected products to a category, or out of every category (`category_id` null). */
+    public function bulkCategory(Request $request, ChangeLogService $changeLog)
+    {
+        $request->validate(['category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')]]);
+        $target = $request->filled('category_id') ? Category::find((int) $request->input('category_id')) : null;
+
+        // A menu group holds subcategories, never products (see the Category model).
+        if ($target && $target->children()->exists()) {
+            return back()->with('error', __('messages.admin.category_move_target_invalid'));
+        }
+
+        $products = $this->bulkSelection($request);
+        $moved = 0;
+
+        DB::transaction(function () use ($products, $target, $changeLog, &$moved) {
+            foreach ($products as $product) {
+                if ($product->category_id === $target?->id) {
+                    continue;
+                }
+
+                $before = $product->attributesToArray();
+                $product->update(['category_id' => $target?->id]);
+                $changeLog->logUpdated($product, $before, $product->name_ar);
+                $moved++;
+            }
+        });
+
+        $this->clearBulkUndo($changeLog);
+
+        if ($moved === 0) {
+            return back()->with('success', __('messages.admin.bulk_nothing_changed'));
+        }
+
+        return back()->with('success', $target
+            ? __('messages.admin.bulk_moved', ['count' => $moved, 'name' => $target->name_ar])
+            : __('messages.admin.bulk_uncategorized', ['count' => $moved]));
+    }
+
+    /**
+     * Show or hide the selected products.
+     *
+     * 🔑 Showing goes through the same publish guard as the one-click toggle: a
+     * product missing its price or image is skipped, not forced live, and the
+     * message says how many stayed hidden so nothing fails silently.
+     */
+    public function bulkVisibility(Request $request, ChangeLogService $changeLog)
+    {
+        $visible = $request->validate(['visible' => ['required', 'boolean']])['visible'];
+        $visible = filter_var($visible, FILTER_VALIDATE_BOOLEAN);
+        $products = $this->bulkSelection($request);
+
+        $changed = 0;
+        $blocked = 0;
+
+        DB::transaction(function () use ($products, $visible, $changeLog, &$changed, &$blocked) {
+            foreach ($products as $product) {
+                if ($product->is_active === $visible) {
+                    continue;
+                }
+
+                if ($visible && ! $product->isPublishable()) {
+                    $blocked++;
+
+                    continue;
+                }
+
+                $before = $product->attributesToArray();
+                $product->update(['is_active' => $visible]);
+                $changeLog->logUpdated($product, $before, $product->name_ar);
+                $changed++;
+            }
+        });
+
+        $this->clearBulkUndo($changeLog);
+
+        $message = $changed === 0 && $blocked === 0
+            ? __('messages.admin.bulk_nothing_changed')
+            : __($visible ? 'messages.admin.bulk_shown' : 'messages.admin.bulk_hidden', ['count' => $changed]);
+
+        if ($blocked > 0) {
+            $message .= ' '.__('messages.admin.bulk_show_blocked', ['count' => $blocked]);
+        }
+
+        return back()->with($changed === 0 && $blocked > 0 ? 'error' : 'success', $message);
+    }
+
+    /** Soft-delete the selected products — each restorable from the change log. */
+    public function bulkDestroy(Request $request, ChangeLogService $changeLog)
+    {
+        $products = $this->bulkSelection($request);
+
+        DB::transaction(function () use ($products, $changeLog) {
+            foreach ($products as $product) {
+                $product->delete(); // soft delete — preserves order history references
+                $changeLog->logDeleted($product, $product->name_ar);
+            }
+        });
+
+        $this->clearBulkUndo($changeLog);
+
+        return back()->with('success', __('messages.admin.bulk_products_deleted', ['count' => $products->count()]));
+    }
+
     /**
      * Shared validation for create + update. On update, unique rules ignore the
      * current product. Slug auto-derives from name_en / sku when left blank.
@@ -444,7 +597,9 @@ class ProductController extends Controller
         $id = $product?->id;
 
         $data = $request->validate([
-            'category_id' => ['required', 'exists:categories,id'],
+            // Nullable: a product whose category was deleted has none, and it must
+            // stay editable (price, stock…) without being forced into one first.
+            'category_id' => ['nullable', 'exists:categories,id'],
             'name_ar' => ['required', 'string', 'max:255'],
             'name_en' => ['nullable', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:191', Rule::unique('products', 'slug')->ignore($id)],
