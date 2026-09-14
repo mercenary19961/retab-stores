@@ -67,10 +67,19 @@ class ShopController
                 ->get()
                 ->map(fn (Product $p) => $this->card($p))
                 ->all(),
+            // imageUrl(), not the raw column: an image uploaded from the admin is a
+            // media-disk key, not a web path (see Category::imageUrl).
             'featuredCategories' => Category::where('is_active', true)
                 ->whereNotNull('image')
                 ->orderBy('sort_order')
                 ->get(['id', 'name_ar', 'name_en', 'slug', 'image'])
+                ->map(fn (Category $c) => [
+                    'id' => $c->id,
+                    'name_ar' => $c->name_ar,
+                    'name_en' => $c->name_en,
+                    'slug' => $c->slug,
+                    'image' => $c->imageUrl(),
+                ])
                 ->all(),
             // Random handful of the active pool → rotates on each refresh.
             'reviews' => ClientReview::where('is_active', true)

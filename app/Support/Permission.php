@@ -17,6 +17,8 @@ class Permission
     public const SCHEMA = [
         'orders' => ['view', 'manage', 'export'],
         'products' => ['view', 'create', 'edit', 'delete'],
+        // The navbar groups and the categories products are filed under.
+        'categories' => ['view', 'manage'],
         'product_requests' => ['view', 'manage'],
         'inventory' => ['view', 'import'],
         'returns' => ['view', 'resolve'],
@@ -46,6 +48,10 @@ class Permission
     public const DEFAULTS = [
         'orders' => ['view' => true, 'manage' => true, 'export' => false],
         'products' => ['view' => true, 'create' => true, 'edit' => true, 'delete' => false],
+        // On by default: a rename or a new category is catalogue housekeeping, and
+        // the destructive case (deleting) refuses on its own while anything is filed
+        // under the category (Category::deletionBlocker).
+        'categories' => ['view' => true, 'manage' => true],
         'product_requests' => ['view' => true, 'manage' => true],
         'inventory' => ['view' => true, 'import' => true],
         'returns' => ['view' => true, 'resolve' => true],
@@ -87,11 +93,11 @@ class Permission
         // The daily fulfilment desk: take orders out of the door, handle returns.
         'operations' => ['orders', 'returns', 'shipping', 'product_requests', 'customers', 'inventory', 'contact_messages'],
         // Looks after what the store sells and how it reads.
-        'catalogue' => ['products', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages'],
+        'catalogue' => ['products', 'categories', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages'],
         // Everything except the settings that can reconfigure the business itself.
         'manager' => [
             'orders', 'returns', 'shipping', 'product_requests', 'customers', 'inventory', 'contact_messages',
-            'products', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages', 'marketing', 'change_log',
+            'products', 'categories', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages', 'marketing', 'change_log',
         ],
     ];
 

@@ -562,7 +562,12 @@ class ProductController extends Controller
         // (التمور / الهدايا) exist purely to drive the storefront navbar, so excluding
         // them also drops the duplicate "Dates" (parent group vs leaf) from the list.
         // name_en ships too so the EN-first admin can localize the labels.
-        return Category::whereNotNull('parent_id')
+        //
+        // A leaf is "has no subcategories", NOT "has a parent": a top-level category
+        // with no children is a leaf too. The old `parent_id IS NOT NULL` test left
+        // out العروض الخاصة (so its offers opened with an empty category select) and
+        // would have made any new top-level category impossible to file a product in.
+        return Category::whereDoesntHave('children')
             ->orderBy('sort_order')
             ->get(['id', 'name_ar', 'name_en'])
             ->map(fn (Category $c) => ['id' => $c->id, 'name_ar' => $c->name_ar, 'name_en' => $c->name_en])

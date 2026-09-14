@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChangeLogController;
 use App\Http\Controllers\Admin\ClientReviewController;
 use App\Http\Controllers\Admin\ContactMessageController;
@@ -82,6 +83,18 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::put('products/{product}', [ProductController::class, 'update'])->middleware('permission:products.edit')->name('products.update');
     Route::patch('products/{product}/toggle-active', [ProductController::class, 'toggleActive'])->middleware('permission:products.edit')->name('products.toggle-active');
     Route::delete('products/{product}', [ProductController::class, 'destroy'])->middleware('permission:products.delete')->name('products.destroy');
+
+    // Categories — the navbar groups and the categories products are filed under.
+    Route::get('categories', [CategoryController::class, 'index'])->middleware('permission:categories.view')->name('categories.index');
+    Route::middleware('permission:categories.manage')->group(function () {
+        Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
+        // The dialog submits multipart (an image can come with it), so it POSTs with
+        // `_method=PUT`: PHP does not parse the body of a real PUT request.
+        Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+        Route::patch('categories/{category}/toggle', [CategoryController::class, 'toggle'])->name('categories.toggle');
+        Route::patch('categories/{category}/move', [CategoryController::class, 'move'])->name('categories.move');
+        Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    });
 
     // "I want this" demand signals for Coming-Soon products.
     Route::get('product-requests', [ProductRequestController::class, 'index'])->middleware('permission:product_requests.view')->name('product-requests.index');

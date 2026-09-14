@@ -14,6 +14,7 @@ import {
     Boxes,
     CalendarHeart,
     FileText,
+    FolderTree,
     History,
     Info,
     KeyRound,
@@ -73,6 +74,7 @@ const NAV_GROUPS: { key: string; items: NavItem[] }[] = [
         key: 'catalog',
         items: [
             { key: 'products', href: '/admin/products', icon: Package, perm: 'products' },
+            { key: 'categories', href: '/admin/categories', icon: FolderTree, perm: 'categories' },
             { key: 'productRequests', href: '/admin/product-requests', icon: Sparkles, perm: 'product_requests' },
             { key: 'productReviews', href: '/admin/product-reviews', icon: MessageSquareQuote, perm: 'product_reviews' },
             { key: 'inventory', href: '/admin/stock-import', icon: Boxes, perm: 'inventory' },
