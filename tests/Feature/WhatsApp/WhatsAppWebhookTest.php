@@ -51,4 +51,34 @@ class WhatsAppWebhookTest extends TestCase
 
         $this->assertSame('read', $message->fresh()->status);
     }
+
+    /**
+     * 🔴 A missing app secret must not mean "accept everything" in production:
+     * anyone who found the URL could rewrite the message ledger with fake receipts.
+     */
+    public function test_production_refuses_receipts_when_no_app_secret_is_configured(): void
+    {
+        $this->app['env'] = 'production';
+        config()->set('services.whatsapp.app_secret', '');
+        $message = WhatsappMessage::create(['recipient' => '966500000000', 'template' => 'order_confirmed', 'status' => 'sent', 'wam_id' => 'wamid.P']);
+
+        $this->postJson('/webhooks/whatsapp', ['entry' => [['changes' => [['value' => ['statuses' => [['id' => 'wamid.P', 'status' => 'read']]]]]]]])
+            ->assertUnauthorized();
+
+        $this->assertSame('sent', $message->fresh()->status);
+    }
+
+    public function test_a_correctly_signed_receipt_is_accepted(): void
+    {
+        config()->set('services.whatsapp.app_secret', 'app-secret');
+        $message = WhatsappMessage::create(['recipient' => '966500000000', 'template' => 'order_confirmed', 'status' => 'sent', 'wam_id' => 'wamid.S']);
+        $body = json_encode(['entry' => [['changes' => [['value' => ['statuses' => [['id' => 'wamid.S', 'status' => 'delivered']]]]]]]]);
+
+        $this->call('POST', '/webhooks/whatsapp', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.hash_hmac('sha256', $body, 'app-secret'),
+        ], $body)->assertOk();
+
+        $this->assertSame('delivered', $message->fresh()->status);
+    }
 }

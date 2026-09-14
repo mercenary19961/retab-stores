@@ -174,6 +174,11 @@ class AdminAlertChannelsTest extends TestCase
                 throw new \RuntimeException('network down');
             }
 
+            public function sendAuthenticationCode(string $to, string $template, string $language, string $code): string
+            {
+                throw new \RuntimeException('network down');
+            }
+
             public function sendText(string $to, string $body): string
             {
                 throw new \RuntimeException('network down');

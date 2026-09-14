@@ -28,6 +28,19 @@ interface WhatsAppGateway
     public function sendTemplate(string $to, string $template, string $language, array $params = []): string;
 
     /**
+     * Send a one-time login code through an approved AUTHENTICATION template.
+     *
+     * A separate call because Meta requires the code twice for this category —
+     * in the body and as the copy-code button's parameter — and rejects the
+     * body-only shape `sendTemplate` produces.
+     *
+     * @return string the provider message id (wam_id)
+     *
+     * @throws \Throwable on transport failure
+     */
+    public function sendAuthenticationCode(string $to, string $template, string $language, string $code): string;
+
+    /**
      * Send a free-form text message. Only valid INSIDE the 24h customer window;
      * used for replies / OTP, not business-initiated marketing.
      *

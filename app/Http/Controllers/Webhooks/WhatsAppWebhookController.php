@@ -64,14 +64,19 @@ class WhatsAppWebhookController
     }
 
     /**
-     * Verify X-Hub-Signature-256 against the raw request body. When no app secret
-     * is configured (dev), accept — there's nothing to verify against.
+     * Verify X-Hub-Signature-256 against the raw request body.
+     *
+     * With no app secret configured there is nothing to verify against: that is
+     * accepted in dev and tests, but 🔴 REFUSED in production. Otherwise a
+     * forgotten WHATSAPP_APP_SECRET would let anyone who finds the URL post fake
+     * delivery receipts and rewrite the message ledger, with nothing failing to
+     * say so.
      */
     private function signatureValid(Request $request): bool
     {
         $secret = (string) config('services.whatsapp.app_secret');
         if ($secret === '') {
-            return true;
+            return ! app()->environment('production');
         }
 
         $signature = (string) $request->header('X-Hub-Signature-256');

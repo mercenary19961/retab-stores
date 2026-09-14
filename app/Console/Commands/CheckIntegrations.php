@@ -6,6 +6,8 @@ use App\Services\Payments\MoyasarGateway;
 use App\Services\Payments\PaymentGateway;
 use App\Services\Payments\Tamara\TamaraClient;
 use App\Services\Shipping\Oto\OtoClient;
+use App\Services\WhatsApp\CloudApiGateway;
+use App\Services\WhatsApp\WhatsAppGateway;
 use App\Support\ResendProbe;
 use Illuminate\Console\Command;
 
@@ -97,6 +99,39 @@ class CheckIntegrations extends Command
                 ],
                 'webhook' => 'webhooks.oto',
                 'probe' => fn (): array => app(OtoClient::class)->ping(),
+            ],
+            [
+                'label' => 'WhatsApp — Meta Cloud API (order messages, login codes, staff alerts)',
+                'env' => [
+                    'WHATSAPP_TOKEN' => 'services.whatsapp.token',
+                    'WHATSAPP_PHONE_NUMBER_ID' => 'services.whatsapp.phone_number_id',
+                    'WHATSAPP_APP_SECRET' => 'services.whatsapp.app_secret',
+                    'WHATSAPP_VERIFY_TOKEN' => 'services.whatsapp.verify_token',
+                ],
+                'webhook' => 'webhooks.whatsapp',
+                'probe' => function (): array {
+                    $gateway = app(WhatsAppGateway::class);
+
+                    return $gateway instanceof CloudApiGateway
+                        ? $gateway->ping()
+                        : ['configured' => false, 'ok' => false, 'status' => null, 'message' => 'WHATSAPP_DRIVER is not cloud'];
+                },
+                // Two failure modes the env list alone cannot show: a complete set
+                // of keys that nothing routes through (driver still `log`, so every
+                // message goes to a log file), and no staff phones to alert.
+                'notes' => function (): array {
+                    $driver = (string) config('services.whatsapp.driver');
+                    $recipients = array_filter(array_map('trim', explode(',', (string) config('services.whatsapp.admin_recipients'))));
+
+                    return [
+                        ['WHATSAPP_DRIVER', $driver === 'cloud'
+                            ? "<info>{$driver}</info>"
+                            : "<comment>{$driver}</comment> — messages are only LOGGED until this is 'cloud' (expected in local dev)"],
+                        ['staff alert phones', $recipients === []
+                            ? '<comment>none — set WHATSAPP_ADMIN_RECIPIENTS to alert staff on new orders</comment>'
+                            : '<info>'.count($recipients).' configured</info>'],
+                    ];
+                },
             ],
             [
                 'label' => 'Resend — transactional email (staff alerts, customer mail)',

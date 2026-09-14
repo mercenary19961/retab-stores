@@ -67,6 +67,11 @@ class WhatsAppServiceTest extends TestCase
                 throw new \RuntimeException('network down');
             }
 
+            public function sendAuthenticationCode(string $to, string $template, string $language, string $code): string
+            {
+                throw new \RuntimeException('network down');
+            }
+
             public function sendText(string $to, string $body): string
             {
                 throw new \RuntimeException('network down');
@@ -89,6 +94,51 @@ class WhatsAppServiceTest extends TestCase
         $message->refresh();
         $this->assertSame('failed', $message->status);
         $this->assertStringContainsString('network down', (string) $message->error);
+    }
+
+    /**
+     * 🔴 A login code must go through the AUTHENTICATION call: Meta rejects an
+     * authentication template sent body-only, which is what sendTemplate does.
+     */
+    public function test_a_login_code_uses_the_authentication_call_and_is_not_stored(): void
+    {
+        $fake = new class implements WhatsAppGateway
+        {
+            /** @var list<array{string, string}> */
+            public array $calls = [];
+
+            public function sendTemplate(string $to, string $template, string $language, array $params = []): string
+            {
+                $this->calls[] = ['template', $template];
+
+                return 'wamid.T';
+            }
+
+            public function sendAuthenticationCode(string $to, string $template, string $language, string $code): string
+            {
+                $this->calls[] = ['authentication', $code];
+
+                return 'wamid.A';
+            }
+
+            public function sendText(string $to, string $body): string
+            {
+                return 'wamid.X';
+            }
+
+            public function isLive(): bool
+            {
+                return true;
+            }
+        };
+        $this->app->instance(WhatsAppGateway::class, $fake);
+
+        $message = app(WhatsAppService::class)->sendOtp('+966 50 000 0000', '482913');
+
+        $this->assertSame([['authentication', '482913']], $fake->calls);
+        $this->assertSame('sent', $message->fresh()->status);
+        // The plaintext code never reaches the ledger.
+        $this->assertSame(['***'], $message->fresh()->payload['params']);
     }
 
     public function test_admin_new_order_fans_out_to_configured_recipients(): void

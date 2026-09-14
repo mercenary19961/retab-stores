@@ -20,6 +20,14 @@ class LogGateway implements WhatsAppGateway
         return 'log-'.Str::uuid();
     }
 
+    /** The code itself is never written to the log, same as the ledger redaction. */
+    public function sendAuthenticationCode(string $to, string $template, string $language, string $code): string
+    {
+        Log::info('WhatsApp (log driver) authentication code', ['to' => $to, 'template' => $template, 'language' => $language, 'code' => '***']);
+
+        return 'log-'.Str::uuid();
+    }
+
     public function sendText(string $to, string $body): string
     {
         Log::info('WhatsApp (log driver) text', compact('to', 'body'));

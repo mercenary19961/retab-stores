@@ -340,7 +340,11 @@ class WhatsAppService
 
         // Inline path — only for sends the user is actively waiting on (OTP).
         try {
-            $wamId = $this->gateway->sendTemplate($to, $template, $language, $params);
+            // An authentication template carries its code twice (body + copy-code
+            // button), so it has its own gateway call. See CloudApiGateway.
+            $wamId = $category === 'authentication'
+                ? $this->gateway->sendAuthenticationCode($to, $template, $language, (string) ($params[0] ?? ''))
+                : $this->gateway->sendTemplate($to, $template, $language, $params);
             $message->update(['status' => 'sent', 'wam_id' => $wamId, 'sent_at' => now()]);
         } catch (\Throwable $e) {
             $message->update(['status' => 'failed', 'error' => Str::limit($e->getMessage(), 1000)]);
