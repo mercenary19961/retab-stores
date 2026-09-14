@@ -189,8 +189,7 @@ class DashboardController extends Controller
      */
     private function inventory(): array
     {
-        $lowStockList = Product::where('is_active', true)
-            ->whereRaw('stock <= COALESCE(low_stock_threshold, ?)', [5])
+        $lowStockList = Product::lowStock()
             ->orderBy('stock')
             ->limit(8)
             ->get(['id', 'name_ar', 'name_en', 'sku', 'stock'])
@@ -204,9 +203,10 @@ class DashboardController extends Controller
 
         return [
             'lastSynced' => $this->lastSynced(),
-            'outOfStock' => Product::where('is_active', true)->where('stock', '<=', 0)->count(),
-            'lowStock' => Product::where('is_active', true)
-                ->whereRaw('stock <= COALESCE(low_stock_threshold, ?)', [5])->count(),
+            // The same scopes the products list filters on, because each of these
+            // figures links there (`?status=out_of_stock` / `low_stock`).
+            'outOfStock' => Product::outOfStock()->count(),
+            'lowStock' => Product::lowStock()->count(),
             'activeProducts' => Product::where('is_active', true)->count(),
             // Moved out of the action queue: a backlog figure that never reaches
             // zero belongs with the other stock metrics, not beside decisions that

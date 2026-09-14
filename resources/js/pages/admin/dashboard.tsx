@@ -334,22 +334,34 @@ export default function AdminDashboard({
                         without the number having to shout. `border-s` not `border-l`,
                         so it flips with the reading direction. */}
                     <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-                        <div className="flex flex-col gap-0.5 border-s-2 border-red-400/70 ps-3">
-                            <span className={`text-xl font-bold ${inventory.outOfStock ? 'text-red-400' : 'text-neutral-100'}`}>
+                        {/* Every figure opens the products list filtered to exactly what it
+                            counts — the controller uses the same scopes for both. */}
+                        <Link href="/admin/products?status=out_of_stock" className="group flex flex-col gap-0.5 border-s-2 border-red-400/70 ps-3">
+                            <span
+                                className={`group-hover:text-brand-gold text-xl font-bold transition-colors ${inventory.outOfStock ? 'text-red-400' : 'text-neutral-100'}`}
+                            >
                                 {inventory.outOfStock}
                             </span>
-                            <span className="text-[11px] text-neutral-500">{t('admin.dashboard.inventory.outOfStock')}</span>
-                        </div>
-                        <div className="flex flex-col gap-0.5 border-s-2 border-amber-400/70 ps-3">
-                            <span className={`text-xl font-bold ${inventory.lowStock ? 'text-amber-400' : 'text-neutral-100'}`}>
+                            <span className="text-[11px] text-neutral-500 group-hover:text-neutral-300">
+                                {t('admin.dashboard.inventory.outOfStock')}
+                            </span>
+                        </Link>
+                        <Link href="/admin/products?status=low_stock" className="group flex flex-col gap-0.5 border-s-2 border-amber-400/70 ps-3">
+                            <span
+                                className={`group-hover:text-brand-gold text-xl font-bold transition-colors ${inventory.lowStock ? 'text-amber-400' : 'text-neutral-100'}`}
+                            >
                                 {inventory.lowStock}
                             </span>
-                            <span className="text-[11px] text-neutral-500">{t('admin.dashboard.inventory.lowStock')}</span>
-                        </div>
-                        <div className="flex flex-col gap-0.5 border-s-2 border-neutral-700 ps-3">
-                            <span className="text-xl font-bold text-neutral-100">{inventory.activeProducts}</span>
-                            <span className="text-[11px] text-neutral-500">{t('admin.dashboard.inventory.active')}</span>
-                        </div>
+                            <span className="text-[11px] text-neutral-500 group-hover:text-neutral-300">
+                                {t('admin.dashboard.inventory.lowStock')}
+                            </span>
+                        </Link>
+                        <Link href="/admin/products?status=active" className="group flex flex-col gap-0.5 border-s-2 border-neutral-700 ps-3">
+                            <span className="group-hover:text-brand-gold text-xl font-bold text-neutral-100 transition-colors">
+                                {inventory.activeProducts}
+                            </span>
+                            <span className="text-[11px] text-neutral-500 group-hover:text-neutral-300">{t('admin.dashboard.inventory.active')}</span>
+                        </Link>
                         {/* Moved here from the action queue: a backlog that never
                             reaches zero belongs with the stock metrics, not beside
                             decisions due today. Still one click from the drafts list. */}

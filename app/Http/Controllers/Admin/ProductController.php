@@ -85,7 +85,7 @@ class ProductController extends Controller
             'filters' => [
                 'search' => $request->query('search'),
                 'category' => $request->query('category') ? (int) $request->query('category') : null,
-                'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon', 'incomplete'], true) ? $request->query('status') : null,
+                'status' => in_array($request->query('status'), ['active', 'draft', 'coming_soon', 'incomplete', 'out_of_stock', 'low_stock'], true) ? $request->query('status') : null,
                 'sort' => in_array($request->query('sort'), self::SORTABLE, true) ? $request->query('sort') : null,
                 'direction' => $request->query('direction') === 'asc' ? 'asc' : 'desc',
                 'per_page' => $perPage,
@@ -123,7 +123,11 @@ class ProductController extends Controller
             ->when($status === 'coming_soon', fn ($q) => $q->where('products.is_coming_soon', true))
             // Blocked by the publish guard — same definition the dashboard tile
             // counts, so the number there and this list can never disagree.
-            ->when($status === 'incomplete', fn ($q) => $q->incompleteForPublish());
+            ->when($status === 'incomplete', fn ($q) => $q->incompleteForPublish())
+            // Where the dashboard's Inventory health figures link — the same scopes
+            // count them there, so the number and the list always match.
+            ->when($status === 'out_of_stock', fn ($q) => $q->outOfStock())
+            ->when($status === 'low_stock', fn ($q) => $q->lowStock());
 
         if ($sort === 'category') {
             $query->leftJoin('categories', 'categories.id', '=', 'products.category_id')

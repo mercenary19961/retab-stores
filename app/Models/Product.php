@@ -161,6 +161,32 @@ class Product extends Model
         });
     }
 
+    /** Low-stock line for a product with no `low_stock_threshold` of its own. */
+    public const DEFAULT_LOW_STOCK_THRESHOLD = 5;
+
+    /**
+     * Live products with nothing left to sell.
+     *
+     * 🔑 One definition for the dashboard's "Out of stock" figure AND the products
+     * list's `?status=out_of_stock` filter it links to, so the number clicked and
+     * the rows that open can never disagree.
+     */
+    public function scopeOutOfStock(Builder $query): Builder
+    {
+        return $query->where('products.is_active', true)->where('products.stock', '<=', 0);
+    }
+
+    /**
+     * Live products at or under their low-stock line (their own threshold, else the
+     * default). Includes the out-of-stock ones, as the dashboard always has: zero is
+     * the lowest stock there is. Same one-definition rule as scopeOutOfStock().
+     */
+    public function scopeLowStock(Builder $query): Builder
+    {
+        return $query->where('products.is_active', true)
+            ->whereRaw('products.stock <= COALESCE(products.low_stock_threshold, ?)', [self::DEFAULT_LOW_STOCK_THRESHOLD]);
+    }
+
     /**
      * Re-check a saved product and hide it if it is no longer publishable.
      *

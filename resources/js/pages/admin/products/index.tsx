@@ -412,6 +412,9 @@ export default function ProductsIndex({
                         },
                         { value: 'coming_soon', label: t('admin.products.comingSoon') },
                         { value: 'incomplete', label: t('admin.products.statusIncomplete') },
+                        // Where the dashboard's Inventory health figures link.
+                        { value: 'out_of_stock', label: t('admin.products.statusOutOfStock') },
+                        { value: 'low_stock', label: t('admin.products.statusLowStock') },
                     ]}
                     className="w-full sm:w-auto"
                 />

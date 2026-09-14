@@ -1264,6 +1264,8 @@ const ar = {
             activateBlockedNoImage: 'أضف صورة أولاً',
             activateBlocked: 'أكمل بياناته أولاً حتى يظهر في المتجر',
             statusIncomplete: 'يحتاج إكمالاً',
+            statusOutOfStock: 'نفد المخزون',
+            statusLowStock: 'مخزون منخفض',
             viewImages: 'عرض الصور',
             viewTable: 'عرض جدول',
             viewCards: 'عرض بطاقات',

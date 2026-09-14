@@ -1268,6 +1268,8 @@ const en = {
             activateBlockedNoImage: 'Add an image first',
             activateBlocked: 'Complete it first to show it on the store',
             statusIncomplete: 'Needs completing',
+            statusOutOfStock: 'Out of stock',
+            statusLowStock: 'Low stock',
             viewImages: 'View images',
             viewTable: 'Table view',
             viewCards: 'Card view',
