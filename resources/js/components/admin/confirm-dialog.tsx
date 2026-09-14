@@ -47,9 +47,9 @@ export default function ConfirmDialog({
     return (
         <Modal open={open} onClose={onClose} size="sm" title={title}>
             <div className="space-y-4">
-                <p className="text-sm text-neutral-700 dark:text-neutral-200" dir="auto">
-                    {message}
-                </p>
+                {/* No dir="auto": the message is UI copy, so it follows the panel's
+                    language. Callers wrap any interpolated name in isolate() (lib/bidi). */}
+                <p className="text-sm text-neutral-700 dark:text-neutral-200">{message}</p>
                 {/* A sibling block, not inside the <p> above: callers pass lists,
                     and a <ul> nested in a <p> is invalid markup. */}
                 {details}

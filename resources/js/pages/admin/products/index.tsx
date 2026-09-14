@@ -18,6 +18,7 @@ import { useResizableColumns, type ColumnDef } from '@/hooks/use-resizable-colum
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { THEAD } from '@/lib/admin-ui';
+import { isolate } from '@/lib/bidi';
 import { Head, router } from '@inertiajs/react';
 import {
     AlignLeft,
@@ -875,7 +876,7 @@ export default function ProductsIndex({
                         ? t('admin.products.bulk.moveConfirmNone', { n: selected.size })
                         : t('admin.products.bulk.moveConfirm', {
                               n: selected.size,
-                              name: moveTargetCategory ? loc(moveTargetCategory.name_ar, moveTargetCategory.name_en) : '',
+                              name: moveTargetCategory ? isolate(loc(moveTargetCategory.name_ar, moveTargetCategory.name_en)) : '',
                           })
                 }
                 confirmLabel={t('admin.products.bulk.move')}

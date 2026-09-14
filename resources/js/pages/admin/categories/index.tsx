@@ -12,6 +12,7 @@ import { useCan } from '@/hooks/use-can';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { CARD, THEAD } from '@/lib/admin-ui';
+import { isolate } from '@/lib/bidi';
 
 /**
  * Categories: the storefront's top-menu groups and the categories products are
@@ -325,13 +326,13 @@ function CategoryDeleteDialog({ category, rows, onClose }: { category: CategoryR
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-600 dark:text-red-400">
                         <AlertTriangle className="h-5 w-5" />
                     </div>
-                    {/* No dir="auto": the sentence follows the panel's language. With
-                        auto, an Arabic category name at the start flipped the whole
-                        English sentence right-to-left and scrambled it. */}
+                    {/* No dir="auto": the sentence follows the panel's language, and the
+                        name is isolated inside it (lib/bidi). With auto, an Arabic name
+                        at the start flipped the whole English sentence right-to-left. */}
                     <p className="text-sm text-neutral-700 dark:text-neutral-200">
                         {hasProducts
-                            ? t('admin.categories.deleteDialog.lead', { name: category.name_ar, n: category.products_count })
-                            : t('admin.categories.deleteDialog.leadEmpty', { name: category.name_ar })}
+                            ? t('admin.categories.deleteDialog.lead', { name: isolate(category.name_ar), n: category.products_count })
+                            : t('admin.categories.deleteDialog.leadEmpty', { name: isolate(category.name_ar) })}
                     </p>
                 </div>
 

@@ -1,6 +1,7 @@
 import Button from '@/components/admin/button';
 import Modal from '@/components/admin/modal';
 import { useAdminT } from '@/i18n/use-admin-t';
+import { isolate } from '@/lib/bidi';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -57,8 +58,11 @@ export default function ConfirmDeleteButton({
                             <AlertTriangle className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                            <p className="text-sm text-neutral-700 dark:text-neutral-200" dir="auto">
-                                {t('admin.deleteModal.lead', { name: itemName ?? '' })}
+                            {/* Direction from the panel's language, the name isolated inside
+                                it (see lib/bidi). `dir="auto"` here would let an Arabic name
+                                decide the direction of an English sentence. */}
+                            <p className="text-sm text-neutral-700 dark:text-neutral-200">
+                                {t('admin.deleteModal.lead', { name: isolate(itemName ?? '') })}
                             </p>
                             <p
                                 className={`mt-1 text-xs ${reversible ? 'text-neutral-500 dark:text-neutral-400' : 'font-medium text-red-600 dark:text-red-400'}`}
