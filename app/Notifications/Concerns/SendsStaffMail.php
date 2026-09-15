@@ -3,6 +3,7 @@
 namespace App\Notifications\Concerns;
 
 use App\Models\Setting;
+use App\Support\MailAddress;
 use Illuminate\Notifications\Messages\MailMessage;
 
 /**
@@ -53,6 +54,30 @@ trait SendsStaffMail
                 'actionLabel' => $actionLabel,
                 'note' => $note,
             ]);
+    }
+
+    /**
+     * The bell always; the email only when the account has an address AND has
+     * not been switched off on the Staff page (`users.staff_email_alerts`).
+     *
+     * `users.email` is nullable (a staff account can be phone-only under the OTP
+     * identity model) and the mail transport throws on an empty address, so the
+     * address check is not optional. `?? true` covers a freshly created model
+     * whose DB default has not been read back yet.
+     *
+     * @return array<int, string>
+     */
+    protected function staffChannels(object $notifiable): array
+    {
+        $email = $notifiable->email ?? null;
+
+        // Deliverable too: a staff login on a non-routable address (`…@retab.local`)
+        // would only bounce, and bounces damage the sending domain's reputation.
+        $wantsMail = filled($email)
+            && MailAddress::isDeliverable($email)
+            && ($notifiable->staff_email_alerts ?? true);
+
+        return $wantsMail ? ['database', 'mail'] : ['database'];
     }
 
     /** "175.50 ريال" in the pinned staff language. */

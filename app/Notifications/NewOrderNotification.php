@@ -41,7 +41,7 @@ class NewOrderNotification extends Notification implements ShouldQueue
         // `users.email` is NULLABLE here (a staff account can be phone-only under
         // the OTP identity model) and the mail transport throws on an empty
         // address — so email is opt-in per recipient, not assumed.
-        return $notifiable->email ? ['database', 'mail'] : ['database'];
+        return $this->staffChannels($notifiable);
     }
 
     /**

@@ -2062,6 +2062,9 @@ const en = {
                 makeEditor: 'Make editor',
                 selfBlocked: 'You cannot change your own role.',
                 lastAdminBlocked: 'This is the only admin account. Promote someone else first.',
+                owner: 'Store owner',
+                ownerOnly: 'Only the store owner account can change who is an admin.',
+                ownerCreatesAdmins: 'Only the store owner account can create admins.',
                 confirmPromoteTitle: 'Grant full access?',
                 confirmPromoteBody:
                     '{{name}} will get full access to every section, including staff, settings and change log, and will be able to add or remove other staff. You can change this back later.',
@@ -2096,6 +2099,9 @@ const en = {
                 product_requests: 'Product requests',
                 contact_messages: 'Contact messages',
                 staff: 'Staff & access',
+                // Added to the permission schema without labels, so the grid showed raw keys.
+                shipping: 'Shipping',
+                store_events: 'Store events',
             },
             actions: {
                 view: 'View',
@@ -2117,10 +2123,17 @@ const en = {
                 canSelfRecover: 'They can reset this themselves by email. Only do this if they have asked you to.',
                 noSelfRecovery: 'This account has no email it can be reached at, so a reset here is the only way back in.',
                 adminBlocked: 'Only an admin can reset another admin’s password.',
+                ownerBlocked: 'The store owner changes their own password, from the key icon in the top bar.',
                 confirmTitle: 'Set a new password?',
                 confirmBody:
                     '{{name}} will be signed out everywhere and will need this password to get back in. Copy it before you confirm — it is not shown again.',
                 signsOutHint: 'Send it over WhatsApp or read it out, then ask them to change it once they are back in.',
+            },
+            emailAlerts: {
+                label: 'Alert emails',
+                onHint: 'Gets an email for new orders, cancellations, returns, product requests and contact messages. The bell always shows them.',
+                offHint: 'Gets no alert emails. New orders and the rest still appear in the bell.',
+                unreachable: 'This address cannot receive email, so it is never sent alert emails. The bell still shows them.',
             },
         },
         changeLog: {

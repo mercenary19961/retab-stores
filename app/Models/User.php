@@ -72,6 +72,7 @@ class User extends Authenticatable
             'confirmed_purchases_count' => 'integer',
             'ui_preferences' => 'array',
             'permissions' => 'array',
+            'staff_email_alerts' => 'boolean',
         ];
     }
 
@@ -103,6 +104,20 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * The store owner: the one admin who may change who is an admin, and whose
+     * password no other admin can reset (config `retab.owner_email`).
+     *
+     * It must be an ADMIN as well as the right address, so the check can never
+     * be satisfied by a customer or editor account that somehow holds the email.
+     */
+    public function isOwner(): bool
+    {
+        return $this->isAdmin()
+            && $this->email !== null
+            && strcasecmp($this->email, (string) config('retab.owner_email')) === 0;
     }
 
     public function isEditor(): bool

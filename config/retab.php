@@ -22,6 +22,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Store owner
+    |--------------------------------------------------------------------------
+    |
+    | The ONE account allowed to change who is an admin (promote, demote, create
+    | an admin), and whose password no other admin can reset. Everyone else with
+    | the admin role still runs the store, but cannot hand out or take away admin
+    | access. See User::isOwner() and Admin\UserController.
+    |
+    | Defaults to the initial admin above, so a fresh install needs nothing set.
+    |
+    */
+    'owner_email' => env('OWNER_EMAIL') ?: (env('ADMIN_EMAIL') ?: 'admin@retab.com.sa'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Search-engine indexing
     |--------------------------------------------------------------------------
     |

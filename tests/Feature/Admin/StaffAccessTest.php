@@ -12,6 +12,12 @@ class StaffAccessTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** The store owner: the only admin allowed to change who is an admin. */
+    private function owner(): User
+    {
+        return User::factory()->create(['role' => 'admin', 'email' => config('retab.owner_email')]);
+    }
+
     public function test_editor_default_permissions_gate_sections(): void
     {
         $editor = User::factory()->create(['role' => 'editor']); // null → Permission::DEFAULTS
@@ -60,7 +66,7 @@ class StaffAccessTest extends TestCase
      */
     public function test_admin_creates_another_admin(): void
     {
-        $this->actingAs(User::factory()->create(['role' => 'admin']))
+        $this->actingAs($this->owner())
             ->post('/admin/users', ['name' => 'Second Admin', 'email' => 'admin2@retab.test', 'password' => 'password123', 'role' => 'admin'])
             ->assertSessionHas('success');
 
@@ -84,7 +90,7 @@ class StaffAccessTest extends TestCase
 
     public function test_an_editor_can_be_promoted_to_admin(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->owner();
         $editor = User::factory()->create(['role' => 'editor']);
 
         $this->actingAs($admin)->put("/admin/users/{$editor->id}/role", ['role' => 'admin'])->assertSessionHas('success');
@@ -98,7 +104,7 @@ class StaffAccessTest extends TestCase
 
     public function test_an_admin_can_be_demoted_while_another_admin_remains(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->owner();
         $other = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->put("/admin/users/{$other->id}/role", ['role' => 'editor'])->assertSessionHas('success');
@@ -114,7 +120,7 @@ class StaffAccessTest extends TestCase
      */
     public function test_the_last_admin_cannot_be_demoted(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->owner();
 
         // The MESSAGE is asserted, not merely that it failed: with the guards in
         // the other order this refusal reads "not your own role", which does not
@@ -131,7 +137,7 @@ class StaffAccessTest extends TestCase
      */
     public function test_you_cannot_change_your_own_role(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->owner();
         User::factory()->create(['role' => 'admin']); // count guard satisfied
 
         $this->actingAs($admin)->put("/admin/users/{$admin->id}/role", ['role' => 'editor'])
@@ -147,7 +153,7 @@ class StaffAccessTest extends TestCase
      */
     public function test_a_promotion_preserves_the_permissions_a_later_demotion_restores(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->owner();
 
         $tuned = Permission::DEFAULTS;
         $tuned['settings']['view'] = true;
@@ -180,7 +186,7 @@ class StaffAccessTest extends TestCase
      */
     public function test_a_departed_admin_can_be_demoted_then_removed(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->owner();
         $leaver = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->delete("/admin/users/{$leaver->id}")->assertForbidden();
@@ -193,7 +199,7 @@ class StaffAccessTest extends TestCase
 
     public function test_admin_grants_and_revokes_editor_permissions(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->owner();
         $editor = User::factory()->create(['role' => 'editor']);
 
         $perms = Permission::DEFAULTS;
@@ -218,7 +224,7 @@ class StaffAccessTest extends TestCase
 
     public function test_admin_permissions_are_not_editable(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = $this->owner();
         $otherAdmin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)->put("/admin/users/{$otherAdmin->id}/permissions", ['permissions' => Permission::DEFAULTS])

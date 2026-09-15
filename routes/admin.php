@@ -226,7 +226,8 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::middleware('admin')->group(function () {
         Route::post('users', [UserController::class, 'store'])->name('users.store');
         Route::put('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.permissions');
-        Route::put('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
+        Route::put('users/{user}/role', [UserController::class, 'updateRole'])->name('users.role'); // + owner-only, in the controller
+        Route::put('users/{user}/email-alerts', [UserController::class, 'updateEmailAlerts'])->name('users.email-alerts');
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 

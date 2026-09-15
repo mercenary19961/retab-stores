@@ -35,7 +35,7 @@ class PaymentExpiringNotification extends Notification implements ShouldQueue
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return $notifiable->email ? ['database', 'mail'] : ['database'];
+        return $this->staffChannels($notifiable);
     }
 
     /** @return array<string, string> */

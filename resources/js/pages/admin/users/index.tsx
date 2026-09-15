@@ -9,7 +9,7 @@ import AdminLayout from '@/layouts/admin-layout';
 import { emptyMap, matchingPreset, type PermissionMap } from '@/lib/permissions';
 import { type SharedData } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Check, KeyRound, RefreshCw, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
+import { Check, Crown, KeyRound, RefreshCw, ShieldCheck, UserPlus, UserRound } from 'lucide-react';
 import { useState } from 'react';
 
 type Perms = Record<string, Record<string, boolean>>;
@@ -38,6 +38,11 @@ interface Staff {
     name: string;
     email: string;
     role: Role;
+    // The store owner: the only account that can change who is an admin.
+    is_owner: boolean;
+    // Whether this account is sent the staff alert emails (the bell always shows
+    // everything).
+    email_alerts: boolean;
     created_at: string | null;
     // Whether a reset link could ever reach them. False for the staff accounts
     // deliberately created on a non-routable address, which is exactly who this
@@ -50,6 +55,8 @@ interface Staff {
 /** What the VIEWER may do here, resolved server-side from their permissions. */
 interface Can {
     manageStaff: boolean;
+    // Only the store owner changes who is an admin (promote, demote, create one).
+    changeRoles: boolean;
     resetPasswords: boolean;
 }
 
@@ -79,6 +86,8 @@ export default function UsersIndex({
     const [resetTarget, setResetTarget] = useState<Staff | null>(null);
     const [resetPw, setResetPw] = useState('');
     const [resetting, setResetting] = useState(false);
+    // The account whose alert-email switch is mid-save, so its switch can show it.
+    const [savingAlerts, setSavingAlerts] = useState<number | null>(null);
 
     const selected = staff.find((s) => s.id === selectedId) ?? null;
     const addForm = useForm<{ name: string; email: string; password: string; role: Role }>({
@@ -150,12 +159,15 @@ export default function UsersIndex({
     /**
      * Why a role change may be refused, or null when it is allowed.
      *
-     * Mirrors the server's two guards, IN THE SAME ORDER, so the button explains
-     * itself instead of failing on submit. The server still enforces both — this
-     * is the hint, not the rule.
+     * Mirrors the server's three guards (owner only, last admin, not yourself),
+     * IN THE SAME ORDER, so the button explains itself instead of failing on
+     * submit. The server still enforces them; this is the hint, not the rule.
      */
     const roleBlockedReason = (s: Staff): string | null => {
-        // Count first: the sole admin looking at their own row wants "promote
+        // Owner first: for any other admin the answer is always "not yours to
+        // change", whichever row they are looking at.
+        if (!can.changeRoles) return t('admin.users.role.ownerOnly');
+        // Count next: the sole admin looking at their own row wants "promote
         // someone else first", not "not your own role", which tells them nothing.
         if (s.role === 'admin' && adminCount <= 1) return t('admin.users.role.lastAdminBlocked');
         if (s.id === auth.user?.id) return t('admin.users.role.selfBlocked');
@@ -179,8 +191,69 @@ export default function UsersIndex({
         // 🔴 The escalation guard: an editor who could set an admin's password
         // could simply sign in as that admin.
         if (s.role === 'admin' && !can.manageStaff) return t('admin.users.passwordReset.adminBlocked');
+        // Nobody resets the owner's password here, or another admin could sign in
+        // as the owner and undo the owner-only role rule.
+        if (s.is_owner) return t('admin.users.passwordReset.ownerBlocked');
 
         return null;
+    };
+
+    const toggleAlerts = (s: Staff) => {
+        setSavingAlerts(s.id);
+        router.put(
+            `/admin/users/${s.id}/email-alerts`,
+            { enabled: !s.email_alerts },
+            { preserveScroll: true, onFinish: () => setSavingAlerts(null) },
+        );
+    };
+
+    /**
+     * Whether this account gets the staff alert EMAILS (new orders, cancellations,
+     * returns, …). Any admin can switch it for anyone; the bell is unaffected.
+     *
+     * An address that can never receive mail (a `.local` staff login) is skipped
+     * by the server either way, so the switch says that rather than pretending
+     * the choice matters for it.
+     */
+    const alertsCard = (s: Staff) => {
+        if (!can.manageStaff) return null;
+        const hint = !s.can_self_recover
+            ? 'admin.users.emailAlerts.unreachable'
+            : s.email_alerts
+              ? 'admin.users.emailAlerts.onHint'
+              : 'admin.users.emailAlerts.offHint';
+
+        return (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-900 px-5 py-4">
+                <div className="min-w-0">
+                    <p className="text-xs text-neutral-500">{t('admin.users.emailAlerts.label')}</p>
+                    <p className="max-w-md text-sm text-neutral-300">{t(hint)}</p>
+                </div>
+                <button
+                    type="button"
+                    role="switch"
+                    aria-checked={s.email_alerts}
+                    aria-label={t('admin.users.emailAlerts.label')}
+                    disabled={savingAlerts === s.id}
+                    onClick={() => toggleAlerts(s)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+                        s.email_alerts ? 'bg-brand-teal' : 'bg-neutral-700'
+                    }`}
+                >
+                    {/* The knob sits at the inline START when off and the inline end when
+                        on, via `start-*` (inset-inline-start), which follows THIS
+                        element's direction. ⚠️ Not `rtl:` utilities: Tailwind's `rtl:`
+                        matches any descendant of a [dir=rtl] ancestor, and <html> is
+                        rtl whenever the storefront is in Arabic, so they fired on the
+                        LTR admin shell and threw the knob out of the track. */}
+                    <span
+                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                            s.email_alerts ? 'start-[1.375rem]' : 'start-0.5'
+                        }`}
+                    />
+                </button>
+            </div>
+        );
     };
 
     const openReset = (s: Staff) => {
@@ -395,7 +468,9 @@ export default function UsersIndex({
                     <div className="mt-4">
                         <span className="text-xs text-neutral-400">{t('admin.users.role.label')}</span>
                         <div className="mt-1.5 flex flex-wrap gap-2">
-                            {(['editor', 'admin'] as const).map((r) => (
+                            {/* Only the owner may create an admin, so everyone else is
+                                offered the one role they can actually create. */}
+                            {(can.changeRoles ? (['editor', 'admin'] as const) : (['editor'] as const)).map((r) => (
                                 <button key={r} type="button" onClick={() => addForm.setData('role', r)} className={chip(addForm.data.role === r)}>
                                     {t(`admin.users.roles.${r}`)}
                                 </button>
@@ -404,6 +479,7 @@ export default function UsersIndex({
                         <p className={`mt-1.5 text-xs ${addForm.data.role === 'admin' ? 'text-amber-400/80' : 'text-neutral-500'}`}>
                             {t(addForm.data.role === 'admin' ? 'admin.users.role.adminNote' : 'admin.users.role.editorNote')}
                         </p>
+                        {!can.changeRoles && <p className="mt-1 text-xs text-neutral-500">{t('admin.users.role.ownerCreatesAdmins')}</p>}
                         {addForm.errors.role && <span className="text-xs text-red-400">{addForm.errors.role}</span>}
                     </div>
 
@@ -519,7 +595,14 @@ export default function UsersIndex({
                             }`}
                         >
                             <div className="flex items-center justify-between gap-2">
-                                <span className="truncate font-medium text-neutral-100">{s.name ?? s.email}</span>
+                                <span className="flex min-w-0 items-center gap-1.5">
+                                    <span className="truncate font-medium text-neutral-100">{s.name ?? s.email}</span>
+                                    {s.is_owner && (
+                                        <Crown role="img" aria-label={t('admin.users.role.owner')} className="text-brand-gold h-3.5 w-3.5 shrink-0">
+                                            <title>{t('admin.users.role.owner')}</title>
+                                        </Crown>
+                                    )}
+                                </span>
                                 <StatusPill
                                     tone={s.role === 'admin' ? 'active' : 'idle'}
                                     icon={s.role === 'admin' ? ShieldCheck : UserRound}
@@ -546,9 +629,11 @@ export default function UsersIndex({
                             <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center">
                                 <ShieldCheck className="mx-auto mb-3 h-9 w-9 text-purple-400" />
                                 <p className="font-medium text-neutral-200">{selected.name}</p>
+                                {selected.is_owner && <p className="text-brand-gold mt-1 text-xs font-medium">{t('admin.users.role.owner')}</p>}
                                 <p className="mt-1 text-sm text-neutral-500">{t('admin.users.adminFullAccess')}</p>
                             </div>
                             {roleCard(selected)}
+                            {alertsCard(selected)}
                             {passwordCard(selected)}
                             {isMe && (
                                 <div className="rounded-xl border border-neutral-800 bg-neutral-900">
@@ -569,6 +654,7 @@ export default function UsersIndex({
                                     </p>
                                 </div>
                             )}
+                            {alertsCard(selected)}
                             {passwordCard(selected)}
                             {can.manageStaff && schema && (
                                 <div className="rounded-xl border border-neutral-800 bg-neutral-900">

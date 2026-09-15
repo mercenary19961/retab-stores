@@ -31,6 +31,14 @@ use Inertia\Response;
  * gated on the `staff` permission section so a trusted editor can be given the
  * job of getting a colleague back into their account. That opens a real
  * escalation path, so read the guards on resetPassword() before touching it.
+ *
+ * 🔑 Above the admins sits the STORE OWNER (User::isOwner(), config
+ * `retab.owner_email`, client decision 2026-09-15). Only the owner changes who
+ * is an admin: promoting, demoting, or creating an admin. Any admin still adds
+ * and removes editors. For that to mean anything the owner account must not be
+ * takeable either, so NOBODY resets the owner's password here; the owner changes
+ * it themselves (top-bar key icon, which asks for the current one) or through
+ * "forgot password".
  */
 class UserController extends Controller
 {
@@ -42,7 +50,7 @@ class UserController extends Controller
         $staff = User::whereIn('role', ['admin', 'editor'])
             ->orderByRaw("role = 'admin' desc") // admins first
             ->orderBy('name')
-            ->get(['id', 'name', 'email', 'role', 'permissions', 'created_at']);
+            ->get(['id', 'name', 'email', 'role', 'permissions', 'staff_email_alerts', 'created_at']);
 
         return Inertia::render('admin/users/index', [
             'staff' => $staff->map(fn (User $u) => [
@@ -50,6 +58,10 @@ class UserController extends Controller
                 'name' => $u->name,
                 'email' => $u->email,
                 'role' => $u->role,
+                'is_owner' => $u->isOwner(),
+                // Whether this account is sent the staff alert EMAILS (the bell
+                // always shows everything).
+                'email_alerts' => (bool) $u->staff_email_alerts,
                 'created_at' => $u->created_at?->toDateString(),
                 // Whether this colleague could recover their own account by email,
                 // which is what tells the reader why a reset is theirs to do.
@@ -61,6 +73,7 @@ class UserController extends Controller
             // the route behind it would answer with a 403.
             'can' => [
                 'manageStaff' => $isAdmin,
+                'changeRoles' => $viewer->isOwner(),
                 'resetPasswords' => $viewer->hasPermission('staff.reset_password'),
             ],
             // Grid config is admin-only for the same reason as `permissions`.
@@ -120,6 +133,13 @@ class UserController extends Controller
             return back()->with('error', __('messages.admin.password_reset_admin_only'));
         }
 
+        // Another admin resetting the owner's password could sign in as the owner
+        // and undo the owner-only role rule. The owner's own reset is refused by
+        // the self-check above, so this refuses everyone.
+        if ($user->isOwner()) {
+            return back()->with('error', __('messages.admin.password_reset_owner'));
+        }
+
         $data = $request->validate([
             'password' => ['required', Password::defaults()],
         ]);
@@ -163,6 +183,12 @@ class UserController extends Controller
             'role' => ['required', 'in:admin,editor'],
         ]);
 
+        // Creating an admin hands out admin access, which only the owner decides.
+        // Any admin can still add editors.
+        if ($data['role'] === 'admin' && ! $request->user()->isOwner()) {
+            return back()->withErrors(['role' => __('messages.admin.role_owner_only')]);
+        }
+
         // forceCreate: `role`/`permissions` are guarded privilege fields.
         $user = User::forceCreate([
             'name' => $data['name'],
@@ -203,6 +229,9 @@ class UserController extends Controller
      */
     public function updateRole(Request $request, User $user): RedirectResponse
     {
+        // Owner only: without this any admin could demote every other admin,
+        // the owner included. The page hides the control from everyone else.
+        abort_unless($request->user()->isOwner(), 403);
         abort_unless($user->isStaff(), 403);
 
         $role = $request->validate(['role' => ['required', 'in:admin,editor']])['role'];
@@ -246,6 +275,24 @@ class UserController extends Controller
         $user->forceFill(['permissions' => $clean])->save(); // guarded privilege field
 
         return back()->with('success', __('messages.admin.permissions_updated', ['name' => $user->name]));
+    }
+
+    /**
+     * Switch whether a staff account receives the alert EMAILS. Any admin may do
+     * this for any staff account, their own included; the bell is unaffected.
+     */
+    public function updateEmailAlerts(Request $request, User $user): RedirectResponse
+    {
+        abort_unless($user->isStaff(), 403);
+
+        $enabled = (bool) $request->validate(['enabled' => ['required', 'boolean']])['enabled'];
+
+        $user->forceFill(['staff_email_alerts' => $enabled])->save();
+
+        return back()->with('success', __(
+            $enabled ? 'messages.admin.email_alerts_on' : 'messages.admin.email_alerts_off',
+            ['name' => $user->name ?? $user->email],
+        ));
     }
 
     /**
