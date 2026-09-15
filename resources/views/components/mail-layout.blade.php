@@ -4,6 +4,7 @@
     'supportPhone' => null,
     'title' => '',
     'preheader' => null,
+    'logoUrl' => null,
 ])
 {{--
     Shared shell for customer transactional email.
@@ -49,7 +50,16 @@
 
                     <tr>
                         <td style="background-color:#1b4e53; padding:24px; text-align:center;">
-                            <span style="color:#ffffff; font-size:20px; font-weight:bold; letter-spacing:0.5px;">{{ $storeName }}</span>
+                            {{-- The logo must be an ABSOLUTE PNG URL: mail clients fetch it from
+                                 our site, and Gmail does not render SVG. The file is 286x183 and
+                                 shown at half size so it stays sharp on high-density screens. The
+                                 alt text is what clients that block images show instead. --}}
+                            @if ($logoUrl)
+                                <img src="{{ $logoUrl }}" alt="{{ $storeName }}" width="143" height="92"
+                                     style="display:block; margin:0 auto; border:0; outline:none; text-decoration:none; height:auto; color:#ffffff; font-size:20px; font-weight:bold;">
+                            @else
+                                <span style="color:#ffffff; font-size:20px; font-weight:bold; letter-spacing:0.5px;">{{ $storeName }}</span>
+                            @endif
                         </td>
                     </tr>
 

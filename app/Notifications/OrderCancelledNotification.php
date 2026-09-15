@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Order;
+use App\Notifications\Concerns\SendsStaffMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -20,15 +21,19 @@ use Illuminate\Queue\SerializesModels;
  * be picking stock for this order.
  *
  * See NewOrderNotification for why the database payload is structured while the
- * email is pre-rendered English, and why mail is conditional on the recipient
+ * email is pre-rendered in Arabic, and why mail is conditional on the recipient
  * actually having an email address (users.email is nullable under the OTP
  * identity model, and the mail transport throws on an empty one).
  */
 class OrderCancelledNotification extends Notification implements ShouldQueue
 {
     use Queueable, SerializesModels;
+    use SendsStaffMail;
 
-    public function __construct(private Order $order) {}
+    public function __construct(private Order $order)
+    {
+        $this->locale(self::STAFF_LOCALE);
+    }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -44,12 +49,22 @@ class OrderCancelledNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
-            ->subject("Order {$this->order->order_number} was cancelled by the customer")
-            ->line("{$this->order->customer_name} cancelled order {$this->order->order_number}.")
-            ->line('Total: '.number_format((float) $this->order->total, 2).' SAR')
-            ->action('Open the order', url("/admin/orders/{$this->order->id}"))
-            ->line('Stop any preparation for it. Any payment has already been released automatically.');
+        $number = $this->order->order_number;
+
+        return $this->staffMail(
+            subject: __('emails.staff.order_cancelled.subject', ['number' => $number]),
+            heading: __('emails.staff.order_cancelled.heading'),
+            lines: [__('emails.staff.order_cancelled.intro', ['name' => $this->order->customer_name, 'number' => $number])],
+            details: [
+                __('emails.staff.order_number') => $number,
+                __('emails.staff.total') => $this->money($this->order->total),
+            ],
+            // By ORDER NUMBER: the admin route binds `{order:order_number}`, so the
+            // id this used to link to was a 404.
+            actionUrl: url("/admin/orders/{$number}"),
+            actionLabel: __('emails.staff.open_order'),
+            note: __('emails.staff.order_cancelled.note'),
+        );
     }
 
     /** @return array<string, mixed> */
@@ -61,7 +76,7 @@ class OrderCancelledNotification extends Notification implements ShouldQueue
             'order_number' => $this->order->order_number,
             'customer' => $this->order->customer_name,
             'total' => (float) $this->order->total,
-            'url' => "/admin/orders/{$this->order->id}",
+            'url' => "/admin/orders/{$this->order->order_number}",
         ];
     }
 }

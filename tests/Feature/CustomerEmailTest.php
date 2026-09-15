@@ -183,12 +183,75 @@ class CustomerEmailTest extends TestCase
         app()->setLocale('ar');
 
         (new OrderPlacedMail($this->makeOrder(['locale' => 'en', 'order_number' => 'RTB-1234'])))
-            ->assertHasSubject('We received your order RTB-1234');
+            ->assertHasSubject('We received your order: Sukkari (RTB-1234)');
 
         app()->setLocale('en');
 
         (new OrderPlacedMail($this->makeOrder(['locale' => 'ar', 'order_number' => 'RTB-5678'])))
-            ->assertHasSubject('استلمنا طلبك RTB-5678');
+            ->assertHasSubject('استلمنا طلبك: سكري (RTB-5678)');
+    }
+
+    private function addItem(Order $order, string $nameAr, string $nameEn, float $lineTotal): void
+    {
+        $order->items()->create([
+            'product_name_ar' => $nameAr,
+            'product_name_en' => $nameEn,
+            'sku' => 'SK-'.uniqid(),
+            'unit_price' => $lineTotal,
+            'quantity' => 1,
+            'line_total' => $lineTotal,
+        ]);
+    }
+
+    /**
+     * With several products the subject names ONE (the highest line total, so the
+     * headline is what the order is mostly about) and counts the rest; the body
+     * still lists every item.
+     */
+    public function test_a_multi_item_subject_names_the_biggest_line_and_counts_the_rest(): void
+    {
+        $order = $this->makeOrder(['locale' => 'en', 'order_number' => 'RTB-MULTI']); // Sukkari, 150
+        $this->addItem($order, 'خلاص', 'Khalas', 400);
+        $this->addItem($order, 'عجوة', 'Ajwa', 90);
+
+        $mail = new OrderConfirmedMail($order->fresh());
+        $mail->assertHasSubject('Your order is confirmed: Khalas and 2 more items (RTB-MULTI)');
+
+        $rendered = $mail->render();
+        foreach (['Sukkari', 'Khalas', 'Ajwa'] as $name) {
+            $this->assertStringContainsString($name, $rendered);
+        }
+    }
+
+    /** Arabic has distinct forms for one, two, 3 to 10, and 11+ remaining products. */
+    public function test_the_arabic_remainder_uses_the_right_plural_form(): void
+    {
+        $order = $this->makeOrder(); // Sukkari, 150: the lead line throughout
+
+        $expected = [
+            1 => 'سكري ومنتج آخر',
+            2 => 'سكري ومنتجان آخران',
+            3 => 'سكري و3 منتجات أخرى',
+            11 => 'سكري و11 منتجًا آخر',
+        ];
+
+        $added = 0;
+        foreach ($expected as $others => $summary) {
+            for (; $added < $others; $added++) {
+                $this->addItem($order, 'صنف', 'Item', 10);
+            }
+
+            $this->assertSame($summary, $order->fresh()->itemsSummary('ar'));
+        }
+    }
+
+    /** An English name missing from the snapshot falls back to the Arabic one. */
+    public function test_an_english_subject_falls_back_to_the_arabic_name(): void
+    {
+        $order = $this->makeOrder(['locale' => 'en']);
+        $order->items()->update(['product_name_en' => null]);
+
+        $this->assertSame('سكري', $order->fresh()->itemsSummary('en'));
     }
 
     public function test_bank_transfer_receipt_carries_the_iban_and_the_reference(): void

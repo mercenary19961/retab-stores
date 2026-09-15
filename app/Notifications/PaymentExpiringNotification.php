@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Order;
+use App\Notifications\Concerns\SendsStaffMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -18,14 +19,18 @@ use Illuminate\Queue\SerializesModels;
  * never be captured, and the sale is simply lost with nothing to show for it.
  *
  * See NewOrderNotification for why the database payload is structured while the
- * email is pre-rendered English, and why mail is conditional on the recipient
+ * email is pre-rendered in Arabic, and why mail is conditional on the recipient
  * having an email address at all.
  */
 class PaymentExpiringNotification extends Notification implements ShouldQueue
 {
     use Queueable, SerializesModels;
+    use SendsStaffMail;
 
-    public function __construct(private Order $order, private int $hoursLeft) {}
+    public function __construct(private Order $order, private int $hoursLeft)
+    {
+        $this->locale(self::STAFF_LOCALE);
+    }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -41,12 +46,25 @@ class PaymentExpiringNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
-            ->subject("Action needed: order {$this->order->order_number} expires in ~{$this->hoursLeft}h")
-            ->line("The Tamara authorisation on order {$this->order->order_number} lapses in roughly {$this->hoursLeft} hours.")
-            ->line('Total: '.number_format((float) $this->order->total, 2).' SAR')
-            ->action('Confirm or reject the order', url("/admin/orders/{$this->order->id}"))
-            ->line('Confirming captures the money. Rejecting releases the hold cleanly. Doing nothing loses the sale.');
+        $number = $this->order->order_number;
+        // Arabic counts hours in four forms (ساعتين / 5 ساعات / 12 ساعة), so the
+        // figure goes through trans_choice rather than a bare number + word.
+        $hours = trans_choice('emails.staff.payment_expiring.hours', $this->hoursLeft, ['count' => $this->hoursLeft]);
+
+        return $this->staffMail(
+            subject: __('emails.staff.payment_expiring.subject', ['number' => $number, 'hours' => $hours]),
+            heading: __('emails.staff.payment_expiring.heading'),
+            lines: [__('emails.staff.payment_expiring.intro', ['number' => $number, 'hours' => $hours])],
+            details: [
+                __('emails.staff.order_number') => $number,
+                __('emails.staff.total') => $this->money($this->order->total),
+            ],
+            // By ORDER NUMBER: the admin route binds `{order:order_number}`, so the
+            // id this used to link to was a 404.
+            actionUrl: url("/admin/orders/{$number}"),
+            actionLabel: __('emails.staff.payment_expiring.action'),
+            note: __('emails.staff.payment_expiring.note'),
+        );
     }
 
     /** @return array<string, mixed> */
@@ -58,7 +76,7 @@ class PaymentExpiringNotification extends Notification implements ShouldQueue
             'order_number' => $this->order->order_number,
             'hours_left' => $this->hoursLeft,
             'total' => (float) $this->order->total,
-            'url' => "/admin/orders/{$this->order->id}",
+            'url' => "/admin/orders/{$this->order->order_number}",
         ];
     }
 }

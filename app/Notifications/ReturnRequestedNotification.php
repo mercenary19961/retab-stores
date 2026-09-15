@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\OrderReturn;
+use App\Notifications\Concerns\SendsStaffMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -13,14 +14,18 @@ use Illuminate\Support\Str;
 /**
  * Staff alert that a customer filed a defect/damage return: bell row + email.
  * See NewOrderNotification for why the database payload is structured while the
- * email is pre-rendered English, and why mail is conditional on the recipient
+ * email is pre-rendered in Arabic, and why mail is conditional on the recipient
  * actually having an email address.
  */
 class ReturnRequestedNotification extends Notification implements ShouldQueue
 {
     use Queueable, SerializesModels;
+    use SendsStaffMail;
 
-    public function __construct(private OrderReturn $return) {}
+    public function __construct(private OrderReturn $return)
+    {
+        $this->locale(self::STAFF_LOCALE);
+    }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -38,12 +43,18 @@ class ReturnRequestedNotification extends Notification implements ShouldQueue
     {
         $number = $this->return->order?->order_number ?? '—';
 
-        return (new MailMessage)
-            ->subject("Return requested for order {$number}")
-            ->line("A customer filed a return for order {$number}.")
-            ->line('Reason: '.Str::limit((string) $this->return->reason, 200))
-            ->action('Review the return', url("/admin/returns/{$this->return->id}"))
-            ->line('Returns are defect/damage only and must be filed within 3 days of delivery — the photos are on the review page.');
+        return $this->staffMail(
+            subject: __('emails.staff.return_requested.subject', ['number' => $number]),
+            heading: __('emails.staff.return_requested.heading'),
+            lines: [__('emails.staff.return_requested.intro', ['number' => $number])],
+            details: [
+                __('emails.staff.order_number') => $number,
+                __('emails.staff.return_requested.reason') => Str::limit((string) $this->return->reason, 500),
+            ],
+            actionUrl: url("/admin/returns/{$this->return->id}"),
+            actionLabel: __('emails.staff.return_requested.action'),
+            note: __('emails.staff.return_requested.note'),
+        );
     }
 
     /** @return array<string, mixed> */

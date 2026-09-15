@@ -44,10 +44,20 @@ abstract class OrderMail extends Mailable implements ShouldQueue
      */
     abstract protected function viewName(): string;
 
+    /**
+     * The subject leads with what was bought ("استلمنا طلبك: شابورة بالبر") and
+     * keeps the order number at the end. The number is not decoration: without it
+     * two separate orders of the same product get identical subjects, and Gmail
+     * folds them into one conversation.
+     */
     public function envelope(): Envelope
     {
+        $number = $this->order->order_number;
+        $items = $this->order->itemsSummary($this->localeOrDefault());
+
         return new Envelope(
-            subject: __("emails.{$this->translationKey()}.subject", ['number' => $this->order->order_number]),
+            subject: __("emails.{$this->translationKey()}.subject", ['items' => $items ?? $number])
+                .($items ? " ({$number})" : ''),
         );
     }
 

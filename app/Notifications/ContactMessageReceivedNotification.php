@@ -3,16 +3,18 @@
 namespace App\Notifications;
 
 use App\Models\ContactMessage;
+use App\Notifications\Concerns\SendsStaffMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Lang;
 
 /**
  * Staff alert that a customer submitted the Contact Us form: bell row + email. See
  * NewOrderNotification for why the database payload is structured while the email
- * is pre-rendered English, and why mail is conditional on the recipient actually
+ * is pre-rendered in Arabic, and why mail is conditional on the recipient actually
  * having an email address.
  *
  * Originally shipped with no admin page and no `url`, on the reasoning that staff
@@ -30,8 +32,12 @@ use Illuminate\Queue\SerializesModels;
 class ContactMessageReceivedNotification extends Notification implements ShouldQueue
 {
     use Queueable, SerializesModels;
+    use SendsStaffMail;
 
-    public function __construct(private ContactMessage $contactMessage) {}
+    public function __construct(private ContactMessage $contactMessage)
+    {
+        $this->locale(self::STAFF_LOCALE);
+    }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -49,14 +55,24 @@ class ContactMessageReceivedNotification extends Notification implements ShouldQ
     {
         $name = trim("{$this->contactMessage->first_name} {$this->contactMessage->last_name}");
 
-        return (new MailMessage)
-            ->subject('New contact form message')
-            ->line("From: {$name}")
-            ->line("Email: {$this->contactMessage->email}")
-            ->line("Phone: {$this->contactMessage->phone}")
-            ->line("Inquiry type: {$this->contactMessage->inquiry_type}")
-            ->line('Message:')
-            ->line($this->contactMessage->message);
+        $type = (string) $this->contactMessage->inquiry_type;
+        // A type added to the form but not yet to the translations still shows,
+        // as its raw key, rather than as "emails.staff.inquiry_types.x".
+        $typeLabel = Lang::has("emails.staff.inquiry_types.{$type}") ? __("emails.staff.inquiry_types.{$type}") : $type;
+
+        return $this->staffMail(
+            subject: __('emails.staff.contact_message.subject'),
+            heading: __('emails.staff.contact_message.heading'),
+            details: [
+                __('emails.staff.contact_message.name') => $name,
+                __('emails.staff.contact_message.email') => $this->contactMessage->email,
+                __('emails.staff.contact_message.phone') => $this->contactMessage->phone,
+                __('emails.staff.contact_message.inquiry_type') => $typeLabel,
+                __('emails.staff.contact_message.message') => $this->contactMessage->message,
+            ],
+            actionUrl: url('/admin/contact-messages'),
+            actionLabel: __('emails.staff.contact_message.action'),
+        );
     }
 
     /** @return array<string, mixed> */

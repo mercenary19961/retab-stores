@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Notifications\Concerns\SendsStaffMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -19,16 +21,19 @@ use Illuminate\Queue\SerializesModels;
  * through i18n so it follows the admin's language toggle (the panel is EN-first
  * with an AR switch, independent of the server session locale).
  *
- * ⚠️ The email, by contrast, IS pre-rendered — and deliberately in English. The
- * admin's chosen panel language lives in their browser (localStorage +
- * `admin_locale` cookie), so a notification triggered by a CUSTOMER's request
- * has no way to know it; English matches the EN-first admin panel.
+ * ⚠️ The email, by contrast, IS pre-rendered, and in ARABIC on the branded
+ * staff layout (client decision 2026-09-15, see SendsStaffMail). The admin's
+ * panel language lives in their browser, so a customer-triggered alert cannot
+ * follow it; the store's primary language is the next best answer.
  */
 class NewOrderNotification extends Notification implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, SendsStaffMail, SerializesModels;
 
-    public function __construct(private Order $order) {}
+    public function __construct(private Order $order)
+    {
+        $this->locale(self::STAFF_LOCALE);
+    }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -51,17 +56,45 @@ class NewOrderNotification extends Notification implements ShouldQueue
         return ['database' => 'sync'];
     }
 
+    /**
+     * The subject names what was bought (lead product + "and N more"), and the
+     * body lists every line, so staff can judge stock before opening the panel.
+     * Names come from the order-line snapshot.
+     */
     public function toMail(object $notifiable): MailMessage
     {
         $number = $this->order->order_number;
+        $summary = $this->order->itemsSummary(self::STAFF_LOCALE);
 
-        return (new MailMessage)
-            ->subject("New order {$number} needs confirmation")
-            ->line('A new order has been placed and is waiting for your confirmation.')
-            ->line("Order: {$number}")
-            ->line('Total: '.number_format((float) $this->order->total, 2).' SAR')
-            ->action('Open the order', url("/admin/orders/{$number}"))
-            ->line('Check stock, then confirm or reject it. Card payments are already captured and Tamara authorizations expire, so please review within 24 hours.');
+        return $this->staffMail(
+            subject: $summary
+                ? __('emails.staff.new_order.subject', ['items' => $summary])." ({$number})"
+                : __('emails.staff.new_order.subject_plain', ['number' => $number]),
+            heading: __('emails.staff.new_order.heading'),
+            lines: [__('emails.staff.new_order.intro')],
+            details: [
+                __('emails.staff.order_number') => $number,
+                __('emails.staff.customer') => $this->order->customer_name,
+                __('emails.staff.total') => $this->money($this->order->total),
+            ],
+            items: $this->order->items->map(fn (OrderItem $item) => [
+                'quantity' => $item->quantity,
+                'name' => $this->itemName($item),
+                'total' => $this->money($item->line_total),
+            ])->all(),
+            actionUrl: url("/admin/orders/{$number}"),
+            actionLabel: __('emails.staff.open_order'),
+            note: __('emails.staff.new_order.note'),
+        );
+    }
+
+    /** Arabic snapshot name (English fallback), plus the chosen size if any. */
+    private function itemName(OrderItem $item): string
+    {
+        $name = $item->product_name_ar ?: $item->product_name_en;
+        $option = $item->option_label_ar ?: $item->option_label_en;
+
+        return $option ? "{$name} ({$option})" : (string) $name;
     }
 
     /** @return array<string, mixed> */

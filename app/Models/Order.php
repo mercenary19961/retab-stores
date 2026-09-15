@@ -79,6 +79,38 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    /**
+     * Product names for an email subject: the line with the highest total leads
+     * (usually what the order is "about"), and any other lines collapse into
+     * "and N more" so the subject stays short. The body lists every item.
+     *
+     * Null when the order has no lines, so callers can fall back to the number.
+     * Names come from the order-line SNAPSHOT, so a later product rename never
+     * changes what an old email said.
+     */
+    public function itemsSummary(string $locale): ?string
+    {
+        $items = $this->loadMissing('items')->items;
+
+        if ($items->isEmpty()) {
+            return null;
+        }
+
+        // Sort by id first so a tie on line total keeps the earliest line (PHP's
+        // sort is stable), which makes the choice deterministic.
+        $lead = $items->sortBy('id')->sortByDesc(fn (OrderItem $item) => (float) $item->line_total)->first();
+
+        $name = $locale === 'en'
+            ? ($lead->product_name_en ?: $lead->product_name_ar)
+            : ($lead->product_name_ar ?: $lead->product_name_en);
+
+        $others = $items->count() - 1;
+
+        return $others > 0
+            ? $name.' '.trans_choice('emails.common.and_more', $others, ['count' => $others], $locale)
+            : $name;
+    }
+
     public function activities(): HasMany
     {
         return $this->hasMany(OrderActivity::class);

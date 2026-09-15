@@ -22,10 +22,12 @@ return [
         'qty' => 'Qty',
         'help' => 'Need help? Reply to this email or message us on WhatsApp at :phone.',
         'footer_rights' => 'All rights reserved.',
+        // Appended to the lead product's name in a subject when the order has more lines.
+        'and_more' => '{1} and 1 more item|[2,*] and :count more items',
     ],
 
     'placed' => [
-        'subject' => 'We received your order :number',
+        'subject' => 'We received your order: :items',
         'heading' => 'Thank you for your order',
         'intro' => 'We have received your order and it is now being reviewed by our team. We will let you know as soon as it is confirmed.',
         'bank_heading' => 'Complete your bank transfer',
@@ -38,17 +40,91 @@ return [
     ],
 
     'confirmed' => [
-        'subject' => 'Your order :number is confirmed',
+        'subject' => 'Your order is confirmed: :items',
         'heading' => 'Your order is confirmed',
         'intro' => 'Good news — we have confirmed your order and it is being prepared. You will get another email with tracking details once it is on its way.',
     ],
 
     'shipped' => [
-        'subject' => 'Your order :number is on its way',
+        'subject' => 'Your order is on its way: :items',
         'heading' => 'Your order has shipped',
         'intro' => 'Your order is on its way. You can follow it with the details below.',
         'carrier' => 'Carrier',
         'tracking_number' => 'Tracking number',
+    ],
+
+    /*
+     * Staff alert emails. Sent in ARABIC today (see
+     * App\Notifications\Concerns\SendsStaffMail); kept mirrored here so a
+     * per-account language can be switched on later without new copy.
+     */
+    'staff' => [
+        'order_number' => 'Order',
+        'customer' => 'Customer',
+        'total' => 'Total',
+        'open_order' => 'Open the order',
+        'product' => 'Product',
+        'contact' => 'Contact',
+
+        'new_order' => [
+            'subject' => 'New order: :items',
+            'subject_plain' => 'New order :number needs confirmation',
+            'heading' => 'A new order needs your confirmation',
+            'intro' => 'A new order has been placed and is waiting for your review.',
+            'note' => 'Check stock, then confirm or reject it. Card payments are captured immediately and Tamara authorizations expire, so please review within 24 hours.',
+        ],
+
+        'order_cancelled' => [
+            'subject' => 'Order :number was cancelled by the customer',
+            'heading' => 'An order was cancelled',
+            'intro' => ':name cancelled order :number.',
+            'note' => 'Stop any preparation for it. Any payment has already been released automatically.',
+        ],
+
+        'payment_expiring' => [
+            'subject' => 'Action needed: the Tamara authorization on order :number expires in about :hours',
+            'heading' => 'A Tamara authorization is about to expire',
+            'intro' => 'The Tamara authorization on order :number lapses in about :hours.',
+            'hours' => '{0} less than an hour|{1} 1 hour|[2,*] :count hours',
+            'action' => 'Confirm or reject the order',
+            'note' => 'Confirming captures the money. Rejecting releases the hold cleanly. Doing nothing loses the sale.',
+        ],
+
+        'return_requested' => [
+            'subject' => 'Return requested for order :number',
+            'heading' => 'A new return request',
+            'intro' => 'A customer filed a return for order :number.',
+            'reason' => 'Reason',
+            'action' => 'Review the return',
+            'note' => 'Returns are for defects or damage only and must be filed within 3 days of delivery. The photos are on the review page.',
+        ],
+
+        'product_requested' => [
+            'subject' => 'Someone wants a coming-soon product',
+            'heading' => 'A coming-soon product was requested',
+            'intro' => 'A customer registered interest in a product that is not on sale yet.',
+            'action' => 'Open product requests',
+            'note' => 'Follow up on WhatsApp, then mark the request handled.',
+        ],
+
+        'contact_message' => [
+            'subject' => 'New contact form message',
+            'heading' => 'A new message from the Contact Us page',
+            'name' => 'Name',
+            'email' => 'Email',
+            'phone' => 'Phone',
+            'inquiry_type' => 'Inquiry type',
+            'message' => 'Message',
+            'action' => 'Open messages',
+        ],
+
+        'inquiry_types' => [
+            'order' => 'Order inquiry',
+            'product' => 'Product inquiry',
+            'complaint' => 'Complaint',
+            'partnership' => 'Partnership',
+            'other' => 'Other',
+        ],
     ],
 
 ];

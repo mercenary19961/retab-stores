@@ -13,6 +13,8 @@ use App\Models\ProductRequest;
 use App\Models\User;
 use App\Models\WhatsappMessage;
 use App\Notifications\NewOrderNotification;
+use App\Notifications\OrderCancelledNotification;
+use App\Notifications\PaymentExpiringNotification;
 use App\Notifications\ProductRequestedNotification;
 use App\Services\WhatsApp\WhatsAppGateway;
 use App\Services\WhatsApp\WhatsAppService;
@@ -94,9 +96,91 @@ class AdminAlertChannelsTest extends TestCase
         $message = $mail->first()->getOriginalMessage();
         $this->assertStringContainsString($order->order_number, $message->getSubject());
         $this->assertSame('admin@test.com', $message->getTo()[0]->getAddress());
-        // The body carries the total and a deep link into the admin panel.
-        $this->assertStringContainsString('175.50', $message->toString());
-        $this->assertStringContainsString("/admin/orders/{$order->order_number}", $message->toString());
+        // The body carries the total and a deep link into the admin panel. Read from
+        // the DECODED body: toString() is quoted-printable and can soft-break a URL.
+        $this->assertStringContainsString('175.50', $message->getHtmlBody());
+        $this->assertStringContainsString("/admin/orders/{$order->order_number}", $message->getHtmlBody());
+    }
+
+    public function test_the_staff_subject_names_the_product_and_the_body_lists_every_item(): void
+    {
+        $this->staff();
+        $order = $this->order();
+        foreach ([['شابورة بالبر', 'Wheat (Burr) Rusk', 9], ['سكري', 'Sukkari', 50], ['عجوة', null, 20]] as [$ar, $en, $total]) {
+            $order->items()->create([
+                'product_name_ar' => $ar,
+                'product_name_en' => $en,
+                'sku' => 'SK-'.uniqid(),
+                'unit_price' => $total,
+                'quantity' => 1,
+                'line_total' => $total,
+            ]);
+        }
+
+        User::staff()->first()->notify(new NewOrderNotification($order));
+
+        $message = $this->sentMail()->first()->getOriginalMessage();
+        $this->assertSame("طلب جديد: سكري ومنتجان آخران ({$order->order_number})", $message->getSubject());
+
+        // The decoded HTML body: toString() is MIME-encoded, which garbles Arabic.
+        $body = $message->getHtmlBody();
+        foreach (['شابورة بالبر', 'سكري', 'عجوة'] as $name) {
+            $this->assertStringContainsString($name, $body);
+        }
+    }
+
+    /**
+     * Staff emails are pinned to Arabic. They are QUEUED and the worker runs in the
+     * app default locale (`en`), so without the pin they would silently go out in
+     * English. The branded layout carries the Retab logo, not Laravel's.
+     */
+    public function test_staff_emails_are_arabic_and_branded_whatever_the_app_locale(): void
+    {
+        $this->staff();
+        app()->setLocale('en');
+
+        User::staff()->first()->notify(new NewOrderNotification($this->order()));
+
+        $message = $this->sentMail()->first()->getOriginalMessage();
+        $this->assertStringStartsWith('طلب جديد', $message->getSubject());
+
+        $body = $message->getHtmlBody();
+        $this->assertStringContainsString('dir="rtl"', $body);
+        $this->assertStringContainsString('images/footer/logo.png', $body);
+        $this->assertStringNotContainsString('notification-logo', $body); // Laravel's default header
+    }
+
+    /**
+     * The admin order route binds `{order:order_number}`. These two alerts used
+     * to link by database id, so their button (and bell row) led to a 404.
+     */
+    public function test_cancelled_and_expiring_alerts_link_to_the_order_by_number(): void
+    {
+        $admin = $this->staff();
+        $order = $this->order();
+        $url = "/admin/orders/{$order->order_number}";
+
+        foreach ([new OrderCancelledNotification($order), new PaymentExpiringNotification($order, 5)] as $notification) {
+            $this->assertSame($url, $notification->toArray($admin)['url']);
+            $admin->notify($notification);
+        }
+
+        $this->sentMail()->each(function ($sent) use ($url) {
+            $this->assertStringContainsString($url, $sent->getOriginalMessage()->getHtmlBody());
+        });
+        $this->assertCount(2, $this->sentMail());
+
+        $this->actingAs($admin)->get($url)->assertOk();
+    }
+
+    /** Arabic hour counts need their own forms, not "5 ساعة". */
+    public function test_the_expiring_alert_counts_hours_in_proper_arabic(): void
+    {
+        $admin = $this->staff();
+
+        $admin->notify(new PaymentExpiringNotification($this->order(), 5));
+
+        $this->assertStringContainsString('5 ساعات', $this->sentMail()->first()->getOriginalMessage()->getSubject());
     }
 
     public function test_staff_without_an_email_still_get_the_bell_row_and_no_mail(): void
@@ -135,7 +219,7 @@ class AdminAlertChannelsTest extends TestCase
 
         $mail = $this->sentMail();
         $this->assertCount(1, $mail);
-        $this->assertStringContainsString('coming-soon', $mail->first()->getOriginalMessage()->getSubject());
+        $this->assertStringContainsString('قريباً', $mail->first()->getOriginalMessage()->getSubject());
         // Decoded: the body is quoted-printable, so raw Arabic bytes aren't in toString().
         $this->assertStringContainsString('سكري فاخر', quoted_printable_decode($mail->first()->getOriginalMessage()->toString()));
     }

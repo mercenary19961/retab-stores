@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\ProductRequest;
+use App\Notifications\Concerns\SendsStaffMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,14 +13,18 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Staff alert that a customer tapped "I want this" on a Coming-Soon product:
  * bell row + email. See NewOrderNotification for why the database payload is
- * structured while the email is pre-rendered English, and why mail is
+ * structured while the email is pre-rendered in Arabic, and why mail is
  * conditional on the recipient actually having an email address.
  */
 class ProductRequestedNotification extends Notification implements ShouldQueue
 {
     use Queueable, SerializesModels;
+    use SendsStaffMail;
 
-    public function __construct(private ProductRequest $request) {}
+    public function __construct(private ProductRequest $request)
+    {
+        $this->locale(self::STAFF_LOCALE);
+    }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
@@ -38,12 +43,18 @@ class ProductRequestedNotification extends Notification implements ShouldQueue
         $product = $this->request->product?->name_ar ?? '—';
         $contact = $this->request->user?->name ?? $this->request->phone ?? '—';
 
-        return (new MailMessage)
-            ->subject('Someone wants a coming-soon product')
-            ->line("A customer registered interest in: {$product}")
-            ->line("Contact: {$contact}")
-            ->action('Open product requests', url('/admin/product-requests'))
-            ->line('Follow up on WhatsApp, then mark the request handled.');
+        return $this->staffMail(
+            subject: __('emails.staff.product_requested.subject'),
+            heading: __('emails.staff.product_requested.heading'),
+            lines: [__('emails.staff.product_requested.intro')],
+            details: [
+                __('emails.staff.product') => $product,
+                __('emails.staff.contact') => $contact,
+            ],
+            actionUrl: url('/admin/product-requests'),
+            actionLabel: __('emails.staff.product_requested.action'),
+            note: __('emails.staff.product_requested.note'),
+        );
     }
 
     /** @return array<string, mixed> */
