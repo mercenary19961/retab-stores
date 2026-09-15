@@ -777,18 +777,13 @@ export default function ProductsIndex({
                     {products.data.map((p) => (
                         <div
                             key={p.id}
-                            className="flex flex-col rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+                            // A selected card is outlined in teal: its checkbox sits down in
+                            // the footer, far from the name, so the selection must read at a glance.
+                            className={`flex flex-col rounded-xl border bg-white p-4 transition-colors dark:bg-neutral-900 ${
+                                selected.has(p.id) ? 'border-brand-teal/70' : 'border-neutral-200 dark:border-neutral-800'
+                            }`}
                         >
                             <div className="flex items-start gap-3">
-                                {selectable && (
-                                    <input
-                                        type="checkbox"
-                                        checked={selected.has(p.id)}
-                                        onChange={() => toggleOne(p.id)}
-                                        aria-label={t('admin.products.bulk.selectRow', { name: loc(p.name_ar, p.name_en) })}
-                                        className="accent-brand-teal mt-1 h-4 w-4 shrink-0"
-                                    />
-                                )}
                                 {thumb(p, 'h-16 w-16', 'text-xl')}
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-start gap-1.5">
@@ -840,8 +835,21 @@ export default function ProductsIndex({
 
                             <div className="mt-3 flex flex-wrap gap-1">{statusBadges(p)}</div>
 
-                            <div className="mt-4 flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-                                {rowActions(p)}
+                            {/* The select box lives on the actions row (inline start), not beside
+                                the image, so the photo and name keep the card's full width. */}
+                            <div className="mt-4 flex items-center gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-800">
+                                {selectable && (
+                                    <label className="-m-1.5 inline-flex cursor-pointer items-center p-1.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.has(p.id)}
+                                            onChange={() => toggleOne(p.id)}
+                                            aria-label={t('admin.products.bulk.selectRow', { name: loc(p.name_ar, p.name_en) })}
+                                            className="accent-brand-teal h-4 w-4"
+                                        />
+                                    </label>
+                                )}
+                                <div className="ms-auto flex items-center gap-2">{rowActions(p)}</div>
                             </div>
                         </div>
                     ))}
