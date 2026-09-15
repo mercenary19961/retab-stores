@@ -43,8 +43,9 @@ export default defineConfig({
         ? {
               // Reseed a fresh SQLite DB, then serve it. DB_* overrides are passed via
               // env (Laravel's real env wins over .env), so the dev DB is untouched.
-              command:
-                  'php artisan migrate:fresh --seed --force && php artisan serve --host=127.0.0.1 --port=8100',
+              // A small wrapper rather than `artisan serve`, so a dying PHP server is
+              // logged (with its signal) and restarted; see e2e/serve.mjs.
+              command: 'node e2e/serve.mjs',
               url: LOCAL,
               timeout: 120_000,
               reuseExistingServer: false,

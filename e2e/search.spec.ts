@@ -15,13 +15,26 @@ import { expect, test } from './fixtures';
 
 const overlay = '[role=dialog] input[type=search]';
 
-/** Open the overlay and wait for the index to arrive, so nothing races the fetch. */
+/**
+ * Click a search entry point and wait until the index request has FULLY finished.
+ *
+ * ⚠️ Not optional. Opening the overlay fires `/shop/search-index` (the overlay calls
+ * `load()` as it opens), and a test that ends while that request is still in flight
+ * closes the page mid-response. In CI the PHP built-in server then died outright,
+ * and every later test failed with ERR_CONNECTION_REFUSED (2026-09-14, 2026-09-15).
+ * Waiting for the body also replaces the old spinner check, which passed instantly
+ * whenever it ran before the spinner had appeared.
+ */
+async function clickSearch(page: import('@playwright/test').Page, testId = 'nav-search') {
+    const index = page.waitForResponse((r) => r.url().includes('/shop/search-index'));
+    await page.getByTestId(testId).click();
+    await (await index).finished();
+}
+
+/** Open the overlay with the index loaded, so nothing races the fetch. */
 async function openSearch(page: import('@playwright/test').Page) {
-    await page.getByTestId('nav-search').click();
+    await clickSearch(page);
     await page.locator(overlay).waitFor();
-    await page.locator(overlay).fill('a');
-    await expect(page.locator('[role=dialog] .animate-spin')).toHaveCount(0);
-    await page.locator(overlay).fill('');
 }
 
 async function names(page: import('@playwright/test').Page): Promise<string[]> {
@@ -124,7 +137,7 @@ test('Escape closes it even when focus has left the field', async ({ page }) => 
     // a press that arrived before focus landed (it is set on a timer) did nothing —
     // and the page behind stayed scroll-locked with the overlay still up.
     await page.goto('/shop');
-    await page.getByTestId('nav-search').click();
+    await clickSearch(page);
     await page.locator('[role=dialog]').waitFor();
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
@@ -145,7 +158,7 @@ test('covers the viewport when opened after scrolling', async ({ page }) => {
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(1000);
 
-    await page.getByTestId('nav-search').click();
+    await clickSearch(page);
     const box = await page.locator('[role=dialog]').boundingBox();
     const viewport = page.viewportSize()!;
 
@@ -160,7 +173,7 @@ test('is reachable on a phone through the drawer', async ({ page }) => {
     // Row 1 has no room for a fifth control at 320px, so the phone entry point is a
     // search FIELD at the top of the drawer rather than another icon.
     await page.locator('header button').first().click();
-    await page.getByTestId('nav-search-mobile').click();
+    await clickSearch(page, 'nav-search-mobile');
 
     await page.locator(overlay).fill('dates');
     await expect(page.locator('[role=dialog] ul li').first()).toBeVisible();

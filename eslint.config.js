@@ -38,6 +38,15 @@ export default [
         },
     },
     {
+        // Node scripts (the E2E server wrapper) run outside the browser.
+        files: ['e2e/**/*.mjs'],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+        },
+    },
+    {
         ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'tailwind.config.js'],
     },
     prettier, // Turn off all rules that might conflict with Prettier
