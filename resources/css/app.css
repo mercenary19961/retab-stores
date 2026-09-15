@@ -462,6 +462,14 @@ input[type='search']::-webkit-search-decoration {
     [role='button']:not(:disabled) {
         cursor: pointer;
     }
+
+    /* Browsers centre <th> text by default and Tailwind's reset leaves that alone,
+       so `text-start` on the <thead> (THEAD in lib/admin-ui.ts) never reached the
+       cells and headers floated away from their column's data. Inheriting lets the
+       row's alignment apply; a `text-end` utility on one <th> still wins. */
+    th {
+        text-align: inherit;
+    }
 }
 
 :root {

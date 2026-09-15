@@ -290,20 +290,23 @@ export default function OrderDetailView({
                             <table className="w-full text-sm">
                                 <thead className={THEAD}>
                                     <tr>
-                                        <th className="py-1 font-medium">{t('admin.common.product')}</th>
-                                        <th className="py-1 font-medium">{t('admin.common.sku')}</th>
-                                        <th className="py-1 text-right font-medium">{t('admin.common.price')}</th>
-                                        <th className="py-1 text-right font-medium">{t('admin.common.qty')}</th>
-                                        <th className="py-1 text-right font-medium">{t('admin.common.total')}</th>
+                                        <th className="px-3 py-2 text-start font-medium">{t('admin.common.product')}</th>
+                                        <th className="px-3 py-2 text-start font-medium">{t('admin.common.sku')}</th>
+                                        <th className="px-3 py-2 text-end font-medium">{t('admin.common.price')}</th>
+                                        <th className="px-3 py-2 text-end font-medium">{t('admin.common.qty')}</th>
+                                        <th className="px-3 py-2 text-end font-medium">{t('admin.common.total')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {order.items.map((item, i) => (
                                         <tr key={i} className="border-t border-neutral-100 dark:border-neutral-800">
-                                            <td className="py-2" dir="auto">
-                                                {item.name}
+                                            {/* <bdi>, not dir="auto" on the cell: an Arabic name keeps its own
+                                                direction without flipping the cell's alignment, which pushed it
+                                                against the SKU column in the English panel. */}
+                                            <td className="px-3 py-2 text-start">
+                                                <bdi>{item.name}</bdi>
                                             </td>
-                                            <td className="py-2 font-mono text-neutral-500">
+                                            <td className="px-3 py-2 text-start font-mono whitespace-nowrap text-neutral-500">
                                                 {item.sku ? (
                                                     <CopyText
                                                         value={item.sku}
@@ -314,9 +317,9 @@ export default function OrderDetailView({
                                                     '—'
                                                 )}
                                             </td>
-                                            <td className="py-2 text-right">{item.unit_price}</td>
-                                            <td className="py-2 text-right">{item.quantity}</td>
-                                            <td className="py-2 text-right">{item.line_total}</td>
+                                            <td className="px-3 py-2 text-end tabular-nums">{item.unit_price}</td>
+                                            <td className="px-3 py-2 text-end tabular-nums">{item.quantity}</td>
+                                            <td className="px-3 py-2 text-end tabular-nums">{item.line_total}</td>
                                         </tr>
                                     ))}
                                 </tbody>
