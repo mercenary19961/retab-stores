@@ -509,7 +509,7 @@ const ar = {
         summaryTitle: 'ملخّص الطلب',
         subtotal: 'المجموع الفرعي',
         shipping: 'الشحن',
-        shippingFlatNote: 'سعر شحن ثابت لجميع دول الخليج',
+        shippingFlatNote: 'سعر شحن ثابت لجميع مدن المملكة',
         shippingFree: 'مجاني',
         discount: 'الخصم',
         grandTotal: 'الإجمالي',

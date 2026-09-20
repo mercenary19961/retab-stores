@@ -487,7 +487,7 @@ const en = {
         summaryTitle: 'Order summary',
         subtotal: 'Subtotal',
         shipping: 'Shipping',
-        shippingFlatNote: 'Flat rate across all GCC countries',
+        shippingFlatNote: 'Flat rate to every city in Saudi Arabia',
         shippingFree: 'Free',
         discount: 'Discount',
         grandTotal: 'Total',
