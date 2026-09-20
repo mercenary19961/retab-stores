@@ -9,6 +9,7 @@ use App\Models\OrderReturn;
 use App\Models\User;
 use App\Models\WhatsappCampaign;
 use App\Models\WhatsappMessage;
+use App\Support\PhoneNumber;
 use App\Support\Queues;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -356,17 +357,12 @@ class WhatsAppService
 
     /**
      * Normalize a phone to E.164 digits (no '+'), as Meta expects. Returns null
-     * for empty/garbage input.
+     * for empty/garbage input. A locally written Saudi mobile (05…) gains its
+     * country code; see PhoneNumber for why stripping non-digits was not enough.
      */
     private function normalize(?string $phone): ?string
     {
-        if (! $phone) {
-            return null;
-        }
-
-        $digits = preg_replace('/\D+/', '', $phone) ?? '';
-
-        return $digits === '' ? null : $digits;
+        return PhoneNumber::toWhatsApp($phone);
     }
 
     /**

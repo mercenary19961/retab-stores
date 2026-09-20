@@ -140,6 +140,20 @@ class Order extends Model
     }
 
     /**
+     * Is this a bank-transfer order still waiting for the money to arrive?
+     *
+     * The counterpart of isAwaitingGatewayPayment(). A transfer has no gateway to
+     * tell us it landed, so a member of staff checks the bank account and records
+     * it by hand. Matches the dashboard's "bank transfers to verify" count.
+     */
+    public function isAwaitingBankTransfer(): bool
+    {
+        return $this->payment_method === PaymentMethod::BankTransfer
+            && $this->payment_status === PaymentStatus::Pending
+            && $this->status === OrderStatus::PendingPayment;
+    }
+
+    /**
      * The gateway transaction ledger (authorisations, captures, voids, refunds).
      * Append-only: every service writes rows here and none are updated in place,
      * so the timestamps are a reliable record of WHEN money moved — which is how

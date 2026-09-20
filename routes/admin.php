@@ -48,6 +48,8 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::get('orders', [OrderController::class, 'index'])->middleware('permission:orders.view')->name('orders.index');
     Route::get('orders/export', [OrderController::class, 'export'])->middleware('permission:orders.export')->name('orders.export');
     Route::get('orders/{order:order_number}/detail', [OrderController::class, 'detail'])->middleware('permission:orders.view')->name('orders.detail');
+    // Printable page for whoever packs the box: items and address, no prices.
+    Route::get('orders/{order:order_number}/packing-slip', [OrderController::class, 'packingSlip'])->middleware('permission:orders.view')->name('orders.packing-slip');
     Route::get('orders/{order:order_number}', [OrderController::class, 'show'])->middleware('permission:orders.view')->name('orders.show');
     Route::middleware('permission:orders.manage')->group(function () {
         // GET, but gated on `manage` not `view`: it pushes the order to OTO and
@@ -63,6 +65,9 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
         // Re-open a lapsed gateway hold and WhatsApp the customer a signed link to
         // finish paying — the recovery for an expired Tamara authorisation.
         Route::post('orders/{order:order_number}/payment-link', [OrderController::class, 'sendPaymentLink'])->name('orders.payment-link');
+        // A bank transfer has no gateway to report it, so staff record it by hand.
+        Route::post('orders/{order:order_number}/transfer-received', [OrderController::class, 'markTransferReceived'])->name('orders.transfer-received');
+        Route::post('orders/{order:order_number}/notes', [OrderController::class, 'updateNotes'])->name('orders.notes');
     });
 
     // Products.

@@ -1,9 +1,11 @@
 import Button from '@/components/admin/button';
+import Modal from '@/components/admin/modal';
 import ShippingPicker from '@/components/admin/shipping-picker';
 import StatusBadge from '@/components/admin/status-badge';
 import CopyText from '@/components/copy-text';
 import { useAdminT } from '@/i18n/use-admin-t';
 import { THEAD } from '@/lib/admin-ui';
+import { isolate } from '@/lib/bidi';
 import type { TFunction } from 'i18next';
 import {
     Ban,
@@ -12,18 +14,24 @@ import {
     Check,
     CircleDollarSign,
     CreditCard,
+    ExternalLink,
+    FileText,
     Globe,
     History,
+    Landmark,
     Mail,
     MapPin,
+    MessageCircle,
     Package,
     PackageCheck,
     PackageSearch,
     PackageX,
     Phone,
+    Printer,
     Send,
     ShieldCheck,
     Signpost,
+    StickyNote,
     Truck,
     User,
     UserCheck,
@@ -34,6 +42,8 @@ import { useState, type ReactNode } from 'react';
 
 export interface OrderItem {
     name: string;
+    /** The chosen size/packaging (e.g. «كرتون»), snapshotted onto the line. */
+    option: string | null;
     sku: string | null;
     unit_price: number;
     quantity: number;
@@ -83,6 +93,12 @@ export interface OrderDetailData {
     currency: string;
     tracking_number: string | null;
     carrier: string | null;
+    /** The carrier's public tracking page, when the shipping portal has one on file. */
+    tracking_url: string | null;
+    shipping_label_url: string | null;
+    whatsapp_url: string | null;
+    /** The account the customer was told to pay into. Only while a transfer is awaited. */
+    bank_name: string | null;
     admin_notes: string | null;
     confirmed_by: string | null;
     confirmed_at: string | null;
@@ -101,6 +117,59 @@ export interface OrderCan {
     /** Recall the SHIPMENT and return the order to confirmed. Moves no money. */
     cancelShipment: boolean;
     sendPaymentLink: boolean;
+    /** A bank transfer is awaited: staff record it once it shows in the account. */
+    markTransferReceived: boolean;
+    editNotes: boolean;
+}
+
+/**
+ * One sentence saying what this order needs next, shown beside its actions.
+ * The status pill says where the order IS; this says what to DO about it, which
+ * is the question staff actually open the page with.
+ */
+function nextStep(order: OrderDetailData, t: TFunction): string {
+    const key = (k: string, opts?: Record<string, unknown>) => t(`admin.orders.show.next.${k}`, opts);
+
+    switch (order.status) {
+        case 'pending_payment':
+            if (order.payment_method === 'bank_transfer') {
+                return key('bankTransfer', {
+                    amount: isolate(`${order.total.toFixed(2)} ${order.currency}`),
+                    bank: isolate(order.bank_name ?? '—'),
+                    number: isolate(order.order_number),
+                });
+            }
+            return order.payment_method ? key('gateway') : key('pendingPayment');
+        case 'awaiting_confirmation':
+            return key('awaiting');
+        case 'confirmed':
+            return key('confirmed');
+        case 'shipped':
+            return key('shipped', { carrier: isolate(order.carrier ?? '—'), tracking: isolate(order.tracking_number ?? '—') });
+        case 'delivered':
+            return key('delivered');
+        case 'cancelled':
+            return key('cancelled');
+        case 'unavailable':
+            return key('unavailable');
+        default:
+            return '';
+    }
+}
+
+/** An outbound link styled like a small secondary button (opens in a new tab). */
+function ToolLink({ href, icon: Icon, children }: { href: string; icon: LucideIcon; children: ReactNode }) {
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+        >
+            <Icon className="h-3.5 w-3.5" />
+            {children}
+        </a>
+    );
 }
 
 /**
@@ -130,7 +199,11 @@ function activityLabel(a: OrderActivity, t: TFunction): ReactNode {
         case 'shipment_cancelled':
             return line('activityShipmentCancelled', { carrier: a.meta?.carrier ?? '—' });
         case 'payment_received':
-            return line('activityPaymentReceived', { gateway: a.meta?.gateway ?? '—' });
+            // `bank_transfer` has a translated label; gateway names (moyasar)
+            // have none and fall through as written.
+            return line('activityPaymentReceived', {
+                gateway: a.meta?.gateway ? t(`admin.paymentMethod.${a.meta.gateway}`, { defaultValue: a.meta.gateway }) : '—',
+            });
         case 'payment_authorized':
             return line('activityPaymentAuthorized', { gateway: a.meta?.gateway ?? '—' });
         case 'payment_lapsed':
@@ -181,9 +254,21 @@ export default function OrderDetailView({
 }) {
     const { t } = useAdminT();
     const [note, setNote] = useState('');
+    const [reference, setReference] = useState('');
+    const [dialog, setDialog] = useState<'transfer' | 'unavailable' | null>(null);
+    const [notes, setNotes] = useState(order.admin_notes ?? '');
     const [picking, setPicking] = useState(false);
     const addr = order.shipping_address ?? {};
-    const hasActions = can.confirm || can.unavailable || can.ship || can.cancel || can.cancelShipment || can.sendPaymentLink;
+    const hasActions =
+        can.markTransferReceived || can.confirm || can.unavailable || can.ship || can.cancel || can.cancelShipment || can.sendPaymentLink;
+    const hint = nextStep(order, t);
+    const notesDirty = notes.trim() !== (order.admin_notes ?? '').trim();
+
+    /** Close the dialog first, so it is not left open over the page while the request runs. */
+    const act = (verb: string, data?: Record<string, string>) => {
+        setDialog(null);
+        onAction(verb, data);
+    };
 
     const ship = (deliveryOptionId: number | null) => {
         setPicking(false);
@@ -200,83 +285,156 @@ export default function OrderDetailView({
                 <ShippingPicker open={picking} onClose={() => setPicking(false)} orderNumber={order.order_number} onConfirm={ship} busy={busy} />
             )}
 
+            <Modal open={dialog === 'transfer'} onClose={() => setDialog(null)} title={t('admin.orders.show.transferTitle')} size="sm">
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                    {t('admin.orders.show.transferBody', { amount: isolate(`${order.total.toFixed(2)} ${order.currency}`) })}
+                </p>
+                <label className="mt-4 block">
+                    <span className="text-xs font-medium text-neutral-500">{t('admin.orders.show.transferReference')}</span>
+                    <input
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value)}
+                        dir="ltr"
+                        maxLength={100}
+                        className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-sm dark:border-neutral-700 dark:bg-neutral-800"
+                    />
+                    <span className="mt-1 block text-xs text-neutral-500">{t('admin.orders.show.transferReferenceHint')}</span>
+                </label>
+                <div className="mt-5 flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setDialog(null)}>
+                        {t('admin.orders.show.back')}
+                    </Button>
+                    <Button
+                        variant="primary"
+                        icon={Landmark}
+                        disabled={busy}
+                        onClick={() => act('transfer-received', { reference: reference.trim() })}
+                    >
+                        {t('admin.orders.show.markTransferReceived')}
+                    </Button>
+                </div>
+            </Modal>
+
+            <Modal open={dialog === 'unavailable'} onClose={() => setDialog(null)} title={t('admin.orders.show.unavailableTitle')} size="sm">
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">{t('admin.orders.show.unavailableBody')}</p>
+                <label className="mt-4 block">
+                    <span className="text-xs font-medium text-neutral-500">{t('admin.orders.show.noteLabel')}</span>
+                    <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        rows={3}
+                        maxLength={1000}
+                        className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+                    />
+                </label>
+                <div className="mt-5 flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setDialog(null)}>
+                        {t('admin.orders.show.back')}
+                    </Button>
+                    <Button variant="warning" icon={Ban} disabled={busy} onClick={() => act('unavailable', { note })}>
+                        {t('admin.orders.show.markUnavailable')}
+                    </Button>
+                </div>
+            </Modal>
+
+            {/* Where the order is, then the tools that are useful in any state. */}
             <div className="flex flex-wrap items-center gap-3">
                 <StatusBadge domain="order" value={order.status} className="px-2.5 py-1 text-sm" />
                 <span className="text-sm text-neutral-400">{order.created_at ?? '—'}</span>
+                <div className="ms-auto flex flex-wrap items-center gap-2">
+                    {order.whatsapp_url && (
+                        <ToolLink href={order.whatsapp_url} icon={MessageCircle}>
+                            {t('admin.orders.show.whatsapp')}
+                        </ToolLink>
+                    )}
+                    <ToolLink href={`/admin/orders/${order.order_number}/packing-slip`} icon={Printer}>
+                        {t('admin.orders.show.packingSlip')}
+                    </ToolLink>
+                    {order.tracking_url && (
+                        <ToolLink href={order.tracking_url} icon={ExternalLink}>
+                            {t('admin.orders.show.trackParcel')}
+                        </ToolLink>
+                    )}
+                    {order.shipping_label_url && (
+                        <ToolLink href={order.shipping_label_url} icon={FileText}>
+                            {t('admin.orders.show.shippingLabel')}
+                        </ToolLink>
+                    )}
+                </div>
             </div>
 
-            {hasActions && (
-                <div className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                    <div className="flex flex-wrap items-center gap-3">
-                        {can.confirm && (
-                            <Button
-                                variant="success"
-                                icon={Check}
-                                disabled={busy}
-                                onClick={() => onAction('confirm', {}, t('admin.orders.show.confirmMsg'))}
-                            >
-                                {t('admin.orders.show.confirmOrder')}
-                            </Button>
-                        )}
-                        {can.ship && (
-                            <Button variant="primary" icon={Truck} disabled={busy} onClick={() => setPicking(true)}>
-                                {t('admin.orders.show.ship')}
-                            </Button>
-                        )}
-                        {/* Recalls the parcel so the order can be shipped again — NOT
-                            the same as cancelling the order, so it is deliberately
-                            styled as a secondary action and worded differently. */}
-                        {can.cancelShipment && (
-                            <Button
-                                variant="secondary"
-                                icon={PackageX}
-                                disabled={busy}
-                                onClick={() => onAction('cancel-shipment', {}, t('admin.orders.show.cancelShipmentMsg'))}
-                            >
-                                {t('admin.orders.show.cancelShipment')}
-                            </Button>
-                        )}
-                        {/* The hold lapsed before anyone confirmed. Secondary, not
-                            danger: this recovers the sale rather than ending it. */}
-                        {can.sendPaymentLink && (
-                            <Button
-                                variant="secondary"
-                                icon={Send}
-                                onClick={() => onAction('payment-link', {}, t('admin.orders.show.paymentLinkMsg'))}
-                            >
-                                {t('admin.orders.show.paymentLink')}
-                            </Button>
-                        )}
-                        {can.cancel && (
-                            <Button
-                                variant="danger"
-                                icon={X}
-                                disabled={busy}
-                                onClick={() => onAction('cancel', {}, t('admin.orders.show.cancelMsg'))}
-                            >
-                                {t('admin.orders.show.cancel')}
-                            </Button>
-                        )}
+            {/* What the order needs next, with the buttons that do it. The sentence
+                fills the width the lone button used to leave empty. The main action
+                sits at the inline end; Cancel is never the first thing you reach. */}
+            {hint && (
+                <div className="flex flex-wrap items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                    <div className="min-w-0 flex-1 basis-72">
+                        <p className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">{t('admin.orders.show.nextStep')}</p>
+                        <p className="mt-1 text-sm text-neutral-800 dark:text-neutral-200">{hint}</p>
                     </div>
 
-                    {can.unavailable && (
-                        <div className="mt-3 flex flex-wrap items-end gap-3 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-                            <label className="flex-1">
-                                <span className="text-xs text-neutral-500">{t('admin.orders.show.noteLabel')}</span>
-                                <input
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    className="mt-1 w-full rounded border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
-                                />
-                            </label>
-                            <Button
-                                variant="warning"
-                                icon={Ban}
-                                disabled={busy}
-                                onClick={() => onAction('unavailable', { note }, t('admin.orders.show.unavailableMsg'))}
-                            >
-                                {t('admin.orders.show.markUnavailable')}
-                            </Button>
+                    {hasActions && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            {can.cancel && (
+                                <Button
+                                    variant="danger"
+                                    icon={X}
+                                    disabled={busy}
+                                    onClick={() => onAction('cancel', {}, t('admin.orders.show.cancelMsg'))}
+                                >
+                                    {t('admin.orders.show.cancel')}
+                                </Button>
+                            )}
+                            {/* Recalls the parcel so the order can be shipped again — NOT
+                                the same as cancelling the order, so it is deliberately
+                                styled as a secondary action and worded differently. */}
+                            {can.cancelShipment && (
+                                <Button
+                                    variant="secondary"
+                                    icon={PackageX}
+                                    disabled={busy}
+                                    onClick={() => onAction('cancel-shipment', {}, t('admin.orders.show.cancelShipmentMsg'))}
+                                >
+                                    {t('admin.orders.show.cancelShipment')}
+                                </Button>
+                            )}
+                            {can.unavailable && (
+                                <Button variant="warning" icon={Ban} disabled={busy} onClick={() => setDialog('unavailable')}>
+                                    {t('admin.orders.show.markUnavailable')}
+                                </Button>
+                            )}
+                            {/* The hold lapsed before anyone confirmed. This recovers the
+                                sale rather than ending it. */}
+                            {can.sendPaymentLink && (
+                                <Button
+                                    variant="primary"
+                                    icon={Send}
+                                    disabled={busy}
+                                    onClick={() => onAction('payment-link', {}, t('admin.orders.show.paymentLinkMsg'))}
+                                >
+                                    {t('admin.orders.show.paymentLink')}
+                                </Button>
+                            )}
+                            {can.markTransferReceived && (
+                                <Button variant="primary" icon={Landmark} disabled={busy} onClick={() => setDialog('transfer')}>
+                                    {t('admin.orders.show.markTransferReceived')}
+                                </Button>
+                            )}
+                            {can.confirm && (
+                                <Button
+                                    variant="success"
+                                    icon={Check}
+                                    disabled={busy}
+                                    onClick={() => onAction('confirm', {}, t('admin.orders.show.confirmMsg'))}
+                                >
+                                    {t('admin.orders.show.confirmOrder')}
+                                </Button>
+                            )}
+                            {can.ship && (
+                                <Button variant="primary" icon={Truck} disabled={busy} onClick={() => setPicking(true)}>
+                                    {t('admin.orders.show.ship')}
+                                </Button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -305,6 +463,11 @@ export default function OrderDetailView({
                                                 against the SKU column in the English panel. */}
                                             <td className="px-3 py-2 text-start">
                                                 <bdi>{item.name}</bdi>
+                                                {item.option && (
+                                                    <span className="block text-xs text-neutral-500">
+                                                        <bdi>{item.option}</bdi>
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-3 py-2 text-start font-mono whitespace-nowrap text-neutral-500">
                                                 {item.sku ? (
@@ -439,13 +602,49 @@ export default function OrderDetailView({
                         />
                     </section>
 
-                    {(order.confirmed_by || order.confirmed_at || order.delivered_at || order.admin_notes) && (
+                    {(can.editNotes || order.confirmed_by || order.confirmed_at || order.delivered_at || order.admin_notes) && (
                         <section className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                             <SectionHeader icon={ShieldCheck}>{t('admin.orders.show.admin')}</SectionHeader>
                             {order.confirmed_by && <Row icon={UserCheck} label={t('admin.orders.show.confirmedBy')} value={order.confirmed_by} />}
                             {order.confirmed_at && <Row icon={CalendarCheck} label={t('admin.orders.show.confirmedAt')} value={order.confirmed_at} />}
                             {order.delivered_at && <Row icon={PackageCheck} label={t('admin.orders.show.deliveredAt')} value={order.delivered_at} />}
-                            {order.admin_notes && <p className="mt-2 text-sm text-neutral-500">{order.admin_notes}</p>}
+
+                            <div className="mt-3">
+                                <p className="flex items-center gap-2 text-sm text-neutral-500">
+                                    <StickyNote className="h-3.5 w-3.5 shrink-0" />
+                                    {t('admin.orders.show.notes')}
+                                </p>
+                                {can.editNotes ? (
+                                    <>
+                                        <textarea
+                                            value={notes}
+                                            onChange={(e) => setNotes(e.target.value)}
+                                            rows={3}
+                                            maxLength={2000}
+                                            dir="auto"
+                                            placeholder={t('admin.orders.show.notesPlaceholder')}
+                                            aria-label={t('admin.orders.show.notes')}
+                                            className="mt-2 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
+                                        />
+                                        {/* Only offered once something changed, so the button
+                                            says whether pressing it would do anything. */}
+                                        <div className="mt-2 flex justify-end">
+                                            <Button
+                                                size="sm"
+                                                variant="primary"
+                                                disabled={busy || !notesDirty}
+                                                onClick={() => onAction('notes', { admin_notes: notes })}
+                                            >
+                                                {t('admin.orders.show.notesSave')}
+                                            </Button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="mt-2 text-sm whitespace-pre-wrap text-neutral-600 dark:text-neutral-300" dir="auto">
+                                        {order.admin_notes || t('admin.orders.show.notesEmpty')}
+                                    </p>
+                                )}
+                            </div>
                         </section>
                     )}
                 </div>

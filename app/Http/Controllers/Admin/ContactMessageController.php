@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\ContactMessageController as StorefrontContactMessageController;
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
-use App\Services\Auth\OtpService;
+use App\Support\PhoneNumber;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -40,7 +40,7 @@ class ContactMessageController extends Controller
                 // Built here rather than in the page so the number goes through the
                 // app's single normalizer (E.164 digits, no '+'). Unconditional:
                 // phone is NOT NULL in the schema and required by the form's rules.
-                'whatsapp_url' => 'https://wa.me/'.app(OtpService::class)->normalize($m->phone),
+                'whatsapp_url' => PhoneNumber::whatsAppUrl($m->phone),
                 'inquiry_type' => $m->inquiry_type,
                 'message' => $m->message,
                 'handled' => $m->handled_at !== null,

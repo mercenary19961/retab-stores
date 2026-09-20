@@ -173,8 +173,9 @@ class OrderActivity extends Model
             'type' => $type,
             'from_status' => $fromStatus,
             'to_status' => $order->status?->value,
-            // No user_id: a payment is settled by the customer and the gateway,
-            // never by a member of staff.
+            // No user_id here: a gateway payment is settled by the customer and
+            // the gateway. A bank transfer is the exception, recorded by a member
+            // of staff, so markTransferReceived() stamps the user afterwards.
             'meta' => array_filter([
                 'gateway' => $gateway,
                 'amount' => $amount === null ? null : (float) $amount,

@@ -5,10 +5,12 @@ namespace App\Services;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\PaymentTransactionType;
 use App\Models\DemandEvent;
 use App\Models\LoyaltyReward;
 use App\Models\Order;
 use App\Models\OrderActivity;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\Tamara\TamaraService;
@@ -94,6 +96,67 @@ class OrderConfirmationService
     }
 
     /**
+     * Staff saw a bank transfer arrive: record it and hand the order on to the
+     * normal confirm step (pending_payment → awaiting_confirmation).
+     *
+     * 🔴 Before this existed nothing could make that move. Cards advance on the
+     * Moyasar webhook and Tamara on its authorisation, but a transfer has no
+     * gateway to report it, so every bank-transfer order stayed in "pending
+     * payment" until someone cancelled it.
+     *
+     * Row-locked and idempotent, so a double click (or two staff members at once)
+     * records the money once. Nothing is sent to the customer: their receipt with
+     * the bank details went out at checkout, and the confirmation message follows
+     * when staff confirm the order.
+     */
+    public function markTransferReceived(Order $order, ?int $userId = null, ?string $reference = null): Order
+    {
+        if (! $order->isAwaitingBankTransfer()) {
+            throw new \RuntimeException(__('messages.admin.transfer_not_applicable'));
+        }
+
+        DB::transaction(function () use ($order, $userId, $reference) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+            if (! $locked->isAwaitingBankTransfer()) {
+                return; // recorded by a concurrent call
+            }
+
+            $from = $locked->status->value;
+
+            $locked->forceFill([
+                'payment_status' => PaymentStatus::Paid,
+                'status' => OrderStatus::AwaitingConfirmation,
+                'paid_at' => now(),
+            ])->save();
+
+            // The ledger is the authoritative record of money moving, so a
+            // transfer belongs in it like any gateway capture. The bank's own
+            // reference, when staff type it, is what reconciliation matches on.
+            Payment::create([
+                'order_id' => $locked->id,
+                'gateway' => PaymentMethod::BankTransfer->value,
+                'type' => PaymentTransactionType::Capture,
+                'amount' => $locked->total,
+                'currency' => $locked->currency,
+                'status' => 'succeeded',
+                'gateway_transaction_id' => $reference,
+                'raw' => ['recorded_by' => $userId],
+            ]);
+
+            OrderActivity::logPaymentReceived(
+                $locked,
+                $from,
+                PaymentMethod::BankTransfer->value,
+                $locked->total,
+                $locked->currency,
+                $reference,
+            )->forceFill(['user_id' => $userId])->save();
+        });
+
+        return $order->refresh();
+    }
+
+    /**
      * Admin can't fulfill (out of stock). Releases the held funds, logs demand
      * analytics, and flips the order to `unavailable`. No stock was deducted, so
      * there's nothing to restore.
@@ -118,9 +181,14 @@ class OrderConfirmationService
                 ]);
             }
 
+            // Appended, not written over: staff can now keep their own notes on
+            // the order, and the reason it could not be filled belongs beside
+            // them rather than in place of them.
             $order->forceFill([
                 'status' => OrderStatus::Unavailable,
-                'admin_notes' => $note ?? $order->admin_notes,
+                'admin_notes' => filled($note)
+                    ? trim(($order->admin_notes ? $order->admin_notes."\n\n" : '').$note)
+                    : $order->admin_notes,
             ])->save();
 
             OrderActivity::logStatusChange(

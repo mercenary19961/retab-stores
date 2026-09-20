@@ -6,10 +6,13 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderActivity;
+use App\Models\Setting;
+use App\Models\ShippingCarrier;
 use App\Services\CustomerMailer;
 use App\Services\OrderConfirmationService;
 use App\Services\Shipping\ShippingService;
 use App\Services\WhatsApp\WhatsAppService;
+use App\Support\PhoneNumber;
 use App\Support\TableExport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -177,6 +180,12 @@ class OrderController extends Controller
     {
         $order->load(['items', 'activities.user', 'confirmedBy', 'coupon']);
 
+        // Every lifecycle action posts to a route behind `orders.manage`, while
+        // this page only needs `orders.view`. Offering the buttons to a view-only
+        // editor would hand them a row of 403s, so each flag below requires it.
+        $manage = (bool) Auth::user()?->hasPermission('orders.manage');
+        $awaitingTransfer = $order->isAwaitingBankTransfer();
+
         return [
             'order' => [
                 'order_number' => $order->order_number,
@@ -198,6 +207,16 @@ class OrderController extends Controller
                 'currency' => $order->currency,
                 'tracking_number' => $order->tracking_number,
                 'carrier' => $order->carrier,
+                // The carrier's public tracking page, when the shipping portal has
+                // a tracking URL on file for it. Null otherwise, and the button hides.
+                'tracking_url' => $this->trackingUrl($order),
+                'shipping_label_url' => $order->shipping_label_url,
+                // Through the same rule the WhatsApp sender uses, so +966 / 05… /
+                // spaces all open the one chat the customer is actually on.
+                'whatsapp_url' => PhoneNumber::whatsAppUrl($order->customer_phone),
+                // Which account the customer was told to pay into, for the
+                // "waiting for a transfer" line. Only while it is still awaited.
+                'bank_name' => $awaitingTransfer ? Setting::get('bank_name') : null,
                 'admin_notes' => $order->admin_notes,
                 'confirmed_by' => $order->confirmedBy?->name,
                 'confirmed_at' => $order->confirmed_at?->toDateTimeString(),
@@ -205,6 +224,7 @@ class OrderController extends Controller
                 'created_at' => $order->created_at?->toDateTimeString(),
                 'items' => $order->items->map(fn ($item) => [
                     'name' => $item->product_name_ar,
+                    'option' => $item->option_label_ar,
                     'sku' => $item->sku,
                     'unit_price' => (float) $item->unit_price,
                     'quantity' => $item->quantity,
@@ -224,29 +244,87 @@ class OrderController extends Controller
                 ]),
             ],
             'can' => [
-                'confirm' => $order->status === OrderStatus::AwaitingConfirmation,
-                'unavailable' => $order->status === OrderStatus::AwaitingConfirmation,
-                'ship' => $order->status === OrderStatus::Confirmed && ! $order->tracking_number,
+                'confirm' => $manage && $order->status === OrderStatus::AwaitingConfirmation,
+                'unavailable' => $manage && $order->status === OrderStatus::AwaitingConfirmation,
+                'ship' => $manage && $order->status === OrderStatus::Confirmed && ! $order->tracking_number,
+                'markTransferReceived' => $manage && $awaitingTransfer,
+                'editNotes' => $manage,
                 // 🔴 This used to be `status === Confirmed`, which is the exact
                 // complement of what cancelByCustomer() accepts — so the button
                 // appeared only in the one state guaranteed to fail, and clicking
                 // it always flashed "This order can no longer be cancelled."
                 // Ask the enum rather than restating its rule here.
-                'cancel' => $order->status->isCancellableByCustomer(),
+                'cancel' => $manage && $order->status->isCancellableByCustomer(),
                 // Cancelling the SHIPMENT is a different operation from cancelling
                 // the ORDER: it recalls the parcel and returns the order to
                 // confirmed so it can be shipped again, and moves no money.
                 // Excluded once delivered — there is nothing left to recall.
-                'cancelShipment' => $order->tracking_number !== null && $order->status === OrderStatus::Shipped,
+                'cancelShipment' => $manage && $order->tracking_number !== null && $order->status === OrderStatus::Shipped,
                 // Recovery for a gateway hold that lapsed before we confirmed it.
                 // Asks the model rather than restating the rule — the same predicate
                 // the storefront pay route and the account list already use, so the
                 // three cannot drift (the 2026-08-15 admin-cancel bug).
                 // `customer_phone` is NOT NULL on orders, so there is no phone check
                 // here — an unreachable guard reads as a real one to the next person.
-                'sendPaymentLink' => $order->isAwaitingGatewayPayment(),
+                'sendPaymentLink' => $manage && $order->isAwaitingGatewayPayment(),
             ],
         ];
+    }
+
+    /** The carrier's tracking page for this parcel, if the portal has a URL for it. */
+    private function trackingUrl(Order $order): ?string
+    {
+        if (! $order->carrier || ! $order->tracking_number) {
+            return null;
+        }
+
+        return ShippingCarrier::where('key', ShippingCarrier::normalizeKey($order->carrier))
+            ->first()
+            ?->trackingLink($order->tracking_number);
+    }
+
+    /**
+     * Record a bank transfer that staff have seen arrive in the account. The
+     * optional reference is the bank's own transaction number, kept on the
+     * ledger row so the transfer can be matched to the statement later.
+     */
+    public function markTransferReceived(Request $request, Order $order)
+    {
+        $data = $request->validate([
+            'reference' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        try {
+            $this->confirmation->markTransferReceived($order, Auth::id(), $data['reference'] ?? null);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('messages.admin.transfer_received'));
+    }
+
+    /** Staff's own notes on the order. Never shown to the customer. */
+    public function updateNotes(Request $request, Order $order)
+    {
+        $data = $request->validate([
+            'admin_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $order->forceFill(['admin_notes' => filled($data['admin_notes'] ?? null) ? trim($data['admin_notes']) : null])->save();
+
+        return back()->with('success', __('messages.admin.notes_saved'));
+    }
+
+    /**
+     * A printable page for whoever packs the box: what goes in it and where it
+     * is going, with no prices. A plain Blade page rather than an Inertia one, so
+     * it prints without the admin chrome and opens in its own tab.
+     */
+    public function packingSlip(Order $order)
+    {
+        $order->load('items');
+
+        return view('admin.packing-slip', ['order' => $order]);
     }
 
     public function confirm(Order $order)
