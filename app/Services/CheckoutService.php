@@ -84,9 +84,14 @@ class CheckoutService
 
             [$coupon, $discount] = $this->resolveCoupon($couponCode, $subtotal, $cart->user_id);
 
-            $fulfillment = $options['fulfillment'] instanceof Fulfillment
-                ? $options['fulfillment']
-                : Fulfillment::tryFrom((string) ($options['fulfillment'] ?? '')) ?? Fulfillment::Delivery;
+            // ⚠️ Read the key ONCE, with `??`, before testing it. Writing
+            // `$options['fulfillment'] instanceof Fulfillment` reads a missing key
+            // before deciding it is missing, so every caller that passes no options
+            // at all — which is most of them — hit "Undefined array key".
+            $chosen = $options['fulfillment'] ?? null;
+            $fulfillment = $chosen instanceof Fulfillment
+                ? $chosen
+                : (Fulfillment::tryFrom((string) $chosen) ?? Fulfillment::Delivery);
 
             // Effective fee already accounts for an automatic free-shipping window;
             // a free-shipping coupon waives it too.
