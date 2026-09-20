@@ -205,6 +205,39 @@ export default function StoreNavbar() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
 
+    /*
+     * Cart bump. Watches the shared `cart.count` prop rather than listening for an
+     * event from whichever page did the adding, so EVERY path into the cart
+     * animates and no call site has to remember to announce itself.
+     *
+     * ⚠️ Only an INCREASE bumps. `previous` is seeded from the first render, so
+     * arriving on a page with three items already in the cart is silent, and
+     * removing an item on the cart page does not celebrate.
+     */
+    const [bumping, setBumping] = useState(false);
+    const previousCount = useRef(cartCount);
+
+    useEffect(() => {
+        const grew = cartCount > previousCount.current;
+        previousCount.current = cartCount;
+
+        if (!grew) return;
+
+        /* ⚠️ Re-adding while the animation is still running has to RESTART it, and
+           setting a already-true flag true again renders nothing. Dropping the
+           class for one frame is what makes the browser run the keyframes afresh. */
+        setBumping(false);
+        const frame = requestAnimationFrame(() => setBumping(true));
+        const timer = setTimeout(() => setBumping(false), 600);
+
+        return () => {
+            cancelAnimationFrame(frame);
+            clearTimeout(timer);
+        };
+    }, [cartCount]);
+
+    const cartBump = bumping ? 'cart-bump' : '';
+
     // Reveal-on-scroll-up navbar: one scroll down hides it outright, scrolling up
     // slides it straight back in, so navigation is always a flick away. `scrolled`
     // now drives ONLY the drop shadow — see the note above the constants.
@@ -512,7 +545,7 @@ export default function StoreNavbar() {
                         <Link
                             href="/cart"
                             aria-label={t('common.cart')}
-                            className="text-brand-gold hover:text-brand-teal relative hidden transition-colors md:inline-flex"
+                            className={`text-brand-gold hover:text-brand-teal relative hidden transition-colors md:inline-flex ${cartBump}`}
                         >
                             <ShoppingBag className="size-5" />
                             {cartCount > 0 && (
@@ -553,7 +586,7 @@ export default function StoreNavbar() {
                         <Link
                             href="/cart"
                             aria-label={t('common.cart')}
-                            className="text-brand-gold hover:text-brand-teal relative transition-colors md:hidden"
+                            className={`text-brand-gold hover:text-brand-teal relative transition-colors md:hidden ${cartBump}`}
                         >
                             <ShoppingBag className="size-6" />
                             {cartCount > 0 && (

@@ -437,6 +437,8 @@ const ar = {
     },
     product: {
         addToCart: 'أضف إلى السلة',
+        addingToCart: 'جارٍ الإضافة…',
+        addedToCart: 'تمت الإضافة إلى السلة',
         chooseOption: 'اختر أحد الخيارات',
         piecesPerBox: 'الكرتون يحتوي على {{n}} عبوة',
         sizeGrams: '{{n}} جم',

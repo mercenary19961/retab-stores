@@ -414,6 +414,8 @@ const en = {
     },
     product: {
         addToCart: 'Add to cart',
+        addingToCart: 'Adding…',
+        addedToCart: 'Added to cart',
         chooseOption: 'Choose an option',
         piecesPerBox: 'The box contains {{n}} packs',
         sizeGrams: '{{n}}g',

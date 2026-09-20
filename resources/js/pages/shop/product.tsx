@@ -6,8 +6,8 @@ import { useLocalized } from '@/lib/localize';
 import { round2 } from '@/lib/option-pricing';
 import { type SharedData } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Check, Gift, Heart, Link2, Minus, PackageOpen, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { Check, Gift, Heart, Link2, LoaderCircle, Minus, PackageOpen, Plus, ShoppingBag, Sparkles, Star } from 'lucide-react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ProductOptionData {
@@ -92,6 +92,16 @@ function Stars({ value, className = '' }: { value: number; className?: string })
     );
 }
 
+/**
+ * The add-to-cart button's three faces. A lookup rather than nested ternaries in
+ * the JSX, so the icon and the label for a state can never drift apart.
+ */
+const CART_BUTTON = {
+    idle: { Icon: ShoppingBag, key: 'product.addToCart', spin: false },
+    adding: { Icon: LoaderCircle, key: 'product.addingToCart', spin: true },
+    added: { Icon: Check, key: 'product.addedToCart', spin: false },
+} as const;
+
 export default function ShopProduct({
     product,
     reviews,
@@ -115,6 +125,38 @@ export default function ShopProduct({
     const description = localized(product, 'description');
 
     const [qty, setQty] = useState(1);
+
+    /*
+     * Add-to-cart feedback. Pressing the button used to do nothing visible: the
+     * POST is preserveScroll, so the only thing that moved was a small count in
+     * the header the shopper was not looking at.
+     */
+    const [cartState, setCartState] = useState<'idle' | 'adding' | 'added'>('idle');
+    const revertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // The confirmation reverts on a timer, so it must not outlive the page.
+    useEffect(() => () => void (revertTimer.current && clearTimeout(revertTimer.current)), []);
+
+    const addToCart = () =>
+        router.post(
+            '/cart',
+            { product_id: product.id, option_id: selected?.id ?? null, quantity: qty },
+            {
+                preserveScroll: true,
+                onStart: () => setCartState('adding'),
+                onSuccess: () => {
+                    setCartState('added');
+                    if (revertTimer.current) clearTimeout(revertTimer.current);
+                    revertTimer.current = setTimeout(() => setCartState('idle'), 2000);
+                },
+                /* ⚠️ Backstop, and it has to be conditional: onFinish runs after
+                   onSuccess too, so resetting unconditionally would wipe the
+                   confirmation the instant it appeared. Only a request that ended
+                   while still 'adding' (a network failure, a validation error)
+                   needs releasing. */
+                onFinish: () => setCartState((current) => (current === 'adding' ? 'idle' : current)),
+            },
+        );
 
     // A discount is on the ORIGINAL price by default and only reaches the sizes
     // when the admin opted it in (sale_applies_to_options) — mirrors
@@ -390,17 +432,26 @@ export default function ShopProduct({
                             <button
                                 type="button"
                                 data-testid="add-to-cart"
-                                onClick={() =>
-                                    router.post(
-                                        '/cart',
-                                        { product_id: product.id, option_id: selected?.id ?? null, quantity: qty },
-                                        { preserveScroll: true },
-                                    )
-                                }
-                                className="bg-brand-teal hover:bg-brand-teal/90 inline-flex flex-1 items-center justify-center gap-2 rounded-full px-8 py-3 font-semibold text-white transition-colors"
+                                onClick={addToCart}
+                                disabled={cartState === 'adding'}
+                                /* The label IS the confirmation, so it has to be
+                                   announced rather than only seen. Same pattern as
+                                   the quantity readout above. */
+                                aria-live="polite"
+                                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-8 py-3 font-semibold text-white transition-colors duration-300 ${
+                                    cartState === 'added' ? 'bg-emerald-600' : 'bg-brand-teal hover:bg-brand-teal/90'
+                                }`}
                             >
-                                <ShoppingBag className="size-5" />
-                                {t('product.addToCart')}
+                                {(() => {
+                                    const { Icon, key, spin } = CART_BUTTON[cartState];
+
+                                    return (
+                                        <>
+                                            <Icon className={`size-5 ${spin ? 'animate-spin' : ''}`} />
+                                            {t(key)}
+                                        </>
+                                    );
+                                })()}
                             </button>
                         </div>
                     ) : (
