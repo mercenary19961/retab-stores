@@ -78,6 +78,10 @@ const ar = {
         namePlaceholder: 'محمد العتيبي',
         forgotPassword: 'نسيت كلمة المرور؟',
         remember: 'تذكّرني',
+        adminLogin: {
+            title: 'دخول الموظفين',
+            subtitle: 'أدخل بريد وكلمة مرور حساب الموظف',
+        },
         login: {
             title: 'تسجيل الدخول إلى حسابك',
             subtitle: 'أدخل بريدك الإلكتروني وكلمة المرور لتسجيل الدخول',

@@ -78,6 +78,10 @@ const en = {
         namePlaceholder: 'Mohammed Alotaibi',
         forgotPassword: 'Forgot password?',
         remember: 'Remember me',
+        adminLogin: {
+            title: 'Staff sign-in',
+            subtitle: 'Enter the email and password for your staff account',
+        },
         login: {
             title: 'Log in to your account',
             subtitle: 'Enter your email and password to log in',

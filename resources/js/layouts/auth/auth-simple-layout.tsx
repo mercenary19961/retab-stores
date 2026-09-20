@@ -1,5 +1,6 @@
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Link } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
 interface AuthLayoutProps {
@@ -12,6 +13,7 @@ interface AuthLayoutProps {
 export default function AuthSimpleLayout({ children, title, description }: AuthLayoutProps) {
     const { t } = useTranslation();
     const { toggleLanguage } = useLanguage();
+    const { flash } = usePage<SharedData>().props;
 
     return (
         <div className="bg-brand-cream relative flex min-h-svh flex-col items-center justify-center px-6 py-12">
@@ -38,6 +40,22 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
                             </div>
                         )}
                     </div>
+
+                    {/* 🔴 Flash errors, rendered here so EVERY auth page shows them.
+                        Without this a redirect carrying ->with('error', ...) — which
+                        is how the Google callback reports a failed sign-in — bounces
+                        the visitor back to a page that looks like nothing happened.
+                        That is exactly how an expired OAuth state presented as "the
+                        login button silently does nothing". */}
+                    {flash?.error && (
+                        <div
+                            role="alert"
+                            data-testid="auth-error"
+                            className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                        >
+                            {flash.error}
+                        </div>
+                    )}
 
                     <div className="mt-8">{children}</div>
                 </div>

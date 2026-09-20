@@ -43,6 +43,11 @@ export interface SharedData {
     whatsappAuth: boolean;
     /** True only when a Google OAuth client is configured; gates the button. */
     googleAuth: boolean;
+    /**
+     * One-shot messages from the last request. `id` is a per-response nonce so an
+     * identical message twice in a row still re-triggers value-compared effects.
+     */
+    flash: { success?: string | null; error?: string | null; id?: string | null };
     [key: string]: unknown;
 }
 

@@ -51,6 +51,15 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // 🔑 Send an unauthenticated visitor to the door they were heading for.
+        // Without this, a staff member whose session expired mid-task lands on the
+        // CUSTOMER login — which offers Google, WhatsApp and a sign-up link, none
+        // of which can produce a staff account. The split pages are only real if
+        // the redirect respects it.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin', 'admin/*')
+            ? route('admin.login')
+            : route('login'));
+
         $middleware->alias([
             'staff' => EnsureUserIsStaff::class,
             'admin' => EnsureUserIsAdmin::class,

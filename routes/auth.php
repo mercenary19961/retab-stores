@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AdminSessionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -33,6 +34,12 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:6,1,otp-send')->name('login.whatsapp.send');
     Route::post('login/whatsapp/verify', [OtpAuthController::class, 'verify'])
         ->middleware('throttle:6,1,otp-verify')->name('login.whatsapp.verify');
+
+    // Staff front door. Separate from the customers' /login: no social sign-in
+    // and no sign-up link, because staff accounts exist only at /admin/users.
+    // Shares LoginRequest, so the throttle and lockout are the same.
+    Route::get('admin/login', [AdminSessionController::class, 'create'])->name('admin.login');
+    Route::post('admin/login', [AdminSessionController::class, 'store'])->name('admin.login.store');
 
     // Sign in with Google. Both 404 unless a Google OAuth client is configured.
     // Own throttle bucket — a bare `throttle:N,1` rejoins the shared per-visitor
