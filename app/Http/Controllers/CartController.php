@@ -18,6 +18,16 @@ class CartController
     /** Session key holding the shopper's applied coupon code (carried to checkout). */
     public const COUPON_SESSION_KEY = 'cart_coupon';
 
+    /**
+     * Session key for "this order is a gift", set on the cart page.
+     *
+     * In the session rather than a checkout field because the client asked for
+     * the control to live on the CART, above the coupon box — so like the coupon
+     * it has to survive the trip to checkout. Both are cleared once an order is
+     * placed, or the next cart would silently inherit the choice.
+     */
+    public const GIFT_SESSION_KEY = 'cart_gift';
+
     public function __construct(
         protected CartService $cart,
         protected CheckoutService $checkout,
@@ -55,6 +65,9 @@ class CartController
             // fell below its minimum, it expired, it hit its cap…). Surfaced inline
             // so the shopper isn't silently charged more than they expected.
             'couponError' => $couponError,
+
+            // Gift toggle, carried to checkout in the session (see GIFT_SESSION_KEY).
+            'isGift' => (bool) $request->session()->get(self::GIFT_SESSION_KEY, false),
 
             // Empty state only — an empty cart is otherwise a dead end.
             'bestSellers' => $summary['count'] === 0 ? ProductCards::bestSellers(4) : [],
@@ -108,6 +121,19 @@ class CartController
      * redeemed until the order is placed, and placeOrder re-validates under a row
      * lock, so an early preview can never over-redeem a usage-capped coupon.
      */
+    /**
+     * Mark (or unmark) this cart as a gift.
+     *
+     * A flag for staff and nothing more — it changes no price, no routing and no
+     * messaging. It tells whoever packs the box to treat it as a gift.
+     */
+    public function setGift(Request $request): RedirectResponse
+    {
+        $request->session()->put(self::GIFT_SESSION_KEY, $request->boolean('is_gift'));
+
+        return back();
+    }
+
     public function applyCoupon(Request $request): RedirectResponse
     {
         $data = $request->validate(['code' => ['required', 'string', 'max:60']]);

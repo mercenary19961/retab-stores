@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Fulfillment;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Cart;
@@ -59,23 +60,41 @@ class CheckoutService
     /**
      * @param  array{name?:string,email?:string,phone?:string}  $customer
      * @param  array<string,mixed>  $shippingAddress  GCC-format address
+     * @param  array<string,mixed>  $options  Checkout extras: is_gift, fulfillment,
+     *                                        recipient_name, recipient_phone,
+     *                                        company_name, company_cr, company_vat.
+     *                                        Passed as one array rather than seven
+     *                                        more positional arguments.
      */
-    public function placeOrder(Cart $cart, array $customer, array $shippingAddress, ?string $couponCode = null): Order
-    {
+    public function placeOrder(
+        Cart $cart,
+        array $customer,
+        array $shippingAddress,
+        ?string $couponCode = null,
+        array $options = [],
+    ): Order {
         $cart->loadMissing('items.product');
 
         if ($cart->items->isEmpty()) {
             throw new \RuntimeException('Cart is empty.');
         }
 
-        return DB::transaction(function () use ($cart, $customer, $shippingAddress, $couponCode) {
+        return DB::transaction(function () use ($cart, $customer, $shippingAddress, $couponCode, $options) {
             [$subtotal, $lines] = $this->buildLines($cart);
 
             [$coupon, $discount] = $this->resolveCoupon($couponCode, $subtotal, $cart->user_id);
 
+            $fulfillment = $options['fulfillment'] instanceof Fulfillment
+                ? $options['fulfillment']
+                : Fulfillment::tryFrom((string) ($options['fulfillment'] ?? '')) ?? Fulfillment::Delivery;
+
             // Effective fee already accounts for an automatic free-shipping window;
             // a free-shipping coupon waives it too.
-            $shippingFee = $this->shippingFee();
+            //
+            // 🔴 Collection charges nothing: the customer walks into the shop, so
+            // there is no carrier to pay. Decided HERE rather than in the browser
+            // because this figure is what the customer is charged.
+            $shippingFee = $fulfillment->needsShipping() ? $this->shippingFee() : 0.0;
             if ($coupon && $coupon->wavesShipping()) {
                 $shippingFee = 0.0;
             }
@@ -90,7 +109,21 @@ class CheckoutService
                 // Snapshot the checkout language: customer emails are queued, so the
                 // worker's locale (AR) would otherwise decide what an EN shopper reads.
                 'locale' => app()->getLocale(),
-                'shipping_address' => $shippingAddress,
+                // Collection orders carry no address: there is nowhere to ship to,
+                // and storing the shop's own address would read as the customer's.
+                //
+                // ⚠️ An empty array, not null. The column is NOT NULL, and `[]` also
+                // keeps every existing `shipping_address['city']` read safe — null
+                // would turn each one into "array offset on null". `needsShipping()`
+                // is the authority on whether there is an address to care about.
+                'shipping_address' => $fulfillment->needsShipping() ? $shippingAddress : [],
+                'is_gift' => (bool) ($options['is_gift'] ?? false),
+                'fulfillment' => $fulfillment,
+                'recipient_name' => $options['recipient_name'] ?? null,
+                'recipient_phone' => $options['recipient_phone'] ?? null,
+                'company_name' => $options['company_name'] ?? null,
+                'company_cr' => $options['company_cr'] ?? null,
+                'company_vat' => $options['company_vat'] ?? null,
                 'status' => OrderStatus::PendingPayment,
                 'payment_status' => PaymentStatus::Pending,
                 'subtotal' => $subtotal,

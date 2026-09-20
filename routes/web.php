@@ -89,6 +89,9 @@ Route::patch('/cart/items/{item}', [CartController::class, 'update'])->middlewar
 Route::delete('/cart/items/{item}', [CartController::class, 'remove'])->middleware('throttle:60,1,cart')->name('cart.remove');
 // Coupon apply is a code-guessing surface, so it gets a tighter limit than the
 // cart mutations above — it only previews (nothing is redeemed until checkout).
+// Gift flag. Own throttle bucket — a bare `throttle:N,1` rejoins the shared
+// per-visitor counter that once 429'd shoppers at checkout (2026-08-06).
+Route::post('/cart/gift', [CartController::class, 'setGift'])->middleware('throttle:30,1,cart-gift')->name('cart.gift');
 Route::post('/cart/coupon', [CartController::class, 'applyCoupon'])->middleware('throttle:10,1,coupon')->name('cart.coupon.apply');
 Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->middleware('throttle:30,1,coupon')->name('cart.coupon.remove');
 

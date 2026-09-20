@@ -205,6 +205,17 @@ class OrderController extends Controller
                 'shipping_cost' => $order->shipping_cost === null ? null : (float) $order->shipping_cost,
                 'total' => (float) $order->total,
                 'currency' => $order->currency,
+                // Checkout options. `is_gift` and `fulfillment` change how the box
+                // is packed and whether it is shipped at all, so staff must see
+                // them on the order rather than only on the packing slip.
+                'is_gift' => (bool) $order->is_gift,
+                'fulfillment' => $order->fulfillment?->value,
+                'recipient' => $order->hasAlternateRecipient() ? $order->recipient() : null,
+                'company' => filled($order->company_name) ? [
+                    'name' => $order->company_name,
+                    'cr' => $order->company_cr,
+                    'vat' => $order->company_vat,
+                ] : null,
                 'tracking_number' => $order->tracking_number,
                 'carrier' => $order->carrier,
                 // The carrier's public tracking page, when the shipping portal has
@@ -246,7 +257,10 @@ class OrderController extends Controller
             'can' => [
                 'confirm' => $manage && $order->status === OrderStatus::AwaitingConfirmation,
                 'unavailable' => $manage && $order->status === OrderStatus::AwaitingConfirmation,
-                'ship' => $manage && $order->status === OrderStatus::Confirmed && ! $order->tracking_number,
+                // 🔴 Collection orders are never shipped: the customer walks in and
+                // takes them. Offering Ship would push a parcel to OTO and dispatch
+                // a courier to collect something nobody is sending.
+                'ship' => $manage && $order->needsShipping() && $order->status === OrderStatus::Confirmed && ! $order->tracking_number,
                 'markTransferReceived' => $manage && $awaitingTransfer,
                 'editNotes' => $manage,
                 // 🔴 This used to be `status === Confirmed`, which is the exact

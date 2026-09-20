@@ -31,7 +31,43 @@ interface Props {
     total: number;
     coupon: { code: string; waives_shipping: boolean } | null;
     couponError: string | null;
+    isGift: boolean;
     bestSellers: StoreProduct[];
+}
+
+/**
+ * "This order is a gift" — a flag for whoever packs the box. Deliberately
+ * changes nothing about price, routing or messaging.
+ *
+ * Sits above the coupon box, where the client asked for it. Posts on toggle
+ * rather than waiting for checkout, so the choice survives the trip in the
+ * session exactly the way an applied coupon does.
+ */
+function GiftToggle({ isGift }: { isGift: boolean }) {
+    const { t } = useTranslation();
+    const [busy, setBusy] = useState(false);
+
+    return (
+        <div className="mb-3 rounded-lg border border-gray-200 p-3">
+            <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                    type="checkbox"
+                    data-testid="cart-gift"
+                    checked={isGift}
+                    disabled={busy}
+                    onChange={(e) => {
+                        setBusy(true);
+                        router.post('/cart/gift', { is_gift: e.target.checked }, { preserveScroll: true, onFinish: () => setBusy(false) });
+                    }}
+                    className="mt-0.5"
+                />
+                <span className="min-w-0">
+                    <span className="block text-sm font-medium text-gray-800">{t('cart.giftLabel')}</span>
+                    <span className="block text-xs text-gray-500">{t('cart.giftHint')}</span>
+                </span>
+            </label>
+        </div>
+    );
 }
 
 /** Money with two decimals — cart totals should never render as bare integers. */
@@ -155,7 +191,7 @@ function CouponBox({ coupon, error }: { coupon: Props['coupon']; error: string |
     );
 }
 
-export default function Cart({ items, subtotal, shippingFee, freeShipping, discount, total, coupon, couponError, bestSellers }: Props) {
+export default function Cart({ items, subtotal, shippingFee, freeShipping, discount, total, coupon, couponError, isGift, bestSellers }: Props) {
     const { t } = useTranslation();
     const localized = useLocalized();
     const currency = t('common.currency');
@@ -336,6 +372,7 @@ export default function Cart({ items, subtotal, shippingFee, freeShipping, disco
                     </div>
                     <p className="mt-1 text-[11px] text-gray-400">{t('cart.vatNote')}</p>
 
+                    <GiftToggle isGift={isGift} />
                     <CouponBox coupon={coupon} error={couponError} />
 
                     <Link

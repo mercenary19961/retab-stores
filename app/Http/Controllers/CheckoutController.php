@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Fulfillment;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -22,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class CheckoutController
@@ -68,11 +70,33 @@ class CheckoutController
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['nullable', 'email', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:20'],
-            'country' => ['required', 'in:'.implode(',', self::GCC)],
-            'city' => ['required', 'string', 'max:255'],
+            // How they get it. Everything address-shaped below is required only
+            // for delivery — a collection order has nowhere to ship to, so asking
+            // for a city would be asking for something that does not exist.
+            //
+            // ⚠️ Optional, not required, and it defaults to delivery. A shopper who
+            // had checkout open across a deploy still has the previous JS bundle,
+            // which posts no `fulfillment` at all — requiring it would reject their
+            // order over a field they cannot see. Delivery is also the safe default:
+            // it charges the shipping fee rather than silently waiving it.
+            'fulfillment' => ['sometimes', Rule::enum(Fulfillment::class)],
+            // required_unless, not required_if: with `fulfillment` absent (the
+            // stale-bundle case above) required_if would not fire and an order
+            // could be placed with no address at all.
+            'country' => ['required_unless:fulfillment,collection', 'nullable', 'in:'.implode(',', self::GCC)],
+            'city' => ['required_unless:fulfillment,collection', 'nullable', 'string', 'max:255'],
             'district' => ['nullable', 'string', 'max:255'],
             'street' => ['nullable', 'string', 'max:255'],
             'building' => ['nullable', 'string', 'max:255'],
+            // Someone else receiving it. The phone is required once a name is
+            // given: a courier with a name and no number cannot deliver.
+            'recipient_name' => ['nullable', 'string', 'max:255'],
+            'recipient_phone' => ['nullable', 'required_with:recipient_name', 'string', 'max:20'],
+            // Buying as a company. The name is what makes it a company order, so
+            // the registration numbers are required alongside it.
+            'company_name' => ['nullable', 'string', 'max:255'],
+            'company_cr' => ['nullable', 'required_with:company_name', 'string', 'max:32'],
+            'company_vat' => ['nullable', 'required_with:company_name', 'string', 'max:32'],
             // 🔴 Validated against the ENABLED methods, not the whole enum. Hiding a
             // radio button in the browser is not a control; a disabled method must
             // be refused here too.
@@ -90,14 +114,29 @@ class CheckoutController
                 $cart,
                 ['name' => $data['customer_name'], 'email' => $data['customer_email'] ?? null, 'phone' => $data['customer_phone']],
                 [
-                    'country' => $data['country'],
-                    'city' => $data['city'],
+                    'country' => $data['country'] ?? null,
+                    'city' => $data['city'] ?? null,
                     'district' => $data['district'] ?? null,
                     'street' => $data['street'] ?? null,
                     'building' => $data['building'] ?? null,
-                    'phone' => $data['customer_phone'],
+                    // The number the courier rings. Whoever is actually receiving
+                    // the parcel, not necessarily whoever paid for it.
+                    'phone' => ($data['recipient_phone'] ?? null) ?: $data['customer_phone'],
                 ],
                 $data['coupon_code'] ?? null,
+                [
+                    // The gift flag is set on the CART, so it travels in the session
+                    // like the coupon does rather than as a checkout field.
+                    'is_gift' => (bool) $request->session()->get(CartController::GIFT_SESSION_KEY, false),
+                    // Absent on a stale bundle — placeOrder falls back to delivery,
+                    // but say so here rather than relying on that.
+                    'fulfillment' => $data['fulfillment'] ?? Fulfillment::Delivery->value,
+                    'recipient_name' => $data['recipient_name'] ?? null,
+                    'recipient_phone' => $data['recipient_phone'] ?? null,
+                    'company_name' => $data['company_name'] ?? null,
+                    'company_cr' => $data['company_cr'] ?? null,
+                    'company_vat' => $data['company_vat'] ?? null,
+                ],
             );
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
@@ -110,6 +149,8 @@ class CheckoutController
         // The coupon is spent now (placeOrder recorded its redemption), so drop the
         // cart-page copy — otherwise it would silently reappear on the next order.
         $session->forget(CartController::COUPON_SESSION_KEY);
+        // Same reasoning: the gift choice belonged to that cart, not to the next one.
+        $session->forget(CartController::GIFT_SESSION_KEY);
 
         // Alert staff that a new order needs attention (verify transfer / check stock)
         // across all three channels: WhatsApp + the in-panel notification bell.

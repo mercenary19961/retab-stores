@@ -16,6 +16,7 @@ import {
     CreditCard,
     ExternalLink,
     FileText,
+    Gift,
     Globe,
     History,
     Landmark,
@@ -91,6 +92,14 @@ export interface OrderDetailData {
     shipping_cost: number | null;
     total: number;
     currency: string;
+    /** Pack as a gift: no prices or invoice in the box. */
+    is_gift: boolean;
+    /** 'delivery' | 'collection'. Collection orders are never shipped. */
+    fulfillment: string | null;
+    /** Set only when the buyer nominated someone else to receive the parcel. */
+    recipient: { name: string; phone: string } | null;
+    /** Set only on a company purchase. */
+    company: { name: string; cr: string | null; vat: string | null } | null;
     tracking_number: string | null;
     carrier: string | null;
     /** The carrier's public tracking page, when the shipping portal has one on file. */
@@ -551,7 +560,34 @@ export default function OrderDetailView({
                         <Row icon={User} label={t('admin.common.name')} value={order.customer_name ?? '—'} />
                         <Row icon={Phone} label={t('admin.common.phone')} value={order.customer_phone ?? '—'} />
                         <Row icon={Mail} label={t('admin.common.email')} value={order.customer_email ?? '—'} />
+                        {/* Only rendered when the buyer nominated someone else — a
+                            row reading "same as customer" is noise on every order. */}
+                        {order.recipient && (
+                            <>
+                                <Row icon={User} label={t('admin.orders.recipientName')} value={order.recipient.name} />
+                                <Row icon={Phone} label={t('admin.orders.recipientPhone')} value={order.recipient.phone} />
+                            </>
+                        )}
+                        {order.company && (
+                            <>
+                                <Row icon={Building2} label={t('admin.orders.companyName')} value={order.company.name} />
+                                <Row icon={FileText} label={t('admin.orders.companyCr')} value={order.company.cr ?? '—'} />
+                                <Row icon={FileText} label={t('admin.orders.companyVat')} value={order.company.vat ?? '—'} />
+                            </>
+                        )}
                     </section>
+
+                    {/* Packing instructions. Their own panel because they change what
+                        staff physically do, unlike the reference rows above. */}
+                    {(order.is_gift || order.fulfillment === 'collection') && (
+                        <section className="rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
+                            <SectionHeader icon={Gift}>{t('admin.orders.packingNotes')}</SectionHeader>
+                            {order.is_gift && <p className="text-sm text-amber-900 dark:text-amber-200">{t('admin.orders.isGift')}</p>}
+                            {order.fulfillment === 'collection' && (
+                                <p className="mt-1 text-sm text-amber-900 dark:text-amber-200">{t('admin.orders.isCollection')}</p>
+                            )}
+                        </section>
+                    )}
 
                     <section className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                         <SectionHeader icon={Truck}>{t('admin.common.shipping')}</SectionHeader>

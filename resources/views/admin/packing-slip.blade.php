@@ -11,6 +11,8 @@
         $address['country'] ?? null,
     ]));
     $name = fn ($ar, $en) => $locale === 'en' && filled($en) ? $en : $ar;
+    // Who actually gets the parcel — the buyer unless they nominated someone else.
+    $recipient = $order->recipient();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}">
@@ -29,6 +31,10 @@
         .number { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 20px; font-weight: 700; direction: ltr; unicode-bidi: embed; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
         .label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #555; margin-bottom: 6px; }
+        /* Packing instructions that change what goes in the box. Bordered rather
+           than filled so it survives a black-and-white printer, which is what
+           this page will actually come out of. */
+        .notice { border: 2px solid #000; padding: 8px 10px; margin-bottom: 14px; font-weight: 700; }
         .ltr { direction: ltr; unicode-bidi: embed; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 10px 8px; border-bottom: 1px solid #ddd; text-align: start; vertical-align: top; }
@@ -65,17 +71,36 @@
             </div>
         </header>
 
+        @if ($order->is_gift)
+            {{-- Loudest thing on the page on purpose: it is the one instruction
+                 that changes how the box is packed, and it cannot be recovered
+                 once the parcel has gone. --}}
+            <div class="notice">{{ __('packing_slip.gift') }}</div>
+        @endif
+
+        @if (! $order->needsShipping())
+            <div class="notice">{{ __('packing_slip.collection') }}</div>
+        @endif
+
         <div class="grid">
             <div>
-                <div class="label">{{ __('packing_slip.ship_to') }}</div>
-                <div><strong><bdi>{{ $order->customer_name }}</bdi></strong></div>
+                <div class="label">{{ $order->needsShipping() ? __('packing_slip.ship_to') : __('packing_slip.collected_by') }}</div>
+                {{-- Whoever actually receives it, which is not always the buyer. --}}
+                <div><strong><bdi>{{ $recipient['name'] }}</bdi></strong></div>
+                @if ($order->hasAlternateRecipient())
+                    <div class="muted">{{ __('packing_slip.ordered_by', ['name' => $order->customer_name]) }}</div>
+                @endif
                 @foreach ($addressLines as $line)
                     <div><bdi>{{ $line }}</bdi></div>
                 @endforeach
             </div>
             <div>
                 <div class="label">{{ __('packing_slip.phone') }}</div>
-                <div class="ltr">{{ $order->customer_phone }}</div>
+                <div class="ltr">{{ $recipient['phone'] }}</div>
+                @if (filled($order->company_name))
+                    <div class="label" style="margin-top:10px">{{ __('packing_slip.company') }}</div>
+                    <div><bdi>{{ $order->company_name }}</bdi></div>
+                @endif
             </div>
         </div>
 
