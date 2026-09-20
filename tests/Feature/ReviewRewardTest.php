@@ -33,9 +33,18 @@ class ReviewRewardTest extends TestCase
         ]);
     }
 
-    private function customer(): User
+    /**
+     * Opted in by default: Meta classifies the review-nudge template as Marketing,
+     * so WhatsAppService refuses to send it without consent. These tests are about
+     * reward eligibility, not consent — pass false to exercise the opt-in gate.
+     */
+    private function customer(bool $optIn = true): User
     {
-        return User::factory()->create(['role' => 'customer', 'phone' => '+966500000000']);
+        return User::factory()->create([
+            'role' => 'customer',
+            'phone' => '+966500000000',
+            'whatsapp_opt_in' => $optIn,
+        ]);
     }
 
     private function orderFor(User $user, Product $product, OrderStatus $status = OrderStatus::Confirmed): Order
@@ -154,6 +163,24 @@ class ReviewRewardTest extends TestCase
 
         $this->assertNotNull($order->fresh()->review_reminder_sent_at);
         $this->assertDatabaseHas('whatsapp_messages', ['order_id' => $order->id, 'template' => 'review_reminder']);
+    }
+
+    /**
+     * Meta classifies this template as Marketing (it carries a discount), and a
+     * marketing message to someone who never consented gets blocked and reported,
+     * which cuts the whole number's messaging limits.
+     */
+    public function test_reminder_job_does_not_message_a_customer_who_has_not_opted_in(): void
+    {
+        $this->enable();
+        $order = $this->orderFor($this->customer(optIn: false), $this->product(), OrderStatus::Delivered);
+
+        (new SendReviewReminder($order->id))->handle(app(WhatsAppService::class), app(ReviewRewardService::class));
+
+        $this->assertDatabaseMissing('whatsapp_messages', ['order_id' => $order->id]);
+        // Still stamped: the job ran and decided, so a repeated "delivered"
+        // webhook must not re-enter it hoping for a different answer.
+        $this->assertNotNull($order->fresh()->review_reminder_sent_at);
     }
 
     public function test_reminder_job_skips_a_customer_who_already_claimed(): void

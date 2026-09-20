@@ -127,9 +127,17 @@ class WhatsAppService
         return $order->itemsSummary($language) ?: $order->order_number;
     }
 
-    /** 5-purchase milestone — 15% reward coupon issued. */
+    /**
+     * 5-purchase milestone — 15% reward coupon issued.
+     *
+     * Opt-in gated: see optedIn().
+     */
     public function notifyLoyaltyReward(Order $order, LoyaltyReward $reward): ?WhatsappMessage
     {
+        if (! $this->optedIn($reward->user_id)) {
+            return null;
+        }
+
         $code = $reward->coupon?->code ?? '';
 
         return $this->dispatch($order->customer_phone, self::T_LOYALTY_REWARD, [
@@ -141,15 +149,45 @@ class WhatsAppService
     /**
      * Post-delivery nudge: review a purchased product to earn a one-time discount.
      * Sent ~1 day after delivery (queued) since most customers won't reopen the
-     * site on their own. Utility template — tied to their own order.
+     * site on their own.
+     *
+     * Opt-in gated: see optedIn().
      */
     public function notifyReviewReminder(Order $order, int $discountPercent, string $reviewUrl): ?WhatsappMessage
     {
+        if (! $this->optedIn($order->user_id)) {
+            return null;
+        }
+
         return $this->dispatch($order->customer_phone, self::T_REVIEW_REMINDER, [
             $order->customer_name ?? '',
             (string) $discountPercent,
             $reviewUrl,
         ], purpose: 'review_reminder', order: $order, userId: $order->user_id);
+    }
+
+    /**
+     * May we send this customer a MARKETING message?
+     *
+     * 🔴 The loyalty coupon and the review nudge both carry a discount offer, so
+     * Meta classifies their templates as Marketing rather than Utility (confirmed
+     * on submission, 2026-09-20). Marketing requires explicit opt-in: sending
+     * without it is a policy breach, and in practice the recipients block or
+     * report, which drops the number's quality rating and gets the whole account's
+     * messaging limits cut — so it costs far more than the one message.
+     *
+     * Deliberately NOT keyed off the `category` argument the way the queue choice
+     * is. Passing `category: 'marketing'` would also route these to the bulk queue,
+     * and that was decided against on purpose: each is one triggered message per
+     * customer, not a blast, and neither should queue behind a 5,000-recipient
+     * campaign. Transactional sends never reach this check.
+     *
+     * No account means no consent on file, so no marketing message.
+     */
+    private function optedIn(?int $userId): bool
+    {
+        return $userId !== null
+            && (bool) User::whereKey($userId)->value('whatsapp_opt_in');
     }
 
     /**
