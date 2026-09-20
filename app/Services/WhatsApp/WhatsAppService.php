@@ -84,6 +84,7 @@ class WhatsAppService
     {
         return $this->dispatch($order->customer_phone, self::T_ORDER_CONFIRMED, [
             $order->customer_name ?? '',
+            $this->itemsFor($order),
             $order->order_number,
         ], purpose: 'order_confirm', order: $order);
     }
@@ -102,9 +103,28 @@ class WhatsAppService
     {
         return $this->dispatch($order->customer_phone, self::T_ORDER_SHIPPED, [
             $order->customer_name ?? '',
+            $this->itemsFor($order),
             $order->order_number,
             $order->tracking_number ?? '',
         ], purpose: 'shipped', order: $order);
+    }
+
+    /**
+     * What the customer actually bought, for the order templates: the
+     * highest-value line plus "and N more". Same helper the order emails use,
+     * so a receipt and its WhatsApp message can never name different products.
+     *
+     * Read in the language the TEMPLATE is sent in, not the order's own locale:
+     * the templates exist only in Arabic, so an English product name would land
+     * mid-Arabic sentence. Falls back to the order number because Meta rejects
+     * an empty template parameter, and an order with no lines has nothing else
+     * to identify it by.
+     */
+    private function itemsFor(Order $order): string
+    {
+        $language = (string) config('services.whatsapp.default_language', 'ar');
+
+        return $order->itemsSummary($language) ?: $order->order_number;
     }
 
     /** 5-purchase milestone — 15% reward coupon issued. */
