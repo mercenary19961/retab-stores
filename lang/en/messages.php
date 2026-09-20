@@ -73,6 +73,7 @@ return [
     'auth' => [
         'google_expired' => 'That sign-in attempt expired. Please try again.',
         'google_failed' => 'We could not sign you in with Google. Please try again, or use another way to sign in.',
+        'google_email_taken' => 'That email address is already registered. Please sign in with your password instead.',
         'not_staff' => 'This is the staff sign-in. That account is a customer account — please sign in at the main login page.',
     ],
 

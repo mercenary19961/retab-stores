@@ -28,6 +28,13 @@ use Laravel\Socialite\Two\InvalidStateException;
  */
 class GoogleAuthController extends Controller
 {
+    /**
+     * How long an avatar URL may be before we decline to store it. Matches the
+     * `users.avatar` / `social_accounts.avatar` column width set by the
+     * widen_avatar_urls migration; a test pins the two together.
+     */
+    public const AVATAR_MAX = 1024;
+
     /** Is a Google OAuth client actually set up? */
     public static function isConfigured(): bool
     {
@@ -65,7 +72,15 @@ class GoogleAuthController extends Controller
             return redirect()->route('login')->with('error', __('messages.auth.google_failed'));
         }
 
-        Auth::login($this->resolveUser($googleUser), remember: true);
+        $user = $this->resolveUser($googleUser);
+
+        if (! $user) {
+            // Google will not vouch for the address and somebody already holds it.
+            // See resolveUser() for why refusing is the only safe answer.
+            return redirect()->route('login')->with('error', __('messages.auth.google_email_taken'));
+        }
+
+        Auth::login($user, remember: true);
 
         // Honours the page they were sent here from — which is what makes this
         // usable from checkout as well as from the login page.
@@ -80,8 +95,9 @@ class GoogleAuthController extends Controller
      *   2. An account already has this email   → link it, but only if Google says
      *                                            the address is verified.
      *   3. Neither                             → create a customer.
+     *   4. Unverified email that is already taken → refuse (null); see below.
      */
-    private function resolveUser(SocialiteUser $googleUser): User
+    private function resolveUser(SocialiteUser $googleUser): ?User
     {
         return DB::transaction(function () use ($googleUser) {
             $providerId = (string) $googleUser->getId();
@@ -94,7 +110,7 @@ class GoogleAuthController extends Controller
 
             if ($link && $link->user) {
                 // Avatars change; refresh it so the account does not keep a stale one.
-                $link->update(['avatar' => $googleUser->getAvatar()]);
+                $link->update(['avatar' => $this->avatar($googleUser)]);
                 $this->fillBlanks($link->user, $googleUser);
 
                 return $link->user;
@@ -104,6 +120,16 @@ class GoogleAuthController extends Controller
                 ? User::where('email', $email)->lockForUpdate()->first()
                 : null;
 
+            // 🔴 Google will not vouch for this address AND an account already
+            // holds it. Linking is an account takeover, which is precisely what
+            // matchableByEmail() just refused — and creating a second account is
+            // impossible because `users.email` is unique, so the insert throws and
+            // the customer eats a 500 on the auth path. Refusing, and sending them
+            // to the password door, is the only safe outcome left.
+            if (! $user && filled($email) && User::where('email', $email)->exists()) {
+                return null;
+            }
+
             if (! $user) {
                 // 🔴 forceCreate, not create: `role` is deliberately excluded from
                 // User::$fillable as a privilege field, so mass assignment would
@@ -111,7 +137,7 @@ class GoogleAuthController extends Controller
                 $user = User::forceCreate([
                     'name' => $googleUser->getName(),
                     'email' => $email,
-                    'avatar' => $googleUser->getAvatar(),
+                    'avatar' => $this->avatar($googleUser),
                     'role' => 'customer',
                     // Google has already proven the address, so re-verifying it by
                     // email would ask the customer to confirm what we just confirmed.
@@ -129,7 +155,7 @@ class GoogleAuthController extends Controller
                 'user_id' => $user->id,
                 'provider' => 'google',
                 'provider_id' => $providerId,
-                'avatar' => $googleUser->getAvatar(),
+                'avatar' => $this->avatar($googleUser),
             ]);
 
             return $user;
@@ -160,6 +186,26 @@ class GoogleAuthController extends Controller
     }
 
     /**
+     * The provider's avatar URL, or null if it will not fit.
+     *
+     * 🔑 An avatar is decoration; it must never be able to break sign-in. Google
+     * already issues URLs past the 255 this column originally held, which is
+     * exactly what 500'd the first production sign-in, and nothing stops a
+     * provider making them longer again tomorrow. So an oversized one is DROPPED
+     * rather than stored or truncated: a missing profile picture is invisible,
+     * a truncated URL is a broken image, and an exception here costs the
+     * customer their account.
+     */
+    private function avatar(SocialiteUser $googleUser): ?string
+    {
+        $url = $googleUser->getAvatar();
+
+        return filled($url) && mb_strlen((string) $url) <= self::AVATAR_MAX
+            ? (string) $url
+            : null;
+    }
+
+    /**
      * Fill only what the account is missing. Never overwrites: a customer who set
      * their own name here should not have it replaced by their Google one on the
      * next sign-in.
@@ -168,7 +214,7 @@ class GoogleAuthController extends Controller
     {
         $fill = array_filter([
             'name' => blank($user->name) ? $googleUser->getName() : null,
-            'avatar' => blank($user->avatar) ? $googleUser->getAvatar() : null,
+            'avatar' => blank($user->avatar) ? $this->avatar($googleUser) : null,
         ]);
 
         if ($fill !== []) {
