@@ -55,6 +55,10 @@ class CheckoutController
             // placeOrder re-validates it under lock — this is only convenience).
             'appliedCoupon' => $request->session()->get(CartController::COUPON_SESSION_KEY),
             'countries' => self::GCC,
+            // Which methods the store is offering today, managed from /admin/settings.
+            // The page renders from this rather than a hardcoded list, so switching
+            // a gateway off removes it from checkout without a deploy.
+            'paymentMethods' => PaymentMethod::enabledValues(),
         ]);
     }
 
@@ -69,7 +73,10 @@ class CheckoutController
             'district' => ['nullable', 'string', 'max:255'],
             'street' => ['nullable', 'string', 'max:255'],
             'building' => ['nullable', 'string', 'max:255'],
-            'payment_method' => ['required', 'in:card,tamara,bank_transfer'],
+            // 🔴 Validated against the ENABLED methods, not the whole enum. Hiding a
+            // radio button in the browser is not a control; a disabled method must
+            // be refused here too.
+            'payment_method' => ['required', 'in:'.implode(',', PaymentMethod::enabledValues())],
             'coupon_code' => ['nullable', 'string', 'max:60'],
         ]);
 

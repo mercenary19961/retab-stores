@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PaymentMethod;
 use App\Http\Controllers\Controller;
 use App\Models\ClientReview;
 use App\Models\ContentPage;
@@ -45,6 +46,19 @@ class SettingController extends Controller
         'social_linkedin' => ['nullable', 'url', 'max:255'],
         // Admin UX: the "How it works" attention beam (stored '1'/'0').
         'admin_help_pulse' => ['boolean'],
+        // Which payment methods checkout offers (stored '1'/'0'). Keys come from
+        // the enum so a new method cannot be added without a home here.
+        'payment_card_enabled' => ['boolean'],
+        'payment_tamara_enabled' => ['boolean'],
+        'payment_bank_transfer_enabled' => ['boolean'],
+    ];
+
+    /** Settings stored as '1'/'0' rather than free text. */
+    private const BOOLEAN_FIELDS = [
+        'admin_help_pulse',
+        'payment_card_enabled',
+        'payment_tamara_enabled',
+        'payment_bank_transfer_enabled',
     ];
 
     /**
@@ -113,10 +127,20 @@ class SettingController extends Controller
     {
         $data = $request->validate(self::FIELDS);
 
-        // Normalise the boolean toggle to a clean '1'/'0' string (a raw PHP false
+        // Normalise the boolean toggles to a clean '1'/'0' string (a raw PHP false
         // would persist as '' and read back as "on").
-        if (array_key_exists('admin_help_pulse', $data)) {
-            $data['admin_help_pulse'] = $request->boolean('admin_help_pulse') ? '1' : '0';
+        foreach (self::BOOLEAN_FIELDS as $key) {
+            if (array_key_exists($key, $data)) {
+                $data[$key] = $request->boolean($key) ? '1' : '0';
+            }
+        }
+
+        // 🔴 Refuse up front rather than let the last method be switched off. The
+        // failure would otherwise surface days later as a shopper unable to pay at
+        // all, with nothing connecting it back to this save — the same shape as the
+        // last-carrier guard on the shipping portal.
+        if ($this->wouldDisableEveryPaymentMethod($data)) {
+            return back()->with('error', __('messages.admin.payment_last_enabled'));
         }
 
         DB::transaction(function () use ($data, $changeLog) {
@@ -135,5 +159,31 @@ class SettingController extends Controller
         });
 
         return back()->with('success', __('messages.admin.settings_saved'));
+    }
+
+    /**
+     * Would this save leave checkout with no way to pay?
+     *
+     * Reads the submitted value where the form sent one and the stored value
+     * otherwise, because the settings form posts whichever fields it rendered —
+     * a partial save must be judged on the resulting state, not on this request
+     * alone.
+     *
+     * @param  array<string,mixed>  $data
+     */
+    private function wouldDisableEveryPaymentMethod(array $data): bool
+    {
+        foreach (PaymentMethod::cases() as $method) {
+            $key = $method->settingKey();
+            $enabled = array_key_exists($key, $data)
+                ? $data[$key] === '1'
+                : Setting::get($key, '1') === '1';
+
+            if ($enabled) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

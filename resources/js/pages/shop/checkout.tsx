@@ -13,7 +13,9 @@ interface Item {
     line_total: number;
 }
 
-const METHOD_VALUES = ['bank_transfer', 'card', 'tamara'] as const;
+// Display order for the methods the server says are on. Kept here rather than
+// taken from the server's order so the list reads the same way every time.
+const METHOD_ORDER = ['bank_transfer', 'card', 'tamara'] as const;
 
 export default function Checkout({
     items,
@@ -21,13 +23,19 @@ export default function Checkout({
     shippingFee,
     countries,
     appliedCoupon,
+    paymentMethods,
 }: {
     items: Item[];
     subtotal: number;
     shippingFee: number;
     countries: string[];
     appliedCoupon?: string | null;
+    paymentMethods: string[];
 }) {
+    // Only what the store currently offers, managed from /admin/settings. Typed as
+    // string[] rather than the literal union, or the union narrows the form's
+    // payment_method field and the radio's own onChange stops type-checking.
+    const methods: string[] = METHOD_ORDER.filter((m) => paymentMethods.includes(m));
     const { t } = useTranslation();
     const localized = useLocalized();
     const currency = t('common.currency');
@@ -41,7 +49,10 @@ export default function Checkout({
         district: '',
         street: '',
         building: '',
-        payment_method: 'bank_transfer',
+        // Default to the first method still offered — bank transfer when it is on,
+        // otherwise whatever leads. Hardcoding 'bank_transfer' would preselect a
+        // method the store may have switched off.
+        payment_method: methods[0] ?? '',
         // Carried over from the cart page so the shopper doesn't retype it. The
         // form still submits it and placeOrder re-validates under lock.
         coupon_code: appliedCoupon ?? '',
@@ -110,7 +121,7 @@ export default function Checkout({
                     <section className="rounded-lg border border-gray-200 bg-white p-4">
                         <h2 className="mb-3 font-bold">{t('checkout.paymentMethod')}</h2>
                         <div className="space-y-2">
-                            {METHOD_VALUES.map((value) => (
+                            {methods.map((value) => (
                                 <label key={value} className="flex items-center gap-2">
                                     <input
                                         type="radio"

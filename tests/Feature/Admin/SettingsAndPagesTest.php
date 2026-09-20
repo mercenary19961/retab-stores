@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\PaymentMethod;
 use App\Models\ContentPage;
 use App\Models\Setting;
 use App\Models\User;
@@ -27,6 +28,53 @@ class SettingsAndPagesTest extends TestCase
 
         $this->assertSame('35', Setting::get('shipping_flat_fee'));
         $this->assertSame('SA9780000145608010008130', Setting::get('bank_iban'));
+    }
+
+    public function test_admin_can_switch_a_payment_method_off(): void
+    {
+        $this->actingAs($this->admin())->put('/admin/settings', [
+            'shipping_flat_fee' => '35',
+            'payment_card_enabled' => false,
+            'payment_tamara_enabled' => false,
+            'payment_bank_transfer_enabled' => true,
+        ])->assertSessionHas('success');
+
+        $this->assertSame(['bank_transfer'], PaymentMethod::enabledValues());
+    }
+
+    /**
+     * 🔴 Refused at the save, not discovered later by a shopper who cannot pay.
+     */
+    public function test_the_last_payment_method_cannot_be_switched_off(): void
+    {
+        $this->actingAs($this->admin())->put('/admin/settings', [
+            'shipping_flat_fee' => '35',
+            'payment_card_enabled' => false,
+            'payment_tamara_enabled' => false,
+            'payment_bank_transfer_enabled' => false,
+        ])->assertSessionHas('error');
+
+        // Nothing was written: all three are still on.
+        $this->assertCount(3, PaymentMethod::enabled());
+    }
+
+    /**
+     * The guard judges the RESULTING state, so a form that posts only some of the
+     * toggles is measured against what is already stored rather than against this
+     * request alone.
+     */
+    public function test_the_guard_accounts_for_methods_the_form_did_not_post(): void
+    {
+        Setting::set(PaymentMethod::Card->settingKey(), '0');
+        Setting::set(PaymentMethod::Tamara->settingKey(), '0');
+
+        // Only bank transfer is left, and this request would switch it off.
+        $this->actingAs($this->admin())->put('/admin/settings', [
+            'shipping_flat_fee' => '35',
+            'payment_bank_transfer_enabled' => false,
+        ])->assertSessionHas('error');
+
+        $this->assertSame(['bank_transfer'], PaymentMethod::enabledValues());
     }
 
     public function test_footer_prop_falls_back_to_defaults_then_reflects_override(): void

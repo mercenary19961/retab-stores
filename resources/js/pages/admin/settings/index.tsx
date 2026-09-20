@@ -5,7 +5,7 @@ import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
+import { CreditCard, Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 
 const CONFIRM_WORD = 'RESET';
@@ -61,6 +61,11 @@ const SECTIONS: SectionDef[] = [
 
 const ALL_KEYS = SECTIONS.flatMap((s) => s.fields.map((f) => f.key));
 
+// Which payment methods checkout offers. Bank transfer leads because it is the
+// one that needs no gateway, so it is the method a store can always fall back to.
+const PAYMENT_METHODS = ['bank_transfer', 'card', 'tamara'] as const;
+const PAYMENT_KEYS = PAYMENT_METHODS.map((m) => `payment_${m}_enabled`);
+
 const INPUT =
     'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm transition-colors placeholder:text-neutral-400 focus:border-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100';
 
@@ -88,6 +93,9 @@ export default function SettingsIndex({
             ...ALL_KEYS.map((k) => [k, settings[k] ?? '']),
             // Attention-beam toggle, kept as '1'/'0' so the whole form stays string-typed.
             ['admin_help_pulse', settings['admin_help_pulse'] === '0' ? '0' : '1'],
+            // Payment methods. Unset means ON — matching PaymentMethod::enabled(),
+            // so a store that has never opened this page keeps offering all three.
+            ...PAYMENT_KEYS.map((k) => [k, settings[k] === '0' ? '0' : '1']),
         ]) as Record<string, string>,
     );
 
@@ -155,7 +163,46 @@ export default function SettingsIndex({
         </div>
     );
 
-    const pulseOn = data.admin_help_pulse === '1';
+    /**
+     * One '1'/'0' setting as a switch. Shared by the help beam and the payment
+     * methods so the two can't drift apart visually.
+     *
+     * The knob is positioned with `insetInlineStart` and a direction-aware
+     * translate rather than an `rtl:` utility — inside the admin shell an `rtl:`
+     * variant fires whenever the STOREFRONT is in Arabic, which throws the knob
+     * out of its track on the English panel.
+     */
+    const renderToggle = (key: string, label: string, hint: string): ReactNode => {
+        const on = data[key] === '1';
+
+        return (
+            <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+                <div className="min-w-0">
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">{label}</span>
+                    <p className="text-xs text-neutral-400">{hint}</p>
+                </div>
+                <button
+                    type="button"
+                    role="switch"
+                    aria-checked={on}
+                    aria-label={label}
+                    onClick={() => setData(key, on ? '0' : '1')}
+                    className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
+                        on ? 'bg-brand-teal' : 'bg-neutral-300 dark:bg-neutral-600'
+                    }`}
+                >
+                    <span
+                        aria-hidden
+                        className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                        style={{
+                            insetInlineStart: '0.125rem',
+                            transform: on ? `translateX(${rtl ? '-1.25rem' : '1.25rem'})` : 'translateX(0)',
+                        }}
+                    />
+                </button>
+            </div>
+        );
+    };
 
     return (
         <AdminLayout title={t('admin.settings.title')}>
@@ -187,36 +234,31 @@ export default function SettingsIndex({
                         </section>
                     ))}
 
+                    {/* Which payment methods checkout offers. Switching one off hides it
+                        from checkout AND makes it invalid server-side; it never affects an
+                        order already placed with that method, which stays payable. */}
+                    <section id="payment-methods" className={CARD}>
+                        {sectionHeader(CreditCard, 'payments')}
+                        <div className="space-y-3">
+                            {PAYMENT_METHODS.map((m) =>
+                                renderToggle(
+                                    `payment_${m}_enabled`,
+                                    t(`admin.settings.paymentMethods.${m}.label`),
+                                    t(`admin.settings.paymentMethods.${m}.hint`),
+                                ),
+                            )}
+                        </div>
+                        {!PAYMENT_KEYS.some((k) => data[k] === '1') && (
+                            <p className="mt-3 text-xs font-medium text-red-600 dark:text-red-400">
+                                {t('admin.settings.paymentMethods.noneWarning')}
+                            </p>
+                        )}
+                    </section>
+
                     {/* Admin-panel preferences (not storefront) — holds the help beam toggle. */}
                     <section id="help-pulse" className={CARD}>
                         {sectionHeader(SlidersHorizontal, 'preferences')}
-                        <div className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
-                            <div className="min-w-0">
-                                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
-                                    {t('admin.settings.helpPulse.label')}
-                                </span>
-                                <p className="text-xs text-neutral-400">{t('admin.settings.helpPulse.hint')}</p>
-                            </div>
-                            <button
-                                type="button"
-                                role="switch"
-                                aria-checked={pulseOn}
-                                aria-label={t('admin.settings.helpPulse.label')}
-                                onClick={() => setData('admin_help_pulse', pulseOn ? '0' : '1')}
-                                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-                                    pulseOn ? 'bg-brand-teal' : 'bg-neutral-300 dark:bg-neutral-600'
-                                }`}
-                            >
-                                <span
-                                    aria-hidden
-                                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
-                                    style={{
-                                        insetInlineStart: '0.125rem',
-                                        transform: pulseOn ? `translateX(${rtl ? '-1.25rem' : '1.25rem'})` : 'translateX(0)',
-                                    }}
-                                />
-                            </button>
-                        </div>
+                        {renderToggle('admin_help_pulse', t('admin.settings.helpPulse.label'), t('admin.settings.helpPulse.hint'))}
                     </section>
 
                     {canReset && (

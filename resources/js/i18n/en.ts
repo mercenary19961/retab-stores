@@ -2019,7 +2019,23 @@ const en = {
                 bank: { title: 'Bank transfer', desc: 'Account details shown to customers paying by manual transfer.' },
                 contact: { title: 'Contact & registration', desc: 'Shown in the storefront footer.' },
                 social: { title: 'Social links', desc: 'Footer icons. Leave a field blank to hide that icon.' },
+                payments: { title: 'Payment methods', desc: 'What customers can pay with at checkout.' },
                 preferences: { title: 'Admin preferences', desc: 'Options for this admin panel, not the storefront.' },
+            },
+            paymentMethods: {
+                bank_transfer: {
+                    label: 'Bank transfer',
+                    hint: 'Customer transfers to the store IBAN and a member of staff marks it received. Needs no gateway.',
+                },
+                card: {
+                    label: 'Cards (mada, Visa, Mastercard, Apple Pay)',
+                    hint: 'Through Moyasar. Switch off until the Moyasar account is live, or customers will pick a method that cannot complete.',
+                },
+                tamara: {
+                    label: 'Tamara (pay later)',
+                    hint: 'Split payment. Switch off until the Tamara account is live.',
+                },
+                noneWarning: 'Every method is off. Customers would have no way to pay, so this cannot be saved.',
             },
             groups: {
                 footerContact: 'Footer & contact',
