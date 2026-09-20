@@ -14,9 +14,15 @@ test('guest can place a bank-transfer order', async ({ page }) => {
 
     await page.goto('/checkout');
 
-    // Required fields (country defaults to SA, payment defaults to bank_transfer).
-    await page.getByTestId('customer_name').fill('E2E Buyer');
+    // 🔑 Phone FIRST. Checkout is stepped: nothing below the identity block exists
+    // in the DOM until we have a way to reach the customer, so filling the name
+    // before the phone would be typing into a field that has not been rendered.
     await page.getByTestId('customer_phone').fill('0512345678');
+
+    // The rest appears once identified. Waiting on the name field is the assertion
+    // that the reveal actually happened — a timeout here means the gate broke.
+    await expect(page.getByTestId('customer_name')).toBeVisible();
+    await page.getByTestId('customer_name').fill('E2E Buyer');
     await page.getByTestId('city').fill('Riyadh');
     await page.locator('input[name="payment_method"][value="bank_transfer"]').check();
 

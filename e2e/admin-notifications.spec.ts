@@ -21,8 +21,11 @@ async function placeOrder(page: Page): Promise<string> {
     ]);
 
     await page.goto('/checkout');
-    await page.getByTestId('customer_name').fill('Bell Buyer');
+    // Phone first: checkout is stepped, and nothing below the identity block is
+    // in the DOM until the customer can be reached. See checkout.spec.ts.
     await page.getByTestId('customer_phone').fill('0512345678');
+    await expect(page.getByTestId('customer_name')).toBeVisible();
+    await page.getByTestId('customer_name').fill('Bell Buyer');
     await page.getByTestId('city').fill('Riyadh');
     await page.locator('input[name="payment_method"][value="bank_transfer"]').check();
 
