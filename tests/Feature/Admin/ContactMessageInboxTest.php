@@ -124,7 +124,7 @@ class ContactMessageInboxTest extends TestCase
 
     public function test_guests_are_sent_to_the_login_page(): void
     {
-        $this->get('/admin/contact-messages')->assertRedirect('/login');
+        $this->get('/admin/contact-messages')->assertRedirect('/admin/login');
     }
 
     /**

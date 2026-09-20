@@ -192,7 +192,7 @@ class ProductReviewModerationTest extends TestCase
 
     public function test_guests_and_customers_cannot_reach_the_page(): void
     {
-        $this->get('/admin/product-reviews')->assertRedirect('/login');
+        $this->get('/admin/product-reviews')->assertRedirect('/admin/login');
 
         $customer = User::forceCreate([
             'name' => 'Customer', 'email' => 'c'.uniqid().'@test.com',
