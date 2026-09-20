@@ -623,6 +623,7 @@ const en = {
         goToEmailLogin: 'Sign in with email',
         createAccount: 'Create an account',
         withWhatsapp: 'Sign in with WhatsApp',
+        withGoogle: 'Continue with Google',
     },
     admin: {
         brand: 'Retab Admin',

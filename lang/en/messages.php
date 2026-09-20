@@ -70,6 +70,11 @@ return [
         'unavailable' => 'WhatsApp sign-in is unavailable right now. You can sign in with your email and password instead.',
     ],
 
+    'auth' => [
+        'google_expired' => 'That sign-in attempt expired. Please try again.',
+        'google_failed' => 'We could not sign you in with Google. Please try again, or use another way to sign in.',
+    ],
+
     'requests' => [
         'received' => 'Thanks! We’ve noted your interest and will let you know as soon as it’s available.',
     ],

@@ -28,6 +28,20 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
+    /*
+     * Sign in with Google (Socialite). Credentials come from a Google Cloud
+     * OAuth client: console.cloud.google.com → Google Auth Platform → Clients.
+     *
+     * ⚠️ The redirect URI must match what is registered there EXACTLY — the apex
+     * domain, not www, since that is our canonical host. Both keys unset means
+     * the routes 404 and the button never renders (GoogleAuthController).
+     */
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Setting;
@@ -74,6 +75,10 @@ class HandleInertiaRequests extends Middleware
             // lights the whole flow back up with no code change and nothing to
             // remember to revert on launch day.
             'whatsappAuth' => fn () => app(WhatsAppGateway::class)->isLive(),
+            // Same discipline for Google: the button renders only when an OAuth
+            // client is actually configured, and the routes 404 without one — so
+            // a customer is never sent to a sign-in screen that cannot complete.
+            'googleAuth' => fn () => GoogleAuthController::isConfigured(),
             // Default social-share card. Shared rather than hardcoded client-side
             // because og:image MUST be absolute — crawlers do not resolve relative
             // paths — so it has to be built from APP_URL on the server. JPEG, not

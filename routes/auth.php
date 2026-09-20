@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\OtpAuthController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -32,6 +33,14 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:6,1,otp-send')->name('login.whatsapp.send');
     Route::post('login/whatsapp/verify', [OtpAuthController::class, 'verify'])
         ->middleware('throttle:6,1,otp-verify')->name('login.whatsapp.verify');
+
+    // Sign in with Google. Both 404 unless a Google OAuth client is configured.
+    // Own throttle bucket — a bare `throttle:N,1` rejoins the shared per-visitor
+    // counter that once 429'd shoppers at checkout (2026-08-06).
+    Route::get('auth/google', [GoogleAuthController::class, 'redirect'])
+        ->middleware('throttle:10,1,google-auth')->name('auth.google');
+    Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])
+        ->middleware('throttle:10,1,google-auth')->name('auth.google.callback');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');

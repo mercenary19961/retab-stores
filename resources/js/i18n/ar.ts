@@ -642,6 +642,7 @@ const ar = {
         goToEmailLogin: 'الدخول بالبريد الإلكتروني',
         createAccount: 'إنشاء حساب جديد',
         withWhatsapp: 'الدخول عبر واتساب',
+        withGoogle: 'المتابعة عبر جوجل',
     },
     admin: {
         brand: 'إدارة رطاب',

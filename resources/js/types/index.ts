@@ -41,6 +41,8 @@ export interface SharedData {
      * a code that went to the server log.
      */
     whatsappAuth: boolean;
+    /** True only when a Google OAuth client is configured; gates the button. */
+    googleAuth: boolean;
     [key: string]: unknown;
 }
 

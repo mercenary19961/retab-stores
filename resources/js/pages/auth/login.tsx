@@ -2,6 +2,7 @@ import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import GoogleLoginButton from '@/components/auth/google-login-button';
 import WhatsAppLoginLink from '@/components/auth/whatsapp-login-link';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -93,9 +94,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 )}
             </Form>
 
-            {/* Renders nothing while WhatsApp cannot deliver a code, so this page is
-                never a one-way street into a door that does not open. */}
-            <div className="mt-4">
+            {/* Both render nothing while their provider is unconfigured, so this
+                page is never a one-way street into a door that does not open. */}
+            <div className="mt-4 space-y-3">
+                <GoogleLoginButton />
                 <WhatsAppLoginLink />
             </div>
 

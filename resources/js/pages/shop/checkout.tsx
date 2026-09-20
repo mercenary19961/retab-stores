@@ -288,7 +288,15 @@ export default function Checkout({
                     </section>
                 </div>
 
-                <div className="h-fit rounded-lg border border-gray-200 bg-white p-4">
+                {/* Follows the shopper down the page: the total and the confirm
+                    button are what they are deciding on, and a long form pushed
+                    both off screen. `h-fit` is what lets it stick inside a grid
+                    column — a stretched item has nothing to scroll within.
+
+                    Sticky only from `lg`: below that the summary is stacked above
+                    the form, where pinning it would eat a phone's viewport. The
+                    offset clears the sticky header. */}
+                <div className="h-fit rounded-lg border border-gray-200 bg-white p-4 lg:sticky lg:top-32">
                     <h2 className="mb-3 font-bold">{t('checkout.orderSummary')}</h2>
                     <ul className="space-y-1 text-sm">
                         {items.map((it) => (
