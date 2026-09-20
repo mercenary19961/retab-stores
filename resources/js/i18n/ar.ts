@@ -535,6 +535,17 @@ const ar = {
         phone: 'رقم الجوال',
         emailOptional: 'البريد الإلكتروني (اختياري)',
         shippingAddress: 'عنوان الشحن',
+        identity: {
+            title: 'كيف نتواصل معك؟',
+            hint: 'سجّل دخولك لنعبّئ بياناتك تلقائياً، أو اكتفِ بإضافة رقم جوالك.',
+            or: 'أو',
+            signedInAs: 'مسجّل الدخول باسم {{name}}',
+        },
+        phonePlaceholder: '5X XXX XXXX',
+        shortAddress: 'العنوان الوطني (اختياري)',
+        shortAddressHint: 'ثمانية رموز، مثال RRMD7708. شركات الشحن تعتمد عليه.',
+        saveAddress: 'احفظ هذا العنوان في حسابي',
+        addAnotherAddress: 'استخدم عنواناً آخر',
         fulfillment: 'كيف تحب أن تستلم طلبك؟',
         fulfillmentOptions: {
             delivery: { label: 'التوصيل إلى عنواني', hint: 'يصلك الطلب عبر شركة الشحن.' },

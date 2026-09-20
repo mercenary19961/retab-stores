@@ -53,8 +53,15 @@ export interface SharedData {
 
 export interface User {
     id: number;
+    /** Nullable in the DB under the OTP identity model — a WhatsApp signup has only a phone. */
     name: string;
     email: string;
+    /**
+     * Declared explicitly even though the index signature below would cover it:
+     * through that signature it resolves to `unknown`, which silently poisons any
+     * expression that uses it (`user?.phone ?? ''` becomes `{}`, not `string`).
+     */
+    phone?: string | null;
     avatar?: string;
     /** 'admin' | 'editor' | 'customer'. Drives admin access; see useCan(). */
     role?: string;

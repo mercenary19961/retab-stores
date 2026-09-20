@@ -6,6 +6,7 @@ use App\Enums\Fulfillment;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Models\Address;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\User;
@@ -19,6 +20,7 @@ use App\Services\Payments\PaymentService;
 use App\Services\Payments\Tamara\TamaraService;
 use App\Services\ReturnService;
 use App\Services\WhatsApp\WhatsAppService;
+use App\Support\NationalAddress;
 use Illuminate\Http\Request;
 use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Log;
@@ -61,11 +63,34 @@ class CheckoutController
             // The page renders from this rather than a hardcoded list, so switching
             // a gateway off removes it from checkout without a deploy.
             'paymentMethods' => PaymentMethod::enabledValues(),
+            // Addresses this customer has saved before, newest-default first, so a
+            // returning shopper picks instead of retyping. Empty for guests.
+            'savedAddresses' => $request->user()
+                ? $request->user()->addresses()
+                    ->orderByDesc('is_default')
+                    ->latest()
+                    ->get()
+                    ->map(fn (Address $a) => [
+                        'id' => $a->id,
+                        'label' => $a->label,
+                        'summary' => $a->summary(),
+                        'is_default' => $a->is_default,
+                        ...$a->toOrderSnapshot(),
+                    ])
+                    ->values()
+                : [],
         ]);
     }
 
     public function store(Request $request)
     {
+        // ⚠️ Normalise BEFORE validating. Customers type the national address as
+        // "RRMD 7708" or "rrmd-7708", and the shape rule below would reject both
+        // even though they are the same code as "RRMD7708".
+        $request->merge([
+            'short_address' => NationalAddress::normalize($request->input('short_address')),
+        ]);
+
         $data = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['nullable', 'email', 'max:255'],
@@ -88,6 +113,12 @@ class CheckoutController
             'district' => ['nullable', 'string', 'max:255'],
             'street' => ['nullable', 'string', 'max:255'],
             'building' => ['nullable', 'string', 'max:255'],
+            // Saudi National Address short code. Optional by design — many
+            // customers do not know theirs, and the typed street already gets the
+            // parcel delivered. Shape only: nobody but SPL can say if it is real.
+            'short_address' => ['nullable', 'string', 'max:12', 'regex:'.NationalAddress::PATTERN],
+            // Remember this address on the account for next time.
+            'save_address' => ['sometimes', 'boolean'],
             // Someone else receiving it. The phone is required once a name is
             // given: a courier with a name and no number cannot deliver.
             'recipient_name' => ['nullable', 'string', 'max:255'],
@@ -119,6 +150,7 @@ class CheckoutController
                     'district' => $data['district'] ?? null,
                     'street' => $data['street'] ?? null,
                     'building' => $data['building'] ?? null,
+                    'short_address' => $data['short_address'] ?? null,
                     // The number the courier rings. Whoever is actually receiving
                     // the parcel, not necessarily whoever paid for it.
                     'phone' => ($data['recipient_phone'] ?? null) ?: $data['customer_phone'],
@@ -151,6 +183,8 @@ class CheckoutController
         $session->forget(CartController::COUPON_SESSION_KEY);
         // Same reasoning: the gift choice belonged to that cart, not to the next one.
         $session->forget(CartController::GIFT_SESSION_KEY);
+
+        $this->rememberAddress($request, $data);
 
         // Alert staff that a new order needs attention (verify transfer / check stock)
         // across all three channels: WhatsApp + the in-panel notification bell.
@@ -288,6 +322,57 @@ class CheckoutController
      * cookie. The gateway reference is only a fallback for a lost session
      * (expired, cookies cleared, finished on another device).
      */
+    /**
+     * Keep this delivery address on the customer's account, so the next order is
+     * a pick rather than a retype.
+     *
+     * ⚠️ Best-effort and deliberately silent. The order is already placed by the
+     * time this runs, and failing to remember an address must never surface as an
+     * error on a successful purchase.
+     *
+     * 🔑 Deduplicated on the address itself, not just on the tick-box: a customer
+     * ordering to the same place three times should end up with one saved address,
+     * not three identical ones cluttering the picker.
+     *
+     * @param  array<string,mixed>  $data
+     */
+    private function rememberAddress(Request $request, array $data): void
+    {
+        $user = $request->user();
+
+        // ⚠️ `$request->boolean()` rather than reading $data: the checkbox arrives
+        // as the string '1' or '0', and '0' is only falsy in PHP by accident of
+        // string-to-bool rules. Asking the request keeps the intent explicit.
+        if (! $user || ! $request->boolean('save_address')) {
+            return;
+        }
+
+        // Collection orders have no address to remember.
+        if (($data['fulfillment'] ?? Fulfillment::Delivery->value) === Fulfillment::Collection->value) {
+            return;
+        }
+
+        $fields = [
+            'country' => $data['country'] ?? null,
+            'city' => $data['city'] ?? null,
+            'district' => $data['district'] ?? null,
+            'street' => $data['street'] ?? null,
+            'building' => $data['building'] ?? null,
+            'short_address' => $data['short_address'] ?? null,
+        ];
+
+        try {
+            $user->addresses()->firstOrCreate($fields, [
+                'phone' => $data['customer_phone'],
+                // The first address a customer saves becomes their default, so a
+                // single-address account never has to choose.
+                'is_default' => $user->addresses()->doesntExist(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Could not save the customer address', ['user' => $user->id, 'error' => $e->getMessage()]);
+        }
+    }
+
     private function resolveReturnedOrder(Request $request): ?Order
     {
         /** @var Store $session — push() lives on Store, not the Session contract */

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\User;
 use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -155,5 +156,134 @@ class CheckoutControllerTest extends TestCase
 
         $this->get(route('orders.show', $order->order_number))->assertOk();
         $this->assertSame(PaymentMethod::BankTransfer, $order->fresh()->payment_method);
+    }
+
+    // ---- Address: national address code + saving it to the account -----------
+
+    /** @param  array<string,mixed>  $overrides */
+    private function placeOrder(array $overrides = []): void
+    {
+        $this->post('/checkout', [
+            'customer_name' => 'Zaid',
+            'customer_phone' => '0512345678',
+            'country' => 'SA',
+            'city' => 'Riyadh',
+            'district' => 'Al Malqa',
+            'street' => 'King Fahd Road',
+            'payment_method' => 'bank_transfer',
+            ...$overrides,
+        ]);
+    }
+
+    /**
+     * 🔑 Customers type the code as "RRMD 7708" or "rrmd-7708". Normalising
+     * before validation is what stops the shape rule rejecting the same address
+     * written a different way.
+     */
+    public function test_a_national_address_is_normalised_before_it_is_validated(): void
+    {
+        $this->seedCartWithOneProduct();
+        $this->placeOrder(['short_address' => 'rrmd 7708']);
+
+        $this->assertSame('RRMD7708', Order::firstOrFail()->shipping_address['short_address']);
+    }
+
+    public function test_a_misshapen_national_address_is_refused(): void
+    {
+        $this->seedCartWithOneProduct();
+        $this->placeOrder(['short_address' => 'ABC123']);
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    /** Optional by design — most customers do not know theirs. */
+    public function test_an_order_can_be_placed_without_a_national_address(): void
+    {
+        $this->seedCartWithOneProduct();
+        $this->placeOrder();
+
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertNull(Order::firstOrFail()->shipping_address['short_address']);
+    }
+
+    public function test_a_signed_in_customer_can_save_the_address_to_their_account(): void
+    {
+        $user = User::forceCreate(['name' => 'Zaid', 'email' => 'z@test.com', 'password' => bcrypt('x'), 'role' => 'customer']);
+        $this->actingAs($user);
+        $this->seedCartWithOneProduct();
+        $this->placeOrder(['save_address' => '1', 'short_address' => 'RRMD7708']);
+
+        $this->assertSame(1, $user->addresses()->count());
+        $address = $user->addresses()->first();
+        $this->assertSame('RRMD7708', $address->short_address);
+        // First address saved becomes the default, so a single-address account
+        // never has to choose.
+        $this->assertTrue($address->is_default);
+    }
+
+    public function test_the_address_is_not_saved_when_the_customer_did_not_ask(): void
+    {
+        $user = User::forceCreate(['name' => 'Zaid', 'email' => 'z2@test.com', 'password' => bcrypt('x'), 'role' => 'customer']);
+        $this->actingAs($user);
+        $this->seedCartWithOneProduct();
+        $this->placeOrder(['save_address' => '0']);
+
+        $this->assertSame(0, $user->addresses()->count());
+    }
+
+    /**
+     * Ordering to the same place twice must not fill the picker with duplicates
+     * — which is why the save is deduplicated on the address, not the tick-box.
+     */
+    public function test_ordering_twice_to_the_same_address_saves_it_once(): void
+    {
+        $user = User::forceCreate(['name' => 'Zaid', 'email' => 'z3@test.com', 'password' => bcrypt('x'), 'role' => 'customer']);
+        $this->actingAs($user);
+
+        foreach ([1, 2] as $ignored) {
+            $this->seedCartWithOneProduct();
+            $this->placeOrder(['save_address' => '1', 'short_address' => 'RRMD7708']);
+        }
+
+        $this->assertSame(2, Order::count());
+        $this->assertSame(1, $user->addresses()->count());
+    }
+
+    /** A collection order has no address, so there is nothing to remember. */
+    public function test_a_collection_order_saves_no_address(): void
+    {
+        $user = User::forceCreate(['name' => 'Zaid', 'email' => 'z4@test.com', 'password' => bcrypt('x'), 'role' => 'customer']);
+        $this->actingAs($user);
+        $this->seedCartWithOneProduct();
+        $this->placeOrder(['fulfillment' => 'collection', 'save_address' => '1', 'country' => null, 'city' => null]);
+
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertSame(0, $user->addresses()->count());
+    }
+
+    public function test_saved_addresses_are_offered_on_the_checkout_page(): void
+    {
+        $user = User::forceCreate(['name' => 'Zaid', 'email' => 'z5@test.com', 'password' => bcrypt('x'), 'role' => 'customer']);
+        $user->addresses()->create([
+            'country' => 'SA', 'city' => 'Riyadh', 'district' => 'Al Malqa',
+            'short_address' => 'rrmd 7708', 'is_default' => true,
+        ]);
+        $this->actingAs($user);
+        $this->seedCartWithOneProduct();
+
+        $this->get('/checkout')->assertInertia(
+            fn (Assert $page) => $page
+                ->has('savedAddresses', 1)
+                // Stored canonical, whatever was typed — see the model mutator.
+                ->where('savedAddresses.0.short_address', 'RRMD7708'),
+        );
+    }
+
+    /** Guests have no account, so there is nothing to offer. */
+    public function test_guests_are_offered_no_saved_addresses(): void
+    {
+        $this->seedCartWithOneProduct();
+
+        $this->get('/checkout')->assertInertia(fn (Assert $page) => $page->has('savedAddresses', 0));
     }
 }

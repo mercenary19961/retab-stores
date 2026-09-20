@@ -513,6 +513,17 @@ const en = {
         phone: 'Mobile number',
         emailOptional: 'Email (optional)',
         shippingAddress: 'Shipping address',
+        identity: {
+            title: 'How should we reach you?',
+            hint: 'Sign in to fill this in for you, or just give us a phone number.',
+            or: 'or',
+            signedInAs: 'Signed in as {{name}}',
+        },
+        phonePlaceholder: '5X XXX XXXX',
+        shortAddress: 'National address (optional)',
+        shortAddressHint: 'Eight characters, e.g. RRMD7708. Couriers navigate by this.',
+        saveAddress: 'Save this address to my account',
+        addAnotherAddress: 'Use a different address',
         fulfillment: 'How would you like to receive it?',
         fulfillmentOptions: {
             delivery: { label: 'Deliver to my address', hint: 'A courier brings it to you.' },
