@@ -365,11 +365,24 @@ export default function StoreNavbar() {
                             link to /shop — the only place a search box existed — so a
                             shopper on a product page had to leave it to search, and
                             lost where they were.
-                            Sits beside the burger at EVERY width: on desktop it leads
-                            the utility icons, on phones it is the first thing after the
-                            menu. See the sign-up pill below for why it goes HERE rather
-                            than after the pill — search is a utility, the pill is an
-                            invitation, and the utilities cluster by the burger. */}
+                            Sits beside the burger at EVERY width: on phones it is the
+                            first thing after the menu. See the sign-up pill below for
+                            why it goes HERE rather than after the pill — search is a
+                            utility, the pill is an invitation, and the utilities
+                            cluster by the burger.
+                            🔑 On DESKTOP it is pushed to the end of the row instead
+                            (`md:order-last`), so the cluster reads account · cart ·
+                            search — i.e. the account icon takes the outermost edge.
+                            Done with `order` rather than by moving it in the DOM
+                            because the burger and the sign-up pill are phone-only: a
+                            DOM move would drag search after the pill on phones and
+                            undo the placement the paragraph above argues for.
+                            ⚠️ Trade-off accepted: `order` leaves tab order following
+                            the DOM, so on desktop focus reaches search before the
+                            account icon while the eye sees it last. These are three
+                            adjacent peer utilities with no meaningful sequence between
+                            them, so it does not carry the reading-order problem that
+                            WCAG 2.4.3 is about. */}
                         <button
                             type="button"
                             onClick={() => setSearchOpen(true)}
@@ -383,7 +396,7 @@ export default function StoreNavbar() {
                                has only ~9px of clearance to the logo at 390px in
                                Arabic. 4px of the 6px gap is absorbed, so the two hit
                                boxes still do not overlap. */
-                            className="text-brand-gold hover:text-brand-teal -m-1 inline-flex shrink-0 p-1 transition-colors"
+                            className="text-brand-gold hover:text-brand-teal -m-1 inline-flex shrink-0 p-1 transition-colors md:order-last"
                         >
                             <Search className="size-5" />
                         </button>
