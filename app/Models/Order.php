@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Fulfillment;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -21,6 +22,15 @@ class Order extends Model
         'customer_email',
         'customer_phone',
         'locale',
+        // Checkout options: gift flag, delivery vs collection, a different person
+        // receiving the parcel, and the buyer's company details.
+        'is_gift',
+        'fulfillment',
+        'recipient_name',
+        'recipient_phone',
+        'company_name',
+        'company_cr',
+        'company_vat',
         'shipping_address',
         'status',
         'payment_status',
@@ -54,6 +64,8 @@ class Order extends Model
         'status' => OrderStatus::class,
         'payment_status' => PaymentStatus::class,
         'payment_method' => PaymentMethod::class,
+        'is_gift' => 'boolean',
+        'fulfillment' => Fulfillment::class,
         'subtotal' => 'decimal:2',
         'discount_total' => 'decimal:2',
         'shipping_fee' => 'decimal:2',
@@ -151,6 +163,36 @@ class Order extends Model
         return $this->payment_method === PaymentMethod::BankTransfer
             && $this->payment_status === PaymentStatus::Pending
             && $this->status === OrderStatus::PendingPayment;
+    }
+
+    /**
+     * Who actually receives the parcel: the person named on the order when the
+     * buyer nominated someone else, otherwise the buyer.
+     *
+     * 🔑 One definition, because at least four places need it and they must
+     * agree — the carrier booking, the packing slip, the shipping WhatsApp
+     * message and the admin order page. A buyer sending dates to their mother
+     * should not have the courier phoning the buyer.
+     *
+     * @return array{name: string, phone: string}
+     */
+    public function recipient(): array
+    {
+        return filled($this->recipient_name)
+            ? ['name' => $this->recipient_name, 'phone' => $this->recipient_phone ?: $this->customer_phone]
+            : ['name' => $this->customer_name, 'phone' => $this->customer_phone];
+    }
+
+    /** Is someone other than the buyer receiving this order? */
+    public function hasAlternateRecipient(): bool
+    {
+        return filled($this->recipient_name);
+    }
+
+    /** Collection orders have no carrier, no shipping fee and no address. */
+    public function needsShipping(): bool
+    {
+        return ($this->fulfillment ?? Fulfillment::Delivery)->needsShipping();
     }
 
     /**

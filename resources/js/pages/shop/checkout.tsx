@@ -17,6 +17,28 @@ interface Item {
 // taken from the server's order so the list reads the same way every time.
 const METHOD_ORDER = ['bank_transfer', 'card', 'tamara'] as const;
 
+/**
+ * Scheme acceptance marks, self-hosted in public/images/payment.
+ *
+ * ⚠️ Self-hosted deliberately, never hotlinked: the same marks are served from
+ * Zid's CDN today, and that CDN stops serving this store at cutover — the exact
+ * way the product images were lost.
+ *
+ * `card` carries four because one Moyasar method covers all of them; bank
+ * transfer has no scheme mark and deliberately shows none rather than a stand-in
+ * icon that would read as a brand it isn't.
+ */
+const METHOD_LOGOS: Record<string, { src: string; alt: string }[]> = {
+    card: [
+        { src: '/images/payment/mada.png', alt: 'mada' },
+        { src: '/images/payment/visa.png', alt: 'Visa' },
+        { src: '/images/payment/mastercard.png', alt: 'Mastercard' },
+        { src: '/images/payment/apple-pay.svg', alt: 'Apple Pay' },
+    ],
+    tamara: [{ src: '/images/payment/tamara.webp', alt: 'Tamara' }],
+    bank_transfer: [],
+};
+
 export default function Checkout({
     items,
     subtotal,
@@ -121,18 +143,40 @@ export default function Checkout({
                     <section className="rounded-lg border border-gray-200 bg-white p-4">
                         <h2 className="mb-3 font-bold">{t('checkout.paymentMethod')}</h2>
                         <div className="space-y-2">
-                            {methods.map((value) => (
-                                <label key={value} className="flex items-center gap-2">
-                                    <input
-                                        type="radio"
-                                        name="payment_method"
-                                        value={value}
-                                        checked={data.payment_method === value}
-                                        onChange={(e) => setData('payment_method', e.target.value)}
-                                    />
-                                    <span>{t(`payment.${value}`)}</span>
-                                </label>
-                            ))}
+                            {methods.map((value) => {
+                                const logos = METHOD_LOGOS[value] ?? [];
+
+                                return (
+                                    <label key={value} className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="payment_method"
+                                            value={value}
+                                            checked={data.payment_method === value}
+                                            onChange={(e) => setData('payment_method', e.target.value)}
+                                        />
+                                        <span>{t(`payment.${value}`)}</span>
+                                        {logos.length > 0 && (
+                                            // `ms-auto` so the marks sit at the row's far end in
+                                            // both reading directions.
+                                            <span className="ms-auto flex shrink-0 items-center gap-1.5">
+                                                {logos.map((logo) => (
+                                                    <img
+                                                        key={logo.src}
+                                                        src={logo.src}
+                                                        alt={logo.alt}
+                                                        loading="lazy"
+                                                        // One shared height, width follows each mark's
+                                                        // own aspect — they range from square badges
+                                                        // (Visa) to wide wordmarks (mada).
+                                                        className="h-5 w-auto"
+                                                    />
+                                                ))}
+                                            </span>
+                                        )}
+                                    </label>
+                                );
+                            })}
                         </div>
                     </section>
                 </div>
