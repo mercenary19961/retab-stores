@@ -32,6 +32,25 @@ const METHOD_ORDER = ['bank_transfer', 'card', 'tamara'] as const;
  * transfer has no scheme mark and deliberately shows none rather than a stand-in
  * icon that would read as a brand it isn't.
  */
+/**
+ * Where a customer who does not know their national address can get one.
+ *
+ * 🔴 BOTH of these belong to SAUDI POST (SPL), NOT to Retab. The WhatsApp number
+ * is SPL's own published National Address channel — their site lists 0112898888
+ * for exactly this enquiry, alongside Absher, Tawakkalna and the Maha chatbot
+ * (their domestic support line is the separate 19992). **Do not "correct" it to
+ * the store's number**: it would send customers asking about a government
+ * address registry into Retab's support queue, which cannot answer them.
+ *
+ * The same pairing is what the live Zid store does, so customers who have
+ * ordered before will recognise it.
+ */
+const SPL_NATIONAL_ADDRESS: Record<string, string> = {
+    ar: 'https://splonline.com.sa/ar/national-address-1/',
+    en: 'https://splonline.com.sa/en/national-address-1/',
+};
+const SPL_WHATSAPP = 'https://api.whatsapp.com/send/?phone=966112898888';
+
 const METHOD_LOGOS: Record<string, { src: string; alt: string }[]> = {
     card: [
         { src: '/images/payment/mada.png', alt: 'mada' },
@@ -81,7 +100,7 @@ export default function Checkout({
     // string[] rather than the literal union, or the union narrows the form's
     // payment_method field and the radio's own onChange stops type-checking.
     const methods: string[] = METHOD_ORDER.filter((m) => paymentMethods.includes(m));
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const localized = useLocalized();
     const currency = t('common.currency');
     // Both are rare, so their fields stay collapsed until the shopper asks.
@@ -355,6 +374,32 @@ export default function Checkout({
                                         className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
                                     />
                                     <span className="mt-1 block text-xs text-gray-400">{t('checkout.shortAddressHint')}</span>
+                                    {/* The way out for the many customers who do not
+                                        know their code. Without it the hint describes
+                                        a value with nowhere to go and get it.
+                                        ⚠️ `target="_blank"` is not optional here: this
+                                        is a checkout, and navigating away from a filled
+                                        form to look something up loses the order. */}
+                                    <span className="mt-1 block text-xs text-gray-500">
+                                        {t('checkout.shortAddressUnknown')}{' '}
+                                        <a
+                                            href={SPL_NATIONAL_ADDRESS[i18n.language] ?? SPL_NATIONAL_ADDRESS.ar}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-brand-teal underline underline-offset-2"
+                                        >
+                                            {t('checkout.shortAddressLookup')}
+                                        </a>
+                                        <span aria-hidden> · </span>
+                                        <a
+                                            href={SPL_WHATSAPP}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-brand-teal underline underline-offset-2"
+                                        >
+                                            {t('checkout.shortAddressAsk')}
+                                        </a>
+                                    </span>
                                     {errors.short_address && <span className="text-xs text-red-500">{errors.short_address}</span>}
                                 </label>
                             </div>
