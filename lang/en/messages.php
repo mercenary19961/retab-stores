@@ -106,6 +106,8 @@ return [
     ],
 
     'admin' => [
+        'announcement_saved' => 'Announcement saved.',
+        'announcement_deleted' => 'Announcement deleted.',
         'settings_saved' => 'Settings saved.',
         'content_reset' => 'Content restored to the project-handover defaults.',
         'no_permission' => 'You do not have permission to perform this action.',

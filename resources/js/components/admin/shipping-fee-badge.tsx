@@ -78,7 +78,7 @@ export default function ShippingFeeBadge() {
                     ref={inputRef}
                     type="number"
                     min={0}
-                    step="0.01"
+                    step="1"
                     value={value}
                     disabled={saving}
                     onChange={(e) => setValue(e.target.value)}
@@ -126,7 +126,10 @@ export default function ShippingFeeBadge() {
         >
             <Truck className="text-brand-gold h-4 w-4 shrink-0" />
             {/* tabular-nums so the bar does not jitter as the figure changes. */}
-            <span className="tabular-nums">{shippingFee.amount.toFixed(2)}</span>
+            {/* Whole riyals read as whole riyals. Decimals are only shown when
+                the value genuinely has them (the full settings form still
+                accepts 25.50), so the bar never displays a fake ".00". */}
+            <span className="tabular-nums">{Number.isInteger(shippingFee.amount) ? shippingFee.amount : shippingFee.amount.toFixed(2)}</span>
             <span className="hidden text-xs text-neutral-500 sm:inline">{t('admin.shippingFee.currency')}</span>
             {/* ⚠️ Without this the client could set 30, watch every customer pay
                 nothing, and reasonably conclude the control is broken. */}

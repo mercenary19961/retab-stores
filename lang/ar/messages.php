@@ -106,6 +106,8 @@ return [
     ],
 
     'admin' => [
+        'announcement_saved' => 'تم حفظ الإشعار.',
+        'announcement_deleted' => 'تم حذف الإشعار.',
         'settings_saved' => 'تم حفظ الإعدادات.',
         'content_reset' => 'تمت إعادة المحتوى إلى إعدادات التسليم الافتراضية.',
         'no_permission' => 'ليست لديك صلاحية لتنفيذ هذا الإجراء.',

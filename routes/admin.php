@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChangeLogController;
 use App\Http\Controllers\Admin\ClientReviewController;
@@ -195,6 +196,15 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
         Route::get('customers/{customer}/detail', [CustomerController::class, 'detail'])->name('customers.detail');
         Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     });
+
+    // The strip above the storefront. `manage` covers create/edit/toggle/delete:
+    // an announcement is reversible and time-boxed, so there is nothing here that
+    // warrants a finer split.
+    Route::get('announcements', [AnnouncementController::class, 'index'])->middleware('permission:announcements.view')->name('announcements.index');
+    Route::post('announcements', [AnnouncementController::class, 'store'])->middleware('permission:announcements.manage')->name('announcements.store');
+    Route::put('announcements/{announcement}', [AnnouncementController::class, 'update'])->middleware('permission:announcements.manage')->name('announcements.update');
+    Route::post('announcements/{announcement}/toggle', [AnnouncementController::class, 'toggle'])->middleware('permission:announcements.manage')->name('announcements.toggle');
+    Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('permission:announcements.manage')->name('announcements.destroy');
 
     // Store settings + CMS pages.
     Route::get('settings', [SettingController::class, 'edit'])->middleware('permission:settings.view')->name('settings.edit');

@@ -1,3 +1,4 @@
+import AnnouncementBar from '@/components/store/announcement-bar';
 import CookieConsent from '@/components/store/cookie-consent';
 import StoreFooter from '@/components/store/footer';
 import StoreNavbar from '@/components/store/navbar';
@@ -18,6 +19,7 @@ interface Category {
 export default function StoreLayout({ children, bare = false }: PropsWithChildren<{ categories?: Category[]; bare?: boolean }>) {
     return (
         <div className="flex min-h-screen flex-col overflow-x-clip bg-[#faf8f5] font-sans text-[#1f2937]">
+            <AnnouncementBar />
             <StoreNavbar />
 
             {bare ? <div className="flex-1">{children}</div> : <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>}

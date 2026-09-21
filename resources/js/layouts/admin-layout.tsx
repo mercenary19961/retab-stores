@@ -93,6 +93,7 @@ const NAV_GROUPS: { key: string; items: NavItem[] }[] = [
     {
         key: 'content',
         items: [
+            { key: 'announcements', href: '/admin/announcements', icon: Megaphone, perm: 'announcements' },
             { key: 'reviews', href: '/admin/client-reviews', icon: Star, perm: 'reviews' },
             { key: 'contentPages', href: '/admin/content-pages', icon: FileText, perm: 'content_pages' },
             { key: 'contactMessages', href: '/admin/contact-messages', icon: Mail, perm: 'contact_messages' },

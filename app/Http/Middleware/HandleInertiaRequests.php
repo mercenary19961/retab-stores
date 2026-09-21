@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Models\Announcement;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Setting;
@@ -187,6 +188,32 @@ class HandleInertiaRequests extends Middleware
             'notifications' => fn () => $request->user()?->isStaff()
                 ? $this->adminNotifications($request->user())
                 : null,
+            /*
+             * The announcement strip above the storefront.
+             *
+             * ⚠️ Storefront only. The admin panel has its own chrome and would
+             * gain nothing from a shipping notice aimed at shoppers; resolving it
+             * there would just be a query per admin page load.
+             *
+             * Both locales are shipped so the AR/EN toggle stays instant, the
+             * same contract product names use (see useLocalized).
+             */
+            'announcements' => fn () => $request->is('admin', 'admin/*')
+                ? []
+                : Announcement::live()
+                    ->orderBy('sort_order')
+                    ->latest()
+                    ->get()
+                    ->map(fn (Announcement $a) => [
+                        'id' => $a->id,
+                        'message_ar' => $a->message_ar,
+                        'message_en' => $a->message_en,
+                        'link_url' => $a->link_url,
+                        'link_label_ar' => $a->link_label_ar,
+                        'link_label_en' => $a->link_label_en,
+                        'tone' => $a->tone,
+                    ])
+                    ->values(),
             // Flat shipping fee, for the admin top bar's quick editor. Gated on
             // settings.view so it follows the same grants as the settings page.
             //

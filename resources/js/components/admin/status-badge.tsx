@@ -13,6 +13,7 @@ import {
     Handshake,
     Hourglass,
     Lock,
+    Megaphone,
     MessageCircle,
     Package,
     PackageX,
@@ -131,6 +132,19 @@ const DOMAINS = {
             ended: { tone: 'idle', icon: CalendarX },
             // The one state a human chose, so it reads as stopped rather than over.
             paused: { tone: 'stopped', icon: CirclePause },
+        },
+    },
+    /**
+     * The storefront announcement strip. `live` is `active` rather than
+     * `attention`: it is working as intended, not asking anyone to do anything.
+     */
+    announcement: {
+        prefix: 'admin.announcements.states.',
+        values: {
+            live: { tone: 'active', icon: Megaphone },
+            scheduled: { tone: 'idle', icon: Hourglass },
+            ended: { tone: 'done', icon: CircleCheck },
+            off: { tone: 'stopped', icon: CircleX },
         },
     },
     changeLog: {

@@ -30,6 +30,8 @@ class Permission
         'store_events' => ['view', 'manage'],
         'reviews' => ['view', 'manage'],
         'product_reviews' => ['view', 'manage'],
+        // The strip above the storefront (shipping notices, promotions).
+        'announcements' => ['view', 'manage'],
         'content_pages' => ['view', 'edit'],
         'contact_messages' => ['view', 'manage'],
         'settings' => ['view', 'edit'],
@@ -53,6 +55,7 @@ class Permission
         // under the category (Category::deletionBlocker).
         'categories' => ['view' => true, 'manage' => true],
         'product_requests' => ['view' => true, 'manage' => true],
+        'announcements' => ['view' => true, 'manage' => true],
         'inventory' => ['view' => true, 'import' => true],
         'returns' => ['view' => true, 'resolve' => true],
         'shipping' => ['view' => true, 'manage' => false],
@@ -93,11 +96,11 @@ class Permission
         // The daily fulfilment desk: take orders out of the door, handle returns.
         'operations' => ['orders', 'returns', 'shipping', 'product_requests', 'customers', 'inventory', 'contact_messages'],
         // Looks after what the store sells and how it reads.
-        'catalogue' => ['products', 'categories', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages'],
+        'catalogue' => ['products', 'categories', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages', 'announcements'],
         // Everything except the settings that can reconfigure the business itself.
         'manager' => [
             'orders', 'returns', 'shipping', 'product_requests', 'customers', 'inventory', 'contact_messages',
-            'products', 'categories', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages', 'marketing', 'change_log',
+            'products', 'categories', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages', 'announcements', 'marketing', 'change_log',
         ],
     ];
 
