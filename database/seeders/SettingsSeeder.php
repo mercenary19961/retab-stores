@@ -39,6 +39,12 @@ class SettingsSeeder extends Seeder
             'bank_account' => '145608010008130',
             'bank_iban' => 'SA9780000145608010008130',
 
+            // Public business identifiers, printed in the storefront footer.
+            // They live here as DATA rather than as a code fallback so the
+            // owner-confirmed deletion can actually remove them from the site.
+            'commercial_registration' => '7001744098',
+            'vat_number' => '300789485500003',
+
             // Admin UX default: the "How it works" attention beam is on at handover.
             'admin_help_pulse' => '1',
 

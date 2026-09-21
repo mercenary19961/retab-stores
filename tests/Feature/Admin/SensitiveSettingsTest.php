@@ -215,6 +215,35 @@ class SensitiveSettingsTest extends TestCase
         }
     }
 
+    /**
+     * 🔴 THE GAP THIS FEATURE SHIPPED WITH. Two of the four sensitive values are
+     * PRINTED IN THE PUBLIC FOOTER, and the footer used to fall back to hardcoded
+     * constants in SettingController::FOOTER_DEFAULTS whenever the stored value
+     * was blank. So a confirmed deletion cleared the settings rows and the
+     * storefront carried on showing both numbers to every visitor, with nothing
+     * anywhere to notice. Deleting them has to delete them from the SITE, not
+     * just from the settings table.
+     */
+    public function test_deleting_them_removes_them_from_the_public_footer(): void
+    {
+        Setting::set('commercial_registration', '7001744098');
+        Setting::set('vat_number', '300789485500003');
+
+        // Present beforehand, so a pass after the purge cannot be vacuous.
+        $this->get('/')->assertInertia(fn ($page) => $page
+            ->where('footer.commercial_registration', '7001744098')
+            ->where('footer.vat_number', '300789485500003'));
+
+        $this->actingAs($this->owner())->get($this->requestAndCaptureLink());
+
+        $this->get('/')
+            ->assertInertia(fn ($page) => $page
+                ->where('footer.commercial_registration', '')
+                ->where('footer.vat_number', ''))
+            ->assertDontSee('7001744098')
+            ->assertDontSee('300789485500003');
+    }
+
     /** 🔑 Single use. A signed URL alone stays replayable for its whole lifetime. */
     public function test_the_link_cannot_be_used_twice(): void
     {

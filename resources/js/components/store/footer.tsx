@@ -95,32 +95,40 @@ export default function StoreFooter() {
                             also aligns the two badges into a column on phones, where the
                             rows are `justify-between`. */}
                         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 max-md:w-full max-md:max-w-[15rem] max-md:justify-start max-md:gap-x-4 max-md:gap-y-2">
-                            <div className="flex items-center gap-2 max-md:w-full max-md:justify-start max-md:gap-2">
-                                <img
-                                    src="/images/footer/badge-commerce.png"
-                                    alt={t('footer.commercialReg')}
-                                    className="h-12 w-12 shrink-0 object-contain max-md:h-8 max-md:w-8"
-                                />
-                                <div className="text-start leading-tight">
-                                    <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.commercialReg')}</div>
-                                    <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
-                                        {footer.commercial_registration}
+                            {/* ⚠️ Each badge renders only when it HAS a number. Both are
+                                sensitive settings the owner can delete, and a badge left with a
+                                label and a blank line under it reads as a broken footer rather
+                                than as a value that was removed on purpose. */}
+                            {footer.commercial_registration && (
+                                <div className="flex items-center gap-2 max-md:w-full max-md:justify-start max-md:gap-2">
+                                    <img
+                                        src="/images/footer/badge-commerce.png"
+                                        alt={t('footer.commercialReg')}
+                                        className="h-12 w-12 shrink-0 object-contain max-md:h-8 max-md:w-8"
+                                    />
+                                    <div className="text-start leading-tight">
+                                        <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.commercialReg')}</div>
+                                        <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
+                                            {footer.commercial_registration}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-2 max-md:w-full max-md:justify-start max-md:gap-2">
-                                <img
-                                    src="/images/footer/badge-vat.png"
-                                    alt={t('footer.vatNumber')}
-                                    className="h-12 w-12 shrink-0 object-contain max-md:h-8 max-md:w-8"
-                                />
-                                <div className="text-start leading-tight">
-                                    <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.vatNumber')}</div>
-                                    <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
-                                        {footer.vat_number}
+                            )}
+                            {footer.vat_number && (
+                                <div className="flex items-center gap-2 max-md:w-full max-md:justify-start max-md:gap-2">
+                                    <img
+                                        src="/images/footer/badge-vat.png"
+                                        alt={t('footer.vatNumber')}
+                                        className="h-12 w-12 shrink-0 object-contain max-md:h-8 max-md:w-8"
+                                    />
+                                    <div className="text-start leading-tight">
+                                        <div className="text-brand-teal text-sm font-bold max-md:text-[0.7rem]">{t('footer.vatNumber')}</div>
+                                        <div dir="ltr" className="text-brand-teal text-xs font-semibold tracking-wide max-md:text-[0.65rem]">
+                                            {footer.vat_number}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Contact (LTR content) */}

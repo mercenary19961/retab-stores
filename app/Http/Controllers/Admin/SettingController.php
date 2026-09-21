@@ -70,8 +70,14 @@ class SettingController extends Controller
     public const FOOTER_DEFAULTS = [
         'contact_phone' => '+966 5 5088 3845',
         'contact_email' => 'Info@retab.com.sa',
-        'commercial_registration' => '7001744098',
-        'vat_number' => '300789485500003',
+        // 🔴 Deliberately EMPTY, unlike every other key here. Both numbers are
+        // sensitive settings the owner may delete (SensitiveSettings::KEYS), and a
+        // hardcoded fallback would keep printing them in the footer after the
+        // confirmed deletion had cleared the stored value - silently breaking the
+        // one promise that feature makes. Their handover values live in
+        // SettingsSeeder::defaults(), and the footer hides a badge with no number.
+        'commercial_registration' => '',
+        'vat_number' => '',
         'social_snapchat' => 'https://www.snapchat.com/add/retab_dates',
         'social_facebook' => 'https://www.facebook.com/retab_dates',
         'social_instagram' => 'https://www.instagram.com/retab_dates',
