@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\GlobalSearchController;
+use App\Http\Controllers\Admin\HeroController;
 use App\Http\Controllers\Admin\MarketingController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OrderController;
@@ -152,6 +153,22 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
         Route::post('discounts/import/apply', [DiscountController::class, 'applyImport'])->name('discounts.import.apply');
         Route::post('discounts/clear', [DiscountController::class, 'clear'])->name('discounts.clear');
         Route::post('discounts/undo/{activityLog}', [DiscountController::class, 'undo'])->name('discounts.undo');
+    });
+
+    // The homepage hero: the client's own slides and video, and which of those or
+    // a running campaign's banners the storefront actually shows.
+    //
+    // ⚠️ Every write is POST, including the update: the forms carry files, and a
+    // multipart PUT/PATCH body is not parsed by PHP.
+    Route::get('hero', [HeroController::class, 'index'])->middleware('permission:hero.view')->name('hero.index');
+    Route::middleware('permission:hero.manage')->group(function () {
+        // Literal before wildcard, so `hero/mode` can never be read as a slide id.
+        Route::post('hero/mode', [HeroController::class, 'updateMode'])->name('hero.mode');
+        Route::post('hero', [HeroController::class, 'store'])->name('hero.store');
+        Route::post('hero/{slide}', [HeroController::class, 'update'])->name('hero.update');
+        Route::patch('hero/{slide}/toggle', [HeroController::class, 'toggle'])->name('hero.toggle');
+        Route::post('hero/{slide}/reorder', [HeroController::class, 'reorder'])->name('hero.reorder');
+        Route::delete('hero/{slide}', [HeroController::class, 'destroy'])->name('hero.destroy');
     });
 
     // Store events — named, time-boxed homepage campaigns ("اليوم الوطني السعودي").

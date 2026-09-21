@@ -106,6 +106,9 @@ return [
     ],
 
     'admin' => [
+        'hero_slide_saved' => 'Slide saved.',
+        'hero_slide_deleted' => 'Slide deleted.',
+        'hero_mode_saved' => 'Homepage banner updated.',
         'announcement_saved' => 'Announcement saved.',
         'announcement_deleted' => 'Announcement deleted.',
         'sensitive_mail_failed' => 'We could not send the confirmation email, so nothing was started. Try again in a moment.',

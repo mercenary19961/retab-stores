@@ -106,6 +106,9 @@ return [
     ],
 
     'admin' => [
+        'hero_slide_saved' => 'تم حفظ الشريحة.',
+        'hero_slide_deleted' => 'تم حذف الشريحة.',
+        'hero_mode_saved' => 'تم تحديث بانر الصفحة الرئيسية.',
         'announcement_saved' => 'تم حفظ الإشعار.',
         'announcement_deleted' => 'تم حذف الإشعار.',
         'sensitive_mail_failed' => 'تعذّر إرسال رسالة التأكيد، ولم يبدأ شيء. حاول بعد قليل.',

@@ -55,12 +55,25 @@ interface SlideArt {
  * never share the carousel.
  */
 interface HeroBanner {
-    id: number;
+    /**
+     * Prefixed by source (`event-3`, `slide-7`) because the set is now composed
+     * from TWO tables. A bare numeric id would collide the moment a campaign
+     * banner and a hero slide shared one.
+     */
+    id: string;
+    /** A still, or a muted looping video. Video slides carry `video` + a poster. */
+    kind: 'image' | 'video';
     /** Desktop art, 2:1, served at the 1920px `hero` variant. */
     image: string;
     /** Phone art, 4:5 — null when the admin uploaded none. */
     image_mobile: string | null;
-    href: string;
+    /**
+     * The video file, for `kind: 'video'` only. `image` then holds its POSTER,
+     * which is what renders before playback and what replaces the video entirely
+     * under prefers-reduced-motion.
+     */
+    video: string | null;
+    href: string | null;
     alt_ar: string | null;
     alt_en: string | null;
 }
@@ -216,21 +229,77 @@ function Arrow({ flip }: { flip?: boolean }) {
  * would change height on every other slide. Without a full set, phones show the
  * desktop art too, at its own 2:1.
  */
-function BannerSlide({ banner, alt, priority, phonePoster }: { banner: HeroBanner; alt: string; priority: boolean; phonePoster: boolean }) {
-    return (
+function BannerSlide({
+    banner,
+    alt,
+    priority,
+    phonePoster,
+    reducedMotion,
+    onEnded,
+}: {
+    banner: HeroBanner;
+    alt: string;
+    priority: boolean;
+    phonePoster: boolean;
+    reducedMotion: boolean;
+    onEnded?: () => void;
+}) {
+    const box = `block aspect-[2/1] w-full object-cover ${phonePoster ? 'max-sm:aspect-[4/5]' : ''}`;
+
+    /*
+     * 🔴 Under reduced motion a video slide renders its POSTER, not the video.
+     * A silent looping film is exactly the kind of perpetual movement that
+     * setting exists to stop, and the poster is a real frame of it rather than a
+     * substitute image - so nothing is lost but the motion. The carousel's own
+     * timer then governs this slide like any other still.
+     */
+    const playable = banner.kind === 'video' && banner.video && !reducedMotion;
+
+    const media = playable ? (
+        <video
+            // All four are REQUIRED together for autoplay to work on iOS: a video
+            // that is not muted, or not inline, is simply refused by the browser
+            // and the visitor gets a frozen poster with no way to start it.
+            autoPlay
+            muted
+            playsInline
+            // Loop only when it is the whole hero. With siblings it hands over at
+            // the end instead (see onEnded), so a film is never cut off mid-shot
+            // by a fixed six-second tick.
+            loop={!onEnded}
+            onEnded={onEnded}
+            // The poster is what fills the box while the file downloads, which is
+            // the difference between a hero and an empty band for the first second.
+            poster={banner.image ?? undefined}
+            preload={priority ? 'auto' : 'metadata'}
+            aria-label={alt}
+            className={box}
+        >
+            <source src={banner.video ?? undefined} />
+        </video>
+    ) : (
+        <picture>
+            {phonePoster && banner.image_mobile && <source media={MOBILE_ART} srcSet={banner.image_mobile} />}
+            <img
+                // eager + high priority: the first banner is the homepage's LCP element.
+                fetchPriority={priority ? 'high' : 'auto'}
+                loading={priority ? 'eager' : 'lazy'}
+                src={banner.image ?? undefined}
+                alt={alt}
+                className={box}
+            />
+        </picture>
+    );
+
+    // ⚠️ A slide without a link is a plain block, not a <Link href="">. An empty
+    // href resolves to the current page, so the whole hero would look clickable
+    // and do nothing - worse than not being clickable at all.
+    return banner.href ? (
         <Link href={banner.href} className="block bg-[#01482b]">
-            <picture>
-                {phonePoster && banner.image_mobile && <source media={MOBILE_ART} srcSet={banner.image_mobile} />}
-                <img
-                    // eager + high priority: the first banner is the homepage's LCP element.
-                    fetchPriority={priority ? 'high' : 'auto'}
-                    loading={priority ? 'eager' : 'lazy'}
-                    src={banner.image}
-                    alt={alt}
-                    className={`block aspect-[2/1] w-full object-cover ${phonePoster ? 'max-sm:aspect-[4/5]' : ''}`}
-                />
-            </picture>
+            {media}
         </Link>
+    ) : (
+        <div className="block bg-[#01482b]">{media}</div>
     );
 }
 
@@ -247,11 +316,18 @@ export default function StoreHero() {
     const { heroBanners } = usePage().props as { heroBanners?: HeroBanner[] };
     const banners = Array.isArray(heroBanners) ? heroBanners : [];
     // One phone shape for the whole set: posters only when every banner has one.
-    const phonePoster = banners.length > 0 && banners.every((b) => b.image_mobile);
+    // ⚠️ Video slides are EXEMPT from the "every slide has phone art" test. A
+    // video fills whichever box it is given, so requiring phone art from it would
+    // drop the portrait crops of the stills sitting beside it and hand phones the
+    // 2:1 desktop art for the whole set.
+    const needsPhoneArt = banners.filter((b) => b.kind !== 'video');
+    const phonePoster = needsPhoneArt.length > 0 && needsPhoneArt.every((b) => b.image_mobile);
 
     const raw = t('hero.slides', { returnObjects: true, defaultValue: [] }) as unknown;
     const copy = (Array.isArray(raw) ? raw : []) as SlideCopy[];
-    const bannerSlides = banners.map((banner): Slide => ({ kind: 'banner', key: `banner-${banner.id}`, banner }));
+    // `banner.id` already carries its source prefix (`event-3` / `slide-7`), so
+    // it is unique across both tables without any further namespacing here.
+    const bannerSlides = banners.map((banner): Slide => ({ kind: 'banner', key: banner.id, banner }));
     const copySlides: Slide[] = [
         // Drop any copy entry with no matching art rather than rendering a slide with
         // a broken image, and keep i18n order as carousel order.
@@ -270,9 +346,25 @@ export default function StoreHero() {
 
     const [index, setIndex] = useState(0);
     const [paused, setPaused] = useState(false);
+    /*
+     * Read once on mount rather than inline: the SSR pass has no matchMedia, and
+     * an inline read would make the server and client disagree on the first frame.
+     * Starting `false` means the server renders the motion version, which the
+     * client then corrects - the safe direction, since the alternative is every
+     * visitor briefly seeing the reduced variant.
+     */
+    const [reducedMotion, setReducedMotion] = useState(false);
     // Bumped by every manual control, purely so the timer below restarts. See goTo.
     const [nudge, setNudge] = useState(0);
     const count = slides.length;
+    /*
+     * Whether the slide on screen is a video that is actually playing. Derived
+     * from `index` rather than from `current` (which is computed further down,
+     * after the effects) so the timer effect above can depend on it.
+     */
+    const at = Math.min(index, Math.max(count - 1, 0));
+    const showing = slides[at];
+    const holdForVideo = showing?.kind === 'banner' && showing.banner.kind === 'video' && !!showing.banner.video && !reducedMotion;
 
     /**
      * Every manual control goes through here so the timer restarts on ANY press.
@@ -299,12 +391,30 @@ export default function StoreHero() {
     useEffect(() => {
         if (count < 2 || paused) return;
         // An auto-rotating carousel is exactly what this setting is about.
-        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        if (reducedMotion) return;
+        /*
+         * 🔑 A PLAYING video governs its own dwell time and advances from its
+         * `onEnded`. Leaving the fixed tick running would cut a fifteen-second
+         * film off at six, which is the single most obvious way this feature
+         * could look broken. Under reduced motion the slide is only its poster,
+         * so the ordinary tick correctly applies again.
+         */
+        if (holdForVideo) return;
 
         const id = window.setTimeout(() => setIndex((i) => (i + 1) % count), SLIDE_MS);
 
         return () => window.clearTimeout(id);
-    }, [index, nudge, paused, count]);
+    }, [index, nudge, paused, count, reducedMotion, holdForVideo]);
+
+    useEffect(() => {
+        const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+        if (!mq) return;
+        const apply = () => setReducedMotion(mq.matches);
+        apply();
+        mq.addEventListener('change', apply);
+
+        return () => mq.removeEventListener('change', apply);
+    }, []);
 
     // Don't rotate behind a tab nobody is looking at — otherwise someone returns
     // after ten minutes to a slide chosen by a timer rather than by them.
@@ -353,7 +463,16 @@ export default function StoreHero() {
             onBlurCapture={() => setPaused(false)}
         >
             {current.kind === 'banner' ? (
-                <BannerSlide banner={current.banner} phonePoster={phonePoster} alt={localized(current.banner, 'alt')} priority={active === 0} />
+                <BannerSlide
+                    banner={current.banner}
+                    phonePoster={phonePoster}
+                    alt={localized(current.banner, 'alt')}
+                    priority={active === 0}
+                    reducedMotion={reducedMotion}
+                    /* Undefined when it is the only slide, which is what makes the
+                       video `loop` instead of handing over to nothing. */
+                    onEnded={many ? () => setIndex((i) => (i + 1) % slides.length) : undefined}
+                />
             ) : (
                 <CopySlide slide={current.copy} art={current.art} priority={active === 0} />
             )}

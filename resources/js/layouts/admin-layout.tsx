@@ -16,6 +16,7 @@ import {
     CalendarHeart,
     FileText,
     FolderTree,
+    GalleryHorizontal,
     History,
     Info,
     KeyRound,
@@ -93,6 +94,7 @@ const NAV_GROUPS: { key: string; items: NavItem[] }[] = [
     {
         key: 'content',
         items: [
+            { key: 'hero', href: '/admin/hero', icon: GalleryHorizontal, perm: 'hero' },
             { key: 'announcements', href: '/admin/announcements', icon: Megaphone, perm: 'announcements' },
             { key: 'reviews', href: '/admin/client-reviews', icon: Star, perm: 'reviews' },
             { key: 'contentPages', href: '/admin/content-pages', icon: FileText, perm: 'content_pages' },

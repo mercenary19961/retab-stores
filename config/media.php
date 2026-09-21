@@ -42,4 +42,15 @@ return [
     */
     'image_driver' => env('MEDIA_IMAGE_DRIVER', 'gd'),
 
+    /*
+    | Hero video size cap, in megabytes. Enforced in Media::storeVideo() AND in
+    | the admin form's validation, so a file that slips past one meets the other.
+    |
+    | Deliberately small. The hero video is downloaded by every first-time visitor
+    | before they reach a single product, on a store whose customers are mostly on
+    | phones - and the client will judge it on office wifi, where a 60 MB file
+    | feels fine. 12 MB is roughly 15 seconds of decent 1080p h.264.
+    */
+    'video_max_mb' => (int) env('MEDIA_VIDEO_MAX_MB', 12),
+
 ];

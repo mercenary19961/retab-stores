@@ -138,6 +138,19 @@ const DOMAINS = {
      * The storefront announcement strip. `live` is `active` rather than
      * `attention`: it is working as intended, not asking anyone to do anything.
      */
+    hero: {
+        prefix: 'admin.hero.states.',
+        values: {
+            live: { tone: 'active', icon: Megaphone },
+            scheduled: { tone: 'idle', icon: Hourglass },
+            ended: { tone: 'done', icon: CircleCheck },
+            off: { tone: 'stopped', icon: CircleX },
+            // 🔑 The only ATTENTION tone here: the slide is switched on and inside
+            // its window, and still will not show, because its file is missing.
+            // That is a job owed by staff, which is exactly what the tone means.
+            incomplete: { tone: 'attention', icon: TriangleAlert },
+        },
+    },
     announcement: {
         prefix: 'admin.announcements.states.',
         values: {

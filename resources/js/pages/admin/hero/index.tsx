@@ -1,0 +1,437 @@
+import Button from '@/components/admin/button';
+import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
+import Modal from '@/components/admin/modal';
+import StatusBadge from '@/components/admin/status-badge';
+import StatusToggle from '@/components/admin/status-toggle';
+import { useAdminT } from '@/i18n/use-admin-t';
+import AdminLayout from '@/layouts/admin-layout';
+import { CARD } from '@/lib/admin-ui';
+import { Head, router, useForm } from '@inertiajs/react';
+import { ChevronDown, ChevronUp, Film, GalleryHorizontal, Image as ImageIcon, Pencil, Plus } from 'lucide-react';
+import { useState } from 'react';
+
+interface Slide {
+    id: number;
+    kind: 'image' | 'video';
+    image: string | null;
+    image_mobile: string | null;
+    video: string | null;
+    video_poster: string | null;
+    href: string | null;
+    alt_ar: string | null;
+    alt_en: string | null;
+    is_active: boolean;
+    starts_at: string | null;
+    ends_at: string | null;
+    sort_order: number;
+    state: string;
+}
+
+/** One entry of the composed hero, exactly as the storefront receives it. */
+interface PreviewItem {
+    id: string;
+    kind: 'image' | 'video';
+    image: string | null;
+    image_mobile: string | null;
+    video: string | null;
+    href: string | null;
+    alt_ar: string | null;
+    alt_en: string | null;
+}
+
+/** `datetime-local` wants `YYYY-MM-DDTHH:mm`; the server ships ISO-8601. */
+const toInput = (iso: string | null) => (iso ? iso.slice(0, 16) : '');
+
+export default function HeroIndex({
+    slides,
+    campaignBanners,
+    mode,
+    modes,
+    preview,
+    videoMaxMb,
+    canManage,
+}: {
+    slides: Slide[];
+    campaignBanners: PreviewItem[];
+    mode: string;
+    modes: string[];
+    preview: PreviewItem[];
+    videoMaxMb: number;
+    canManage: boolean;
+}) {
+    const { t, i18n } = useAdminT();
+    const [editing, setEditing] = useState<Slide | null>(null);
+    const [open, setOpen] = useState(false);
+
+    const form = useForm<{
+        kind: 'image' | 'video';
+        image: File | null;
+        image_mobile: File | null;
+        video: File | null;
+        video_poster: File | null;
+        href: string;
+        alt_ar: string;
+        alt_en: string;
+        is_active: boolean;
+        starts_at: string;
+        ends_at: string;
+        sort_order: number;
+    }>({
+        kind: 'image',
+        image: null,
+        image_mobile: null,
+        video: null,
+        video_poster: null,
+        href: '',
+        alt_ar: '',
+        alt_en: '',
+        is_active: true,
+        starts_at: '',
+        ends_at: '',
+        sort_order: 0,
+    });
+
+    const openFor = (row: Slide | null) => {
+        setEditing(row);
+        form.setData({
+            kind: row?.kind ?? 'image',
+            // Files are never pre-filled: a file input cannot be given a value, and
+            // the server keeps whatever is already stored when none is sent.
+            image: null,
+            image_mobile: null,
+            video: null,
+            video_poster: null,
+            href: row?.href ?? '',
+            alt_ar: row?.alt_ar ?? '',
+            alt_en: row?.alt_en ?? '',
+            is_active: row?.is_active ?? true,
+            starts_at: toInput(row?.starts_at ?? null),
+            ends_at: toInput(row?.ends_at ?? null),
+            sort_order: row?.sort_order ?? 0,
+        });
+        form.clearErrors();
+        setOpen(true);
+    };
+
+    /*
+     * ⚠️ POST for BOTH create and update, never PUT. The body is multipart and PHP
+     * does not parse a multipart PUT, so the files would arrive empty — the same
+     * reason product images live on their own POST endpoint.
+     */
+    const submit = () => {
+        /*
+         * 🔴 The boolean MUST go as 1/0. multipart/form-data carries strings
+         * only, so Inertia serialises `true` as the literal "true" — which
+         * Laravel's `boolean` rule rejects, because it accepts only
+         * true/false/1/0/"1"/"0". The whole form then 302s back with an error
+         * and nothing is saved.
+         *
+         * Caught in a browser, not by the suite: the PHPUnit test omitted the
+         * field entirely and so exercised the default instead of this path.
+         */
+        form.transform((data) => ({ ...data, is_active: data.is_active ? 1 : 0 }));
+
+        form.post(editing ? `/admin/hero/${editing.id}` : '/admin/hero', {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => setOpen(false),
+        });
+    };
+
+    const text = (name: 'href' | 'alt_ar' | 'alt_en' | 'starts_at' | 'ends_at' | 'sort_order', label: string, type = 'text', hint?: string) => (
+        <label className="block">
+            <span className="text-sm text-neutral-300">{label}</span>
+            <input
+                type={type}
+                value={String(form.data[name] ?? '')}
+                onChange={(e) => form.setData(name, (type === 'number' ? Number(e.target.value) : e.target.value) as never)}
+                className="focus:border-brand-gold mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-white outline-none"
+            />
+            {hint && <span className="mt-1 block text-xs text-neutral-500">{hint}</span>}
+            {form.errors[name] && <span className="text-xs text-red-400">{form.errors[name]}</span>}
+        </label>
+    );
+
+    const file = (name: 'image' | 'image_mobile' | 'video' | 'video_poster', label: string, accept: string, hint: string) => (
+        <label className="block">
+            <span className="text-sm text-neutral-300">{label}</span>
+            <input
+                type="file"
+                accept={accept}
+                aria-label={label}
+                onChange={(e) => form.setData(name, e.target.files?.[0] ?? null)}
+                className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 outline-none file:mr-3 file:rounded file:border-0 file:bg-neutral-800 file:px-3 file:py-1 file:text-neutral-200"
+            />
+            <span className="mt-1 block text-xs text-neutral-500">{hint}</span>
+            {form.errors[name] && <span className="text-xs text-red-400">{form.errors[name]}</span>}
+        </label>
+    );
+
+    const label = (item: PreviewItem) => (i18n.language === 'en' && item.alt_en ? item.alt_en : (item.alt_ar ?? ''));
+
+    return (
+        <AdminLayout title={t('admin.hero.title')}>
+            <Head title={t('admin.hero.title')} />
+
+            <div className="mb-4 flex items-start justify-between gap-4">
+                <p className="max-w-2xl text-sm text-neutral-400">{t('admin.hero.intro')}</p>
+                {canManage && (
+                    <Button onClick={() => openFor(null)} icon={Plus}>
+                        {t('admin.hero.add')}
+                    </Button>
+                )}
+            </div>
+
+            {/* ── PREVIEW ───────────────────────────────────────────────────────
+                🔑 Built server-side by HeroBanners::live(), the SAME method the
+                storefront calls. It is not a second guess at the rules: a preview
+                that re-derived them would agree until the day they changed, and
+                then quietly show the client something the homepage does not do. */}
+            <section className={`${CARD} mb-6 p-5`}>
+                <div className="mb-3 flex items-baseline justify-between gap-3">
+                    <h2 className="font-medium text-neutral-200">{t('admin.hero.previewTitle')}</h2>
+                    <span className="text-xs text-neutral-500">{t('admin.hero.previewNote')}</span>
+                </div>
+
+                {preview.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-neutral-700 px-4 py-8 text-center text-sm text-neutral-400">
+                        {t('admin.hero.previewEmpty')}
+                    </p>
+                ) : (
+                    <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {preview.map((item, i) => (
+                            <li key={item.id} className="overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950">
+                                <div className="relative aspect-[2/1] bg-neutral-900">
+                                    {/* A video's poster is shipped in `image`, so one
+                                        <img> covers both kinds and the preview never
+                                        downloads the film itself. */}
+                                    {item.image ? (
+                                        <img src={item.image} alt={label(item)} className="h-full w-full object-cover" />
+                                    ) : (
+                                        <div className="flex h-full items-center justify-center text-neutral-600">
+                                            <Film className="h-6 w-6" />
+                                        </div>
+                                    )}
+                                    <span className="absolute start-2 top-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white">
+                                        {i + 1}
+                                    </span>
+                                    {item.kind === 'video' && (
+                                        <span className="absolute end-2 top-2 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-xs text-white">
+                                            <Film className="h-3 w-3" /> {t('admin.hero.kinds.video')}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="truncate px-3 py-2 text-xs text-neutral-400" dir="auto">
+                                    {/* Where it came from, because "why did my slide
+                                        disappear" is the question this page exists to
+                                        answer, and a campaign is usually the reason. */}
+                                    {item.id.startsWith('event-') ? t('admin.hero.fromCampaign') : t('admin.hero.fromYou')}
+                                </p>
+                            </li>
+                        ))}
+                    </ol>
+                )}
+            </section>
+
+            {/* ── MODE ─────────────────────────────────────────────────────────── */}
+            <section className={`${CARD} mb-6 p-5`}>
+                <h2 className="mb-1 font-medium text-neutral-200">{t('admin.hero.modeTitle')}</h2>
+                <p className="mb-3 text-sm text-neutral-400">{t('admin.hero.modeIntro')}</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                    {modes.map((m) => {
+                        const selected = m === mode;
+
+                        return (
+                            <button
+                                key={m}
+                                type="button"
+                                disabled={!canManage}
+                                aria-pressed={selected}
+                                onClick={() => router.post('/admin/hero/mode', { mode: m }, { preserveScroll: true })}
+                                className={`rounded-lg border p-3 text-start transition-colors disabled:opacity-50 ${
+                                    selected ? 'border-brand-gold bg-brand-teal/20' : 'border-neutral-800 bg-neutral-950 hover:border-neutral-700'
+                                }`}
+                            >
+                                <span className="block text-sm font-medium text-neutral-100">{t(`admin.hero.modes.${m}.label`)}</span>
+                                <span className="mt-1 block text-xs text-neutral-400">{t(`admin.hero.modes.${m}.hint`)}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+                {campaignBanners.length > 0 && <p className="mt-3 text-xs text-neutral-500">{t('admin.hero.campaignRunning')}</p>}
+            </section>
+
+            {/* ── THE CLIENT'S OWN SLIDES ──────────────────────────────────────── */}
+            <section className={`${CARD} overflow-hidden`}>
+                {slides.length === 0 ? (
+                    <div className="px-6 py-12 text-center">
+                        <GalleryHorizontal className="mx-auto mb-3 h-8 w-8 text-neutral-600" />
+                        <p className="font-medium text-neutral-300">{t('admin.hero.emptyTitle')}</p>
+                        <p className="mt-1 text-sm text-neutral-500">{t('admin.hero.emptyHint')}</p>
+                    </div>
+                ) : (
+                    <ul className="divide-y divide-neutral-800">
+                        {slides.map((s, i) => (
+                            <li key={s.id} className="flex flex-wrap items-center gap-4 px-4 py-3">
+                                <div className="h-14 w-28 shrink-0 overflow-hidden rounded bg-neutral-900">
+                                    {s.kind === 'video' ? (
+                                        s.video_poster ? (
+                                            <img src={s.video_poster} alt="" className="h-full w-full object-cover" />
+                                        ) : (
+                                            <div className="flex h-full items-center justify-center text-neutral-600">
+                                                <Film className="h-5 w-5" />
+                                            </div>
+                                        )
+                                    ) : s.image ? (
+                                        <img src={s.image} alt="" className="h-full w-full object-cover" />
+                                    ) : (
+                                        <div className="flex h-full items-center justify-center text-neutral-600">
+                                            <ImageIcon className="h-5 w-5" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                    <p className="flex items-center gap-2 truncate text-sm text-neutral-200" dir="auto">
+                                        {s.kind === 'video' ? (
+                                            <Film className="h-3.5 w-3.5 shrink-0" />
+                                        ) : (
+                                            <ImageIcon className="h-3.5 w-3.5 shrink-0" />
+                                        )}
+                                        {s.alt_ar || t(`admin.hero.kinds.${s.kind}`)}
+                                    </p>
+                                    <p className="truncate text-xs text-neutral-500">
+                                        {/* Blank means "no bound", which is the feature:
+                                            no end date runs until it is switched off. */}
+                                        {s.starts_at ? new Date(s.starts_at).toLocaleString() : t('admin.hero.noStart')}
+                                        {' · '}
+                                        {s.ends_at ? new Date(s.ends_at).toLocaleString() : t('admin.hero.noEnd')}
+                                    </p>
+                                </div>
+
+                                <StatusBadge domain="hero" value={s.state} />
+
+                                {canManage && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex shrink-0 flex-col">
+                                            <button
+                                                type="button"
+                                                disabled={i === 0}
+                                                aria-label={t('admin.hero.moveUp')}
+                                                onClick={() =>
+                                                    router.post(`/admin/hero/${s.id}/reorder`, { direction: 'up' }, { preserveScroll: true })
+                                                }
+                                                className="rounded p-0.5 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200 disabled:pointer-events-none disabled:opacity-25"
+                                            >
+                                                <ChevronUp className="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                disabled={i === slides.length - 1}
+                                                aria-label={t('admin.hero.moveDown')}
+                                                onClick={() =>
+                                                    router.post(`/admin/hero/${s.id}/reorder`, { direction: 'down' }, { preserveScroll: true })
+                                                }
+                                                className="rounded p-0.5 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200 disabled:pointer-events-none disabled:opacity-25"
+                                            >
+                                                <ChevronDown className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                        <StatusToggle
+                                            tone={s.is_active ? 'active' : 'stopped'}
+                                            label={s.is_active ? t('admin.hero.on') : t('admin.hero.off')}
+                                            url={`/admin/hero/${s.id}/toggle`}
+                                            method="patch"
+                                        />
+                                        <Button variant="secondary" size="sm" icon={Pencil} onClick={() => openFor(s)}>
+                                            {t('admin.common.edit')}
+                                        </Button>
+                                        <ConfirmDeleteButton
+                                            itemName={s.alt_ar || t(`admin.hero.kinds.${s.kind}`)}
+                                            onConfirm={() => router.delete(`/admin/hero/${s.id}`, { preserveScroll: true })}
+                                        />
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
+
+            <Modal open={open} onClose={() => setOpen(false)} title={editing ? t('admin.hero.editTitle') : t('admin.hero.addTitle')}>
+                <div className="grid gap-4">
+                    <div>
+                        <span className="text-sm text-neutral-300">{t('admin.hero.kind')}</span>
+                        <div className="mt-1 flex gap-2">
+                            {(['image', 'video'] as const).map((k) => (
+                                <button
+                                    key={k}
+                                    type="button"
+                                    aria-pressed={form.data.kind === k}
+                                    onClick={() => form.setData('kind', k)}
+                                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                        form.data.kind === k
+                                            ? 'border-brand-gold bg-brand-teal/20 text-neutral-100'
+                                            : 'border-neutral-700 bg-neutral-950 text-neutral-300'
+                                    }`}
+                                >
+                                    {k === 'video' ? <Film className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
+                                    {t(`admin.hero.kinds.${k}`)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {form.data.kind === 'image'
+                        ? [
+                              file('image', t('admin.hero.imageDesktop'), 'image/*', t('admin.hero.imageDesktopHint')),
+                              file('image_mobile', t('admin.hero.imagePhone'), 'image/*', t('admin.hero.imagePhoneHint')),
+                          ]
+                        : [
+                              file('video', t('admin.hero.video'), 'video/mp4,video/webm', t('admin.hero.videoHint', { n: videoMaxMb })),
+                              file('video_poster', t('admin.hero.poster'), 'image/*', t('admin.hero.posterHint')),
+                          ]}
+
+                    {text('alt_ar', t('admin.hero.altAr'), 'text', t('admin.hero.altHint'))}
+                    {text('alt_en', t('admin.hero.altEn'))}
+                    {text('href', t('admin.hero.href'), 'text', t('admin.hero.hrefHint'))}
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {text('starts_at', t('admin.hero.startsAt'), 'datetime-local')}
+                        {text('ends_at', t('admin.hero.endsAt'), 'datetime-local')}
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {text('sort_order', t('admin.hero.order'), 'number')}
+                        <label className="flex items-end gap-2 pb-2">
+                            <input
+                                type="checkbox"
+                                checked={form.data.is_active}
+                                onChange={(e) => form.setData('is_active', e.target.checked)}
+                                className="h-4 w-4 rounded border-neutral-700 bg-neutral-950"
+                            />
+                            <span className="text-sm text-neutral-300">{t('admin.hero.showOnStore')}</span>
+                        </label>
+                    </div>
+
+                    {/* Every remaining field's error, so a rejection can never be
+                        silent. `is_active` in particular has no visible control of
+                        its own to hang a message under. */}
+                    <div className="empty:hidden">
+                        {form.errors.is_active && <span className="text-xs text-red-400">{form.errors.is_active}</span>}
+                        {form.errors.kind && <span className="text-xs text-red-400">{form.errors.kind}</span>}
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                        <Button variant="secondary" onClick={() => setOpen(false)}>
+                            {t('admin.common.cancel')}
+                        </Button>
+                        <Button onClick={submit} disabled={form.processing}>
+                            {t('admin.hero.save')}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+        </AdminLayout>
+    );
+}

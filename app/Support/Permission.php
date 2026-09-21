@@ -28,6 +28,9 @@ class Permission
         'coupons' => ['view', 'create', 'edit', 'delete'],
         'discounts' => ['view', 'manage'],
         'store_events' => ['view', 'manage'],
+        // The homepage hero: the client's own slides and video, plus which of
+        // them or a running campaign's banners the storefront shows.
+        'hero' => ['view', 'manage'],
         'reviews' => ['view', 'manage'],
         'product_reviews' => ['view', 'manage'],
         // The strip above the storefront (shipping notices, promotions).
@@ -64,6 +67,10 @@ class Permission
         'coupons' => ['view' => true, 'create' => true, 'edit' => true, 'delete' => false],
         'discounts' => ['view' => true, 'manage' => false],
         'store_events' => ['view' => true, 'manage' => false],
+        // View-only by default, mirroring store_events and discounts: the hero is
+        // the first thing every visitor sees, so changing it is a decision rather
+        // than housekeeping.
+        'hero' => ['view' => true, 'manage' => false],
         'reviews' => ['view' => true, 'manage' => true],
         'product_reviews' => ['view' => true, 'manage' => true],
         'content_pages' => ['view' => true, 'edit' => true],
@@ -96,11 +103,11 @@ class Permission
         // The daily fulfilment desk: take orders out of the door, handle returns.
         'operations' => ['orders', 'returns', 'shipping', 'product_requests', 'customers', 'inventory', 'contact_messages'],
         // Looks after what the store sells and how it reads.
-        'catalogue' => ['products', 'categories', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages', 'announcements'],
+        'catalogue' => ['products', 'categories', 'coupons', 'discounts', 'store_events', 'hero', 'reviews', 'product_reviews', 'content_pages', 'announcements'],
         // Everything except the settings that can reconfigure the business itself.
         'manager' => [
             'orders', 'returns', 'shipping', 'product_requests', 'customers', 'inventory', 'contact_messages',
-            'products', 'categories', 'coupons', 'discounts', 'store_events', 'reviews', 'product_reviews', 'content_pages', 'announcements', 'marketing', 'change_log',
+            'products', 'categories', 'coupons', 'discounts', 'store_events', 'hero', 'reviews', 'product_reviews', 'content_pages', 'announcements', 'marketing', 'change_log',
         ],
     ];
 
