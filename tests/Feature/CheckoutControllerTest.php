@@ -158,6 +158,39 @@ class CheckoutControllerTest extends TestCase
         $this->assertSame(PaymentMethod::BankTransfer, $order->fresh()->payment_method);
     }
 
+    // ---- Where the store ships --------------------------------------------------
+
+    /**
+     * 🔴 Saudi only (client decision, 2026-09-21). The store used to accept all
+     * six GCC states, which had already drifted from the cart's own promise of a
+     * "flat rate to every city in Saudi Arabia".
+     */
+    public function test_an_order_to_another_gcc_country_is_refused(): void
+    {
+        $this->seedCartWithOneProduct();
+
+        foreach (['AE', 'KW', 'QA', 'BH', 'OM'] as $country) {
+            $this->placeOrder(['country' => $country]);
+        }
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_the_checkout_page_offers_saudi_arabia_only(): void
+    {
+        $this->seedCartWithOneProduct();
+
+        $this->get('/checkout')->assertInertia(fn (Assert $page) => $page->where('countries', ['SA']));
+    }
+
+    public function test_a_saudi_order_still_goes_through(): void
+    {
+        $this->seedCartWithOneProduct();
+        $this->placeOrder(['country' => 'SA']);
+
+        $this->assertDatabaseCount('orders', 1);
+    }
+
     // ---- Phone number ---------------------------------------------------------
 
     /**

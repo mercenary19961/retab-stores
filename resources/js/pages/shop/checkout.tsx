@@ -110,6 +110,9 @@ export default function Checkout({
     // A saved address to start from: their default, else the most recent. Picking
     // one is what makes a returning customer's checkout a confirmation rather
     // than a retype.
+    /** A country we ship to, falling back to the first (and today only) one. */
+    const shippable = (country?: string | null) => (country && countries.includes(country) ? country : (countries[0] ?? 'SA'));
+
     const initialAddress = savedAddresses[0] ?? null;
 
     const { data, setData, post, processing, errors } = useForm({
@@ -118,7 +121,10 @@ export default function Checkout({
         customer_name: user?.name ?? '',
         customer_email: user?.email ?? '',
         customer_phone: user?.phone ?? '',
-        country: initialAddress?.country ?? countries[0] ?? 'SA',
+        // ⚠️ Clamped to a destination we actually ship to. A saved address from
+        // before the Saudi-only change can carry 'AE', and posting that would fail
+        // validation on a field the customer can no longer even see.
+        country: shippable(initialAddress?.country),
         city: initialAddress?.city ?? '',
         district: initialAddress?.district ?? '',
         street: initialAddress?.street ?? '',
@@ -169,7 +175,7 @@ export default function Checkout({
         setAddressId(a.id);
         setData((d) => ({
             ...d,
-            country: a.country ?? d.country,
+            country: shippable(a.country),
             city: a.city ?? '',
             district: a.district ?? '',
             street: a.street ?? '',
@@ -342,15 +348,27 @@ export default function Checkout({
                             )}
 
                             <div className="grid gap-4 sm:grid-cols-2">
+                                {/* 🔑 A picker with one option is not a choice, it is a
+                                    chore. The store ships to Saudi Arabia only, so the
+                                    single destination is stated rather than offered —
+                                    and this reads off `countries`, so re-opening a
+                                    country brings the real picker back with no edit
+                                    here. */}
                                 <label className="block">
                                     <span className="text-sm text-gray-600">{t('checkout.country')} *</span>
-                                    <StoreSelect
-                                        value={data.country}
-                                        onValueChange={(v) => setData('country', v)}
-                                        ariaLabel={t('checkout.country')}
-                                        options={countries.map((c) => ({ value: c, label: t(`countries.${c}`) }))}
-                                        triggerClassName="mt-1 w-full justify-between rounded border-gray-300 px-3 font-normal text-gray-900 hover:bg-white"
-                                    />
+                                    {countries.length > 1 ? (
+                                        <StoreSelect
+                                            value={data.country}
+                                            onValueChange={(v) => setData('country', v)}
+                                            ariaLabel={t('checkout.country')}
+                                            options={countries.map((c) => ({ value: c, label: t(`countries.${c}`) }))}
+                                            triggerClassName="mt-1 w-full justify-between rounded border-gray-300 px-3 font-normal text-gray-900 hover:bg-white"
+                                        />
+                                    ) : (
+                                        <span className="mt-1 block rounded border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700">
+                                            {t(`countries.${data.country}`)}
+                                        </span>
+                                    )}
                                 </label>
                                 {field('city', t('checkout.city'), true)}
                                 {field('district', t('checkout.district'))}

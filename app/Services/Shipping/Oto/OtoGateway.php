@@ -41,7 +41,14 @@ class OtoGateway implements ShippingGateway
                 'name' => $order->customer_name,
                 'email' => $order->customer_email,
                 'mobile' => $order->customer_phone,
-                'address' => trim(($address['building'] ?? '').' '.($address['street'] ?? '')) ?: ($address['district'] ?? 'N/A'),
+                // 🔴 The national address short code goes to the COURIER, not just
+                // into our database. It was collected at checkout, stored on the
+                // order and the account, and then dropped here — so the one field
+                // Saudi couriers actually navigate by never reached them. It is
+                // appended to the address line rather than sent as its own key
+                // because that line is what OTO prints on the label, and an
+                // unrecognised top-level field risks the whole createOrder call.
+                'address' => self::addressLine($address),
                 'city' => $address['city'] ?? $this->originCity,
                 'country' => $address['country'] ?? 'SA',
             ],
@@ -222,6 +229,29 @@ class OtoGateway implements ShippingGateway
      *
      * @return CarrierOption[]
      */
+    /**
+     * The one line the courier reads off the label.
+     *
+     * Building and street, then the district, then the national address short
+     * code — each dropped when empty, so a sparse address does not come out as
+     * a string of commas. 'N/A' only when we genuinely have nothing, which OTO
+     * requires rather than an empty string.
+     *
+     * @param  array<string,mixed>  $address
+     */
+    private static function addressLine(array $address): string
+    {
+        $parts = [
+            trim(($address['building'] ?? '').' '.($address['street'] ?? '')),
+            $address['district'] ?? '',
+            $address['short_address'] ?? '',
+        ];
+
+        $line = implode(', ', array_filter(array_map('trim', $parts), fn (string $p) => $p !== ''));
+
+        return $line !== '' ? $line : 'N/A';
+    }
+
     private function parseServices(array $data): array
     {
         $rows = $data['deliveryOptions'] ?? $data['deliveryCompany'] ?? $data['data'] ?? $data['options'] ?? (array_is_list($data) ? $data : []);

@@ -31,8 +31,22 @@ use Inertia\Inertia;
 
 class CheckoutController
 {
-    /** GCC destinations we ship to. */
-    private const GCC = ['SA', 'AE', 'KW', 'QA', 'BH', 'OM'];
+    /**
+     * Where the store ships.
+     *
+     * 🔴 SAUDI ONLY (client decision, 2026-09-21). It was the six GCC states, and
+     * that had already drifted out of step with the storefront: the cart promises
+     * a "flat rate to every city in Saudi Arabia" while checkout still accepted
+     * Kuwait at the same price. This closes that contradiction in the direction
+     * the client wants, and it also makes the rest of the address stack coherent
+     * — the phone field assumes +966 and the national address code is a Saudi
+     * registry, neither of which means anything for a GCC delivery.
+     *
+     * Deliberately still an ARRAY rather than a hardcoded 'SA'. The page renders
+     * the picker from it and the request validates against it, so re-opening a
+     * country later is this one line and nothing else.
+     */
+    private const SHIPS_TO = ['SA'];
 
     public function __construct(
         protected CartService $cart,
@@ -59,7 +73,7 @@ class CheckoutController
             // doesn't have to type it twice (the form still submits it, and
             // placeOrder re-validates it under lock — this is only convenience).
             'appliedCoupon' => $request->session()->get(CartController::COUPON_SESSION_KEY),
-            'countries' => self::GCC,
+            'countries' => self::SHIPS_TO,
             // Which methods the store is offering today, managed from /admin/settings.
             // The page renders from this rather than a hardcoded list, so switching
             // a gateway off removes it from checkout without a deploy.
@@ -109,7 +123,7 @@ class CheckoutController
             // required_unless, not required_if: with `fulfillment` absent (the
             // stale-bundle case above) required_if would not fire and an order
             // could be placed with no address at all.
-            'country' => ['required_unless:fulfillment,collection', 'nullable', 'in:'.implode(',', self::GCC)],
+            'country' => ['required_unless:fulfillment,collection', 'nullable', 'in:'.implode(',', self::SHIPS_TO)],
             'city' => ['required_unless:fulfillment,collection', 'nullable', 'string', 'max:255'],
             'district' => ['nullable', 'string', 'max:255'],
             'street' => ['nullable', 'string', 'max:255'],
