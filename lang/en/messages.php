@@ -108,6 +108,12 @@ return [
     'admin' => [
         'announcement_saved' => 'Announcement saved.',
         'announcement_deleted' => 'Announcement deleted.',
+        'sensitive_mail_failed' => 'We could not send the confirmation email, so nothing was started. Try again in a moment.',
+        'sensitive_delete_sent' => 'Check the owner inbox. Nothing is deleted until you open the link in that email.',
+        'sensitive_deleted' => 'The bank and registration details have been deleted.',
+        'sensitive_link_expired' => 'That confirmation link has already been used or has expired. Start again from the settings page.',
+        'sensitive_nothing_to_delete' => 'There is nothing to delete: those fields are already empty.',
+        'sensitive_bank_transfer_on' => 'Switch bank transfer off as a payment method first. Deleting the IBAN while it is still offered would leave customers with nowhere to pay.',
         'settings_saved' => 'Settings saved.',
         'content_reset' => 'Content restored to the project-handover defaults.',
         'no_permission' => 'You do not have permission to perform this action.',

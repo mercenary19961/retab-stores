@@ -9,6 +9,7 @@ use App\Models\ContentPage;
 use App\Models\Setting;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Services\CheckoutService;
+use App\Support\SensitiveSettings;
 use Database\Seeders\ClientReviewSeeder;
 use Database\Seeders\ContentPageSeeder;
 use Database\Seeders\SettingsSeeder;
@@ -81,8 +82,20 @@ class SettingController extends Controller
     public function edit()
     {
         return Inertia::render('admin/settings/index', [
-            'settings' => collect(array_keys(self::FIELDS))
-                ->mapWithKeys(fn (string $key) => [$key => Setting::get($key)]),
+            // 🔴 Masked, not raw. Shipping the real IBAN in the page payload and
+            // hiding it with CSS would be masking theatre — the value would still
+            // sit in the DOM and in every screenshot of the page source. The real
+            // value is fetched only when someone explicitly reveals it.
+            'settings' => SensitiveSettings::maskAll(
+                collect(array_keys(self::FIELDS))
+                    ->mapWithKeys(fn (string $key) => [$key => Setting::get($key)])
+                    ->all(),
+            ),
+            'sensitiveKeys' => SensitiveSettings::KEYS,
+            // Deleting them is the owner's alone, and only with the emailed
+            // confirmation. See Admin\SensitiveDataController.
+            'canDeleteSensitive' => (bool) Auth::user()?->isOwner(),
+            'hasSensitive' => SensitiveSettings::anyPresent(),
             'defaults' => self::FOOTER_DEFAULTS, // shown as placeholders / effective fallback
             'undoMeta' => session('undo:settings'),
             'canReset' => (bool) Auth::user()?->isAdmin(), // handover-reset is admin-only
@@ -159,6 +172,22 @@ class SettingController extends Controller
     public function update(Request $request, ChangeLogService $changeLog)
     {
         $data = $request->validate(self::FIELDS);
+
+        /*
+         * 🔴 Drop any sensitive field that came back as its own mask. The form
+         * posts EVERY field it rendered, so an admin who edits the shipping fee
+         * and saves would otherwise overwrite the IBAN with a row of dots — and
+         * nothing would error. Every bank-transfer customer would then be given
+         * `••••8130` to pay into.
+         *
+         * Dropping rather than rejecting: leaving a field untouched is exactly
+         * what the admin meant by not revealing it.
+         */
+        foreach (SensitiveSettings::KEYS as $key) {
+            if (array_key_exists($key, $data) && SensitiveSettings::isMask($data[$key])) {
+                unset($data[$key]);
+            }
+        }
 
         // Normalise the boolean toggles to a clean '1'/'0' string (a raw PHP false
         // would persist as '' and read back as "on").

@@ -127,4 +127,12 @@ return [
         ],
     ],
 
+    'sensitive' => [
+        'subject' => 'Confirm deleting the bank and registration details',
+        'heading' => 'Confirm deleting the bank and registration details',
+        'line_1' => 'Someone signed in as the store owner asked to delete the bank account number, the IBAN, the commercial registration and the VAT number from the store settings.',
+        'line_2' => 'Nothing has been deleted yet. Use the button below to confirm.',
+        'action' => 'Confirm deletion',
+        'note' => 'This link works once and expires in :minutes minutes. If you did not ask for this, do not open it, and change the owner password.',
+    ],
 ];

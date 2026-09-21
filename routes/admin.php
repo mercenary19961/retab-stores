@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\ProductImageController;
 use App\Http\Controllers\Admin\ProductRequestController;
 use App\Http\Controllers\Admin\ProductReviewController;
 use App\Http\Controllers\Admin\ReturnController;
+use App\Http\Controllers\Admin\SensitiveDataController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ShippingController;
 use App\Http\Controllers\Admin\StockImportController;
@@ -205,6 +206,21 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::put('announcements/{announcement}', [AnnouncementController::class, 'update'])->middleware('permission:announcements.manage')->name('announcements.update');
     Route::post('announcements/{announcement}/toggle', [AnnouncementController::class, 'toggle'])->middleware('permission:announcements.manage')->name('announcements.toggle');
     Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy'])->middleware('permission:announcements.manage')->name('announcements.destroy');
+
+    /*
+     * The business's financial identifiers: reveal one to edit it, or delete the
+     * lot behind an emailed confirmation.
+     *
+     * ⚠️ `reveal` rides on settings.edit, because an admin who may CHANGE the IBAN
+     * must be able to see the one they are changing. Deletion is the owner's
+     * alone and is guarded in the controller as well as here, since the owner
+     * rule lives on the model and must not be restated.
+     */
+    Route::get('sensitive/reveal', [SensitiveDataController::class, 'reveal'])->middleware('permission:settings.edit')->name('sensitive.reveal');
+    Route::post('sensitive/delete', [SensitiveDataController::class, 'requestDeletion'])->middleware('permission:settings.edit')->name('sensitive.request');
+    // ⚠️ Signed, and NOT behind `permission:` — the signature plus an owner
+    // session are the two factors, checked in the controller.
+    Route::get('sensitive/confirm/{token}', [SensitiveDataController::class, 'confirmDeletion'])->name('sensitive.confirm');
 
     // Store settings + CMS pages.
     Route::get('settings', [SettingController::class, 'edit'])->middleware('permission:settings.view')->name('settings.edit');

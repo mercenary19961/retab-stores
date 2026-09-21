@@ -5,7 +5,7 @@ import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { CreditCard, Landmark, Phone, RotateCcw, Share2, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
+import { CreditCard, Eye, Landmark, Mail, Phone, RotateCcw, Share2, ShieldAlert, SlidersHorizontal, Store, type LucideIcon } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 
 const CONFIRM_WORD = 'RESET';
@@ -79,11 +79,18 @@ export default function SettingsIndex({
     defaults = {},
     undoMeta = null,
     canReset = false,
+    sensitiveKeys = [],
+    canDeleteSensitive = false,
+    hasSensitive = false,
 }: {
     settings: Settings;
     defaults?: Record<string, string>;
     undoMeta?: UndoMeta | null;
     canReset?: boolean;
+    /** Keys arriving masked; their real value is fetched only on request. */
+    sensitiveKeys?: string[];
+    canDeleteSensitive?: boolean;
+    hasSensitive?: boolean;
 }) {
     const { t, i18n } = useAdminT();
     const rtl = i18n.language === 'ar';
@@ -101,6 +108,34 @@ export default function SettingsIndex({
 
     const [confirming, setConfirming] = useState(false);
     const [confirmText, setConfirmText] = useState('');
+
+    /*
+     * Which sensitive fields have been revealed in this session.
+     *
+     * 🔑 Masked fields are READ-ONLY until revealed, and that is a guard rather
+     * than polish: typing over a mask would look like an edit, and the server
+     * drops any value that is still a mask, so the change would silently not
+     * save. Making the field unwritable until it holds the real value keeps what
+     * you see and what you can change in step.
+     */
+    const [revealed, setRevealed] = useState<string[]>([]);
+    const [revealing, setRevealing] = useState<string | null>(null);
+
+    const reveal = async (key: string) => {
+        setRevealing(key);
+        try {
+            const res = await fetch(`/admin/sensitive/reveal?key=${encodeURIComponent(key)}`, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            });
+            if (!res.ok) return;
+            const body = (await res.json()) as { value: string };
+            setData(key, body.value);
+            setRevealed((r) => [...r, key]);
+        } finally {
+            setRevealing(null);
+        }
+    };
 
     // Deep link from the help drawer (/admin/settings#help-pulse): scroll to the
     // preferences card and pulse it so the setting is easy to find.
@@ -133,18 +168,37 @@ export default function SettingsIndex({
 
     const renderField = (f: FieldDef): ReactNode => {
         const hint = t(`admin.settings.hints.${f.key}`, { defaultValue: '' });
+        // Sensitive and not yet revealed: showing dots, and not editable yet.
+        const locked = sensitiveKeys.includes(f.key) && !revealed.includes(f.key) && data[f.key] !== '';
+
         return (
             <label key={f.key} id={`field-${f.key}`} className={`block ${f.wide ? 'sm:col-span-2' : ''}`}>
                 <span className="mb-1 block text-sm font-medium text-neutral-600 dark:text-neutral-300">{t(`admin.settings.fields.${f.key}`)}</span>
-                <input
-                    type={f.type ?? 'text'}
-                    step={f.type === 'number' ? '0.01' : undefined}
-                    dir={f.dir}
-                    value={data[f.key]}
-                    placeholder={defaults[f.key]}
-                    onChange={(e) => setData(f.key, e.target.value)}
-                    className={INPUT}
-                />
+                <span className="relative block">
+                    <input
+                        type={f.type ?? 'text'}
+                        step={f.type === 'number' ? '1' : undefined}
+                        dir={f.dir}
+                        value={data[f.key]}
+                        placeholder={defaults[f.key]}
+                        readOnly={locked}
+                        onChange={(e) => setData(f.key, e.target.value)}
+                        className={`${INPUT} ${locked ? 'pe-24 text-neutral-400' : ''}`}
+                    />
+                    {locked && (
+                        <button
+                            type="button"
+                            onClick={() => reveal(f.key)}
+                            disabled={revealing === f.key}
+                            /* end-1, so it sits on the trailing edge in both
+                               directions rather than always on the right. */
+                            className="text-brand-gold absolute end-1 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        >
+                            <Eye className="h-3.5 w-3.5" />
+                            {t('admin.settings.sensitive.reveal')}
+                        </button>
+                    )}
+                </span>
                 {hint && <span className="mt-1 block text-xs text-neutral-400">{hint}</span>}
                 {errors[f.key] && <span className="mt-1 block text-xs text-red-500">{errors[f.key]}</span>}
             </label>
@@ -237,6 +291,34 @@ export default function SettingsIndex({
                     {/* Which payment methods checkout offers. Switching one off hides it
                         from checkout AND makes it invalid server-side; it never affects an
                         order already placed with that method, which stays payable. */}
+                    {/* Owner-only, and it is the store's financial identity, so it is
+                        the one destructive control here that takes two steps. */}
+                    {canDeleteSensitive && (
+                        <section id="sensitive-data" className={`${CARD} border-red-200 dark:border-red-900/50`}>
+                            {sectionHeader(ShieldAlert, 'sensitive')}
+                            <p className="text-sm text-neutral-500">{t('admin.settings.sensitive.explain')}</p>
+                            <ul className="mt-3 space-y-1 text-sm text-neutral-600 dark:text-neutral-300">
+                                {sensitiveKeys.map((k) => (
+                                    <li key={k}>· {t(`admin.settings.fields.${k}`)}</li>
+                                ))}
+                            </ul>
+                            <div className="mt-4 flex items-center gap-3">
+                                <Button
+                                    variant="danger"
+                                    icon={Mail}
+                                    disabled={!hasSensitive}
+                                    onClick={() => router.post('/admin/sensitive/delete', {}, { preserveScroll: true })}
+                                >
+                                    {t('admin.settings.sensitive.requestDelete')}
+                                </Button>
+                                {!hasSensitive && <span className="text-xs text-neutral-500">{t('admin.settings.sensitive.alreadyEmpty')}</span>}
+                            </div>
+                            {/* 🔑 Says plainly that pressing it deletes nothing, because a
+                                red button that sends an email is otherwise alarming. */}
+                            <p className="mt-3 text-xs text-neutral-500">{t('admin.settings.sensitive.twoStep')}</p>
+                        </section>
+                    )}
+
                     <section id="payment-methods" className={CARD}>
                         {sectionHeader(CreditCard, 'payments')}
                         <div className="space-y-3">

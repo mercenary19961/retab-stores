@@ -2098,7 +2098,17 @@ const en = {
                 hint: 'Gently pulses the How it works button once each session until it is opened. Turn off to hide it for all staff.',
             },
             saveHint: 'Changes apply to the storefront right away.',
+            sensitive: {
+                reveal: 'Show',
+                explain:
+                    'These identify the business financially. They are hidden until you choose to show one, and deleting them takes a confirmation emailed to the owner.',
+                requestDelete: 'Delete these details',
+                twoStep:
+                    'Pressing this deletes nothing. It emails the owner a one-time link, and the details are only removed once that link is opened.',
+                alreadyEmpty: 'Nothing to delete: these are already empty.',
+            },
             sections: {
+                sensitive: { title: 'Bank and registration details', desc: 'Hidden by default. Deleting them needs an emailed confirmation.' },
                 store: { title: 'Store', desc: 'Shipping price and the legal entity name.' },
                 bank: { title: 'Bank transfer', desc: 'Account details shown to customers paying by manual transfer.' },
                 contact: { title: 'Contact & registration', desc: 'Shown in the storefront footer.' },
