@@ -199,6 +199,9 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     // Store settings + CMS pages.
     Route::get('settings', [SettingController::class, 'edit'])->middleware('permission:settings.view')->name('settings.edit');
     Route::put('settings', [SettingController::class, 'update'])->middleware('permission:settings.edit')->name('settings.update');
+    // Quick edit from the admin top bar. Same permission and the same change-log
+    // entry as the full form — only the surface differs.
+    Route::patch('shipping-fee', [SettingController::class, 'updateShippingFee'])->middleware('permission:settings.edit')->name('settings.shipping-fee');
     // Admin-only safeguard: restore editable content to the project-handover defaults.
     // Gated by both the `admin` middleware and an in-controller isAdmin check.
     Route::post('settings/reset', [SettingController::class, 'reset'])->middleware('admin')->name('settings.reset');

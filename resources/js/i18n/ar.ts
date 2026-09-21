@@ -666,6 +666,13 @@ const ar = {
     },
     admin: {
         brand: 'إدارة رطاب',
+        shippingFee: {
+            label: 'رسوم الشحن الثابتة',
+            edit: 'رسوم الشحن الثابتة — اضغط لتغيير ما يدفعه العملاء',
+            readOnly: 'رسوم الشحن الثابتة (لا تملك صلاحية تعديلها)',
+            currency: 'ر.س',
+            freeActive: 'مجاني',
+        },
         account: {
             title: 'حسابي',
             changePassword: 'تغيير كلمة المرور',

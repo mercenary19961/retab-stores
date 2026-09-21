@@ -647,6 +647,13 @@ const en = {
     },
     admin: {
         brand: 'Retab Admin',
+        shippingFee: {
+            label: 'Flat shipping fee',
+            edit: 'Flat shipping fee — click to change what customers pay',
+            readOnly: 'Flat shipping fee (you do not have permission to change it)',
+            currency: 'SAR',
+            freeActive: 'FREE',
+        },
         account: {
             title: 'My account',
             changePassword: 'Change password',

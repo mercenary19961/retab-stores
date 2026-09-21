@@ -6,6 +6,7 @@ import MobileScrollNav from '@/components/admin/mobile-scroll-nav';
 import Modal from '@/components/admin/modal';
 import NotificationBell from '@/components/admin/notification-bell';
 import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
+import ShippingFeeBadge from '@/components/admin/shipping-fee-badge';
 import UndoToast from '@/components/admin/undo-toast';
 import adminI18n from '@/i18n/admin';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -352,6 +353,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
                         <GlobalSearch />
                     </div>
                     <div className="flex shrink-0 items-center gap-3 text-sm">
+                        <ShippingFeeBadge />
                         <NotificationBell />
                         <button
                             type="button"

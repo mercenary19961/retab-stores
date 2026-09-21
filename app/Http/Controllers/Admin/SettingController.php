@@ -123,6 +123,39 @@ class SettingController extends Controller
         return back()->with('success', __('messages.admin.content_reset'));
     }
 
+    /**
+     * Quick edit of the flat shipping fee from the admin top bar.
+     *
+     * 🔑 It exists because this is the ONE setting the client changes often and
+     * the only one that changes what every customer pays — burying it three
+     * clicks deep in a form of twenty fields made a routine change feel risky.
+     *
+     * 🔴 It goes through the SAME Setting::set + change log as the full form. A
+     * fee changed from the navbar that did not appear in the audit trail would
+     * be the worst possible omission here: this number decides the price of
+     * every order, and "who changed shipping to 50?" has to be answerable.
+     */
+    public function updateShippingFee(Request $request, ChangeLogService $changeLog)
+    {
+        $key = CheckoutService::SHIPPING_FEE_KEY;
+
+        // Reuses the main form's rule rather than restating it, so the two can
+        // never disagree about what a valid fee is.
+        $data = $request->validate([$key => self::FIELDS[$key]]);
+
+        $current = Setting::get($key);
+        if ((string) $current === (string) $data[$key]) {
+            return back(); // guard the no-op: no write, no log entry
+        }
+
+        DB::transaction(function () use ($key, $data, $current, $changeLog) {
+            Setting::set($key, $data[$key]);
+            $changeLog->logSettingsUpdated([$key => $current], [$key => $data[$key]]);
+        });
+
+        return back()->with('success', __('messages.admin.settings_saved'));
+    }
+
     public function update(Request $request, ChangeLogService $changeLog)
     {
         $data = $request->validate(self::FIELDS);

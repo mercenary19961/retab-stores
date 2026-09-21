@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\StoreEvent;
 use App\Models\User;
 use App\Services\CartService;
+use App\Services\CheckoutService;
 use App\Services\WhatsApp\WhatsAppGateway;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
@@ -185,6 +186,20 @@ class HandleInertiaRequests extends Middleware
             // language toggle. Closure → resolved only for Inertia page responses.
             'notifications' => fn () => $request->user()?->isStaff()
                 ? $this->adminNotifications($request->user())
+                : null,
+            // Flat shipping fee, for the admin top bar's quick editor. Gated on
+            // settings.view so it follows the same grants as the settings page.
+            //
+            // ⚠️ `free` is not decoration: an automatic free-shipping window
+            // overrides this number to 0 at checkout, so without it the client
+            // could edit the fee to 30, watch customers still pay nothing, and
+            // reasonably conclude the control is broken.
+            'shippingFee' => fn () => $request->user()?->hasPermission('settings.view')
+                ? [
+                    'amount' => (float) Setting::get(CheckoutService::SHIPPING_FEE_KEY, 0),
+                    'free' => app(CheckoutService::class)->freeShippingActive(),
+                    'canEdit' => $request->user()->hasPermission('settings.edit'),
+                ]
                 : null,
         ]);
     }
