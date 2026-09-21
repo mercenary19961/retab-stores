@@ -1,3 +1,4 @@
+import { needsConsent } from '@/lib/consent';
 import { useLocalized } from '@/lib/localize';
 import { usePage } from '@inertiajs/react';
 import { ArrowRight, BadgeCheck, Info, TriangleAlert, X } from 'lucide-react';
@@ -89,10 +90,32 @@ export default function AnnouncementCard() {
     const [mounted, setMounted] = useState(false);
     const [dismissed, setDismissed] = useState<number[]>([]);
     const [shown, setShown] = useState(false);
+    const [consentPending, setConsentPending] = useState(true);
 
     useEffect(() => {
         setDismissed(readDismissed());
         setMounted(true);
+    }, []);
+
+    /*
+     * 🔴 Hold back while the cookie banner is up. That banner is `inset-x-0
+     * bottom-0` at z-60, so it covers this corner AND outranks it — the card
+     * would be buried, not merely crowded, and a first-time visitor would never
+     * see the notice at all. It is also a legal gate that has to be actioned, so
+     * it genuinely outranks a shipping notice. Reuses the consent module's own
+     * predicate rather than re-reading the cookie, so the two cannot disagree.
+     */
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+
+        const check = () => setConsentPending(needsConsent(document.cookie));
+
+        check();
+        // The banner writes the cookie on dismissal without a navigation, so poll
+        // briefly rather than leaving the card hidden until the next page load.
+        const timer = setInterval(check, 1000);
+
+        return () => clearInterval(timer);
     }, []);
 
     /*
@@ -119,7 +142,7 @@ export default function AnnouncementCard() {
     // Only the first undismissed one. Dismissing it promotes the next.
     const current = announcements.filter((a) => !dismissed.includes(a.id))[0];
 
-    if (!mounted || !current) return null;
+    if (!mounted || consentPending || !current) return null;
 
     const tone = TONES[current.tone] ?? TONES.info;
     const Icon = tone.icon;
@@ -131,15 +154,23 @@ export default function AnnouncementCard() {
             data-testid="announcement"
             data-tone={current.tone}
             /*
-             * `start-4` / `end-4`, never left/right: the card sits by the reading
-             * edge, so it lands bottom-right in Arabic and bottom-left in English
-             * without a second rule.
+             * 🔴 PHYSICAL right, NOT logical `end`, and this is the one place in
+             * the storefront where that is correct. `scroll-to-top` is pinned
+             * `fixed bottom-2 left-2` with a PHYSICAL left that never mirrors, so
+             * any logical placement here collides in exactly one locale: `start`
+             * overlaps it in English, `end` overlaps it in Arabic. Pinning right
+             * clears it in both.
              *
-             * Full width minus the gutters on phones, a fixed column from `sm`.
-             * z-40 sits above page content and below the search overlay (z-50)
-             * and the cookie banner (z-[60]) — see the storefront z-scale.
+             * It reads well either way: bottom-right is the reading edge in
+             * Arabic, and the conventional toast corner in English.
+             *
+             * ⚠️ On phones the card spans the width, so it cannot dodge sideways
+             * and is raised above the button's 44px corner zone instead.
+             *
+             * z-40 sits above page content, below the search overlay (z-50) and
+             * the cookie banner (z-[60]) — see the storefront z-scale.
              */
-            className={`fixed start-4 end-4 bottom-4 z-40 sm:end-auto sm:max-w-sm ${
+            className={`fixed right-4 bottom-16 left-4 z-40 sm:right-6 sm:bottom-6 sm:left-auto sm:max-w-sm ${
                 shown ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
             } transition-all duration-500 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none`}
         >
