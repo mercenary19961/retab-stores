@@ -653,7 +653,9 @@ const en = {
         brand: 'Retab Admin',
         announcements: {
             title: 'Announcements',
-            intro: 'The strip above the storefront. Use it for notices like "stuffed dates ship to Riyadh only". It tells shoppers something — it does not stop them ordering, so you still reject those orders yourself.',
+            intro: 'A small card that floats in the corner of the storefront. Use it for notices like "stuffed dates ship to Riyadh only". It tells shoppers something; it does not stop them ordering, so you still review and reject those orders yourself.',
+            messageHint:
+                'Keep it under about ten words. Only the first announcement shows at a time, and the next one appears once a shopper dismisses it.',
             add: 'New announcement',
             edit: 'Edit announcement',
             message: 'Message',

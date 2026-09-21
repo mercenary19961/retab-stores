@@ -160,6 +160,9 @@ export default function AnnouncementsIndex({ announcements, tones }: { announcem
             <Modal open={open} onClose={() => setOpen(false)} title={editing ? t('admin.announcements.edit') : t('admin.announcements.add')}>
                 <div className="space-y-4">
                     {field('message_ar', t('admin.announcements.messageAr'))}
+                    {/* Surfaces the two rules a client cannot infer from the form:
+                        short copy reads, and only one shows at a time. */}
+                    <p className="-mt-2 text-xs text-neutral-500">{t('admin.announcements.messageHint')}</p>
                     {field('message_en', t('admin.announcements.messageEn'))}
 
                     <div className="grid gap-4 sm:grid-cols-2">
