@@ -12,6 +12,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\NewOrderNotification;
 use App\Notifications\OrderCancelledNotification;
+use App\Rules\Phone;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use App\Services\CustomerMailer;
@@ -94,7 +95,7 @@ class CheckoutController
         $data = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['nullable', 'email', 'max:255'],
-            'customer_phone' => ['required', 'string', 'max:20'],
+            'customer_phone' => ['required', 'string', 'max:20', new Phone],
             // How they get it. Everything address-shaped below is required only
             // for delivery — a collection order has nowhere to ship to, so asking
             // for a city would be asking for something that does not exist.
@@ -122,7 +123,7 @@ class CheckoutController
             // Someone else receiving it. The phone is required once a name is
             // given: a courier with a name and no number cannot deliver.
             'recipient_name' => ['nullable', 'string', 'max:255'],
-            'recipient_phone' => ['nullable', 'required_with:recipient_name', 'string', 'max:20'],
+            'recipient_phone' => ['nullable', 'required_with:recipient_name', 'string', 'max:20', new Phone],
             // Buying as a company. The name is what makes it a company order, so
             // the registration numbers are required alongside it.
             'company_name' => ['nullable', 'string', 'max:255'],

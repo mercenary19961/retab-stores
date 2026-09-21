@@ -163,6 +163,9 @@ return [
     ],
 
     // Friendly attribute names used in the messages above.
+    // Custom rule: App\Rules\Phone.
+    'phone_number' => 'أدخل رقم جوال سعودي مثل 0512345678، أو رقماً دولياً كاملاً يبدأ بعلامة +.',
+
     'attributes' => [
         'customer_name' => 'الاسم',
         'customer_email' => 'البريد الإلكتروني',

@@ -158,6 +158,61 @@ class CheckoutControllerTest extends TestCase
         $this->assertSame(PaymentMethod::BankTransfer, $order->fresh()->payment_method);
     }
 
+    // ---- Phone number ---------------------------------------------------------
+
+    /**
+     * 🔴 Client-reported: the phone field accepted anything. `4343443434` is the
+     * literal value from that report — ten digits, no country code, not a Saudi
+     * mobile. It reached an order, and that order could never be confirmed by
+     * WhatsApp nor delivered by a courier who rings ahead.
+     */
+    public function test_a_phone_that_is_not_a_real_number_is_refused(): void
+    {
+        $this->seedCartWithOneProduct();
+
+        $this->post('/checkout', [
+            'customer_name' => 'Zaid',
+            'customer_phone' => '4343443434',
+            'country' => 'SA',
+            'city' => 'Riyadh',
+            'payment_method' => 'bank_transfer',
+        ])->assertSessionHasErrors('customer_phone');
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    /** A half-typed number must not slip through either. */
+    public function test_a_partial_phone_is_refused(): void
+    {
+        $this->seedCartWithOneProduct();
+        $this->placeOrder(['customer_phone' => '05123']);
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    /** The shapes customers actually type all still work. */
+    public function test_the_usual_ways_of_writing_a_saudi_mobile_are_accepted(): void
+    {
+        foreach (['0512345678', '512345678', '050 123 4567', '+966512345678'] as $i => $phone) {
+            $this->seedCartWithOneProduct();
+            $this->placeOrder(['customer_phone' => $phone]);
+
+            $this->assertSame($i + 1, Order::count(), "[{$phone}] should have been accepted");
+        }
+    }
+
+    /**
+     * The alternate recipient is the person the courier actually rings, so an
+     * unreachable number there is the same failure one step later.
+     */
+    public function test_an_alternate_recipient_phone_is_validated_too(): void
+    {
+        $this->seedCartWithOneProduct();
+        $this->placeOrder(['recipient_name' => 'Sara', 'recipient_phone' => '4343443434']);
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
     // ---- Address: national address code + saving it to the account -----------
 
     /** @param  array<string,mixed>  $overrides */

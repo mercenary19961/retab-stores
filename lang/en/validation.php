@@ -195,6 +195,10 @@ return [
     |
     */
 
+    // Custom rule: App\Rules\Phone. Named for the rule, not the field, so it
+    // reads correctly wherever it is applied (customer, recipient, contact).
+    'phone_number' => 'Enter a Saudi mobile like 0512345678, or a full international number starting with +.',
+
     'attributes' => [
         'first_name' => 'first name',
         'last_name' => 'last name',

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContactMessage;
 use App\Models\User;
 use App\Notifications\ContactMessageReceivedNotification;
+use App\Rules\Phone;
 use App\Services\TurnstileVerifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,7 +47,7 @@ class ContactMessageController extends Controller
             'first_name' => ['required', 'string', 'max:80'],
             'last_name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', new Phone],
             'inquiry_type' => ['required', 'string', 'in:'.implode(',', self::INQUIRY_TYPES)],
             'message' => ['required', 'string', 'max:2000'],
         ]);

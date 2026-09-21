@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Exceptions\WhatsAppUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\Phone;
 use App\Services\Auth\OtpService;
 use App\Services\CartService;
 use App\Services\TurnstileVerifier;
@@ -36,7 +37,7 @@ class OtpAuthController extends Controller
     public function send(Request $request, TurnstileVerifier $turnstile)
     {
         $data = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', new Phone],
         ]);
 
         // Bot gate — every OTP send costs a real WhatsApp message. The verifier
@@ -63,7 +64,7 @@ class OtpAuthController extends Controller
     public function verify(Request $request)
     {
         $data = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', new Phone],
             'code' => ['required', 'string', 'max:6'],
         ]);
 

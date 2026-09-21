@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductRequest;
 use App\Models\User;
 use App\Notifications\ProductRequestedNotification;
+use App\Rules\Phone;
 use App\Services\TurnstileVerifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class ProductRequestController extends Controller
             $phone = $user->phone; // may be null (e.g. Google-only account) — user_id still identifies them
         } else {
             $data = $request->validate([
-                'phone' => ['required', 'string', 'max:20'],
+                'phone' => ['required', 'string', 'max:20', new Phone],
             ]);
             // Bot gate for guests (no account to trace); no-ops without a secret key.
             if (! $turnstile->verify($request->input('cf-turnstile-response'), $request->ip())) {
