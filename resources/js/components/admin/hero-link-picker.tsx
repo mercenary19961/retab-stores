@@ -1,3 +1,4 @@
+import Select from '@/components/admin/select';
 import { useEffect, useState } from 'react';
 
 export interface LinkTarget {
@@ -148,44 +149,46 @@ export default function HeroLinkPicker({
     // Only offer campaigns when one exists; an empty dropdown reads as broken.
     const kinds: Kind[] = ['none', 'shop', 'category', 'product', ...(targets.events.length ? (['event'] as Kind[]) : []), 'url'];
 
-    const select = 'mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-white outline-none focus:border-brand-gold';
+    /*
+     * ⚠️ The shared admin <Select>, not a native one. A native <select> cannot
+     * restyle the OS option highlight, so its open list showed a bright blue bar
+     * against the dark panel — the client flagged exactly that. Only the free-text
+     * URL field still uses this class.
+     */
+    const field = 'mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-white outline-none focus:border-brand-gold';
 
     return (
         <div className="grid gap-3">
             <label className="block">
                 <span className="text-sm text-neutral-300">{t('admin.hero.linkKind')}</span>
-                <select
-                    value={current.kind}
-                    onChange={(e) => {
-                        const next = e.target.value as Kind;
-                        setKind(next);
-                        // 🔑 `shop` commits immediately since it needs no second
-                        // choice; the rest clear the href, because a category slug
-                        // is meaningless once the kind is "product". The banner is
-                        // simply not a link until the second choice is made.
-                        onChange(buildHref(next, ''));
-                    }}
-                    className={select}
-                >
-                    {kinds.map((k) => (
-                        <option key={k} value={k}>
-                            {t(`admin.hero.linkKinds.${k}`)}
-                        </option>
-                    ))}
-                </select>
+                <div className="mt-1">
+                    <Select
+                        value={current.kind}
+                        onChange={(v) => {
+                            const next = v as Kind;
+                            setKind(next);
+                            // 🔑 `shop` commits immediately since it needs no second
+                            // choice; the rest clear the href, because a category slug
+                            // is meaningless once the kind is "product". The banner is
+                            // simply not a link until the second choice is made.
+                            onChange(buildHref(next, ''));
+                        }}
+                        options={kinds.map((k) => ({ value: k, label: t(`admin.hero.linkKinds.${k}`) }))}
+                    />
+                </div>
             </label>
 
             {list && (
                 <label className="block">
                     <span className="text-sm text-neutral-300">{t(`admin.hero.linkPick.${current.kind}`)}</span>
-                    <select value={current.value} onChange={(e) => onChange(buildHref(kind, e.target.value))} className={select}>
-                        <option value="">{t('admin.hero.linkChoose')}</option>
-                        {list.map((o) => (
-                            <option key={o.value} value={o.value}>
-                                {label(o)}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="mt-1">
+                        <Select
+                            value={current.value}
+                            onChange={(v) => onChange(buildHref(kind, v))}
+                            placeholder={t('admin.hero.linkChoose')}
+                            options={list.map((o) => ({ value: o.value, label: label(o) }))}
+                        />
+                    </div>
                 </label>
             )}
 
@@ -198,7 +201,7 @@ export default function HeroLinkPicker({
                         placeholder="https://instagram.com/retab_dates"
                         value={current.value}
                         onChange={(e) => onChange(buildHref('url', e.target.value))}
-                        className={select}
+                        className={field}
                     />
                     <span className="mt-1 block text-xs text-neutral-500">{t('admin.hero.linkUrlHint')}</span>
                 </label>
