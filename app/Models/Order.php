@@ -51,6 +51,7 @@ class Order extends Model
         'tracking_number',
         'carrier',
         'shipping_label_url',
+        'shipment_attempted_at',
         'admin_notes',
         'confirmed_at',
         'confirmed_by',
@@ -79,6 +80,10 @@ class Order extends Model
         'cancelled_at' => 'datetime',
         'delivered_at' => 'datetime',
         'review_reminder_sent_at' => 'datetime',
+        // Set while a shipment booking is in flight, cleared when one lands. See
+        // ShippingService::fulfill — it is what stops an interrupted attempt
+        // booking a second parcel on the next click.
+        'shipment_attempted_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

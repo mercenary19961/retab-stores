@@ -53,9 +53,41 @@ class ShippingService
         // and resolving the id out of the live list validates it for free.
         $option = $this->resolveOption($order, $deliveryOptionId);
 
-        $shipment = $this->gateway->createShipment($order, $option->id);
+        // 🔴 An interrupted previous attempt may have left a real parcel at OTO
+        // with nothing recorded here — `createShipment` can throw "no tracking
+        // number was returned" AFTER the shipment exists, and the write below can
+        // fail on its own. The duplicate guard at the top reads `tracking_number`,
+        // which is exactly what is missing in that state, so a second click would
+        // book a SECOND parcel: two labels, two collections, two carrier charges.
+        //
+        // 🔑 Consulted ONLY when a previous attempt is known to have been
+        // interrupted. A recall-then-reship is a supported flow, and it is not
+        // known whether OTO keeps reporting a cancelled parcel's tracking number —
+        // so asking unconditionally could "adopt" a dead shipment and silently
+        // never book the replacement. The marker makes that question irrelevant.
+        $shipment = $order->shipment_attempted_at
+            ? $this->gateway->existingShipment($order)
+            : null;
+
+        if ($shipment) {
+            Log::warning('Adopted an existing OTO shipment left by an interrupted attempt', [
+                'order' => $order->order_number,
+                'tracking' => $shipment->trackingNumber,
+            ]);
+        }
+
+        if (! $shipment) {
+            // Written BEFORE the call, and deliberately not in a transaction: the
+            // whole point is that it survives whatever happens next.
+            $order->forceFill(['shipment_attempted_at' => now()])->save();
+
+            $shipment = $this->gateway->createShipment($order, $option->id);
+        }
 
         $order->forceFill([
+            // The attempt finished, so a later re-ship starts clean and never
+            // consults OTO for a parcel that no longer has anything to do with it.
+            'shipment_attempted_at' => null,
             'shipping_provider' => 'oto',
             'tracking_number' => $shipment->trackingNumber,
             'carrier' => $shipment->carrier,

@@ -168,6 +168,30 @@ class OtoGateway implements ShippingGateway
         );
     }
 
+    public function existingShipment(Order $order): ?NormalizedShipment
+    {
+        // Never invent an order id: with no oto_id the order was never pushed, so
+        // there is by definition nothing on OTO's side to have a shipment.
+        if (! $order->oto_id) {
+            return null;
+        }
+
+        $details = $this->safeOrderDetails($order->order_number);
+        $tracking = $this->extract($details, ['trackingNumber', 'awbNumber', 'shipmentNumber', 'awb']);
+
+        if (! $tracking) {
+            return null;
+        }
+
+        return new NormalizedShipment(
+            trackingNumber: $tracking,
+            carrier: $this->extract($details, ['deliveryCompanyName', 'deliveryCompany', 'carrier']) ?: 'OTO',
+            labelUrl: $this->extract($details, ['shippingLabel', 'labelURL', 'awbURL', 'label']),
+            otoId: $order->oto_id,
+            raw: $details,
+        );
+    }
+
     public function cancelShipment(Order $order): bool
     {
         $this->client->cancelShipment(['orderId' => $order->order_number]);

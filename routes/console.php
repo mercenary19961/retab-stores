@@ -38,6 +38,20 @@ Schedule::command('payments:alert-expiring')
     ->hourly()
     ->withoutOverlapping();
 
+// 🔴 The third route by which a paid order becomes a confirmed one. The other two
+// are the gateway's webhook and the customer's own return to /checkout/result —
+// both of which can simply not happen (a lost webhook, a tab closed on the bank's
+// 3-D Secure screen). When both miss, the money sits at the gateway while the
+// order reads unpaid forever, with nothing to notice. Every quarter hour, because
+// the gap this closes is a customer waiting for a receipt they already paid for.
+//
+// ⚠️ Needs the MOYASAR and TAMARA credentials on the scheduler, not just the
+// database ones — same trap as the alert below, and for the same reason: it asks
+// the provider rather than reasoning from local rows.
+Schedule::command('payments:reconcile')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();
+
 // Time-boxed products (store-event offers) leave the storefront at their
 // `available_until`. Every minute because the promise to the client is "gone at
 // midnight", not "gone within the hour"; the query is one indexed-cheap SELECT.

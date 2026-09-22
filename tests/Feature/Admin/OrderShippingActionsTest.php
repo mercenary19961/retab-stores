@@ -478,4 +478,89 @@ class OrderShippingActionsTest extends TestCase
         $this->actingAs($editor->fresh())->post("/admin/orders/{$order->order_number}/ship")->assertForbidden();
         $this->actingAs($editor->fresh())->post("/admin/orders/{$order->order_number}/cancel-shipment")->assertForbidden();
     }
+
+    // ---------------------------------------------------------------------
+    // An interrupted booking must never become a second parcel.
+    // ---------------------------------------------------------------------
+
+    /**
+     * 🔴 The failure this guards, which costs real money: `createShipment` can
+     * throw AFTER OTO has created the parcel ("shipment created but no tracking
+     * number was returned"), and the order write that follows can fail on its own.
+     * Either way the parcel exists at OTO while `tracking_number` — the column the
+     * duplicate guard reads — is still null. The admin sees an order that still
+     * says Ship, clicks again, and a SECOND courier is dispatched.
+     */
+    public function test_an_interrupted_booking_is_adopted_rather_than_booked_again(): void
+    {
+        $order = $this->makeOrder();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
+
+        // First attempt: OTO makes the parcel, then the response loses the tracking
+        // number, so the service throws with the marker already written.
+        $gateway->shouldReceive('createShipment')->once()
+            ->andThrow(new \RuntimeException('OTO shipment created but no tracking number was returned.'));
+
+        $this->actingAs($this->admin())->post("/admin/orders/{$order->order_number}/ship");
+
+        $order->refresh();
+        $this->assertNotNull($order->shipment_attempted_at, 'the interrupted attempt must leave a marker');
+        $this->assertNull($order->tracking_number);
+
+        // Second click. The real parcel is found and adopted; createShipment must
+        // NOT be called again — that is the double charge.
+        $gateway->shouldReceive('existingShipment')->once()->andReturn($this->shipment('TRK-ORPHAN', 'Naqel'));
+
+        $this->actingAs($this->admin())->post("/admin/orders/{$order->order_number}/ship");
+
+        $order->refresh();
+        $this->assertSame('TRK-ORPHAN', $order->tracking_number);
+        $this->assertSame('Naqel', $order->carrier);
+        $this->assertSame(OrderStatus::Shipped, $order->status);
+        $this->assertNull($order->shipment_attempted_at, 'a landed shipment clears the marker');
+    }
+
+    /**
+     * 🔑 A clean first booking must never ask OTO whether a shipment already
+     * exists. That question costs a round trip, and — more importantly — a
+     * recall-then-reship is a supported flow where OTO may still be reporting the
+     * cancelled parcel's tracking number. Adopting it would silently skip booking
+     * the replacement.
+     */
+    public function test_a_clean_booking_never_asks_about_an_existing_shipment(): void
+    {
+        $order = $this->makeOrder();
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
+        $gateway->shouldReceive('createShipment')->once()->andReturn($this->shipment());
+        // Mockery fails the test if this is called, which is the assertion.
+        $gateway->shouldNotReceive('existingShipment');
+
+        $this->actingAs($this->admin())->post("/admin/orders/{$order->order_number}/ship");
+
+        $this->assertSame('TRK-1', $order->refresh()->tracking_number);
+        $this->assertNull($order->shipment_attempted_at);
+    }
+
+    /**
+     * The provider being unreachable must not block shipping: existingShipment is
+     * best-effort, so a null answer falls through to booking normally. Refusing
+     * would strand a paid order over a third party's outage.
+     */
+    public function test_an_unanswerable_lookup_falls_through_to_booking(): void
+    {
+        $order = $this->makeOrder(['shipment_attempted_at' => now()->subMinutes(5)]);
+        $gateway = $this->fakeGateway();
+        $gateway->shouldReceive('pushOrder')->andReturn(555);
+        $gateway->shouldReceive('getDeliveryOptions')->andReturn($this->carrierOptions());
+        $gateway->shouldReceive('existingShipment')->once()->andReturn(null);
+        $gateway->shouldReceive('createShipment')->once()->andReturn($this->shipment('TRK-NEW'));
+
+        $this->actingAs($this->admin())->post("/admin/orders/{$order->order_number}/ship");
+
+        $this->assertSame('TRK-NEW', $order->refresh()->tracking_number);
+    }
 }

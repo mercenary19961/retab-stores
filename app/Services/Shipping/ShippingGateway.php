@@ -31,6 +31,20 @@ interface ShippingGateway
     public function createShipment(Order $order, int $deliveryOptionId): NormalizedShipment;
 
     /**
+     * The shipment the provider ALREADY holds for this order, if any.
+     *
+     * 🔑 Exists so an interrupted booking can be adopted instead of repeated.
+     * Creating a parcel is not idempotent — call it twice and the courier is
+     * dispatched twice and bills twice — so before retrying a booking that may
+     * have half-completed, this asks the provider what it actually has.
+     *
+     * Read-only and best-effort: null means "no shipment, or we could not find
+     * out", and the caller treats both the same way, because the alternative is
+     * refusing to ship an order because a third party was briefly unreachable.
+     */
+    public function existingShipment(Order $order): ?NormalizedShipment;
+
+    /**
      * Cancel a shipment previously created for this order.
      */
     public function cancelShipment(Order $order): bool;
