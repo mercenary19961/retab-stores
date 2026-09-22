@@ -79,7 +79,14 @@ export default function HeroCropPreview({
 
     // How far the desktop art is from the band it has to fill.
     const ratio = natural ? natural.w / natural.h : null;
-    const off = ratio !== null && Math.abs(ratio - DESKTOP.aspect) > 0.25;
+    /*
+     * 🔑 0.08, not 0.25. At 0.25 a 16:9 file (1.78 against a 2.0 band) fell UNDER
+     * the threshold and was never flagged, even though ~11% of its width is cut
+     * off — which is exactly what happened to the client's 2560x1440 video. 0.08
+     * flags anything losing more than roughly 4% and leaves genuinely 2:1 artwork
+     * (the campaign banners) silent.
+     */
+    const off = ratio !== null && Math.abs(ratio - DESKTOP.aspect) > 0.08;
 
     return (
         <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
