@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface LinkTarget {
     value: string;
@@ -118,6 +118,21 @@ export default function HeroLinkPicker({
      * still re-derives from what is stored.
      */
     const [kind, setKind] = useState<Kind>(parsed.kind);
+
+    /*
+     * 🔴 Adopt an href that arrives from OUTSIDE after mount — a restored draft,
+     * or opening a slide. Local state is initialised at mount, so without this a
+     * draft restored a moment later left the dropdown reading "Nothing" while the
+     * href said /shop.
+     *
+     * Only when it parses to a real destination: an EMPTY href is ambiguous
+     * between "nothing" and "kind chosen, value still pending", and local state
+     * is the only thing that knows which.
+     */
+    useEffect(() => {
+        const next = parseHref(href).kind;
+        if (next !== 'none') setKind(next);
+    }, [href]);
 
     // The stored href still wins for the VALUE, so an external change is picked up.
     const current = { kind, value: parsed.kind === kind ? parsed.value : '' };

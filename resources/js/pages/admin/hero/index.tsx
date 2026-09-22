@@ -5,6 +5,7 @@ import HeroLinkPicker, { type LinkTargets } from '@/components/admin/hero-link-p
 import Modal from '@/components/admin/modal';
 import StatusBadge from '@/components/admin/status-badge';
 import StatusToggle from '@/components/admin/status-toggle';
+import { useFormDraft } from '@/hooks/use-form-draft';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { CARD } from '@/lib/admin-ui';
@@ -139,6 +140,15 @@ export default function HeroIndex({
         return () => URL.revokeObjectURL(phonePreview);
     }, [phonePreview]);
 
+    const draft = useFormDraft({
+        key: `hero.${editing?.id ?? 'new'}`,
+        data: form.data,
+        setData: form.setData as unknown as (values: typeof form.data) => void,
+        // Only while the dialog is open: a closed form must neither save nor
+        // restore, or opening "New slide" would inherit the last edit.
+        active: open,
+    });
+
     const openFor = (row: Slide | null) => {
         setEditing(row);
         form.setData({
@@ -239,7 +249,13 @@ export default function HeroIndex({
         form.post(editing ? `/admin/hero/${editing.id}` : '/admin/hero', {
             forceFormData: true,
             preserveScroll: true,
-            onSuccess: () => setOpen(false),
+            onSuccess: () => {
+                // 🔑 Cleared on SUCCESS only. Clearing on close would discard the
+                // draft of someone who hit Cancel by accident, which is the very
+                // thing this is for.
+                draft.clear();
+                setOpen(false);
+            },
         });
     };
 
@@ -540,6 +556,30 @@ export default function HeroIndex({
                    below a tall preview and had to be scrolled to. */
                 size="xl"
             >
+                {/* Actions at the TOP (client's request). The dialog is tall, and
+                    Save sitting under a full-height crop editor meant scrolling
+                    past everything to commit a one-field change. */}
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 pb-4">
+                    <div className="min-w-0 text-xs">
+                        {draft.restored && (
+                            <p className="text-amber-400">
+                                {t('admin.hero.draftRestored')}{' '}
+                                <button type="button" onClick={draft.dismiss} className="underline">
+                                    {t('admin.hero.draftDismiss')}
+                                </button>
+                            </p>
+                        )}
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="secondary" onClick={() => setOpen(false)}>
+                            {t('admin.common.cancel')}
+                        </Button>
+                        <Button onClick={submit} disabled={form.processing}>
+                            {t('admin.hero.save')}
+                        </Button>
+                    </div>
+                </div>
+
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
                     {/* LEFT: the artwork, and what will survive the crop. */}
                     <div className="grid content-start gap-4">
@@ -658,15 +698,6 @@ export default function HeroIndex({
                             {form.errors.kind && <span className="text-xs text-red-400">{form.errors.kind}</span>}
                         </div>
                     </div>
-                </div>
-
-                <div className="mt-5 flex justify-end gap-2 border-t border-neutral-800 pt-4">
-                    <Button variant="secondary" onClick={() => setOpen(false)}>
-                        {t('admin.common.cancel')}
-                    </Button>
-                    <Button onClick={submit} disabled={form.processing}>
-                        {t('admin.hero.save')}
-                    </Button>
                 </div>
             </Modal>
         </AdminLayout>

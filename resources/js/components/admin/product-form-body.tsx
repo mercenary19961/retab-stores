@@ -3,6 +3,7 @@ import { useModalActionsSlot } from '@/components/admin/modal';
 import PageHeader from '@/components/admin/page-header';
 import ProductOptionsEditor, { type OptionRow } from '@/components/admin/product-options-editor';
 import Select from '@/components/admin/select';
+import { useFormDraft } from '@/hooks/use-form-draft';
 import { useHighlightFields } from '@/hooks/use-highlight-fields';
 import { useAdminT } from '@/i18n/use-admin-t';
 import { router, useForm } from '@inertiajs/react';
@@ -168,13 +169,41 @@ export default function ProductFormBody({
     const previews = useMemo(() => data.images.map((f) => URL.createObjectURL(f)), [data.images]);
     useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
+    /*
+     * Keeps a half-finished product across an accidental refresh. This form is
+     * long — two languages, prices, stock, options — so losing it is expensive.
+     *
+     * ⚠️ Photographs are NOT kept; a File cannot be serialised. The notice says so
+     * rather than letting someone assume a restored form is complete.
+     */
+    const draft = useFormDraft({
+        key: `product.${product?.id ?? 'new'}`,
+        data,
+        setData: setData as unknown as (values: typeof data) => void,
+    });
+
     const submit = (e: FormEvent) => {
         e.preventDefault();
         if (!hasImages) return;
+        // Cleared on a successful save only, never on navigating away: someone
+        // who leaves by accident is exactly who this is for.
+        const done = () => draft.clear();
         if (editing) {
             // Edit is a JSON PUT — options go as a plain array (real booleans, null
             // amounts), which Laravel parses directly.
-            put(`/admin/products/${product.id}`, modal ? { preserveScroll: true, preserveState: true, onSuccess: onSaved } : {});
+            put(
+                `/admin/products/${product.id}`,
+                modal
+                    ? {
+                          preserveScroll: true,
+                          preserveState: true,
+                          onSuccess: () => {
+                              done();
+                              onSaved?.();
+                          },
+                      }
+                    : { onSuccess: done },
+            );
         } else {
             // Booleans as '1'/'0' so they survive the multipart (FormData) encoding —
             // top-level and inside each option row. A null amount is sent empty.
@@ -195,7 +224,15 @@ export default function ProductFormBody({
             post('/admin/products', {
                 forceFormData: true,
                 preserveScroll: true,
-                ...(modal ? { preserveState: true, onSuccess: onSaved } : {}),
+                ...(modal
+                    ? {
+                          preserveState: true,
+                          onSuccess: () => {
+                              done();
+                              onSaved?.();
+                          },
+                      }
+                    : { onSuccess: done }),
             });
         }
     };
@@ -253,6 +290,17 @@ export default function ProductFormBody({
     );
     const imageWarning = !hasImages ? <span className="text-xs text-red-500">{t('admin.products.form.imageRequired')}</span> : null;
 
+    /* Sits with the image warning, because both say "this form is not as
+       complete as it looks" - and a restored draft has no photographs. */
+    const draftNotice = draft.restored ? (
+        <p className="text-xs text-amber-400">
+            {t('admin.hero.draftRestored')}{' '}
+            <button type="button" onClick={draft.dismiss} className="underline">
+                {t('admin.hero.draftDismiss')}
+            </button>
+        </p>
+    ) : null;
+
     return (
         <div className="space-y-6">
             {!modal ? (
@@ -262,6 +310,7 @@ export default function ProductFormBody({
                     backLabel={backLabel}
                     actions={
                         <>
+                            {draftNotice}
                             {imageWarning}
                             {saveButton}
                         </>
@@ -273,6 +322,7 @@ export default function ProductFormBody({
                 modalSlot &&
                 createPortal(
                     <>
+                        {draftNotice}
                         {imageWarning}
                         {saveButton}
                     </>,

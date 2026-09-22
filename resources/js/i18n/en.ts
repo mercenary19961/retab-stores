@@ -706,6 +706,8 @@ const en = {
             href: 'Opens — optional',
             hrefHint:
                 'Where tapping the banner takes a shopper, e.g. /shop or /shop?category=dates. A full web address works too. Leave it empty and the banner is just a picture.',
+            draftRestored: 'We kept what you had typed. Please choose your picture or video again — files cannot be saved.',
+            draftDismiss: 'Got it',
             groupLink: 'Where it goes',
             linkKind: 'Tapping the banner opens',
             linkKinds: {
