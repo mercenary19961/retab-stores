@@ -26,6 +26,7 @@ export default function HeroCropBox({
     label,
     hint,
     fitsHint,
+    video = false,
 }: {
     src: string;
     /** Target shape of the band this art has to fill, width / height. */
@@ -36,6 +37,15 @@ export default function HeroCropBox({
     hint: string;
     /** Shown instead of the drag hint when the art already fits and nothing is cut. */
     fitsHint: string;
+    /**
+     * 🔑 `src` is a VIDEO, so it is measured and drawn with <video>.
+     *
+     * The crop editor used to be fed the captured poster IMAGE, which meant it
+     * showed nothing whenever the frame grab failed - indistinguishable, to the
+     * client, from the upload not having worked. The video is on their machine
+     * either way, so the editor should never have depended on the grab.
+     */
+    video?: boolean;
 }) {
     const frame = useRef<HTMLDivElement>(null);
     const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
@@ -43,10 +53,31 @@ export default function HeroCropBox({
 
     useEffect(() => {
         setNatural(null);
+
+        if (video) {
+            // ⚠️ Metadata only: dimensions arrive long before any frame decodes,
+            // so the box sizes itself even on a file this browser cannot play.
+            const el = document.createElement('video');
+            el.preload = 'metadata';
+            el.muted = true;
+            el.onloadedmetadata = () => setNatural({ w: el.videoWidth, h: el.videoHeight });
+            el.src = src;
+
+            return;
+        }
+
         const img = new Image();
         img.onload = () => setNatural({ w: img.naturalWidth, h: img.naturalHeight });
         img.src = src;
-    }, [src]);
+    }, [src, video]);
+
+    /* One element either way, so the crop geometry has a single code path. */
+    const media = (className: string, style?: React.CSSProperties) =>
+        video ? (
+            <video src={src} muted playsInline loop autoPlay draggable={false} className={className} style={style} />
+        ) : (
+            <img src={src} alt="" draggable={false} className={className} style={style} />
+        );
 
     const imageAspect = natural ? natural.w / natural.h : aspect;
 
@@ -136,7 +167,7 @@ export default function HeroCropBox({
                 style={{ aspectRatio: `${natural ? natural.w : 16} / ${natural ? natural.h : 9}` }}
             >
                 {/* The whole picture, dimmed, so what is being given up stays visible. */}
-                <img src={src} alt="" draggable={false} className={`h-full w-full object-contain ${fits ? '' : 'opacity-40'}`} />
+                {media(`h-full w-full object-contain ${fits ? '' : 'opacity-40'}`)}
 
                 {!fits && (
                     <>
@@ -151,18 +182,12 @@ export default function HeroCropBox({
                                 height: `${hf * 100}%`,
                             }}
                         >
-                            <img
-                                src={src}
-                                alt=""
-                                draggable={false}
-                                className="absolute h-full w-full max-w-none object-contain"
-                                style={{
-                                    width: `${(1 / wf) * 100}%`,
-                                    height: `${(1 / hf) * 100}%`,
-                                    left: `${-(left / wf) * 100}%`,
-                                    top: `${-(top / hf) * 100}%`,
-                                }}
-                            />
+                            {media('absolute h-full w-full max-w-none object-contain', {
+                                width: `${(1 / wf) * 100}%`,
+                                height: `${(1 / hf) * 100}%`,
+                                left: `${-(left / wf) * 100}%`,
+                                top: `${-(top / hf) * 100}%`,
+                            })}
                         </div>
                     </>
                 )}

@@ -27,6 +27,7 @@ export default function HeroCropPreview({
     onFocal,
     focalMobile,
     onFocalMobile,
+    video = false,
     t,
 }: {
     /** Object URL of a freshly chosen file, or the stored URL of existing art. */
@@ -36,6 +37,8 @@ export default function HeroCropPreview({
     onFocal: (x: number, y: number) => void;
     focalMobile: { x: number; y: number };
     onFocalMobile: (x: number, y: number) => void;
+    /** `src` is a video file rather than a picture. */
+    video?: boolean;
     t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
     const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
@@ -44,10 +47,20 @@ export default function HeroCropPreview({
         setNatural(null);
         if (!src) return;
 
+        if (video) {
+            const el = document.createElement('video');
+            el.preload = 'metadata';
+            el.muted = true;
+            el.onloadedmetadata = () => setNatural({ w: el.videoWidth, h: el.videoHeight });
+            el.src = src;
+
+            return;
+        }
+
         const img = new Image();
         img.onload = () => setNatural({ w: img.naturalWidth, h: img.naturalHeight });
         img.src = src;
-    }, [src]);
+    }, [src, video]);
 
     if (!src) {
         return (
@@ -66,6 +79,7 @@ export default function HeroCropPreview({
             <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
                 <HeroCropBox
                     src={src}
+                    video={video}
                     aspect={DESKTOP.aspect}
                     focal={focal}
                     onFocal={onFocal}
@@ -82,6 +96,9 @@ export default function HeroCropPreview({
                      */}
                     <HeroCropBox
                         src={phoneSrc || src}
+                        /* Phone art is always a picture; only the shared desktop
+                           file can be a video. */
+                        video={video && !phoneSrc}
                         aspect={PHONE.aspect}
                         focal={phoneSrc ? focalMobile : focal}
                         onFocal={phoneSrc ? onFocalMobile : onFocal}

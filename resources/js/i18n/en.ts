@@ -675,6 +675,8 @@ const en = {
             recommendedPhone: 'phones {{w}} x {{h}}',
             yours: 'Yours: {{w}} x {{h}}',
             willCrop: 'this will be cropped to fit, so set the point below',
+            posterFailed:
+                'We could not read a first frame from this video. It will still play, but please choose a first frame above so shoppers do not see a blank banner while it loads.',
             readingVideo: 'Taking the first frame of your video to use while it loads...',
             previewEmpty: 'Nothing of your own is showing, so the homepage falls back to the four pictures the site was built with.',
             fromCampaign: 'From a running campaign',

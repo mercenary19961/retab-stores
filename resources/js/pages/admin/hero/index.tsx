@@ -125,6 +125,18 @@ export default function HeroIndex({
      */
     const [phonePreview, setPhonePreview] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+    /*
+     * 🔴 Whether `preview_` is a VIDEO, so the crop editor draws it with <video>.
+     *
+     * The editor used to be handed the captured poster instead, which meant a
+     * failed frame grab left it showing its "choose a picture or video" empty
+     * state - identical, from the client's side, to the upload not working. The
+     * video is on their machine regardless, so the editor must not depend on the
+     * grab succeeding.
+     */
+    const [previewVideo, setPreviewVideo] = useState(false);
+    /** The grab failed, so the storefront needs a first frame supplied by hand. */
+    const [posterFailed, setPosterFailed] = useState(false);
 
     // ⚠️ Object URLs are leaked until revoked, and this dialog can be opened
     // dozens of times in a session while choosing artwork.
@@ -188,7 +200,11 @@ export default function HeroIndex({
         form.clearErrors();
         // Editing: show the art that is already stored, so the focal point can be
         // adjusted without re-uploading anything.
-        setPreview_(row ? (row.kind === 'video' ? row.video_poster : row.image_full) : null);
+        // An existing video previews the STORED VIDEO, not its poster: the crop
+        // box should show what the storefront actually renders.
+        setPreview_(row ? (row.kind === 'video' ? (row.video ?? row.video_poster) : row.image_full) : null);
+        setPreviewVideo(row?.kind === 'video' && !!row.video);
+        setPosterFailed(false);
         setPhonePreview(row?.image_mobile_full ?? null);
         setOpen(true);
     };
@@ -235,6 +251,7 @@ export default function HeroIndex({
     const chooseImage = (f: File | null) => {
         form.setData('image', f);
         setPreview_(f ? URL.createObjectURL(f) : null);
+        setPreviewVideo(false);
     };
 
     const choosePhoneImage = (f: File | null) => {
@@ -256,16 +273,27 @@ export default function HeroIndex({
      */
     const chooseVideo = async (f: File | null) => {
         form.setData('video', f);
-        setPreview_(null);
-        if (!f) return;
+        setPosterFailed(false);
 
+        if (!f) {
+            setPreview_(null);
+            setPreviewVideo(false);
+
+            return;
+        }
+
+        // 🔑 Shown IMMEDIATELY, from the file itself. Nothing here waits on the
+        // frame grab, which can take seconds on a large video and can fail outright.
+        setPreview_(URL.createObjectURL(f));
+        setPreviewVideo(true);
+
+        // The poster still matters, but for the STOREFRONT, not for this editor:
+        // a posterless hero video paints nothing while it buffers.
         setBusy(true);
         try {
             const poster = await posterFromVideo(f);
-            if (poster) {
-                form.setData('video_poster', poster);
-                setPreview_(URL.createObjectURL(poster));
-            }
+            if (poster) form.setData('video_poster', poster);
+            else setPosterFailed(true);
         } finally {
             setBusy(false);
         }
@@ -710,9 +738,13 @@ export default function HeroIndex({
                                 form.setData('focal_mobile_x', x);
                                 form.setData('focal_mobile_y', y);
                             }}
+                            video={previewVideo}
                             t={t}
                         />
                         {busy && <p className="text-xs text-neutral-400">{t('admin.hero.readingVideo')}</p>}
+                        {/* ⚠️ Said nothing at all before, so a failed grab was
+                            indistinguishable from a broken upload. */}
+                        {posterFailed && !busy && <p className="text-xs text-amber-400">{t('admin.hero.posterFailed')}</p>}
                     </div>
 
                     {/* RIGHT: the settings. Moved out from under the preview at the
