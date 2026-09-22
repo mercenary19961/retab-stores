@@ -18,6 +18,34 @@
  * boxes with no way to tell a broken upload from a browser limitation.
  */
 
+/**
+ * What this browser claims it can play, asked of the browser itself.
+ *
+ * 🔑 Added because guessing was not working. Two unrelated MP4s failed on the
+ * client's machine, and from here there is no way to tell "this browser has no
+ * H.264 at all" from "this particular file is beyond its decoder" - which need
+ * completely different advice. The browser will answer that question directly.
+ *
+ * ⚠️ `canPlayType` returns 'probably' | 'maybe' | '' and is about the CODEC, not
+ * the file: an empty string for baseline H.264 means no H.264 support whatsoever,
+ * which is decisive. A non-empty answer does NOT promise this file will decode,
+ * because profile level and resolution are not part of the question.
+ */
+export function videoSupport(): { h264: boolean; hevc: boolean; webm: boolean } {
+    if (typeof document === 'undefined') return { h264: false, hevc: false, webm: false };
+
+    const v = document.createElement('video');
+    const can = (type: string) => v.canPlayType(type) !== '';
+
+    return {
+        // Baseline H.264 - the lowest bar any MP4 player clears.
+        h264: can('video/mp4; codecs="avc1.42E01E"'),
+        // Phones often record HEVC into a .mp4, which desktop browsers frequently refuse.
+        hevc: can('video/mp4; codecs="hvc1.1.6.L93.B0"'),
+        webm: can('video/webm; codecs="vp9"'),
+    };
+}
+
 export interface PosterResult {
     /** The captured still, or null if one could not be taken. */
     poster: File | null;

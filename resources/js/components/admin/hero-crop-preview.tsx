@@ -28,6 +28,7 @@ export default function HeroCropPreview({
     focalMobile,
     onFocalMobile,
     video = false,
+    emptyHint,
     t,
 }: {
     /** Object URL of a freshly chosen file, or the stored URL of existing art. */
@@ -39,6 +40,12 @@ export default function HeroCropPreview({
     onFocalMobile: (x: number, y: number) => void;
     /** `src` is a video file rather than a picture. */
     video?: boolean;
+    /**
+     * ⚠️ Replaces the default "choose a picture or video" line, which is WRONG
+     * once a video has been chosen and simply cannot be rendered here - it tells
+     * the client to do the thing they just did.
+     */
+    emptyHint?: string;
     t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
     const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
@@ -65,7 +72,7 @@ export default function HeroCropPreview({
     if (!src) {
         return (
             <p className="rounded-lg border border-dashed border-neutral-700 px-4 py-6 text-center text-xs text-neutral-500">
-                {t('admin.hero.cropEmpty')}
+                {emptyHint ?? t('admin.hero.cropEmpty')}
             </p>
         );
     }

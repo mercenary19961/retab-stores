@@ -9,7 +9,7 @@ import { discardDraft, listDrafts, useFormDraft, type DraftSummary } from '@/hoo
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { CARD } from '@/lib/admin-ui';
-import { posterFromVideo } from '@/lib/video-poster';
+import { posterFromVideo, videoSupport } from '@/lib/video-poster';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Film, GalleryHorizontal, GripVertical, Image as ImageIcon, Lock, Pencil, Plus, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -147,6 +147,18 @@ export default function HeroIndex({
      * already supplied by hand, and watched be ignored.
      */
     const [videoUnplayable, setVideoUnplayable] = useState(false);
+    /*
+     * 🔑 WHY it is unplayable, asked of the browser rather than guessed.
+     *
+     * 'noH264' means this browser cannot play H.264 at ALL, so no MP4 will ever
+     * preview here and the advice is to use a different browser. 'file' means
+     * H.264 works but this file was still refused, which points at its profile
+     * level, resolution or an HEVC track wearing an .mp4 extension. Two very
+     * different messages, and only the browser can tell them apart.
+     */
+    const [videoDiagnosis, setVideoDiagnosis] = useState<'noH264' | 'file' | null>(null);
+    /** Short technical line, so a report carries its own cause. */
+    const [videoDetail, setVideoDetail] = useState('');
 
     // ⚠️ Object URLs are leaked until revoked, and this dialog can be opened
     // dozens of times in a session while choosing artwork.
@@ -216,6 +228,8 @@ export default function HeroIndex({
         setPreviewVideo(row?.kind === 'video' && !!row.video);
         setPosterFailed(false);
         setVideoUnplayable(false);
+        setVideoDiagnosis(null);
+        setVideoDetail('');
         setPhonePreview(row?.image_mobile_full ?? null);
         setOpen(true);
     };
@@ -298,6 +312,8 @@ export default function HeroIndex({
         setPreview_(URL.createObjectURL(f));
         setPreviewVideo(true);
         setVideoUnplayable(false);
+        setVideoDiagnosis(null);
+        setVideoDetail('');
 
         // The poster still matters, but for the STOREFRONT, not for this editor:
         // a posterless hero video paints nothing while it buffers.
@@ -318,7 +334,21 @@ export default function HeroIndex({
             // long we waited. Anything else means the video plays and only the
             // still could not be taken, which is cosmetic.
             if (!result.width || !result.height) {
+                const support = videoSupport();
+
                 setVideoUnplayable(true);
+                setVideoDiagnosis(support.h264 ? 'file' : 'noH264');
+                // Deliberately terse and untranslated: it exists to be pasted into
+                // a message to us, not to be read as prose.
+                setVideoDetail(
+                    [
+                        `error ${result.mediaError ?? '-'}`,
+                        result.reason ?? '-',
+                        `h264 ${support.h264 ? 'yes' : 'NO'}`,
+                        `hevc ${support.hevc ? 'yes' : 'no'}`,
+                        f.type || 'unknown type',
+                    ].join(' · '),
+                );
                 setPreviewVideo(false);
                 // Fall back to a first frame if one is already attached; otherwise
                 // choosePoster() picks it up the moment the client supplies one.
@@ -334,6 +364,8 @@ export default function HeroIndex({
                 height: result.height,
                 type: f.type,
                 size: f.size,
+                support: videoSupport(),
+                ua: navigator.userAgent,
             });
         } finally {
             setBusy(false);
@@ -797,18 +829,33 @@ export default function HeroIndex({
                                 form.setData('focal_mobile_y', y);
                             }}
                             video={previewVideo}
+                            emptyHint={videoUnplayable ? t('admin.hero.cropNeedsPoster') : undefined}
                             t={t}
                         />
                         {busy && <p className="text-xs text-neutral-400">{t('admin.hero.readingVideo')}</p>}
                         {/* ⚠️ Said nothing at all before, so a failed grab was
                             indistinguishable from a broken upload. */}
                         {posterFailed && !busy && (
-                            <p className="text-xs text-amber-400">
-                                {/* Two different problems, two different sentences: "no still
-                                    could be taken" is cosmetic, "this browser cannot play the
-                                    file" needs the client to act. */}
-                                {t(videoUnplayable ? 'admin.hero.videoUnplayable' : 'admin.hero.posterFailed')}
-                            </p>
+                            <div className="text-xs text-amber-400">
+                                {/* Three different problems, three different sentences. "No
+                                    still could be taken" is cosmetic; "this browser has no
+                                    H.264" means no MP4 will ever preview here; "this file was
+                                    refused" points at the file. Only the first is our doing. */}
+                                <p>
+                                    {t(
+                                        !videoUnplayable
+                                            ? 'admin.hero.posterFailed'
+                                            : videoDiagnosis === 'noH264'
+                                              ? 'admin.hero.videoNoH264'
+                                              : // ⚠️ Once the picture IS supplied and driving the
+                                                // preview, stop telling them to supply one.
+                                                preview_ && !previewVideo
+                                                ? 'admin.hero.videoUsingPoster'
+                                                : 'admin.hero.videoUnplayable',
+                                    )}
+                                </p>
+                                {videoDetail && <p className="mt-1 font-mono text-[11px] text-neutral-500">{videoDetail}</p>}
+                            </div>
                         )}
                     </div>
 

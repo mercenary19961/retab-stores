@@ -159,6 +159,24 @@ const MOBILE_ART = '(max-width: 639px)';
 const SLIDE_MS = 6000;
 
 /*
+ * 🔴 HOW LONG A VIDEO SLIDE MAY HOLD THE CAROUSEL BEFORE IT MOVES ON ANYWAY.
+ *
+ * A playing video governs its own dwell time and hands over from `onEnded`. But
+ * `onEnded` never fires for a video that cannot be decoded, fails to download or
+ * stalls mid-stream - and with the ordinary tick disabled the hero then FREEZES ON
+ * THAT SLIDE FOREVER, taking every other banner with it. Proven in a browser: with
+ * the file blocked, the hero sat on slide 0 for 25s while the working build
+ * rotated 0-1-0-1. Not theoretical either, since browsers that refuse a
+ * perfectly valid MP4 turned up in this project's own testing.
+ *
+ * So the hold is always bounded. Once the duration is known it is that plus a
+ * breath; until then it is a grace period long enough for metadata to arrive on a
+ * slow connection, after which the slide is treated like any other still.
+ */
+const VIDEO_TAIL_MS = 2000;
+const VIDEO_METADATA_GRACE_MS = 8000;
+
+/*
  * ⚠️ Every class below is a WHOLE literal string on purpose. Tailwind scans source
  * text, so a composed `bg-gradient-to-${dir}` compiles to no CSS at all and the
  * scrim silently disappears.
@@ -240,6 +258,7 @@ function BannerSlide({
     phonePoster,
     reducedMotion,
     onEnded,
+    onDuration,
 }: {
     banner: HeroBanner;
     alt: string;
@@ -247,6 +266,8 @@ function BannerSlide({
     phonePoster: boolean;
     reducedMotion: boolean;
     onEnded?: () => void;
+    /** Reports the real length so the carousel can bound its wait on `onEnded`. */
+    onDuration?: (seconds: number) => void;
 }) {
     const box =
         'block aspect-[2/1] w-full object-cover [object-position:var(--focal)] ' +
@@ -290,6 +311,12 @@ function BannerSlide({
             // by a fixed six-second tick.
             loop={!onEnded}
             onEnded={onEnded}
+            // ⚠️ The carousel waits on `onEnded`, so it needs a deadline in case
+            // that never comes. A readable duration gives it an exact one.
+            onLoadedMetadata={(e) => {
+                const d = e.currentTarget.duration;
+                if (Number.isFinite(d) && d > 0) onDuration?.(d);
+            }}
             // The poster is what fills the box while the file downloads, which is
             // the difference between a hero and an empty band for the first second.
             poster={banner.image ?? undefined}
@@ -411,6 +438,12 @@ export default function StoreHero() {
     const at = Math.min(index, Math.max(count - 1, 0));
     const showing = slides[at];
     const holdForVideo = showing?.kind === 'banner' && showing.banner.kind === 'video' && !!showing.banner.video && !reducedMotion;
+    /*
+     * The playing length of the video on the CURRENT slide, once it reports one.
+     * Null means it has not loaded (or cannot), which is exactly the case the
+     * grace period covers.
+     */
+    const [videoSeconds, setVideoSeconds] = useState<number | null>(null);
 
     /**
      * Every manual control goes through here so the timer restarts on ANY press.
@@ -445,12 +478,21 @@ export default function StoreHero() {
          * could look broken. Under reduced motion the slide is only its poster,
          * so the ordinary tick correctly applies again.
          */
-        if (holdForVideo) return;
+        /*
+         * 🔑 A video still governs its own dwell time through `onEnded` - this
+         * timer is only the DEADLINE, so a video that never ends cannot strand the
+         * carousel. Whichever comes first wins, and in the ordinary case that is
+         * `onEnded`, well inside the deadline.
+         */
+        const ms = holdForVideo ? (videoSeconds ? videoSeconds * 1000 + VIDEO_TAIL_MS : VIDEO_METADATA_GRACE_MS) : SLIDE_MS;
 
-        const id = window.setTimeout(() => setIndex((i) => (i + 1) % count), SLIDE_MS);
+        const id = window.setTimeout(() => setIndex((i) => (i + 1) % count), ms);
 
         return () => window.clearTimeout(id);
-    }, [index, nudge, paused, count, reducedMotion, holdForVideo]);
+    }, [index, nudge, paused, count, reducedMotion, holdForVideo, videoSeconds]);
+
+    // A new slide knows nothing about the previous one's length.
+    useEffect(() => setVideoSeconds(null), [index]);
 
     useEffect(() => {
         const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -518,6 +560,7 @@ export default function StoreHero() {
                     /* Undefined when it is the only slide, which is what makes the
                        video `loop` instead of handing over to nothing. */
                     onEnded={many ? () => setIndex((i) => (i + 1) % slides.length) : undefined}
+                    onDuration={setVideoSeconds}
                 />
             ) : (
                 <CopySlide slide={current.copy} art={current.art} priority={active === 0} />

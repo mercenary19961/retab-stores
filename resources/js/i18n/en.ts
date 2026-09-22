@@ -675,6 +675,11 @@ const en = {
             recommendedPhone: 'phones {{w}} x {{h}}',
             yours: 'Yours: {{w}} x {{h}}',
             willCrop: 'this will be cropped to fit, so set the point below',
+            cropNeedsPoster: 'Choose a first frame picture above and you will see exactly how it is cropped.',
+            videoUsingPoster:
+                'This browser cannot play the video, so the preview below is your first frame picture instead. The video itself is saved and will still play for shoppers.',
+            videoNoH264:
+                'This browser cannot play H.264 video, which is what almost every MP4 contains. That is a limitation of the browser, not of your file or the store: the banner will still play for shoppers once saved. To preview it here, open the admin in Chrome or Edge.',
             videoUnplayable:
                 'This browser cannot play this video file, so it cannot be shown here. Choose a first frame picture above and it will be used for the preview instead. Shoppers on other devices may still see the video, but an MP4 saved as H.264 is the safest choice.',
             posterFailed:
