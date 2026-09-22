@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\HeroSlide;
+use App\Models\Product;
 use App\Models\Setting;
+use App\Models\StoreEvent;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Support\HeroBanners;
 use App\Support\Media;
@@ -130,6 +133,40 @@ class HeroController extends Controller
 
             // 🔑 The real composed result, from the storefront's own method.
             'preview' => HeroBanners::live(),
+
+            /*
+             * Everything a banner can be pointed at, so the client picks a
+             * destination instead of typing a path.
+             *
+             * 🔑 Shipped in full rather than searched: 7 categories, ~31 products
+             * and a handful of campaigns is a few KB, and a plain <select> with
+             * native typeahead beats a combobox that waits on the network. Revisit
+             * only if the catalogue grows an order of magnitude.
+             *
+             * ⚠️ Only what a shopper can actually reach. Offering a hidden product
+             * would build a banner that leads to a 404.
+             */
+            'linkTargets' => [
+                'categories' => Category::query()
+                    ->where('is_active', true)
+                    ->whereDoesntHave('children')
+                    ->orderBy('sort_order')
+                    ->get(['slug', 'name_ar', 'name_en'])
+                    ->map(fn (Category $c) => ['value' => $c->slug, 'ar' => $c->name_ar, 'en' => $c->name_en])
+                    ->values(),
+                'products' => Product::query()
+                    ->where('is_active', true)
+                    ->orderBy('name_ar')
+                    ->get(['slug', 'name_ar', 'name_en'])
+                    ->map(fn (Product $p) => ['value' => $p->slug, 'ar' => $p->name_ar, 'en' => $p->name_en])
+                    ->values(),
+                'events' => StoreEvent::query()
+                    ->where('is_active', true)
+                    ->orderBy('starts_at')
+                    ->get(['id', 'name_ar', 'name_en'])
+                    ->map(fn (StoreEvent $e) => ['value' => (string) $e->id, 'ar' => $e->name_ar, 'en' => $e->name_en])
+                    ->values(),
+            ],
 
             'videoMaxMb' => Media::videoMaxMb(),
             'canManage' => $this->canManage(),

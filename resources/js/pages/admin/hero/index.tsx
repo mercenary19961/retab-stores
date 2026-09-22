@@ -1,6 +1,7 @@
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
 import HeroCropPreview from '@/components/admin/hero-crop-preview';
+import HeroLinkPicker, { type LinkTargets } from '@/components/admin/hero-link-picker';
 import Modal from '@/components/admin/modal';
 import StatusBadge from '@/components/admin/status-badge';
 import StatusToggle from '@/components/admin/status-toggle';
@@ -57,6 +58,7 @@ export default function HeroIndex({
     modes,
     preview,
     videoMaxMb,
+    linkTargets,
     canManage,
 }: {
     slides: Slide[];
@@ -65,6 +67,7 @@ export default function HeroIndex({
     modes: string[];
     preview: PreviewItem[];
     videoMaxMb: number;
+    linkTargets: LinkTargets;
     canManage: boolean;
 }) {
     const { t, i18n } = useAdminT();
@@ -599,7 +602,18 @@ export default function HeroIndex({
                     <div className="grid content-start gap-4">
                         <section className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
                             <h3 className="mb-2 text-xs font-semibold tracking-wide text-neutral-400 uppercase">{t('admin.hero.groupLink')}</h3>
-                            {text('href', t('admin.hero.href'), 'text', t('admin.hero.hrefHint'))}
+                            <HeroLinkPicker
+                                /* Remount per slide: the kind is local state, so
+                                   without this, opening a second slide would keep
+                                   the first one's choice. */
+                                key={editing?.id ?? 'new'}
+                                href={form.data.href}
+                                onChange={(v) => form.setData('href', v)}
+                                targets={linkTargets}
+                                lang={i18n.language}
+                                t={t}
+                            />
+                            {form.errors.href && <span className="mt-1 block text-xs text-red-400">{form.errors.href}</span>}
                         </section>
 
                         <section className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
