@@ -678,6 +678,8 @@ const en = {
             cropNeedsPoster: 'Choose a first frame picture above and you will see exactly how it is cropped.',
             videoUsingPoster:
                 'This browser cannot play the video, so the preview below is your first frame picture instead. The video itself is saved and will still play for shoppers.',
+            videoCsp:
+                'The site is blocking video previews (its media security policy). This is a configuration problem on our side, not your file or your browser — please report it.',
             videoNoH264:
                 'This browser cannot play H.264 video, which is what almost every MP4 contains. That is a limitation of the browser, not of your file or the store: the banner will still play for shoppers once saved. To preview it here, open the admin in Chrome or Edge.',
             videoUnplayable:

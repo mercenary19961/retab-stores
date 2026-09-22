@@ -25,6 +25,38 @@ class SecurityHardeningTest extends TestCase
         $this->assertStringContainsString("default-src 'self'", (string) $response->headers->get('Content-Security-Policy'));
     }
 
+    /**
+     * 🔴 `media-src 'self'` blocked every hero video in production, in two places
+     * at once: shoppers, because uploaded media is served from the R2 custom
+     * domain rather than this app's origin, and staff, because the admin previews
+     * a chosen file through a `blob:` URL. Both failed silently - the poster still
+     * rendered, so the band merely looked like a still.
+     */
+    public function test_csp_allows_media_from_the_configured_media_origin(): void
+    {
+        config([
+            'filesystems.media' => 'r2',
+            'filesystems.disks.r2.url' => 'https://cdn.example.test',
+        ]);
+
+        $csp = (string) $this->get('/')->headers->get('Content-Security-Policy');
+        $media = collect(explode('; ', $csp))->first(fn (string $d) => str_starts_with($d, 'media-src'));
+
+        $this->assertSame("media-src 'self' blob: https://cdn.example.test", $media,
+            'Hero videos are served from the media disk and previewed as blob: URLs; both must be allowed.');
+    }
+
+    /** A media disk with no public URL must not emit a broken directive. */
+    public function test_csp_media_directive_survives_a_urlless_disk(): void
+    {
+        config(['filesystems.media' => 'r2', 'filesystems.disks.r2.url' => null]);
+
+        $csp = (string) $this->get('/')->headers->get('Content-Security-Policy');
+        $media = collect(explode('; ', $csp))->first(fn (string $d) => str_starts_with($d, 'media-src'));
+
+        $this->assertSame("media-src 'self' blob:", $media);
+    }
+
     public function test_otp_send_is_blocked_when_turnstile_rejects(): void
     {
         config(['services.turnstile.secret_key' => 'test-secret']);

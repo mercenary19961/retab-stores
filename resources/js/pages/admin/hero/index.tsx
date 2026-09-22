@@ -156,7 +156,7 @@ export default function HeroIndex({
      * level, resolution or an HEVC track wearing an .mp4 extension. Two very
      * different messages, and only the browser can tell them apart.
      */
-    const [videoDiagnosis, setVideoDiagnosis] = useState<'noH264' | 'file' | null>(null);
+    const [videoDiagnosis, setVideoDiagnosis] = useState<'noH264' | 'file' | 'csp' | null>(null);
     /** Short technical line, so a report carries its own cause. */
     const [videoDetail, setVideoDetail] = useState('');
 
@@ -252,6 +252,21 @@ export default function HeroIndex({
         refreshDrafts();
     };
 
+    /*
+     * 🔑 CANCEL MEANS CANCEL (client's call). Keeping the draft here was the
+     * original design - "someone who hits Cancel by accident is who this is for" -
+     * and it was wrong: pressing a button labelled Cancel is a deliberate act, and
+     * having the work reappear afterwards reads as the dialog refusing to let go.
+     *
+     * ⚠️ The ×, Escape and the backdrop deliberately still KEEP the draft. Those
+     * are ambiguous or easily hit by accident, so they stay the forgiving path and
+     * the resume button still covers them.
+     */
+    const cancelDialog = () => {
+        draft.clear();
+        closeDialog();
+    };
+
     const resumeDraft = (d: DraftSummary) => {
         if (d.id === 'new') {
             openFor(null);
@@ -337,7 +352,9 @@ export default function HeroIndex({
                 const support = videoSupport();
 
                 setVideoUnplayable(true);
-                setVideoDiagnosis(support.h264 ? 'file' : 'noH264');
+                // ⚠️ CSP first: it is OUR fault, and it presents identically to an
+                // unsupported codec, which is exactly how it went misdiagnosed.
+                setVideoDiagnosis(result.reason === 'csp' ? 'csp' : support.h264 ? 'file' : 'noH264');
                 // Deliberately terse and untranslated: it exists to be pasted into
                 // a message to us, not to be read as prose.
                 setVideoDetail(
@@ -769,7 +786,7 @@ export default function HeroIndex({
                         )}
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="secondary" onClick={closeDialog}>
+                        <Button variant="secondary" onClick={cancelDialog}>
                             {t('admin.common.cancel')}
                         </Button>
                         <Button onClick={submit} disabled={form.processing}>
@@ -845,13 +862,15 @@ export default function HeroIndex({
                                     {t(
                                         !videoUnplayable
                                             ? 'admin.hero.posterFailed'
-                                            : videoDiagnosis === 'noH264'
-                                              ? 'admin.hero.videoNoH264'
-                                              : // ⚠️ Once the picture IS supplied and driving the
-                                                // preview, stop telling them to supply one.
-                                                preview_ && !previewVideo
-                                                ? 'admin.hero.videoUsingPoster'
-                                                : 'admin.hero.videoUnplayable',
+                                            : videoDiagnosis === 'csp'
+                                              ? 'admin.hero.videoCsp'
+                                              : videoDiagnosis === 'noH264'
+                                                ? 'admin.hero.videoNoH264'
+                                                : // ⚠️ Once the picture IS supplied and driving the
+                                                  // preview, stop telling them to supply one.
+                                                  preview_ && !previewVideo
+                                                  ? 'admin.hero.videoUsingPoster'
+                                                  : 'admin.hero.videoUnplayable',
                                     )}
                                 </p>
                                 {videoDetail && <p className="mt-1 font-mono text-[11px] text-neutral-500">{videoDetail}</p>}

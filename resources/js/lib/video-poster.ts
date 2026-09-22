@@ -50,7 +50,7 @@ export interface PosterResult {
     /** The captured still, or null if one could not be taken. */
     poster: File | null;
     /** null on success, otherwise a short machine-readable cause. */
-    reason: 'error' | 'timeout' | 'canvas' | null;
+    reason: 'error' | 'timeout' | 'canvas' | 'csp' | null;
     /** 0 when metadata never arrived, i.e. the browser could not open the file. */
     width: number;
     height: number;
@@ -69,6 +69,25 @@ export async function posterFromVideo(file: File, seconds = 0.1): Promise<Poster
 
     if (typeof document === 'undefined') return fail('error');
 
+    /*
+     * 🔴 WATCH FOR OUR OWN CONTENT SECURITY POLICY BLOCKING THE PREVIEW.
+     *
+     * This cost days. `media-src 'self'` refused every `blob:` URL in production
+     * while local dev, where CSP is skipped, worked perfectly - and the browser
+     * reports it as MediaError 4, which is indistinguishable from a genuinely
+     * unsupported codec. So the dialog confidently blamed the client's browser and
+     * their file, and they re-encoded a video that was never the problem.
+     *
+     * The violation event names the real cause outright, so if this ever recurs
+     * (a new CDN host, a proxy rewriting headers) it says so instead of misleading
+     * whoever reads it next.
+     */
+    let cspBlocked = false;
+    const onViolation = (e: SecurityPolicyViolationEvent) => {
+        if (e.violatedDirective.startsWith('media-src') || e.effectiveDirective?.startsWith('media-src')) cspBlocked = true;
+    };
+    document.addEventListener('securitypolicyviolation', onViolation);
+
     const url = URL.createObjectURL(file);
 
     try {
@@ -83,14 +102,17 @@ export async function posterFromVideo(file: File, seconds = 0.1): Promise<Poster
             // ⚠️ A hard ceiling: a corrupt or unsupported file can leave every
             // event unfired, and without this the save button would hang forever
             // on a promise that never settles.
-            const bail = window.setTimeout(() => resolve(fail('timeout', video.videoWidth, video.videoHeight, video.error?.code ?? null)), 8000);
+            const bail = window.setTimeout(
+                () => resolve(fail(cspBlocked ? 'csp' : 'timeout', video.videoWidth, video.videoHeight, video.error?.code ?? null)),
+                8000,
+            );
 
             const done = (result: PosterResult) => {
                 window.clearTimeout(bail);
                 resolve(result);
             };
 
-            video.onerror = () => done(fail('error', video.videoWidth, video.videoHeight, video.error?.code ?? null));
+            video.onerror = () => done(fail(cspBlocked ? 'csp' : 'error', video.videoWidth, video.videoHeight, video.error?.code ?? null));
 
             video.onloadeddata = () => {
                 // Seek a fraction in: frame 0 of a fade-in is often pure black,
@@ -138,6 +160,7 @@ export async function posterFromVideo(file: File, seconds = 0.1): Promise<Poster
     } catch {
         return fail('error');
     } finally {
+        document.removeEventListener('securitypolicyviolation', onViolation);
         URL.revokeObjectURL(url);
     }
 }
