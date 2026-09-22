@@ -8,6 +8,7 @@ import NotificationBell from '@/components/admin/notification-bell';
 import RevertConflictBanner from '@/components/admin/revert-conflict-banner';
 import ShippingFeeBadge from '@/components/admin/shipping-fee-badge';
 import UndoToast from '@/components/admin/undo-toast';
+import UploadTray from '@/components/admin/upload-tray';
 import adminI18n from '@/i18n/admin';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
@@ -396,6 +397,7 @@ function AdminShell({ children, title }: PropsWithChildren<{ title?: ReactNode }
             </div>
 
             <AdminToasts />
+            <UploadTray sidebarCollapsed={collapsed} />
             <UndoToast />
             <AdminContextMenu />
             <MobileScrollNav scrollRef={mainRef} />

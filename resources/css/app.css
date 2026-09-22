@@ -680,3 +680,75 @@ input[type='search']::-webkit-search-decoration {
         animation: none;
     }
 }
+
+/*
+ * Retab's page-loading bar (components/retab-progress.tsx).
+ *
+ * 🔑 Two layers: a teal-to-gold base that grows quickly then CRAWLS, and a
+ * travelling highlight over it. The crawl matters — a bar that reaches the end
+ * and stops reads as finished-but-broken, so it approaches 90% and waits there
+ * until the response actually lands.
+ */
+@keyframes retab-progress-grow {
+    0% {
+        width: 0;
+    }
+    35% {
+        width: 55%;
+    }
+    100% {
+        width: 90%;
+    }
+}
+
+@keyframes retab-progress-sheen {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(400%);
+    }
+}
+
+.retab-progress-bar {
+    background: linear-gradient(90deg, var(--color-brand-teal), var(--color-brand-gold));
+    animation: retab-progress-grow 8s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    position: relative;
+    overflow: hidden;
+}
+
+.retab-progress-bar::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inline-size: 25%;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+    animation: retab-progress-sheen 1.1s linear infinite;
+}
+
+/* Finished: run to the full width and fade, rather than vanishing mid-draw. */
+.retab-progress-done {
+    width: 100% !important;
+    animation: none;
+    transition:
+        width 0.18s ease-out,
+        opacity 0.18s ease-out 0.08s;
+    opacity: 0;
+}
+
+/*
+ * ⚠️ Reduced motion keeps the BAR (it is information about waiting) and drops the
+ * perpetual sheen, which is decoration and exactly the kind of endless movement
+ * that setting exists to stop.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .retab-progress-bar {
+        animation-duration: 0.01s;
+        width: 90%;
+    }
+
+    .retab-progress-bar::after {
+        animation: none;
+        opacity: 0;
+    }
+}

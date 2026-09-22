@@ -7,6 +7,7 @@ import type { ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { route as routeFn } from 'ziggy-js';
+import RetabProgress from './components/retab-progress';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { initializeTheme } from './hooks/use-appearance';
 
@@ -39,14 +40,18 @@ createInertiaApp({
             // (a nested I18nextProvider) can't hijack the global default.
             <I18nextProvider i18n={i18n}>
                 <LanguageProvider initialLocale={locale}>
+                    <RetabProgress />
                     <App {...props} />
                 </LanguageProvider>
             </I18nextProvider>,
         );
     },
-    progress: {
-        color: '#4B5563',
-    },
+    /*
+     * 🔑 Inertia's own bar is off: `components/retab-progress.tsx` replaces it with
+     * a branded one that also waits 250ms before showing, so quick visits do not
+     * flash a bar at all. Mounted in the tree above, client-side only.
+     */
+    progress: false,
 });
 
 // This will set light / dark mode on load...

@@ -651,6 +651,15 @@ const en = {
     },
     admin: {
         brand: 'Retab Admin',
+        uploads: {
+            dismiss: 'Dismiss',
+            progress: 'Uploading… {{n}}%',
+            processing: 'Almost there, saving…',
+            done: 'Saved.',
+            failed: 'Could not save. Your typing is kept — use Resume to try again.',
+            newSlide: 'New homepage slide',
+            savingSlide: 'Updating homepage slide',
+        },
         hero: {
             title: 'Homepage banner',
             intro: 'The big picture or video at the top of the homepage. Add as many as you like and they rotate; the preview below is exactly what shoppers will see.',
@@ -721,6 +730,7 @@ const en = {
             draftDiscard: 'Start over',
             resumeNew: 'Resume unfinished slide',
             resumeEdit: 'Resume unfinished edit',
+            resumeDiscard: 'Discard this unfinished work',
             resumeHint: 'You started this and did not save it. It is kept in this browser for a day.',
             groupLink: 'Where it goes',
             linkKind: 'Tapping the banner opens',

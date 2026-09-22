@@ -9,9 +9,10 @@ import { discardDraft, listDrafts, useFormDraft, type DraftSummary } from '@/hoo
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { CARD } from '@/lib/admin-ui';
+import { startUpload } from '@/lib/uploads';
 import { posterFromVideo, videoSupport } from '@/lib/video-poster';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Film, GalleryHorizontal, GripVertical, Image as ImageIcon, Lock, Pencil, Plus, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Film, GalleryHorizontal, GripVertical, Image as ImageIcon, Lock, Pencil, Plus, RotateCcw, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Slide {
@@ -429,17 +430,49 @@ export default function HeroIndex({
             focal_mobile_y: Math.round(data.focal_mobile_y),
         }));
 
-        form.post(editing ? `/admin/hero/${editing.id}` : '/admin/hero', {
-            forceFormData: true,
-            preserveScroll: true,
+        /*
+         * 🔑 Sent in the BACKGROUND, not through `router.post`, so a large video
+         * does not pin the admin to this dialog (client's request). The dialog
+         * closes at once and the upload reports itself from the tray.
+         */
+        const body = new FormData();
+        const values: Record<string, unknown> = {
+            ...form.data,
+            is_active: form.data.is_active ? 1 : 0,
+            focal_x: Math.round(form.data.focal_x),
+            focal_y: Math.round(form.data.focal_y),
+            focal_mobile_x: Math.round(form.data.focal_mobile_x),
+            focal_mobile_y: Math.round(form.data.focal_mobile_y),
+        };
+
+        for (const [key, value] of Object.entries(values)) {
+            // ⚠️ A null file must be OMITTED, not sent as the string "null": the
+            // upload rules are `nullable|file`, and a string would fail the file
+            // rule and reject the whole form (the 2026-09-21 required_if bug).
+            if (value === null || value === undefined) continue;
+            body.append(key, value instanceof File ? value : String(value));
+        }
+
+        startUpload({
+            url: editing ? `/admin/hero/${editing.id}` : '/admin/hero',
+            body,
+            label: t(editing ? 'admin.uploads.savingSlide' : 'admin.uploads.newSlide'),
+            fallbackError: t('admin.uploads.failed'),
             onSuccess: () => {
-                // 🔑 Cleared on SUCCESS only. Clearing on close would discard the
-                // draft of someone who hit Cancel by accident, which is the very
-                // thing this is for.
+                // 🔑 Cleared on SUCCESS only, exactly as before — a failure must
+                // leave the typed work recoverable from the resume button.
                 draft.clear();
-                closeDialog();
+                refreshDrafts();
+                // Only reload if still looking at the hero; elsewhere the toast is
+                // the whole story and a reload would yank the page they moved to.
+                if (window.location.pathname.startsWith('/admin/hero')) {
+                    router.reload({ only: ['slides', 'preview', 'drafts'] });
+                }
             },
+            onFailure: () => refreshDrafts(),
         });
+
+        closeDialog();
     };
 
     const text = (name: 'href' | 'alt_ar' | 'alt_en' | 'starts_at' | 'ends_at' | 'sort_order', label: string, type = 'text', hint?: string) => (
@@ -530,21 +563,38 @@ export default function HeroIndex({
                 {canManage && (
                     <div className="flex flex-wrap items-center justify-end gap-2">
                         {drafts.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => resumeDraft(drafts[0])}
-                                /* Amber, matching the in-dialog notice, and deliberately
+                            <span className="inline-flex items-stretch overflow-hidden rounded-md border border-amber-500/40 bg-amber-500/10">
+                                <button
+                                    type="button"
+                                    onClick={() => resumeDraft(drafts[0])}
+                                    /* Amber, matching the in-dialog notice, and deliberately
                                    quieter than the primary action: it is a recovery, not
                                    the thing most visitors came to do. */
-                                className="inline-flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20"
-                                title={t('admin.hero.resumeHint')}
-                            >
-                                <RotateCcw className="size-4 shrink-0" />
-                                <span>
-                                    {drafts[0].id === 'new' ? t('admin.hero.resumeNew') : t('admin.hero.resumeEdit')}
-                                    {drafts.length > 1 && ` (${drafts.length})`}
-                                </span>
-                            </button>
+                                    className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20"
+                                    title={t('admin.hero.resumeHint')}
+                                >
+                                    <RotateCcw className="size-4 shrink-0" />
+                                    <span>
+                                        {drafts[0].id === 'new' ? t('admin.hero.resumeNew') : t('admin.hero.resumeEdit')}
+                                        {drafts.length > 1 && ` (${drafts.length})`}
+                                    </span>
+                                </button>
+                                {/* ⚠️ Throwing work away, so it is a separate press with its
+                                own label — never a click target the resume button can
+                                be mistaken for. */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        discardDraft('hero', drafts[0].id);
+                                        refreshDrafts();
+                                    }}
+                                    aria-label={t('admin.hero.resumeDiscard')}
+                                    title={t('admin.hero.resumeDiscard')}
+                                    className="border-s border-amber-500/40 px-2 text-amber-400/80 transition hover:bg-amber-500/20 hover:text-amber-200"
+                                >
+                                    <X className="size-3.5" />
+                                </button>
+                            </span>
                         )}
                         <Button onClick={() => openFor(null)} icon={Plus}>
                             {t('admin.hero.add')}
