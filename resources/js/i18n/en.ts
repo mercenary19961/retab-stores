@@ -1476,7 +1476,7 @@ const en = {
             live: 'Updates automatically',
             deleteTitle: 'Delete this review?',
             deleteBody:
-                'It is removed permanently and cannot be undone. To take it off the storefront temporarily, use Hide instead. Any reward coupon already issued for it stays valid.',
+                'It comes off the storefront and you can restore it from the Change Log. To take it down temporarily, use Hide instead. Any reward coupon already issued for it stays valid.',
         },
         products: {
             title: 'Products',

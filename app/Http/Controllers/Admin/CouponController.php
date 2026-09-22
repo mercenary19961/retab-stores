@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Services\ChangeLog\ChangeLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -48,30 +50,43 @@ class CouponController extends Controller
     }
 
     /** Quick on/off from the list — flips is_active without opening the editor. */
-    public function toggle(Coupon $coupon)
+    public function toggle(Coupon $coupon, ChangeLogService $changeLog)
     {
-        $coupon->update(['is_active' => ! $coupon->is_active]);
+        DB::transaction(function () use ($coupon, $changeLog) {
+            $before = $coupon->attributesToArray();
+            $coupon->update(['is_active' => ! $coupon->is_active]);
+            $changeLog->logUpdated($coupon, $before, $coupon->code);
+        });
 
         return back()->with('success', __($coupon->is_active ? 'messages.admin.coupon_activated' : 'messages.admin.coupon_deactivated'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ChangeLogService $changeLog)
     {
         $data = $this->validated($request);
 
-        Coupon::create($data + ['source' => 'manual', 'created_by' => Auth::id()]);
+        DB::transaction(function () use ($data, $changeLog) {
+            $coupon = Coupon::create($data + ['source' => 'manual', 'created_by' => Auth::id()]);
+            $changeLog->logCreated($coupon, $coupon->code);
+        });
 
         return redirect()->route('admin.coupons.index')->with('success', __('messages.admin.coupon_saved'));
     }
 
-    public function update(Request $request, Coupon $coupon)
+    public function update(Request $request, Coupon $coupon, ChangeLogService $changeLog)
     {
-        $coupon->update($this->validated($request, $coupon));
+        $data = $this->validated($request, $coupon);
+
+        DB::transaction(function () use ($coupon, $data, $changeLog) {
+            $before = $coupon->attributesToArray();
+            $coupon->update($data);
+            $changeLog->logUpdated($coupon, $before, $coupon->code);
+        });
 
         return redirect()->route('admin.coupons.index')->with('success', __('messages.admin.coupon_saved'));
     }
 
-    public function destroy(Coupon $coupon)
+    public function destroy(Coupon $coupon, ChangeLogService $changeLog)
     {
         // A used coupon is part of order history (redemptions cascade on delete),
         // so retire it by deactivating instead of destroying the audit trail.
@@ -79,7 +94,14 @@ class CouponController extends Controller
             return back()->with('error', __('messages.admin.coupon_has_redemptions'));
         }
 
-        $coupon->delete();
+        // Soft-deletes since 2026_09_22_200000, so Undo restores the coupon with
+        // its window and caps intact. ⚠️ The trashed row still holds its CODE —
+        // validated() scopes the unique rule to live rows so the client can reuse
+        // it, which is the one thing a soft delete could have broken here.
+        DB::transaction(function () use ($coupon, $changeLog) {
+            $changeLog->logDeleted($coupon, $coupon->code);
+            $coupon->delete();
+        });
 
         return redirect()->route('admin.coupons.index')->with('success', __('messages.admin.coupon_deleted'));
     }
@@ -91,7 +113,7 @@ class CouponController extends Controller
         $isFreeShipping = $request->input('type') === 'free_shipping';
 
         $data = $request->validate([
-            'code' => ['required', 'string', 'max:60', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('coupons', 'code')->ignore($coupon?->id)],
+            'code' => ['required', 'string', 'max:60', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('coupons', 'code')->whereNull('deleted_at')->ignore($coupon?->id)],
             'type' => ['required', Rule::in(['percentage', 'fixed', 'free_shipping'])],
             'value' => [$isFreeShipping ? 'nullable' : 'required', 'numeric', 'min:0', ...($isPercentage ? ['max:100'] : [])],
             'max_discount' => ['nullable', 'numeric', 'min:0'],

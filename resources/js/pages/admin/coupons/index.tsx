@@ -390,7 +390,7 @@ export default function CouponsIndex({ coupons, activeCount }: { coupons: Pagina
                                         {can('coupons.delete') && c.used_count === 0 && (
                                             <ConfirmDeleteButton
                                                 itemName={c.code}
-                                                reversible={false}
+                                                reversible
                                                 onConfirm={() => router.delete(`/admin/coupons/${c.id}`, { preserveScroll: true })}
                                             />
                                         )}

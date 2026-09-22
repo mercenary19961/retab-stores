@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\Media;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * One slide in the homepage hero, managed by the client at /admin/hero.
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class HeroSlide extends Model
 {
+    use SoftDeletes;
+
     public const KIND_IMAGE = 'image';
 
     public const KIND_VIDEO = 'video';

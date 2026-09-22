@@ -3,10 +3,22 @@
 namespace App\Services\ChangeLog;
 
 use App\Models\ActivityLog;
+use App\Models\Announcement;
 use App\Models\Category;
+use App\Models\ClientReview;
 use App\Models\ContentPage;
+use App\Models\Coupon;
+use App\Models\EventHeroBanner;
+use App\Models\HeroSlide;
 use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\ProductOption;
+use App\Models\Review;
 use App\Models\Setting;
+use App\Models\ShippingCarrier;
+use App\Models\StoreEvent;
+use App\Models\User;
+use App\Models\WhatsappTemplate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Arr;
@@ -40,14 +52,40 @@ class ChangeLogService
     /** Metadata never snapshotted, diffed, or written back. */
     private const SKIP_KEYS = ['id', 'created_at', 'updated_at', 'deleted_at', 'updated_by'];
 
-    /** subject_type => actions that may be reverted. Everything else is audit-only. */
+    /** Every action, for the subjects that soft-delete and can therefore come back. */
+    private const FULLY_REVERTABLE = [
+        ActivityLog::ACTION_CREATED,
+        ActivityLog::ACTION_UPDATED,
+        ActivityLog::ACTION_DELETED,
+        ActivityLog::ACTION_RESTORED,
+    ];
+
+    /**
+     * subject_type => actions that may be reverted. Everything else is audit-only.
+     *
+     * 🔑 A DELETE IS ONLY LISTED HERE WHEN THE MODEL SOFT-DELETES. revertToRestored()
+     * calls $subject->restore(), so offering it on a hard-deleting model would
+     * advertise an undo that cannot work — and worse, the row is gone, so the
+     * revert fails with "subject missing" rather than anything a client could act
+     * on. When adding a subject, check the model for the SoftDeletes trait first.
+     */
     private const REVERTABLE = [
-        Product::class => [
-            ActivityLog::ACTION_CREATED,
-            ActivityLog::ACTION_UPDATED,
-            ActivityLog::ACTION_DELETED,
-            ActivityLog::ACTION_RESTORED,
-        ],
+        Product::class => self::FULLY_REVERTABLE,
+        // Storefront presentation the client edits daily, all soft-deleting since
+        // 2026_09_22_200000. Their uploads outlive the delete by the media
+        // retention window, so restoring one brings its artwork back with it.
+        HeroSlide::class => self::FULLY_REVERTABLE,
+        Announcement::class => self::FULLY_REVERTABLE,
+        Coupon::class => self::FULLY_REVERTABLE,
+        ClientReview::class => self::FULLY_REVERTABLE,
+        StoreEvent::class => self::FULLY_REVERTABLE,
+        EventHeroBanner::class => self::FULLY_REVERTABLE,
+        ProductImage::class => self::FULLY_REVERTABLE,
+        ProductOption::class => self::FULLY_REVERTABLE,
+        // A customer's own words. Staff can hide one (updated) or remove it
+        // (deleted); both are reversible, which is the point — a review taken
+        // down by mistake is somebody else's content.
+        Review::class => self::FULLY_REVERTABLE,
         // Content pages have no admin delete route — created stays audit-only.
         ContentPage::class => [ActivityLog::ACTION_UPDATED],
         // Edits only. Undoing a CREATE means deleting the row, which would pull
@@ -56,22 +94,63 @@ class ChangeLogService
         // deleted category is not soft-deleted, so there is nothing for undoing a
         // DELETE to restore. Both stay audit-only.
         Category::class => [ActivityLog::ACTION_UPDATED],
+        /*
+         * ⚠️ Staff are audit-only in BOTH directions, deliberately. Undoing
+         * "created" would delete a colleague's account as a side effect of
+         * tidying a log, and undoing "deleted" would restore a login — neither
+         * belongs behind a one-click Undo on a list of edits. Role and permission
+         * changes are recorded in full so the history answers "who granted this",
+         * and reversing one is a deliberate visit to /admin/users.
+         */
+        User::class => [],
+        // Created by syncing OTO's catalogue rather than by a person, so only the
+        // client's own edits (the enable switch, the support contacts) are undoable.
+        ShippingCarrier::class => [ActivityLog::ACTION_UPDATED],
+        // The local mirror of a template that lives in Meta Business Manager.
+        // Reverting our copy cannot reach theirs, so it is a record, not an undo.
+        WhatsappTemplate::class => [],
         ActivityLog::SUBJECT_SETTINGS => [ActivityLog::ACTION_UPDATED],
     ];
 
     /** subject_type => section label for the admin list. */
     public const SUBJECT_LABELS = [
         Product::class => 'Products',
+        ProductImage::class => 'Product images',
+        ProductOption::class => 'Product options',
         Category::class => 'Categories',
         ContentPage::class => 'Content pages',
+        HeroSlide::class => 'Homepage hero',
+        Announcement::class => 'Announcements',
+        Coupon::class => 'Coupons',
+        StoreEvent::class => 'Store events',
+        EventHeroBanner::class => 'Event banners',
+        ClientReview::class => 'Client reviews',
+        Review::class => 'Product reviews',
+        User::class => 'Staff',
+        ShippingCarrier::class => 'Shipping',
+        WhatsappTemplate::class => 'Marketing',
+        ActivityLog::SUBJECT_EVENT_OFFER => 'Store events',
         ActivityLog::SUBJECT_SETTINGS => 'Settings',
     ];
 
     /** subject_type => stable section key (session pointer + dismiss route + page prop). */
     public const SECTION_KEYS = [
         Product::class => 'products',
+        ProductImage::class => 'products',
+        ProductOption::class => 'products',
         Category::class => 'categories',
         ContentPage::class => 'content_pages',
+        HeroSlide::class => 'hero',
+        Announcement::class => 'announcements',
+        Coupon::class => 'coupons',
+        StoreEvent::class => 'store_events',
+        EventHeroBanner::class => 'store_events',
+        ClientReview::class => 'client_reviews',
+        Review::class => 'product_reviews',
+        User::class => 'users',
+        ShippingCarrier::class => 'shipping',
+        WhatsappTemplate::class => 'marketing',
+        ActivityLog::SUBJECT_EVENT_OFFER => 'store_events',
         ActivityLog::SUBJECT_SETTINGS => 'settings',
     ];
 
@@ -153,6 +232,33 @@ class ChangeLogService
     }
 
     /**
+     * Record a change that is NOT one model's attribute diff — an event offer
+     * attached or detached, artwork replaced on a pivot row, a bulk move.
+     *
+     * 🔴 AUDIT-ONLY BY CONSTRUCTION, and that is the whole reason it takes a
+     * subject TYPE STRING rather than a model. The revert machinery writes
+     * `old_data` back onto a model's attributes, so a synthetic field like
+     * "offers" would be silently dropped by fill() and the revert would report
+     * success having changed nothing — the exact failure this service was built
+     * to avoid. A string subject type is absent from REVERTABLE, so revertable()
+     * refuses it and no Undo is ever offered.
+     *
+     * @param  array<string, mixed>  $old
+     * @param  array<string, mixed>  $new
+     */
+    public function logAudit(string $subjectType, ?int $subjectId, string $action, array $old, array $new, ?string $label = null): ActivityLog
+    {
+        return $this->record([
+            'action' => $action,
+            'subject_type' => $subjectType,
+            'subject_id' => $subjectId,
+            'old_data' => $old,
+            'new_data' => $new,
+            'label' => $label,
+        ]);
+    }
+
+    /**
      * Log a settings save. Pass only the keys that actually changed
      * (old => previous values, new => written values). Null when nothing changed.
      */
@@ -176,6 +282,59 @@ class ChangeLogService
     }
 
     // ── Revert ──────────────────────────────────────────────────────────────
+
+    /**
+     * The permission a staff member needs to undo this entry — the same one they
+     * would need to make the change by hand on the section's own page.
+     *
+     * 🔴 WITHOUT THIS, `change_log.revert` IS A SKELETON KEY. It is one grant, and
+     * on its own it let its holder restore a deleted coupon, re-price a product
+     * option or put a hero slide back without holding coupons.edit, products.edit
+     * or hero.manage — reaching every section from one page. That was already
+     * true of the four original subjects; extending the log to twelve more would
+     * have turned a narrow hole into a general one.
+     *
+     * ⚠️ Undoing a CREATE or a RESTORE DELETES the record, so where a section
+     * separates the two (products, coupons) the delete permission is what is
+     * asked for. Everything else uses the section's single write permission.
+     *
+     * Null means the subject has no section permission of its own — settings and
+     * staff are admin-shaped, and the route's own middleware already covers them.
+     */
+    public function requiredPermission(ActivityLog $log): ?string
+    {
+        $destroys = in_array($log->action, [ActivityLog::ACTION_CREATED, ActivityLog::ACTION_RESTORED], true);
+
+        return match ($log->subject_type) {
+            Product::class => $destroys ? 'products.delete' : 'products.edit',
+            // Images and options are edited through their product's own screens,
+            // so they answer to the same permission it does.
+            ProductImage::class, ProductOption::class => 'products.edit',
+            Category::class => 'categories.manage',
+            ContentPage::class => 'content_pages.edit',
+            HeroSlide::class => 'hero.manage',
+            Announcement::class => 'announcements.manage',
+            Coupon::class => $destroys ? 'coupons.delete' : 'coupons.edit',
+            StoreEvent::class, EventHeroBanner::class => 'store_events.manage',
+            ClientReview::class => 'reviews.manage',
+            Review::class => 'product_reviews.manage',
+            ShippingCarrier::class => 'shipping.manage',
+            ActivityLog::SUBJECT_SETTINGS => 'settings.edit',
+            default => null,
+        };
+    }
+
+    /** May this user undo this entry — both the data and their own grants allow it. */
+    public function revertableBy(ActivityLog $log, ?User $user): bool
+    {
+        if (! $this->revertable($log)) {
+            return false;
+        }
+
+        $permission = $this->requiredPermission($log);
+
+        return $permission === null || (bool) $user?->hasPermission($permission);
+    }
 
     /** Whether an entry may be reverted (action + subject matrix, not yet reverted). */
     public function revertable(ActivityLog $log): bool
@@ -452,9 +611,27 @@ class ChangeLogService
     /** Where to edit the subject directly (the change-log "Go to item" link + long-chain fallback). */
     public function editUrl(ActivityLog $log): ?string
     {
+        /*
+         * ⚠️ Most of these are INDEX pages, not per-record edit screens, and that
+         * is correct rather than lazy: hero slides, announcements, coupons and
+         * carriers are all edited in a dialog on their list, so there is no
+         * deeper URL to send anyone to. The ones that return null genuinely
+         * cannot be linked — a product image or option is reachable only through
+         * its parent product, whose id this entry does not carry.
+         */
         return match ($log->subject_type) {
             Product::class => $log->subject_id ? "/admin/products/{$log->subject_id}/edit" : null,
             ContentPage::class => $log->subject_id ? "/admin/content-pages/{$log->subject_id}/edit" : null,
+            ClientReview::class => $log->subject_id ? "/admin/client-reviews/{$log->subject_id}/edit" : null,
+            StoreEvent::class,
+            ActivityLog::SUBJECT_EVENT_OFFER => $log->subject_id ? "/admin/store-events/{$log->subject_id}" : null,
+            HeroSlide::class => '/admin/hero',
+            Announcement::class => '/admin/announcements',
+            Coupon::class => '/admin/coupons',
+            Review::class => '/admin/product-reviews',
+            User::class => '/admin/users',
+            ShippingCarrier::class => '/admin/shipping',
+            WhatsappTemplate::class => '/admin/marketing',
             ActivityLog::SUBJECT_SETTINGS => '/admin/settings',
             default => null,
         };

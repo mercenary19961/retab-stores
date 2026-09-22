@@ -44,3 +44,17 @@ Schedule::command('payments:alert-expiring')
 Schedule::command('catalog:hide-expired')
     ->everyMinute()
     ->withoutOverlapping();
+
+// Close the undo window on deleted uploads: remove the files owned by records
+// trashed longer ago than `media.trash_retention_days`, then force-delete them.
+//
+// 🔴 This is the ONLY thing in the app that destroys an upload. Admin deletes
+// soft-delete and leave the artwork alone precisely so a change-log revert can
+// put a hero slide's video back; this is what stops those files accumulating in
+// R2 forever. If a file is unexpectedly missing, look here first.
+//
+// Daily, off-peak: the window is measured in weeks, so a more frequent run buys
+// nothing and it walks four tables.
+Schedule::command('media:purge-trash')
+    ->dailyAt('03:30')
+    ->withoutOverlapping();

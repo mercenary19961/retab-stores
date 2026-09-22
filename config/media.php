@@ -53,4 +53,25 @@ return [
     */
     'video_max_mb' => (int) env('MEDIA_VIDEO_MAX_MB', 12),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Trash retention
+    |--------------------------------------------------------------------------
+    |
+    | How long a soft-deleted record keeps its uploaded files before
+    | `php artisan media:purge-trash` removes them and force-deletes the row.
+    |
+    | 🔑 This number IS the undo window. Deleting a hero slide used to run
+    | Media::delete() on its video and artwork immediately, so the bytes were gone
+    | from R2 before anyone could ask for them back — a change-log entry could
+    | record the loss but never reverse it. Nothing is destroyed inside the window,
+    | so a revert always has something to restore.
+    |
+    | ⚠️ Raising it costs only R2 storage (fractions of a cent per GB-month).
+    | LOWERING it destroys files that are currently restorable, so treat a
+    | reduction as a destructive change and take a backup first.
+    |
+    */
+    'trash_retention_days' => (int) env('MEDIA_TRASH_RETENTION_DAYS', 30),
+
 ];

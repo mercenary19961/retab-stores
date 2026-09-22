@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Support\ArabicSlug;
 use App\Support\Media;
+use App\Support\MediaTrash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -208,8 +209,15 @@ class CategoryController extends Controller
         // Only now is the file unreferenced: a deleted category has nothing to be
         // restored into, whereas an edit's old image stays on disk so reverting
         // that edit from the change log still finds it.
+        //
+        // ⚠️ QUEUED rather than deleted, even though categories genuinely do not
+        // soft-delete and this delete is genuinely not revertable. Two reasons:
+        // the tile image is a designed asset and the retention window costs
+        // nothing to give it, and MediaTrash re-checks references before it
+        // deletes — so if category deletes ever do become revertable, this needs
+        // no second look.
         if (Category::isUploadedImage($category->image)) {
-            Media::delete($category->image);
+            MediaTrash::schedule($category->image, 'categories.image');
         }
 
         $message = match (true) {

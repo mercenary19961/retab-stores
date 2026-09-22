@@ -45,7 +45,9 @@ class ChangeLogController extends Controller
                 'changes' => $this->changeLog->diff($log),
                 'user' => $log->user?->name,
                 'created_at' => $log->created_at?->toDateTimeString(),
-                'revertable' => $this->changeLog->revertable($log),
+                // 🔑 ANDed with the section's own permission: change_log.revert
+                // says you may undo things, not that you may reach every section.
+                'revertable' => $this->changeLog->revertableBy($log, $request->user()),
                 'reverted_at' => $log->reverted_at?->toDateTimeString(),
                 'reverted_by' => $log->revertedByUser?->name,
                 'reverts_log_id' => $log->reverts_log_id,
@@ -61,8 +63,22 @@ class ChangeLogController extends Controller
         ]);
     }
 
-    public function revert(ActivityLog $activityLog)
+    public function revert(Request $request, ActivityLog $activityLog)
     {
+        /*
+         * 🔴 Enforced here, not merely hidden in the UI. The route is reachable
+         * by anyone holding change_log.revert, so the section check has to live
+         * on the server or the grant is a skeleton key to every section.
+         *
+         * ⚠️ AUTHORIZATION ONLY — deliberately not revertableBy(), which also
+         * answers "is this entry in a state that can be reverted". Conflating the
+         * two turned an already-reverted entry (a double-click) into a 403 page
+         * instead of the "already reverted" message revert() returns. Who may act
+         * is a 403; what may be acted on is an explanation.
+         */
+        $permission = $this->changeLog->requiredPermission($activityLog);
+        abort_if($permission !== null && ! $request->user()?->hasPermission($permission), 403);
+
         $result = $this->changeLog->revert($activityLog);
 
         if ($result->ok) {
@@ -125,6 +141,16 @@ class ChangeLogController extends Controller
         $failed = 0;
 
         foreach ($logs as $log) {
+            // Same authorization gate as the single revert. Counted as blocked
+            // rather than silently dropped, so the totals the admin reads add up.
+            // ⚠️ Permission only — revert() reports the data-state reasons itself.
+            $permission = $this->changeLog->requiredPermission($log);
+            if ($permission !== null && ! $request->user()?->hasPermission($permission)) {
+                $blocked++;
+
+                continue;
+            }
+
             $result = $this->changeLog->revert($log);
 
             if ($result->ok) {

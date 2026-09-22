@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\EventHeroBanner;
 use App\Models\HeroSlide;
@@ -9,6 +10,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\StoreEvent;
 use App\Models\User;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Support\HeroBanners;
 use App\Support\Media;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -386,18 +388,74 @@ class HeroSlideTest extends TestCase
         $this->assertSame('محدث', $slide->fresh()->alt_ar);
     }
 
-    public function test_deleting_a_slide_removes_its_files(): void
+    /**
+     * 🔴 The inverse of what this test used to assert, and the change is the point.
+     *
+     * It previously demanded that deleting a slide destroy its artwork on the
+     * spot, which is exactly what made the delete unrecoverable: the client's
+     * video was gone from R2 before anyone could ask for it back, so no
+     * change-log entry could ever have undone it. The slide is soft-deleted now
+     * and the files are left alone until media:purge-trash closes the window.
+     */
+    public function test_deleting_a_slide_keeps_its_files_so_the_delete_can_be_undone(): void
     {
         Storage::fake(Media::disk());
         $disk = Storage::disk(Media::disk());
-        $disk->put('hero/gone.jpg', 'x');
+        $disk->put('hero/kept.jpg', 'x');
 
-        $slide = $this->slide(['image' => 'hero/gone.jpg']);
+        $slide = $this->slide(['image' => 'hero/kept.jpg']);
 
         $this->actingAs($this->admin())->delete("/admin/hero/{$slide->id}")->assertRedirect();
 
+        // Gone from the panel and the storefront...
         $this->assertSame(0, HeroSlide::count());
-        $disk->assertMissing('hero/gone.jpg');
+        // ...but restorable, with its artwork still there to restore.
+        $this->assertSame(1, HeroSlide::withTrashed()->count());
+        $disk->assertExists('hero/kept.jpg');
+    }
+
+    public function test_deleting_a_slide_is_recorded_and_can_be_undone(): void
+    {
+        Storage::fake(Media::disk());
+        $slide = $this->slide(['image' => 'hero/kept.jpg', 'alt_ar' => 'شريحة']);
+
+        $this->actingAs($this->admin())->delete("/admin/hero/{$slide->id}")->assertRedirect();
+
+        $log = ActivityLog::where('subject_type', HeroSlide::class)
+            ->where('subject_id', $slide->id)
+            ->where('action', ActivityLog::ACTION_DELETED)
+            ->firstOrFail();
+
+        $this->assertSame('شريحة', $log->label);
+
+        $result = app(ChangeLogService::class)->revert($log);
+
+        $this->assertTrue($result->ok);
+        $this->assertSame(1, HeroSlide::count(), 'the slide should be back on the page');
+        $this->assertSame('hero/kept.jpg', HeroSlide::first()->image);
+    }
+
+    /**
+     * ⚠️ The replaced file is queued, never deleted inline. Deleting it made the
+     * change-log entry for the edit a lie: reverting writes the old path back,
+     * and the file it names would already be gone.
+     */
+    public function test_replacing_the_artwork_keeps_the_old_file_until_the_window_closes(): void
+    {
+        Storage::fake(Media::disk());
+        $disk = Storage::disk(Media::disk());
+        $disk->put('hero/old.jpg', 'x');
+
+        $slide = $this->slide(['image' => 'hero/old.jpg']);
+
+        $this->actingAs($this->admin())->post("/admin/hero/{$slide->id}", [
+            'kind' => 'image',
+            'image' => UploadedFile::fake()->image('new.jpg', 1440, 720),
+        ])->assertRedirect();
+
+        $this->assertNotSame('hero/old.jpg', $slide->fresh()->image);
+        $disk->assertExists('hero/old.jpg');
+        $this->assertDatabaseHas('media_trash', ['path' => 'hero/old.jpg']);
     }
 
     public function test_reordering_swaps_with_the_neighbour(): void

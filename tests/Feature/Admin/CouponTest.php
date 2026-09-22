@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\ActivityLog;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -125,6 +127,49 @@ class CouponTest extends TestCase
         $this->assertDatabaseHas('coupons', ['id' => $used->id]);
 
         $this->actingAs($admin)->delete("/admin/coupons/{$unused->id}")->assertSessionHas('success');
-        $this->assertDatabaseMissing('coupons', ['id' => $unused->id]);
+        // Soft-deleted: off every list and unusable at checkout, but restorable.
+        $this->assertNull(Coupon::find($unused->id));
+        $this->assertNotNull(Coupon::withTrashed()->find($unused->id));
+    }
+
+    /**
+     * 🔴 The one thing a soft delete could plausibly have broken here: a trashed
+     * row still occupies the unique index, so without scoping the rule to live
+     * rows the client could never reuse a code they had deleted — and the error
+     * would name a coupon that is not on any screen.
+     */
+    public function test_a_deleted_coupons_code_can_be_used_again(): void
+    {
+        $admin = $this->admin();
+        $original = Coupon::create(['code' => 'RAMADAN', 'type' => 'fixed', 'value' => 5, 'is_active' => true]);
+
+        $this->actingAs($admin)->delete("/admin/coupons/{$original->id}")->assertSessionHas('success');
+
+        $this->actingAs($admin)->post('/admin/coupons', [
+            'code' => 'RAMADAN',
+            'type' => 'fixed',
+            'value' => 10,
+            'is_active' => true,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(1, Coupon::where('code', 'RAMADAN')->count());
+        $this->assertSame('10.00', Coupon::where('code', 'RAMADAN')->value('value'));
+    }
+
+    public function test_deleting_a_coupon_is_recorded_and_can_be_undone(): void
+    {
+        $admin = $this->admin();
+        $coupon = Coupon::create(['code' => 'WELCOME', 'type' => 'fixed', 'value' => 5, 'is_active' => true]);
+
+        $this->actingAs($admin)->delete("/admin/coupons/{$coupon->id}")->assertSessionHas('success');
+
+        $log = ActivityLog::where('subject_type', Coupon::class)
+            ->where('subject_id', $coupon->id)
+            ->where('action', ActivityLog::ACTION_DELETED)
+            ->firstOrFail();
+
+        $this->assertSame('WELCOME', $log->label);
+        $this->assertTrue(app(ChangeLogService::class)->revert($log)->ok);
+        $this->assertNotNull(Coupon::find($coupon->id));
     }
 }

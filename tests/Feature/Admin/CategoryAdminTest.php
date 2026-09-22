@@ -9,8 +9,10 @@ use App\Models\StoreEvent;
 use App\Models\User;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Media;
+use App\Support\MediaTrash;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -193,7 +195,14 @@ class CategoryAdminTest extends TestCase
         $this->assertModelExists($offers);
     }
 
-    public function test_an_empty_category_is_deleted_along_with_its_uploaded_image(): void
+    /**
+     * ⚠️ The tile image is QUEUED, not deleted inline — so the assertion changed
+     * from "the file is gone" to "the file is scheduled to go". Categories still
+     * hard-delete and the delete is still not revertable; the queue simply gives
+     * a designed asset the same retention window everything else gets, and
+     * media:purge-trash re-checks references before it removes anything.
+     */
+    public function test_deleting_an_empty_category_queues_its_uploaded_image_for_removal(): void
     {
         Storage::fake(Media::disk());
         $path = UploadedFile::fake()->image('tile.png')->store(Category::IMAGE_DIR, Media::disk());
@@ -202,6 +211,12 @@ class CategoryAdminTest extends TestCase
         $this->actingAs($this->admin())->delete("/admin/categories/{$category->id}")->assertSessionHas('success');
 
         $this->assertModelMissing($category);
+        Storage::disk(Media::disk())->assertExists($path);
+        $this->assertDatabaseHas('media_trash', ['path' => $path]);
+
+        // And the queue really does remove it once the window has closed.
+        DB::table('media_trash')->update(['trashed_at' => now()->subYear()]);
+        MediaTrash::purge();
         Storage::disk(Media::disk())->assertMissing($path);
     }
 

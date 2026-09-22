@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\EventHeroBanner;
 use App\Models\Product;
 use App\Models\StoreEvent;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Media;
+use App\Support\MediaTrash;
 use App\Support\ProductCodes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -117,18 +119,25 @@ class StoreEventController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ChangeLogService $changeLog)
     {
-        $event = StoreEvent::create($this->validated($request));
+        $event = DB::transaction(function () use ($request, $changeLog) {
+            $event = StoreEvent::create($this->validated($request));
+            $changeLog->logCreated($event, $event->name_ar);
+
+            return $event;
+        });
 
         return redirect()->route('admin.store-events.show', $event)
             ->with('success', __('messages.admin.store_event_saved'));
     }
 
-    public function update(Request $request, StoreEvent $storeEvent)
+    public function update(Request $request, StoreEvent $storeEvent, ChangeLogService $changeLog)
     {
         $oldEnd = $storeEvent->ends_at->copy();
+        $before = $storeEvent->attributesToArray();
         $storeEvent->update($this->validated($request));
+        $changeLog->logUpdated($storeEvent, $before, $storeEvent->name_ar);
 
         // Offers born for this event end WITH it. When its end moves, carry theirs
         // along — but only the ones still pinned to the old end, so an offer whose
@@ -145,47 +154,66 @@ class StoreEventController extends Controller
     }
 
     /** Quick pause/resume from the list — flips is_active without opening the editor. */
-    public function toggle(StoreEvent $storeEvent)
+    public function toggle(StoreEvent $storeEvent, ChangeLogService $changeLog)
     {
-        $storeEvent->update(['is_active' => ! $storeEvent->is_active]);
+        DB::transaction(function () use ($storeEvent, $changeLog) {
+            $before = $storeEvent->attributesToArray();
+            $storeEvent->update(['is_active' => ! $storeEvent->is_active]);
+            $changeLog->logUpdated($storeEvent, $before, $storeEvent->name_ar);
+        });
 
         return back()->with('success', __($storeEvent->is_active
             ? 'messages.admin.store_event_resumed'
             : 'messages.admin.store_event_paused'));
     }
 
-    public function destroy(StoreEvent $storeEvent)
+    public function destroy(StoreEvent $storeEvent, ChangeLogService $changeLog)
     {
-        // Uploaded artwork belongs to the event, so it goes with it — otherwise
-        // every deleted campaign leaves its banners orphaned in R2 with nothing
-        // left pointing at them. The rows cascade; the files do not.
-        foreach ($storeEvent->products as $product) {
-            Media::delete($product->pivot->banner_image);
-        }
-        foreach ($storeEvent->heroBanners as $banner) {
-            Media::delete($banner->image);
-            Media::delete($banner->image_mobile);
-        }
-
-        $storeEvent->delete();
+        /*
+         * 🔴 THE ARTWORK DELIBERATELY STAYS. This used to Media::delete() every
+         * banner and every offer's card before dropping the event, which made
+         * deleting a campaign the single most destructive click in the panel:
+         * a whole designed campaign's files, gone in one request, with nothing
+         * able to bring them back.
+         *
+         * The event soft-deletes now, so Undo restores it whole. Its banners and
+         * pivot rows are left in place (the FK would take them, and they are what
+         * a restore needs), and they are invisible meanwhile because both
+         * EventHeroBanner::scopeLive() and the event strip resolve through the
+         * event, whose soft-delete scope excludes it. MediaTrash collects the
+         * files when the window closes — see its files() for StoreEvent.
+         */
+        DB::transaction(function () use ($storeEvent, $changeLog) {
+            $changeLog->logDeleted($storeEvent, $storeEvent->name_ar);
+            $storeEvent->delete();
+        });
 
         return redirect()->route('admin.store-events.index')
             ->with('success', __('messages.admin.store_event_deleted'));
     }
 
     /** Add a product to the event, appended after whatever is already there. */
-    public function attachOffer(Request $request, StoreEvent $storeEvent)
+    public function attachOffer(Request $request, StoreEvent $storeEvent, ChangeLogService $changeLog)
     {
         $data = $request->validate([
             'product_id' => ['required', 'integer', Rule::exists('products', 'id')->whereNull('deleted_at')],
         ]);
 
-        // syncWithoutDetaching rather than attach: the unique index would throw on a
-        // double-submit, and adding a product already in the event is a no-op, not
-        // an error worth showing anyone.
-        $storeEvent->products()->syncWithoutDetaching([
-            $data['product_id'] => ['sort_order' => (int) $storeEvent->products()->max('event_product.sort_order') + 1],
-        ]);
+        // A double-submit is a no-op rather than a new log entry.
+        if ($storeEvent->products()->whereKey($data['product_id'])->exists()) {
+            return back()->with('success', __('messages.admin.store_event_offer_added'));
+        }
+
+        DB::transaction(function () use ($storeEvent, $data, $changeLog) {
+            // syncWithoutDetaching rather than attach: the unique index would throw on a
+            // double-submit, and adding a product already in the event is a no-op, not
+            // an error worth showing anyone.
+            $storeEvent->products()->syncWithoutDetaching([
+                $data['product_id'] => ['sort_order' => (int) $storeEvent->products()->max('event_product.sort_order') + 1],
+            ]);
+
+            $this->logOffer($changeLog, $storeEvent, Product::find($data['product_id']), ActivityLog::ACTION_CREATED);
+        });
 
         return back()->with('success', __('messages.admin.store_event_offer_added'));
     }
@@ -249,7 +277,7 @@ class StoreEventController extends Controller
     }
 
     /** Badge text for one offer. The artwork has its own endpoint (multipart). */
-    public function updateOffer(Request $request, StoreEvent $storeEvent, Product $product)
+    public function updateOffer(Request $request, StoreEvent $storeEvent, Product $product, ChangeLogService $changeLog)
     {
         $data = $request->validate([
             'badge_ar' => ['nullable', 'string', 'max:60'],
@@ -257,17 +285,37 @@ class StoreEventController extends Controller
         ]);
 
         $this->assertAttached($storeEvent, $product);
-        $storeEvent->products()->updateExistingPivot($product->id, $data);
+
+        DB::transaction(function () use ($storeEvent, $product, $data, $changeLog) {
+            $before = $this->pivotState($storeEvent, $product);
+            $storeEvent->products()->updateExistingPivot($product->id, $data);
+            $storeEvent->unsetRelation('products');
+
+            $this->logOffer($changeLog, $storeEvent, $product, ActivityLog::ACTION_UPDATED, $before);
+        });
 
         return back()->with('success', __('messages.admin.store_event_offer_saved'));
     }
 
-    public function detachOffer(StoreEvent $storeEvent, Product $product)
+    public function detachOffer(StoreEvent $storeEvent, Product $product, ChangeLogService $changeLog)
     {
         $this->assertAttached($storeEvent, $product);
 
-        Media::delete($storeEvent->products()->find($product->id)?->pivot->banner_image);
-        $storeEvent->products()->detach($product->id);
+        DB::transaction(function () use ($storeEvent, $product, $changeLog) {
+            $before = $this->pivotState($storeEvent, $product);
+
+            /*
+             * 🔴 The artwork is QUEUED, not deleted. A pivot row cannot be
+             * soft-deleted, so there is no trashed record holding this path —
+             * MediaTrash is the only thing standing between a mis-click and a
+             * designer's file. It survives the retention window, and re-attaching
+             * the offer with the same artwork inside it keeps the file for good.
+             */
+            MediaTrash::schedule($before['banner_image'] ?? null, 'event_product.banner_image');
+            $storeEvent->products()->detach($product->id);
+
+            $this->logOffer($changeLog, $storeEvent, $product, ActivityLog::ACTION_DELETED, $before);
+        });
 
         return back()->with('success', __('messages.admin.store_event_offer_removed'));
     }
@@ -279,30 +327,45 @@ class StoreEventController extends Controller
      * reason product images have one: a PUT/PATCH carrying multipart is not parsed
      * by PHP, so the file would silently arrive empty.
      */
-    public function uploadOfferBanner(Request $request, StoreEvent $storeEvent, Product $product)
+    public function uploadOfferBanner(Request $request, StoreEvent $storeEvent, Product $product, ChangeLogService $changeLog)
     {
         $request->validate(['banner' => $this->imageRules(required: true, maxKb: 4096)]);
 
         $this->assertAttached($storeEvent, $product);
 
-        $existing = $storeEvent->products()->find($product->id)?->pivot->banner_image;
         $path = Media::storeImage($request->file('banner'), "events/{$storeEvent->id}");
-        $storeEvent->products()->updateExistingPivot($product->id, ['banner_image' => $path]);
 
-        // Only after the replacement is safely stored — deleting first would lose
-        // the old artwork if the upload then failed.
-        Media::delete($existing);
+        DB::transaction(function () use ($storeEvent, $product, $path, $changeLog) {
+            $before = $this->pivotState($storeEvent, $product);
+            $storeEvent->products()->updateExistingPivot($product->id, ['banner_image' => $path]);
+            $storeEvent->unsetRelation('products');
+
+            // Queued, never deleted: the log entry for this replacement names the
+            // old path, so the file has to outlive the edit for an undo to mean
+            // anything. Stored first either way — deleting first would lose the
+            // old artwork if the upload then failed.
+            MediaTrash::schedule($before['banner_image'] ?? null, 'event_product.banner_image');
+
+            $this->logOffer($changeLog, $storeEvent, $product, ActivityLog::ACTION_UPDATED, $before);
+        });
 
         return back()->with('success', __('messages.admin.store_event_offer_saved'));
     }
 
     /** Drop the artwork; the card falls back to the product's own photo. */
-    public function deleteOfferBanner(StoreEvent $storeEvent, Product $product)
+    public function deleteOfferBanner(StoreEvent $storeEvent, Product $product, ChangeLogService $changeLog)
     {
         $this->assertAttached($storeEvent, $product);
 
-        Media::delete($storeEvent->products()->find($product->id)?->pivot->banner_image);
-        $storeEvent->products()->updateExistingPivot($product->id, ['banner_image' => null]);
+        DB::transaction(function () use ($storeEvent, $product, $changeLog) {
+            $before = $this->pivotState($storeEvent, $product);
+
+            MediaTrash::schedule($before['banner_image'] ?? null, 'event_product.banner_image');
+            $storeEvent->products()->updateExistingPivot($product->id, ['banner_image' => null]);
+            $storeEvent->unsetRelation('products');
+
+            $this->logOffer($changeLog, $storeEvent, $product, ActivityLog::ACTION_UPDATED, $before);
+        });
 
         return back()->with('success', __('messages.admin.store_event_offer_saved'));
     }
@@ -336,7 +399,7 @@ class StoreEventController extends Controller
      * shows the desktop art on phones too — see hero.tsx for why that choice is
      * made for the whole set rather than per banner.
      */
-    public function storeBanner(Request $request, StoreEvent $storeEvent)
+    public function storeBanner(Request $request, StoreEvent $storeEvent, ChangeLogService $changeLog)
     {
         $data = $request->validate([
             'image' => $this->imageRules(required: true),
@@ -347,7 +410,7 @@ class StoreEventController extends Controller
             ...$this->windowRules($request),
         ]);
 
-        $storeEvent->heroBanners()->create([
+        $banner = $storeEvent->heroBanners()->create([
             'image' => Media::storeImage($request->file('image'), "events/{$storeEvent->id}/hero"),
             'image_mobile' => $request->hasFile('image_mobile')
                 ? Media::storeImage($request->file('image_mobile'), "events/{$storeEvent->id}/hero")
@@ -360,11 +423,13 @@ class StoreEventController extends Controller
             'sort_order' => (int) $storeEvent->heroBanners()->max('sort_order') + 1,
         ]);
 
+        $changeLog->logCreated($banner, $this->bannerLabel($storeEvent, $banner));
+
         return back()->with('success', __('messages.admin.store_event_banner_added'));
     }
 
     /** Link, alt text, own window and on/off. Every field optional so the toggle can send just one. */
-    public function updateBanner(Request $request, StoreEvent $storeEvent, EventHeroBanner $banner)
+    public function updateBanner(Request $request, StoreEvent $storeEvent, EventHeroBanner $banner, ChangeLogService $changeLog)
     {
         $this->assertBanner($storeEvent, $banner);
 
@@ -376,18 +441,25 @@ class StoreEventController extends Controller
             ...$this->windowRules($request, sometimes: true),
         ]);
 
-        $banner->update($data);
+        DB::transaction(function () use ($storeEvent, $banner, $data, $changeLog) {
+            $before = $banner->attributesToArray();
+            $banner->update($data);
+            $changeLog->logUpdated($banner, $before, $this->bannerLabel($storeEvent, $banner));
+        });
 
         return back()->with('success', __('messages.admin.store_event_banner_saved'));
     }
 
-    public function destroyBanner(StoreEvent $storeEvent, EventHeroBanner $banner)
+    public function destroyBanner(StoreEvent $storeEvent, EventHeroBanner $banner, ChangeLogService $changeLog)
     {
         $this->assertBanner($storeEvent, $banner);
 
-        Media::delete($banner->image);
-        Media::delete($banner->image_mobile);
-        $banner->delete();
+        // 🔴 The artwork stays; the banner soft-deletes. See destroy() above —
+        // a designed banner deleted by mistake used to be unrecoverable.
+        DB::transaction(function () use ($storeEvent, $banner, $changeLog) {
+            $changeLog->logDeleted($banner, $this->bannerLabel($storeEvent, $banner));
+            $banner->delete();
+        });
 
         return back()->with('success', __('messages.admin.store_event_banner_removed'));
     }
@@ -446,6 +518,68 @@ class StoreEventController extends Controller
     private function assertBanner(StoreEvent $storeEvent, EventHeroBanner $banner): void
     {
         abort_unless($banner->store_event_id === $storeEvent->id, 404);
+    }
+
+    /**
+     * The campaign fields of one offer, as the change log stores them.
+     *
+     * ⚠️ Reads through a FRESH relation query rather than `$storeEvent->products`,
+     * because these methods write the pivot and then log it — a cached relation
+     * would hand back the values from before the write.
+     *
+     * @return array<string, mixed>
+     */
+    private function pivotState(StoreEvent $storeEvent, Product $product): array
+    {
+        $pivot = $storeEvent->products()->whereKey($product->id)->first()?->pivot;
+
+        return [
+            'badge_ar' => $pivot?->badge_ar,
+            'badge_en' => $pivot?->badge_en,
+            'banner_image' => $pivot?->banner_image,
+            'sort_order' => $pivot?->sort_order,
+        ];
+    }
+
+    /**
+     * Record an offer change against the event.
+     *
+     * 🔑 Audit-only, and it has to be: the `event_product` pivot has no model, so
+     * there is nothing for the revert machinery to write `old_data` back onto.
+     * Filing it under StoreEvent::class instead would be worse than not logging
+     * it — the event IS revertable, so the panel would offer an Undo that fills
+     * "badge_ar" onto the event, silently drops it, and reports success. Hence
+     * the SUBJECT_EVENT_OFFER sentinel, which REVERTABLE has never heard of.
+     *
+     * @param  array<string, mixed>  $before
+     */
+    private function logOffer(
+        ChangeLogService $changeLog,
+        StoreEvent $storeEvent,
+        ?Product $product,
+        string $action,
+        array $before = [],
+    ): void {
+        if ($product === null) {
+            return;
+        }
+
+        $after = $action === ActivityLog::ACTION_DELETED ? [] : $this->pivotState($storeEvent, $product);
+
+        $changeLog->logAudit(
+            ActivityLog::SUBJECT_EVENT_OFFER,
+            $storeEvent->id,
+            $action,
+            $before,
+            $after,
+            $storeEvent->name_ar.' — '.$product->name_ar,
+        );
+    }
+
+    /** What the change log calls a banner: its alt text, else its position. */
+    private function bannerLabel(StoreEvent $storeEvent, EventHeroBanner $banner): string
+    {
+        return $storeEvent->name_ar.' — '.($banner->alt_ar ?: $banner->alt_en ?: 'banner #'.$banner->getKey());
     }
 
     /** A banner may only link to an offer of its OWN event. */

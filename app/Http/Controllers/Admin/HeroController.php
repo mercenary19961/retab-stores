@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\HeroSlide;
 use App\Models\Setting;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Support\HeroBanners;
 use App\Support\Media;
+use App\Support\MediaTrash;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -128,7 +131,7 @@ class HeroController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ChangeLogService $changeLog): RedirectResponse
     {
         $data = $request->validate($this->rules(creating: true));
 
@@ -140,14 +143,22 @@ class HeroController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        $slide->save();
+        DB::transaction(function () use ($slide, $changeLog) {
+            $slide->save();
+            $changeLog->logCreated($slide, $this->label($slide));
+        });
 
         return back()->with('success', __('messages.admin.hero_slide_saved'));
     }
 
-    public function update(Request $request, HeroSlide $slide): RedirectResponse
+    public function update(Request $request, HeroSlide $slide, ChangeLogService $changeLog): RedirectResponse
     {
         $data = $request->validate($this->rules(creating: false));
+
+        // ⚠️ Captured BEFORE applyUploads, which writes the new paths onto the
+        // model — so the entry records the artwork that was replaced, not the
+        // artwork replacing it.
+        $before = $slide->attributesToArray();
 
         $slide->fill($this->attributes($data));
 
@@ -157,7 +168,10 @@ class HeroController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        $slide->save();
+        DB::transaction(function () use ($slide, $before, $changeLog) {
+            $slide->save();
+            $changeLog->logUpdated($slide, $before, $this->label($slide));
+        });
 
         return back()->with('success', __('messages.admin.hero_slide_saved'));
     }
@@ -166,23 +180,32 @@ class HeroController extends Controller
      * Flip whether the slide is shown. No confirm step: it is one click to undo,
      * matching every other StatusToggle in the panel.
      */
-    public function toggle(HeroSlide $slide): RedirectResponse
+    public function toggle(HeroSlide $slide, ChangeLogService $changeLog): RedirectResponse
     {
-        $slide->update(['is_active' => ! $slide->is_active]);
+        DB::transaction(function () use ($slide, $changeLog) {
+            $before = $slide->attributesToArray();
+            $slide->update(['is_active' => ! $slide->is_active]);
+            $changeLog->logUpdated($slide, $before, $this->label($slide));
+        });
 
         return back()->with('success', __('messages.admin.hero_slide_saved'));
     }
 
-    public function destroy(HeroSlide $slide): RedirectResponse
+    public function destroy(HeroSlide $slide, ChangeLogService $changeLog): RedirectResponse
     {
-        // 🔑 The files go with the row. Nothing else references them (unlike a
-        // category image, which a change-log revert may still need), so leaving
-        // them would be orphaned bytes in R2 that nothing can ever reach.
-        foreach ([$slide->image, $slide->image_mobile, $slide->video, $slide->video_poster] as $path) {
-            Media::delete($path);
-        }
-
-        $slide->delete();
+        /*
+         * 🔴 THE FILES DELIBERATELY STAY. This used to Media::delete() the image,
+         * phone art, video and poster before dropping the row, which made the
+         * delete unrecoverable no matter what was written to the change log — a
+         * revert needs the bytes, and the bytes were gone from R2 within the
+         * second. The slide is soft-deleted instead, so Undo can put it back
+         * whole, and media:purge-trash removes the artwork once the retention
+         * window has closed. See App\Support\MediaTrash.
+         */
+        DB::transaction(function () use ($slide, $changeLog) {
+            $changeLog->logDeleted($slide, $this->label($slide));
+            $slide->delete();
+        });
 
         return back()->with('success', __('messages.admin.hero_slide_deleted'));
     }
@@ -194,9 +217,10 @@ class HeroController extends Controller
      * renumbering from zero would rewrite rows the client did not touch, and the
      * order here is what the homepage rotates through.
      */
-    public function reorder(Request $request, HeroSlide $slide): RedirectResponse
+    public function reorder(Request $request, HeroSlide $slide, ChangeLogService $changeLog): RedirectResponse
     {
         $direction = $request->validate(['direction' => ['required', Rule::in(['up', 'down'])]])['direction'];
+        $before = $slide->attributesToArray();
 
         $neighbour = HeroSlide::query()
             ->where('id', '!=', $slide->id)
@@ -222,18 +246,28 @@ class HeroController extends Controller
          * Push the OTHER row instead, which always separates them and never
          * needs a negative value.
          */
-        if ($mine === $theirs) {
-            if ($direction === 'up') {
-                $neighbour->update(['sort_order' => $mine + 1]);
+        /*
+         * ⚠️ Only the MOVED slide is logged, though a swap writes two rows. Two
+         * entries per click would bury the edits that matter in reorder noise,
+         * and reverting one half of a swap is incoherent anyway — restoring this
+         * slide's position is what "undo the move" means to the person who did
+         * it. Ties are the ordinary state here (see above), so landing back on
+         * one is harmless.
+         */
+        DB::transaction(function () use ($slide, $neighbour, $direction, $mine, $theirs, $before, $changeLog) {
+            if ($mine === $theirs) {
+                if ($direction === 'up') {
+                    $neighbour->update(['sort_order' => $mine + 1]);
+                } else {
+                    $slide->update(['sort_order' => $mine + 1]);
+                }
             } else {
-                $slide->update(['sort_order' => $mine + 1]);
+                $slide->update(['sort_order' => $theirs]);
+                $neighbour->update(['sort_order' => $mine]);
             }
 
-            return back();
-        }
-
-        $slide->update(['sort_order' => $theirs]);
-        $neighbour->update(['sort_order' => $mine]);
+            $changeLog->logUpdated($slide, $before, $this->label($slide));
+        });
 
         return back();
     }
@@ -275,11 +309,24 @@ class HeroController extends Controller
      * The client asked to curate this rather than have a campaign silently take
      * the homepage over, so it is stored rather than hardcoded. See HeroBanners.
      */
-    public function updateMode(Request $request): RedirectResponse
+    public function updateMode(Request $request, ChangeLogService $changeLog): RedirectResponse
     {
         $mode = $request->validate(['mode' => ['required', Rule::in(HeroBanners::MODES)]])['mode'];
+        $key = HeroBanners::MODE_KEY;
+        $current = (string) Setting::get($key, HeroBanners::MODES[0]);
 
-        Setting::set(HeroBanners::MODE_KEY, $mode);
+        // 🔑 Logged like any other setting. This one decides whether a campaign
+        // takes the homepage over, so "why did our slides stop showing?" has to be
+        // answerable — and it was one of three places writing Setting::set()
+        // outside SettingController, all of which bypassed the change log.
+        if ($current === $mode) {
+            return back()->with('success', __('messages.admin.hero_mode_saved'));
+        }
+
+        DB::transaction(function () use ($key, $current, $mode, $changeLog) {
+            Setting::set($key, $mode);
+            $changeLog->logSettingsUpdated([$key => $current], [$key => $mode]);
+        });
 
         return back()->with('success', __('messages.admin.hero_mode_saved'));
     }
@@ -323,12 +370,20 @@ class HeroController extends Controller
     {
         $images = ['image', 'image_mobile', 'video_poster'];
 
+        /*
+         * 🔴 The replaced file is QUEUED, not deleted. Deleting it here made the
+         * change-log entry for this very edit a lie: reverting it writes the old
+         * path back into the row, and the file it names would already be gone —
+         * a slide pointing at a 404, which renders nothing at all. MediaTrash
+         * removes it after the retention window, and only once nothing points at
+         * it any more, so a revert inside the window silently keeps it.
+         */
         foreach ($images as $field) {
             $file = $request->file($field);
             if ($file instanceof UploadedFile) {
                 $old = $slide->{$field};
                 $slide->{$field} = Media::storeImage($file, self::DIR);
-                Media::delete($old);
+                MediaTrash::schedule($old, "hero_slides.{$field}");
             }
         }
 
@@ -336,8 +391,19 @@ class HeroController extends Controller
         if ($video instanceof UploadedFile) {
             $old = $slide->video;
             $slide->video = Media::storeVideo($video, self::DIR);
-            Media::delete($old);
+            MediaTrash::schedule($old, 'hero_slides.video');
         }
+    }
+
+    /**
+     * What the change log calls this slide. A hero slide has no name, so the alt
+     * text is the closest thing to one the client actually typed; failing that,
+     * its kind and id, which at least distinguishes two rows in a list.
+     */
+    private function label(HeroSlide $slide): string
+    {
+        return $slide->alt_ar
+            ?: ($slide->alt_en ?: ucfirst($slide->kind).' slide #'.$slide->getKey());
     }
 
     private function canManage(): bool

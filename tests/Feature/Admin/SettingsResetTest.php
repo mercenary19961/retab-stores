@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\ActivityLog;
 use App\Models\ClientReview;
 use App\Models\ContentPage;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
@@ -38,8 +40,45 @@ class SettingsResetTest extends TestCase
         $this->assertDatabaseHas('content_pages', ['slug' => 'contact']);
 
         // Reviews replaced by exactly the handover pool (curated extra removed).
-        $this->assertDatabaseMissing('client_reviews', ['author_name' => 'Curated Extra']);
+        $this->assertNull(ClientReview::where('author_name', 'Curated Extra')->first());
         $this->assertSame(8, ClientReview::count());
+
+        // ⚠️ Soft-deleted, not destroyed. This button used to wipe every curated
+        // testimonial outright with nothing recorded — the most destructive click
+        // in the panel and the least accountable.
+        $this->assertNotNull(ClientReview::withTrashed()->where('author_name', 'Curated Extra')->first());
+    }
+
+    /**
+     * 🔴 Every part of the reset is recorded: the settings as one entry, and each
+     * page and each discarded review as their own, so "where did our About page
+     * copy go?" is answerable and the pieces can be put back individually.
+     */
+    public function test_the_reset_is_recorded_in_the_change_log(): void
+    {
+        Setting::set(CheckoutService::SHIPPING_FEE_KEY, '99');
+        $curated = ClientReview::create([
+            'author_name' => 'Curated Extra', 'body' => 'nice', 'rating' => 5,
+            'source' => 'manual', 'is_active' => true, 'sort_order' => 0,
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->post('/admin/settings/reset')
+            ->assertRedirect();
+
+        // The settings change, as one entry naming the key that moved.
+        $settings = ActivityLog::where('subject_type', ActivityLog::SUBJECT_SETTINGS)
+            ->latest('id')->firstOrFail();
+        $this->assertSame('99', (string) ($settings->old_data[CheckoutService::SHIPPING_FEE_KEY] ?? null));
+
+        // The discarded review, revertable on its own.
+        $log = ActivityLog::where('subject_type', ClientReview::class)
+            ->where('subject_id', $curated->id)
+            ->where('action', ActivityLog::ACTION_DELETED)
+            ->firstOrFail();
+
+        $this->assertTrue(app(ChangeLogService::class)->revert($log)->ok);
+        $this->assertNotNull(ClientReview::where('author_name', 'Curated Extra')->first());
     }
 
     public function test_editor_cannot_reset(): void

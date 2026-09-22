@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClientReview;
+use App\Services\ChangeLog\ChangeLogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -40,9 +42,12 @@ class ClientReviewController extends Controller
         return Inertia::render('admin/client-reviews/form', ['review' => null]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ChangeLogService $changeLog)
     {
-        ClientReview::create($this->validated($request) + ['source' => 'manual']);
+        DB::transaction(function () use ($request, $changeLog) {
+            $review = ClientReview::create($this->validated($request) + ['source' => 'manual']);
+            $changeLog->logCreated($review, $review->author_name);
+        });
 
         return redirect()->route('admin.client-reviews.index')->with('success', __('messages.admin.review_saved'));
     }
@@ -54,16 +59,26 @@ class ClientReviewController extends Controller
         ]);
     }
 
-    public function update(Request $request, ClientReview $clientReview)
+    public function update(Request $request, ClientReview $clientReview, ChangeLogService $changeLog)
     {
-        $clientReview->update($this->validated($request));
+        DB::transaction(function () use ($request, $clientReview, $changeLog) {
+            $before = $clientReview->attributesToArray();
+            $clientReview->update($this->validated($request));
+            $changeLog->logUpdated($clientReview, $before, $clientReview->author_name);
+        });
 
         return redirect()->route('admin.client-reviews.index')->with('success', __('messages.admin.review_saved'));
     }
 
-    public function destroy(ClientReview $clientReview)
+    public function destroy(ClientReview $clientReview, ChangeLogService $changeLog)
     {
-        $clientReview->delete();
+        // Soft-deletes since 2026_09_22_200000. These are other people's words,
+        // transcribed from Google — losing one to a mis-click meant finding the
+        // original review again and retyping it.
+        DB::transaction(function () use ($clientReview, $changeLog) {
+            $changeLog->logDeleted($clientReview, $clientReview->author_name);
+            $clientReview->delete();
+        });
 
         return redirect()->route('admin.client-reviews.index')->with('success', __('messages.admin.review_deleted'));
     }

@@ -7,12 +7,14 @@ use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Services\CheckoutService;
 use App\Services\Discount\DiscountService;
 use App\Services\ReviewRewardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -73,20 +75,26 @@ class DiscountController extends Controller
     }
 
     /** Toggle the one-time "write a review, get a discount" reward + its percentage. */
-    public function reviewReward(Request $request)
+    public function reviewReward(Request $request, ChangeLogService $changeLog)
     {
         $data = $request->validate([
             'enabled' => ['required', 'boolean'],
             'percent' => ['required', 'integer', 'in:10,20'],
         ]);
 
-        Setting::set('review_reward_enabled', $data['enabled'] ? '1' : '0');
-        Setting::set('review_reward_percent', (string) $data['percent']);
+        // 🔑 Through the change log, like every other setting. This was one of
+        // three places writing Setting::set() outside SettingController, all of
+        // which slipped past the audit trail — and this one hands out real
+        // discount coupons, so "who turned this on at 20%?" has to be answerable.
+        $this->writeSettings($changeLog, [
+            'review_reward_enabled' => $data['enabled'] ? '1' : '0',
+            'review_reward_percent' => (string) $data['percent'],
+        ]);
 
         return back()->with('success', __('messages.admin.review_reward_saved'));
     }
 
-    public function apply(Request $request)
+    public function apply(Request $request, ChangeLogService $changeLog)
     {
         $isPercentage = $request->input('mode') === 'percentage';
 
@@ -115,14 +123,14 @@ class DiscountController extends Controller
 
         // Bundle free shipping over the same window when the discount opts in.
         if ($request->boolean('free_shipping')) {
-            $this->saveFreeShipping(true, $startsAt, $endsAt);
+            $this->saveFreeShipping($changeLog, true, $startsAt, $endsAt);
         }
 
         return back()->with('success', __('messages.admin.discount_applied', ['count' => $log->changes['summary']['applied'] ?? 0]));
     }
 
     /** Save the store-wide automatic free-shipping promotion (+ optional window). */
-    public function freeShipping(Request $request)
+    public function freeShipping(Request $request, ChangeLogService $changeLog)
     {
         $data = $request->validate([
             'active' => ['required', 'boolean'],
@@ -131,6 +139,7 @@ class DiscountController extends Controller
         ]);
 
         $this->saveFreeShipping(
+            $changeLog,
             $data['active'],
             filled($data['starts_at'] ?? null) ? Carbon::parse($data['starts_at']) : null,
             filled($data['ends_at'] ?? null) ? Carbon::parse($data['ends_at']) : null,
@@ -139,12 +148,49 @@ class DiscountController extends Controller
         return back()->with('success', __('messages.admin.free_shipping_saved'));
     }
 
-    /** Write the automatic free-shipping promotion state (shared by apply + freeShipping). */
-    private function saveFreeShipping(bool $active, ?Carbon $startsAt, ?Carbon $endsAt): void
+    /**
+     * Write the automatic free-shipping promotion state (shared by apply + freeShipping).
+     *
+     * 🔴 Logged, because this setting silently overrides the configured shipping
+     * fee for every order while its window is open — the client can set the fee
+     * to 30, watch every customer pay nothing, and reasonably conclude the fee
+     * control is broken. The change log is where that gets explained.
+     */
+    private function saveFreeShipping(ChangeLogService $changeLog, bool $active, ?Carbon $startsAt, ?Carbon $endsAt): void
     {
-        Setting::set(CheckoutService::FREE_SHIPPING_ACTIVE_KEY, $active ? '1' : '0');
-        Setting::set(CheckoutService::FREE_SHIPPING_STARTS_KEY, $startsAt?->toDateTimeString() ?? '');
-        Setting::set(CheckoutService::FREE_SHIPPING_ENDS_KEY, $endsAt?->toDateTimeString() ?? '');
+        $this->writeSettings($changeLog, [
+            CheckoutService::FREE_SHIPPING_ACTIVE_KEY => $active ? '1' : '0',
+            CheckoutService::FREE_SHIPPING_STARTS_KEY => $startsAt?->toDateTimeString() ?? '',
+            CheckoutService::FREE_SHIPPING_ENDS_KEY => $endsAt?->toDateTimeString() ?? '',
+        ]);
+    }
+
+    /**
+     * Write settings and record the change, skipping the keys that did not move.
+     *
+     * Mirrors SettingController::update — one entry per save, changed keys only,
+     * so a no-op save leaves no noise in the log and nothing to revert.
+     *
+     * @param  array<string, string>  $values
+     */
+    private function writeSettings(ChangeLogService $changeLog, array $values): void
+    {
+        DB::transaction(function () use ($changeLog, $values) {
+            $old = [];
+            $new = [];
+
+            foreach ($values as $key => $value) {
+                $current = (string) Setting::get($key, '');
+                if ($current === $value) {
+                    continue;
+                }
+                $old[$key] = $current;
+                $new[$key] = $value;
+                Setting::set($key, $value);
+            }
+
+            $changeLog->logSettingsUpdated($old, $new);
+        });
     }
 
     public function previewImport(Request $request)

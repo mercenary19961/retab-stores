@@ -486,6 +486,7 @@ export default function HeroIndex({
                                             {t('admin.common.edit')}
                                         </Button>
                                         <ConfirmDeleteButton
+                                            reversible
                                             itemName={s.alt_ar || t(`admin.hero.kinds.${s.kind}`)}
                                             onConfirm={() => router.delete(`/admin/hero/${s.id}`, { preserveScroll: true })}
                                         />

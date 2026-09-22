@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ShippingCarrier;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Services\Shipping\CarrierDirectory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -79,7 +81,7 @@ class ShippingController extends Controller
      * No confirm step: it is one click to undo, matching every other StatusToggle
      * in the panel. The guard that does matter is the last-one check below.
      */
-    public function toggle(ShippingCarrier $carrier, CarrierDirectory $directory): RedirectResponse
+    public function toggle(ShippingCarrier $carrier, CarrierDirectory $directory, ChangeLogService $changeLog): RedirectResponse
     {
         // 🔴 Refuse to switch off the last available carrier. Every other carrier
         // being off means resolveOption() throws "no delivery options" on the next
@@ -91,16 +93,28 @@ class ShippingController extends Controller
             return back()->with('error', __('messages.admin.carrier_last_enabled'));
         }
 
-        $carrier->update(['is_enabled' => ! $carrier->is_enabled]);
+        // Recorded: this switch decides whether a courier may carry an order at
+        // all, so "who turned SMSA off?" has to be answerable.
+        DB::transaction(function () use ($carrier, $changeLog) {
+            $before = $carrier->attributesToArray();
+            $carrier->update(['is_enabled' => ! $carrier->is_enabled]);
+            $changeLog->logUpdated($carrier, $before, $carrier->name);
+        });
 
         return back()->with('success', __($carrier->is_enabled
             ? 'messages.admin.carrier_enabled'
             : 'messages.admin.carrier_disabled', ['name' => $carrier->name]));
     }
 
-    public function update(Request $request, ShippingCarrier $carrier): RedirectResponse
+    public function update(Request $request, ShippingCarrier $carrier, ChangeLogService $changeLog): RedirectResponse
     {
-        $carrier->update($request->validate(self::FIELDS));
+        $data = $request->validate(self::FIELDS);
+
+        DB::transaction(function () use ($carrier, $data, $changeLog) {
+            $before = $carrier->attributesToArray();
+            $carrier->update($data);
+            $changeLog->logUpdated($carrier, $before, $carrier->name);
+        });
 
         return back()->with('success', __('messages.admin.carrier_saved', ['name' => $carrier->name]));
     }

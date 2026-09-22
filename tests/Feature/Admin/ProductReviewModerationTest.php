@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\ReviewHelpfulVote;
 use App\Models\User;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -107,7 +109,16 @@ class ProductReviewModerationTest extends TestCase
         $this->assertTrue($review->fresh()->is_approved);
     }
 
-    public function test_deleting_a_review_also_clears_its_helpful_votes(): void
+    /**
+     * 🔴 The inverse of what this used to assert, and deliberately so.
+     *
+     * Votes were cleared to avoid orphans pointing at a missing review id. The
+     * review soft-deletes now, so its id is still there and nothing is orphaned —
+     * while clearing them would mean a review restored by mistake came back
+     * stripped of the helpfulness other customers had voted on, which no undo
+     * can put back. The votes' own cascade still fires on the force-delete.
+     */
+    public function test_deleting_a_review_hides_it_but_keeps_its_helpful_votes(): void
     {
         $review = $this->review($this->product());
         ReviewHelpfulVote::create(['review_id' => $review->id, 'user_id' => $this->editor()->id]);
@@ -116,9 +127,24 @@ class ProductReviewModerationTest extends TestCase
             ->delete("/admin/product-reviews/{$review->id}")
             ->assertRedirect();
 
-        $this->assertDatabaseMissing('reviews', ['id' => $review->id]);
-        // Orphaned votes would point at a review id that no longer exists.
-        $this->assertDatabaseMissing('review_helpful_votes', ['review_id' => $review->id]);
+        $this->assertNull(Review::find($review->id), 'gone from the panel and the product page');
+        $this->assertNotNull(Review::withTrashed()->find($review->id), 'but restorable');
+        $this->assertDatabaseHas('review_helpful_votes', ['review_id' => $review->id]);
+    }
+
+    public function test_deleting_a_review_is_recorded_and_can_be_undone(): void
+    {
+        $review = $this->review($this->product());
+
+        $this->actingAs($this->admin())->delete("/admin/product-reviews/{$review->id}")->assertRedirect();
+
+        $log = ActivityLog::where('subject_type', Review::class)
+            ->where('subject_id', $review->id)
+            ->where('action', ActivityLog::ACTION_DELETED)
+            ->firstOrFail();
+
+        $this->assertTrue(app(ChangeLogService::class)->revert($log)->ok);
+        $this->assertNotNull(Review::find($review->id));
     }
 
     public function test_the_status_filter_separates_published_from_hidden(): void

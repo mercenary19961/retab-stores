@@ -22,10 +22,18 @@ class ProductImageImporter
      */
     public function replaceForProduct(Product $product, array $files): int
     {
+        /*
+         * ⚠️ forceDelete + an immediate file delete, deliberately NOT the deferred
+         * path the admin panel uses. `catalog:import-images` is an operator
+         * replacing a product's photography wholesale, with a --dry-run to check
+         * it first — the wipe IS the request. Soft-deleting here would leave a
+         * trashed row per image for every re-run of a 163-image import, and each
+         * one would pin its file in R2 for the retention window.
+         */
         foreach ($product->images()->get() as $image) {
             Media::delete($image->path);
         }
-        $product->images()->delete();
+        $product->images()->forceDelete();
 
         $stored = 0;
         foreach ($files as $absolutePath) {

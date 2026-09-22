@@ -145,6 +145,7 @@ export default function AnnouncementsIndex({ announcements, tones }: { announcem
                                                 {t('admin.common.edit')}
                                             </Button>
                                             <ConfirmDeleteButton
+                                                reversible
                                                 itemName={a.message_ar}
                                                 onConfirm={() => router.delete(`/admin/announcements/${a.id}`, { preserveScroll: true })}
                                             />

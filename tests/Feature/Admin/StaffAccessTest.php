@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\ActivityLog;
 use App\Models\User;
 use App\Support\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -194,7 +195,61 @@ class StaffAccessTest extends TestCase
         $this->actingAs($admin)->put("/admin/users/{$leaver->id}/role", ['role' => 'editor'])->assertSessionHas('success');
         $this->actingAs($admin)->delete("/admin/users/{$leaver->id}")->assertSessionHas('success');
 
-        $this->assertDatabaseMissing('users', ['id' => $leaver->id]);
+        $this->assertNull(User::find($leaver->id), 'gone from the Staff page');
+        $this->assertNull(
+            User::where('email', $leaver->email)->first(),
+            'and cannot sign in — the soft-delete scope hides them from the credential lookup',
+        );
+    }
+
+    /**
+     * 🔴 The reason removal became a soft delete. `activity_logs.user_id` is
+     * ON DELETE SET NULL, so force-deleting a leaver anonymised every change they
+     * had ever made — months of history losing its author as a side effect of
+     * tidying up. Proven by reverting the trait: with forceDelete() the author
+     * comes back null.
+     */
+    public function test_removing_a_staff_member_keeps_their_name_on_their_past_changes(): void
+    {
+        $admin = $this->owner();
+        $leaver = User::factory()->create(['role' => 'editor']);
+
+        $log = ActivityLog::create([
+            'user_id' => $leaver->id,
+            'action' => ActivityLog::ACTION_UPDATED,
+            'subject_type' => ActivityLog::SUBJECT_SETTINGS,
+            'old_data' => ['shipping_fee' => '20'],
+            'new_data' => ['shipping_fee' => '25'],
+            'label' => 'Settings',
+        ]);
+
+        $this->actingAs($admin)->delete("/admin/users/{$leaver->id}")->assertSessionHas('success');
+
+        $log->refresh();
+        $this->assertSame($leaver->id, $log->user_id);
+        $this->assertSame($leaver->name, User::withTrashed()->find($log->user_id)->name);
+    }
+
+    /**
+     * ⚠️ A trashed row goes on occupying the unique index, so without the
+     * (email, deleted_at) index from 2026_09_22_200300 re-hiring anyone would
+     * pass validation and then 500 on a constraint naming nothing.
+     */
+    public function test_a_removed_staff_members_email_can_be_used_again(): void
+    {
+        $admin = $this->owner();
+        $leaver = User::factory()->create(['role' => 'editor', 'email' => 'returning@retab.com.sa']);
+
+        $this->actingAs($admin)->delete("/admin/users/{$leaver->id}")->assertSessionHas('success');
+
+        $this->actingAs($admin)->post('/admin/users', [
+            'name' => 'Returning Colleague',
+            'email' => 'returning@retab.com.sa',
+            'password' => 'Str0ng-Passw0rd!',
+            'role' => 'editor',
+        ])->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $this->assertSame(1, User::where('email', 'returning@retab.com.sa')->count());
     }
 
     public function test_admin_grants_and_revokes_editor_permissions(): void

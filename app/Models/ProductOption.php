@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * One sellable option of a product (a size such as 250g / 500g / 1kg, or a
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ProductOption extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'label_ar',
         'label_en',

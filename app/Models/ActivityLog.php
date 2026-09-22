@@ -30,6 +30,18 @@ class ActivityLog extends Model
     /** Settings entries have no model row — this sentinel fills subject_type. */
     public const SUBJECT_SETTINGS = 'settings';
 
+    /**
+     * A campaign offer: the `event_product` PIVOT, which has no model of its own.
+     *
+     * 🔑 A sentinel rather than StoreEvent::class on purpose. StoreEvent is fully
+     * revertable, so an entry filed under it would be offered an Undo that tried
+     * to write "offer"-shaped fields onto the event's own attributes and quietly
+     * did nothing. A string subject type is absent from REVERTABLE, which is what
+     * makes these entries audit-only. `subject_id` still carries the event id so
+     * the history groups where a reader expects it.
+     */
+    public const SUBJECT_EVENT_OFFER = 'store_event_offer';
+
     protected $fillable = [
         'user_id',
         'action',

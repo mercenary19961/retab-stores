@@ -482,6 +482,7 @@ function BannerRow({
                     {banner.is_active ? t('admin.storeEvents.banners.switchOff') : t('admin.storeEvents.banners.switchOn')}
                 </Button>
                 <ConfirmDeleteButton
+                    reversible
                     itemName={t('admin.storeEvents.banners.item', { n: index + 1 })}
                     onConfirm={() => router.delete(base, { preserveScroll: true })}
                     size="sm"

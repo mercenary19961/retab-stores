@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * A curated store-level testimonial (Google Maps review or manual). The homepage
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ClientReview extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'author_name',
         'body',

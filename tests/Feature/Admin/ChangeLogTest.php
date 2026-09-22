@@ -8,8 +8,10 @@ use App\Models\ContentPage;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Services\CheckoutService;
 use App\Services\Smacc\SmaccImportService;
+use App\Support\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -464,5 +466,88 @@ class ChangeLogTest extends TestCase
                 ->where('highlight', $firstLogId)
                 ->where('logs.current_page', 2)
                 ->where('logs.data', fn ($data) => collect($data)->pluck('id')->contains($firstLogId)));
+    }
+
+    /**
+     * 🔴 change_log.revert MUST NOT be a skeleton key.
+     *
+     * On its own it is one grant, and without a per-section check its holder
+     * could undo a hero slide, a coupon or a product option from this one page
+     * without holding hero.manage, coupons.edit or products.edit — reaching every
+     * section of the panel through the audit log. Proven to fail against a
+     * version without the gate.
+     */
+    public function test_reverting_needs_the_permission_for_that_section_too(): void
+    {
+        $admin = $this->staff();
+        $product = $this->product();
+
+        $this->actingAs($admin)->put("/admin/products/{$product->id}", $this->payload($product, ['name_ar' => 'اسم جديد']));
+        $log = $this->latestLog();
+
+        // An editor who may read and revert the log, but may not edit products.
+        $permissions = Permission::preset('view_only');
+        $permissions['change_log'] = ['view' => true, 'revert' => true];
+        $editor = User::factory()->create(['role' => 'editor']);
+        $editor->forceFill(['permissions' => $permissions])->save();
+
+        $this->actingAs($editor)->post("/admin/change-log/{$log->id}/revert")->assertForbidden();
+        $this->assertSame('اسم جديد', $product->fresh()->name_ar, 'the revert must not have run');
+
+        // The list does not offer them a button they cannot use.
+        $this->actingAs($editor)->get('/admin/change-log')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('logs.data', fn ($data) => collect($data)
+                    ->firstWhere('id', $log->id)['revertable'] === false));
+
+        // Granting the section's own permission is what unlocks it.
+        $permissions['products']['edit'] = true;
+        $editor->forceFill(['permissions' => $permissions])->save();
+
+        $this->actingAs($editor)->post("/admin/change-log/{$log->id}/revert")->assertRedirect();
+        $this->assertNotSame('اسم جديد', $product->fresh()->name_ar);
+    }
+
+    /**
+     * ⚠️ Undoing a CREATE deletes the record, so it asks for the section's DELETE
+     * permission rather than its edit one — an editor who may add products but
+     * not remove them must not be able to remove one through the log.
+     */
+    public function test_undoing_a_create_asks_for_the_delete_permission(): void
+    {
+        // ⚠️ The helper builds the product directly, so there is no "created"
+        // entry to undo — log one the way the controller would.
+        $product = $this->product();
+        app(ChangeLogService::class)->logCreated($product, $product->name_ar);
+        $log = $this->latestLog();
+
+        $permissions = Permission::preset('view_only');
+        $permissions['change_log'] = ['view' => true, 'revert' => true];
+        $permissions['products'] = ['view' => true, 'create' => true, 'edit' => true, 'delete' => false];
+        $editor = User::factory()->create(['role' => 'editor']);
+        $editor->forceFill(['permissions' => $permissions])->save();
+
+        $this->actingAs($editor)->post("/admin/change-log/{$log->id}/revert")->assertForbidden();
+        $this->assertNotNull(Product::find($product->id));
+    }
+
+    /**
+     * ⚠️ Authorization and data state are separate answers. An already-reverted
+     * entry is an explanation, not a 403 — conflating the two turned a
+     * double-click into a permission error, which is what the first version of
+     * the gate did.
+     */
+    public function test_an_entry_the_user_may_revert_but_cannot_still_explains_itself(): void
+    {
+        $admin = $this->staff();
+        $product = $this->product();
+        $this->actingAs($admin)->put("/admin/products/{$product->id}", $this->payload($product, ['name_ar' => 'اسم']));
+        $log = $this->latestLog();
+
+        $this->actingAs($admin)->post("/admin/change-log/{$log->id}/revert")->assertRedirect();
+        $this->actingAs($admin)->post("/admin/change-log/{$log->id}/revert")
+            ->assertRedirect()
+            ->assertSessionHas('error');
     }
 }

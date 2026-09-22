@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Review;
+use App\Services\ChangeLog\ChangeLogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 /**
@@ -93,9 +95,13 @@ class ProductReviewController extends Controller
      * Back-redirects so the row refreshes in place, matching every other
      * StatusToggle in the panel.
      */
-    public function toggleApproval(Review $review)
+    public function toggleApproval(Review $review, ChangeLogService $changeLog)
     {
-        $review->update(['is_approved' => ! $review->is_approved]);
+        DB::transaction(function () use ($review, $changeLog) {
+            $before = $review->attributesToArray();
+            $review->update(['is_approved' => ! $review->is_approved]);
+            $changeLog->logUpdated($review, $before, $this->label($review));
+        });
 
         return back()->with(
             'success',
@@ -103,14 +109,35 @@ class ProductReviewController extends Controller
         );
     }
 
-    public function destroy(Review $review)
+    public function destroy(Review $review, ChangeLogService $changeLog)
     {
-        // Votes are a separate table with their own rows; clear them so a deleted
-        // review cannot leave orphans behind pointing at a missing id.
-        $review->helpfulVotes()->delete();
-        $review->delete();
+        /*
+         * 🔑 The votes are LEFT ALONE now, which is the opposite of what this did
+         * before. They were cleared to avoid orphans pointing at a missing id —
+         * but the review soft-deletes since 2026_09_22_200000, so its id is still
+         * there and nothing is orphaned. Deleting them would instead mean a
+         * restored review came back stripped of the helpfulness other customers
+         * had voted on, which cannot be undone by anything. The cascade on
+         * review_helpful_votes.review_id still fires on the eventual force-delete.
+         */
+        DB::transaction(function () use ($review, $changeLog) {
+            $changeLog->logDeleted($review, $this->label($review));
+            $review->delete();
+        });
 
         return back()->with('success', __('messages.admin.review_deleted'));
+    }
+
+    /**
+     * What the change log calls a review. It is a customer's own words about a
+     * product, so naming both is what makes the entry legible weeks later.
+     */
+    private function label(Review $review): string
+    {
+        $product = $review->product?->name_ar ?? ('product #'.$review->product_id);
+        $who = $review->user?->name ?: 'a customer';
+
+        return $product.' — '.$who;
     }
 
     /**

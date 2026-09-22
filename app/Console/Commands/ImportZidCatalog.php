@@ -69,7 +69,9 @@ class ImportZidCatalog extends Command
         }
 
         Schema::disableForeignKeyConstraints();
-        ProductImage::query()->delete();
+        // forceDelete: this is `--fresh`, an explicit wipe, so the deferred
+        // trash the admin panel uses would only strand rows and pin files.
+        ProductImage::query()->forceDelete();
         Product::withTrashed()->forceDelete();
         Category::query()->delete();
         Schema::enableForeignKeyConstraints();

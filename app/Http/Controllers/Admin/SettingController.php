@@ -114,26 +114,65 @@ class SettingController extends Controller
      * pool. Deliberately leaves all business data (orders, customers, products,
      * inventory, returns, payments) untouched. Not reversible.
      */
-    public function reset(): RedirectResponse
+    /**
+     * Restore settings, legal pages and homepage testimonials to the values the
+     * site was handed over with.
+     *
+     * 🔴 THE MOST DESTRUCTIVE BUTTON IN THE PANEL, and until now the least
+     * recorded: it overwrote every setting, force-overwrote every content page
+     * and DELETED every curated client review, leaving nothing behind but a
+     * single Log::warning line nobody reads. Now every part of it is logged —
+     * the settings as one entry, each page and each review as their own — so the
+     * change log can answer "where did our About page copy go?" and the pieces
+     * can be put back individually.
+     *
+     * ⚠️ The reviews are soft-deleted (2026_09_22_200000), so "discard the
+     * curated ones" is recoverable rather than final.
+     */
+    public function reset(ChangeLogService $changeLog): RedirectResponse
     {
         abort_unless((bool) Auth::user()?->isAdmin(), 403);
 
-        DB::transaction(function () {
-            // 1) Store settings → handover values (overwrites edits).
+        DB::transaction(function () use ($changeLog) {
+            // 1) Store settings → handover values (overwrites edits). Logged as a
+            //    single entry carrying only the keys this actually changed, which
+            //    is the same shape an ordinary settings save writes.
+            $old = [];
+            $new = [];
             foreach (SettingsSeeder::defaults() as $key => $value) {
+                $current = Setting::get($key);
+                if ((string) $current === (string) $value) {
+                    continue;
+                }
+                $old[$key] = $current;
+                $new[$key] = $value;
                 Setting::set($key, $value);
             }
+            $changeLog->logSettingsUpdated($old, $new);
 
             // 2) Content pages → handover text (force overwrite; the seeder itself
             //    is intentionally non-destructive, so restore explicitly here).
             foreach (ContentPageSeeder::pages() as $page) {
-                ContentPage::updateOrCreate(['slug' => $page['slug']], [...$page, 'is_published' => true]);
+                $existing = ContentPage::where('slug', $page['slug'])->first();
+                $before = $existing?->attributesToArray();
+
+                $restored = ContentPage::updateOrCreate(['slug' => $page['slug']], [...$page, 'is_published' => true]);
+
+                // Edits are revertable, creates are audit-only — the same split
+                // ContentPageController already uses.
+                $before === null
+                    ? $changeLog->logCreated($restored, $restored->title_ar)
+                    : $changeLog->logUpdated($restored, $before, $restored->title_ar);
             }
 
             // 3) Homepage reviews → exactly the handover pool (discard curated ones).
-            ClientReview::query()->delete();
+            foreach (ClientReview::all() as $review) {
+                $changeLog->logDeleted($review, $review->author_name);
+                $review->delete();
+            }
             foreach (ClientReviewSeeder::reviews() as $i => $r) {
-                ClientReview::create($r + ['source' => 'manual', 'is_active' => true, 'sort_order' => $i]);
+                $restored = ClientReview::create($r + ['source' => 'manual', 'is_active' => true, 'sort_order' => $i]);
+                $changeLog->logCreated($restored, $restored->author_name);
             }
         });
 

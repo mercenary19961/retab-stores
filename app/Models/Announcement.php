@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * A message in the strip above the storefront.
@@ -17,6 +18,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Announcement extends Model
 {
+    use SoftDeletes;
+
     /** The looks an announcement can have, in the order the admin picker shows them. */
     public const TONES = ['info', 'warning', 'success'];
 

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Services\ChangeLog\ChangeLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -66,16 +68,23 @@ class AnnouncementController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ChangeLogService $changeLog): RedirectResponse
     {
-        Announcement::create($this->payload($request));
+        DB::transaction(function () use ($request, $changeLog) {
+            $announcement = Announcement::create($this->payload($request));
+            $changeLog->logCreated($announcement, $this->label($announcement));
+        });
 
         return back()->with('success', __('messages.admin.announcement_saved'));
     }
 
-    public function update(Request $request, Announcement $announcement): RedirectResponse
+    public function update(Request $request, Announcement $announcement, ChangeLogService $changeLog): RedirectResponse
     {
-        $announcement->update($this->payload($request));
+        DB::transaction(function () use ($request, $announcement, $changeLog) {
+            $before = $announcement->attributesToArray();
+            $announcement->update($this->payload($request));
+            $changeLog->logUpdated($announcement, $before, $this->label($announcement));
+        });
 
         return back()->with('success', __('messages.admin.announcement_saved'));
     }
@@ -87,18 +96,39 @@ class AnnouncementController extends Controller
      * no end date runs until somebody switches it off here. No confirm step —
      * it is trivially reversible, matching the panel's other status toggles.
      */
-    public function toggle(Announcement $announcement): RedirectResponse
+    public function toggle(Announcement $announcement, ChangeLogService $changeLog): RedirectResponse
     {
-        $announcement->update(['is_active' => ! $announcement->is_active]);
+        DB::transaction(function () use ($announcement, $changeLog) {
+            $before = $announcement->attributesToArray();
+            $announcement->update(['is_active' => ! $announcement->is_active]);
+            $changeLog->logUpdated($announcement, $before, $this->label($announcement));
+        });
 
         return back();
     }
 
-    public function destroy(Announcement $announcement): RedirectResponse
+    public function destroy(Announcement $announcement, ChangeLogService $changeLog): RedirectResponse
     {
-        $announcement->delete();
+        // Soft-deletes since 2026_09_22_200000, so Undo puts the message back
+        // rather than the client retyping it from memory.
+        DB::transaction(function () use ($announcement, $changeLog) {
+            $changeLog->logDeleted($announcement, $this->label($announcement));
+            $announcement->delete();
+        });
 
         return back()->with('success', __('messages.admin.announcement_deleted'));
+    }
+
+    /**
+     * What the change log calls this announcement: the Arabic message, trimmed.
+     * The message IS the record, so a truncated copy of it identifies a row far
+     * better than an id would.
+     */
+    private function label(Announcement $announcement): string
+    {
+        $message = trim((string) ($announcement->message_ar ?: $announcement->message_en));
+
+        return mb_strlen($message) <= 60 ? $message : mb_substr($message, 0, 60).'…';
     }
 
     /** @return array<string, mixed> */

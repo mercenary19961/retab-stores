@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\WhatsappCampaign;
 use App\Models\WhatsappTemplate;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Services\WhatsApp\CampaignService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -51,18 +53,31 @@ class MarketingController extends Controller
         ]);
     }
 
-    public function storeTemplate(Request $request)
+    public function storeTemplate(Request $request, ChangeLogService $changeLog)
     {
         $data = $this->validateTemplate($request);
 
-        WhatsappTemplate::create($data);
+        DB::transaction(function () use ($data, $changeLog) {
+            $template = WhatsappTemplate::create($data);
+            // Audit-only: this row MIRRORS a template that lives in Meta Business
+            // Manager, so reverting our copy could not reach theirs — it would
+            // only make the two disagree, which is exactly how a locally
+            // "approved" template that Meta rejected starts failing every send.
+            $changeLog->logCreated($template, $template->name);
+        });
 
         return back()->with('success', __('messages.marketing.template_saved'));
     }
 
-    public function updateTemplate(Request $request, WhatsappTemplate $template)
+    public function updateTemplate(Request $request, WhatsappTemplate $template, ChangeLogService $changeLog)
     {
-        $template->update($this->validateTemplate($request, $template));
+        $data = $this->validateTemplate($request, $template);
+
+        DB::transaction(function () use ($template, $data, $changeLog) {
+            $before = $template->attributesToArray();
+            $template->update($data);
+            $changeLog->logUpdated($template, $before, $template->name);
+        });
 
         return back()->with('success', __('messages.marketing.template_saved'));
     }

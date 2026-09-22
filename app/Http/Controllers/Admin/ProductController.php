@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductOption;
 use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Media;
 use App\Support\ProductDescriptionWriter;
@@ -206,7 +207,7 @@ class ProductController extends Controller
 
         DB::transaction(function () use ($data, $options, $images, $changeLog) {
             $product = Product::create($data);
-            $this->syncOptions($product, $options);
+            $this->syncOptions($product, $options, $changeLog);
 
             foreach ($images as $i => $file) {
                 $product->images()->create([
@@ -309,7 +310,7 @@ class ProductController extends Controller
         DB::transaction(function () use ($product, $data, $options, $changeLog) {
             $before = $product->attributesToArray();
             $product->update($data);
-            $this->syncOptions($product, $options);
+            $this->syncOptions($product, $options, $changeLog);
             $changeLog->logUpdated($product, $before, $product->name_ar);
         });
 
@@ -671,9 +672,20 @@ class ProductController extends Controller
      * carry an id, create the new ones, delete the rest. Ids are checked to
      * belong to this product so a forged id can't hijack another product's option.
      *
+     * 🔴 EVERY CHANGE HERE IS LOGGED, and it is the gap that mattered most: an
+     * option CARRIES A PRICE. `logUpdated($product, …)` diffs the products table
+     * only, so raising «كرتون» from 69 to 96 — or deleting a size outright — was
+     * completely invisible to the change log while the ordinary text edit beside
+     * it was recorded in full. Options file under the `products` section key, so
+     * the page's "undo last save" still points at the save that made the change.
+     *
+     * ⚠️ Logged individually rather than as one product-shaped entry, so each
+     * option stays revertable on its own — the same reasoning as the bulk product
+     * actions.
+     *
      * @param  list<array<string, mixed>>  $options
      */
-    private function syncOptions(Product $product, array $options): void
+    private function syncOptions(Product $product, array $options, ChangeLogService $changeLog): void
     {
         $keepIds = [];
 
@@ -682,14 +694,29 @@ class ProductController extends Controller
 
             $existing = $o['id'] ? $product->options()->whereKey($o['id'])->first() : null;
             if ($existing) {
+                $before = $existing->attributesToArray();
                 $existing->update($attributes);
+                $changeLog->logUpdated($existing, $before, $this->optionLabel($product, $existing));
                 $keepIds[] = $existing->id;
             } else {
-                $keepIds[] = $product->options()->create($attributes)->id;
+                $created = $product->options()->create($attributes);
+                $changeLog->logCreated($created, $this->optionLabel($product, $created));
+                $keepIds[] = $created->id;
             }
         }
 
-        $product->options()->whereKeyNot($keepIds)->delete();
+        // Soft-deletes since 2026_09_22_200000, so a size removed by mistake comes
+        // back with its price rather than being retyped from memory.
+        foreach ($product->options()->whereKeyNot($keepIds)->get() as $removed) {
+            $changeLog->logDeleted($removed, $this->optionLabel($product, $removed));
+            $removed->delete();
+        }
+    }
+
+    /** What the change log calls an option: its product, then the choice itself. */
+    private function optionLabel(Product $product, ProductOption $option): string
+    {
+        return $product->name_ar.' — '.($option->label_ar ?: $option->label_en ?: 'option #'.$option->getKey());
     }
 
     /**

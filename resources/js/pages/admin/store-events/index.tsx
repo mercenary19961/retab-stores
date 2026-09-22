@@ -164,6 +164,7 @@ export default function StoreEventsIndex({ events, accentPresets }: { events: Pa
                                                     {t('admin.storeEvents.open')}
                                                 </Button>
                                                 <ConfirmDeleteButton
+                                                    reversible
                                                     itemName={event.name_ar}
                                                     onConfirm={() => router.delete(`/admin/store-events/${event.id}`)}
                                                     size="sm"

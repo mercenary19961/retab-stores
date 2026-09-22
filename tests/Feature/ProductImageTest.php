@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\User;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Support\Media;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -81,8 +83,38 @@ class ProductImageTest extends TestCase
             ->delete("/admin/products/{$product->id}/images/{$primary->id}")
             ->assertRedirect();
 
-        $this->assertDatabaseMissing('product_images', ['id' => $primary->id]);
+        $this->assertNull(ProductImage::find($primary->id), 'off the product page');
         $this->assertTrue($other->fresh()->is_primary); // promoted
+    }
+
+    /**
+     * 🔴 Deleting the wrong photo used to be unrecoverable: the file was removed
+     * from R2 in the same request, so the client had to find the original again.
+     * The row soft-deletes and the file waits out the retention window instead.
+     */
+    public function test_deleting_an_image_keeps_the_file_and_can_be_undone(): void
+    {
+        Storage::fake('public');
+        $disk = Storage::disk('public');
+        $disk->put('products/x/a.jpg', 'x');
+
+        $product = $this->product();
+        $image = ProductImage::create(['product_id' => $product->id, 'path' => 'products/x/a.jpg', 'sort_order' => 1, 'is_primary' => true]);
+
+        $this->actingAs($this->staff())
+            ->delete("/admin/products/{$product->id}/images/{$image->id}")
+            ->assertRedirect();
+
+        $disk->assertExists('products/x/a.jpg');
+
+        $log = ActivityLog::where('subject_type', ProductImage::class)
+            ->where('subject_id', $image->id)
+            ->where('action', ActivityLog::ACTION_DELETED)
+            ->firstOrFail();
+
+        $this->assertTrue(app(ChangeLogService::class)->revert($log)->ok);
+        $this->assertSame(1, $product->images()->count());
+        $this->assertSame('products/x/a.jpg', $product->images()->first()->path);
     }
 
     public function test_set_primary_moves_the_flag(): void

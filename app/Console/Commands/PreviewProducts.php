@@ -171,7 +171,10 @@ class PreviewProducts extends Command
                 $files++;
             }
 
-            $product->images()->delete();
+            // forceDelete to match $product->forceDelete() below: --remove exists
+            // precisely so these samples leave nothing behind, trashed rows and
+            // pinned files included.
+            $product->images()->forceDelete();
             $product->forceDelete();
         }
 

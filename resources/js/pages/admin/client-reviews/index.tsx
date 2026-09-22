@@ -272,6 +272,7 @@ export default function ClientReviewsIndex({
                                             {t('admin.common.edit')}
                                         </Button>
                                         <ConfirmDeleteButton
+                                            reversible
                                             itemName={r.author_name}
                                             onConfirm={() => router.delete(`/admin/client-reviews/${r.id}`, { preserveScroll: true })}
                                         />

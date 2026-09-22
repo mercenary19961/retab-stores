@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ChangeLog\ChangeLogService;
 use App\Support\MailAddress;
 use App\Support\Permission;
 use Illuminate\Http\RedirectResponse;
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -174,11 +176,15 @@ class UserController extends Controller
         DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ChangeLogService $changeLog): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            // ⚠️ Scoped to LIVE rows. A removed colleague's row is kept (see the
+            // destroy() note on audit authorship), so an unscoped rule would
+            // refuse to re-hire anyone — and the database index, now
+            // (email, deleted_at), would let the insert through anyway.
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
             'password' => ['required', Password::defaults()],
             'role' => ['required', 'in:admin,editor'],
         ]);
@@ -200,6 +206,11 @@ class UserController extends Controller
             // that later reads as meaningful. Editors start from the defaults.
             'permissions' => $data['role'] === 'editor' ? Permission::DEFAULTS : null,
         ]);
+
+        // ⚠️ The password hash is NOT one of the change log's SKIP_KEYS, so it is
+        // hidden before the snapshot. An audit trail must never become a place
+        // where credential hashes quietly accumulate.
+        $changeLog->logCreated($user->makeHidden('password'), $user->name);
 
         $message = $user->isAdmin() ? 'messages.admin.admin_created' : 'messages.admin.editor_created';
 
@@ -227,7 +238,7 @@ class UserController extends Controller
      * restores exactly the grants that editor had before, instead of silently
      * resetting them to the defaults.
      */
-    public function updateRole(Request $request, User $user): RedirectResponse
+    public function updateRole(Request $request, User $user, ChangeLogService $changeLog): RedirectResponse
     {
         // Owner only: without this any admin could demote every other admin,
         // the owner included. The page hides the control from everyone else.
@@ -250,14 +261,18 @@ class UserController extends Controller
             return back()->with('error', __('messages.admin.role_self'));
         }
 
-        $user->forceFill(['role' => $role])->save(); // guarded privilege field
+        DB::transaction(function () use ($user, $role, $changeLog) {
+            $before = $user->makeHidden('password')->attributesToArray();
+            $user->forceFill(['role' => $role])->save(); // guarded privilege field
+            $changeLog->logUpdated($user, $before, $user->name);
+        });
 
         $message = $role === 'admin' ? 'messages.admin.role_promoted' : 'messages.admin.role_demoted';
 
         return back()->with('success', __($message, ['name' => $user->name]));
     }
 
-    public function updatePermissions(Request $request, User $user): RedirectResponse
+    public function updatePermissions(Request $request, User $user, ChangeLogService $changeLog): RedirectResponse
     {
         abort_unless($user->isEditor(), 403); // admins keep implicit full access
 
@@ -272,7 +287,11 @@ class UserController extends Controller
             }
         }
 
-        $user->forceFill(['permissions' => $clean])->save(); // guarded privilege field
+        DB::transaction(function () use ($user, $clean, $changeLog) {
+            $before = $user->makeHidden('password')->attributesToArray();
+            $user->forceFill(['permissions' => $clean])->save(); // guarded privilege field
+            $changeLog->logUpdated($user, $before, $user->name);
+        });
 
         return back()->with('success', __('messages.admin.permissions_updated', ['name' => $user->name]));
     }
@@ -281,13 +300,17 @@ class UserController extends Controller
      * Switch whether a staff account receives the alert EMAILS. Any admin may do
      * this for any staff account, their own included; the bell is unaffected.
      */
-    public function updateEmailAlerts(Request $request, User $user): RedirectResponse
+    public function updateEmailAlerts(Request $request, User $user, ChangeLogService $changeLog): RedirectResponse
     {
         abort_unless($user->isStaff(), 403);
 
         $enabled = (bool) $request->validate(['enabled' => ['required', 'boolean']])['enabled'];
 
-        $user->forceFill(['staff_email_alerts' => $enabled])->save();
+        DB::transaction(function () use ($user, $enabled, $changeLog) {
+            $before = $user->makeHidden('password')->attributesToArray();
+            $user->forceFill(['staff_email_alerts' => $enabled])->save();
+            $changeLog->logUpdated($user, $before, $user->name);
+        });
 
         return back()->with('success', __(
             $enabled ? 'messages.admin.email_alerts_on' : 'messages.admin.email_alerts_off',
@@ -302,12 +325,32 @@ class UserController extends Controller
      * job: demote them to editor first (which the last-admin guard protects),
      * then remove them here.
      */
-    public function destroy(User $user): RedirectResponse
+    public function destroy(User $user, ChangeLogService $changeLog): RedirectResponse
     {
         abort_if($user->id === Auth::id(), 403); // no self-removal
         abort_unless($user->isEditor(), 403);    // only editor accounts are removable here
 
-        $user->forceDelete();
+        /*
+         * 🔴 SOFT delete, where this used to forceDelete() straight through the
+         * trait the model already had. `activity_logs.user_id` is ON DELETE SET
+         * NULL, so destroying the row ANONYMISED every change that person had
+         * ever made — months of history losing its author as a side effect of
+         * tidying up a leaver. The account is gone from the panel and cannot
+         * sign in (the soft-delete scope hides it from the credential lookup),
+         * but the history still names them.
+         *
+         * ⚠️ Their email and phone are freed for re-use by the (email,
+         * deleted_at) index from 2026_09_22_200300 — otherwise re-hiring anyone
+         * would 500 on a constraint naming nothing.
+         */
+        DB::transaction(function () use ($user, $changeLog) {
+            $changeLog->logDeleted($user, $user->name);
+            $user->delete();
+        });
+
+        // Their session row outlives the account, and Auth would resolve it to a
+        // trashed model. Cheap to be explicit rather than rely on that.
+        DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
 
         return back()->with('success', __('messages.admin.editor_deleted'));
     }
