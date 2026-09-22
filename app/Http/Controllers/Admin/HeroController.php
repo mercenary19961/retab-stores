@@ -72,6 +72,9 @@ class HeroController extends Controller
             'alt_en' => ['nullable', 'string', 'max:255'],
 
             'is_active' => ['boolean'],
+            // Where the 2:1 crop centres, as a percentage of the artwork.
+            'focal_x' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'focal_y' => ['nullable', 'integer', 'min:0', 'max:100'],
             'starts_at' => ['nullable', 'date'],
             // 🔑 An end before the start is a slide that can never show, with
             // nothing on the page to explain why. Same guard as announcements.
@@ -91,6 +94,11 @@ class HeroController extends Controller
                     'image_mobile' => Media::url($s->image_mobile, 'card'),
                     'video' => Media::url($s->video),
                     'video_poster' => Media::url($s->video_poster, 'card'),
+                    // Full-size, for the crop preview: the `card` variant is 500px
+                    // and would be judged for sharpness it was never meant to have.
+                    'image_full' => Media::url($s->image),
+                    'focal_x' => (int) $s->focal_x,
+                    'focal_y' => (int) $s->focal_y,
                     'href' => $s->href,
                     'alt_ar' => $s->alt_ar,
                     'alt_en' => $s->alt_en,
@@ -231,6 +239,37 @@ class HeroController extends Controller
     }
 
     /**
+     * Apply a whole new order at once, which is what a drag-and-drop produces.
+     *
+     * 🔑 Kept alongside the one-step up/down buttons rather than replacing them:
+     * dragging is mouse-only, and the buttons are the keyboard path. Removing
+     * them would make reordering impossible without a pointer.
+     *
+     * ⚠️ Ids not belonging to a hero slide are simply ignored rather than
+     * refused: the preview also contains CAMPAIGN banners, which live in another
+     * table and are ordered by their event.
+     */
+    public function reorderAll(Request $request): RedirectResponse
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'max:100'],
+            'ids.*' => ['integer'],
+        ])['ids'];
+
+        $slides = HeroSlide::whereIn('id', $ids)->get()->keyBy('id');
+
+        $position = 0;
+        foreach ($ids as $id) {
+            $slide = $slides->get($id);
+            if ($slide) {
+                $slide->update(['sort_order' => $position++]);
+            }
+        }
+
+        return back();
+    }
+
+    /**
      * Which source owns the hero while a campaign is running.
      *
      * The client asked to curate this rather than have a campaign silently take
@@ -261,6 +300,10 @@ class HeroController extends Controller
             'alt_ar' => $data['alt_ar'] ?? null,
             'alt_en' => $data['alt_en'] ?? null,
             'is_active' => (bool) ($data['is_active'] ?? true),
+            // Clamped in validation; defaulted here so a slide saved before the
+            // focal point existed keeps the centred crop it already had.
+            'focal_x' => (int) ($data['focal_x'] ?? 50),
+            'focal_y' => (int) ($data['focal_y'] ?? 50),
             'starts_at' => $data['starts_at'] ?? null,
             'ends_at' => $data['ends_at'] ?? null,
             'sort_order' => (int) ($data['sort_order'] ?? 0),

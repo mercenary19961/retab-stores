@@ -1,22 +1,27 @@
 import Button from '@/components/admin/button';
 import ConfirmDeleteButton from '@/components/admin/confirm-delete-button';
+import HeroCropPreview from '@/components/admin/hero-crop-preview';
 import Modal from '@/components/admin/modal';
 import StatusBadge from '@/components/admin/status-badge';
 import StatusToggle from '@/components/admin/status-toggle';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { CARD } from '@/lib/admin-ui';
+import { posterFromVideo } from '@/lib/video-poster';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Film, GalleryHorizontal, Image as ImageIcon, Pencil, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDown, ChevronUp, Film, GalleryHorizontal, GripVertical, Image as ImageIcon, Lock, Pencil, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Slide {
     id: number;
     kind: 'image' | 'video';
     image: string | null;
+    image_full: string | null;
     image_mobile: string | null;
     video: string | null;
     video_poster: string | null;
+    focal_x: number;
+    focal_y: number;
     href: string | null;
     alt_ar: string | null;
     alt_en: string | null;
@@ -73,6 +78,8 @@ export default function HeroIndex({
         alt_ar: string;
         alt_en: string;
         is_active: boolean;
+        focal_x: number;
+        focal_y: number;
         starts_at: string;
         ends_at: string;
         sort_order: number;
@@ -86,10 +93,29 @@ export default function HeroIndex({
         alt_ar: '',
         alt_en: '',
         is_active: true,
+        focal_x: 50,
+        focal_y: 50,
         starts_at: '',
         ends_at: '',
         sort_order: 0,
     });
+
+    /*
+     * A local preview of whatever art is currently chosen: the object URL of a
+     * freshly picked file, or the stored image when editing and nothing new was
+     * picked. This is what makes the crop visible BEFORE saving, which was the
+     * whole complaint.
+     */
+    const [preview_, setPreview_] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+
+    // ⚠️ Object URLs are leaked until revoked, and this dialog can be opened
+    // dozens of times in a session while choosing artwork.
+    useEffect(() => {
+        if (!preview_?.startsWith('blob:')) return;
+
+        return () => URL.revokeObjectURL(preview_);
+    }, [preview_]);
 
     const openFor = (row: Slide | null) => {
         setEditing(row);
@@ -105,12 +131,54 @@ export default function HeroIndex({
             alt_ar: row?.alt_ar ?? '',
             alt_en: row?.alt_en ?? '',
             is_active: row?.is_active ?? true,
+            focal_x: row?.focal_x ?? 50,
+            focal_y: row?.focal_y ?? 50,
             starts_at: toInput(row?.starts_at ?? null),
             ends_at: toInput(row?.ends_at ?? null),
             sort_order: row?.sort_order ?? 0,
         });
         form.clearErrors();
+        // Editing: show the art that is already stored, so the focal point can be
+        // adjusted without re-uploading anything.
+        setPreview_(row ? (row.kind === 'video' ? row.video_poster : row.image_full) : null);
         setOpen(true);
+    };
+
+    /**
+     * Choosing artwork: keep a local preview so the crop is visible immediately.
+     */
+    const chooseImage = (f: File | null) => {
+        form.setData('image', f);
+        setPreview_(f ? URL.createObjectURL(f) : null);
+    };
+
+    /**
+     * Choosing a video: take its first frame as the poster automatically.
+     *
+     * 🔴 This is the fix for "the video doesn't show". A <video> with no poster
+     * paints NOTHING until it has buffered, so a posterless hero video is a flat
+     * block of background colour for the length of the download — which is what
+     * the client saw and reasonably read as broken. The file is already on their
+     * machine here, so we take the frame rather than asking them for one.
+     *
+     * Best effort: if it fails they simply have no poster, exactly as before, and
+     * can still supply one by hand.
+     */
+    const chooseVideo = async (f: File | null) => {
+        form.setData('video', f);
+        setPreview_(null);
+        if (!f) return;
+
+        setBusy(true);
+        try {
+            const poster = await posterFromVideo(f);
+            if (poster) {
+                form.setData('video_poster', poster);
+                setPreview_(URL.createObjectURL(poster));
+            }
+        } finally {
+            setBusy(false);
+        }
     };
 
     /*
@@ -129,7 +197,12 @@ export default function HeroIndex({
          * Caught in a browser, not by the suite: the PHPUnit test omitted the
          * field entirely and so exercised the default instead of this path.
          */
-        form.transform((data) => ({ ...data, is_active: data.is_active ? 1 : 0 }));
+        form.transform((data) => ({
+            ...data,
+            is_active: data.is_active ? 1 : 0,
+            focal_x: Math.round(data.focal_x),
+            focal_y: Math.round(data.focal_y),
+        }));
 
         form.post(editing ? `/admin/hero/${editing.id}` : '/admin/hero', {
             forceFormData: true,
@@ -159,7 +232,12 @@ export default function HeroIndex({
                 type="file"
                 accept={accept}
                 aria-label={label}
-                onChange={(e) => form.setData(name, e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    if (name === 'image') chooseImage(f);
+                    else if (name === 'video') chooseVideo(f);
+                    else form.setData(name, f);
+                }}
                 className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 outline-none file:mr-3 file:rounded file:border-0 file:bg-neutral-800 file:px-3 file:py-1 file:text-neutral-200"
             />
             <span className="mt-1 block text-xs text-neutral-500">{hint}</span>
@@ -168,6 +246,46 @@ export default function HeroIndex({
     );
 
     const label = (item: PreviewItem) => (i18n.language === 'en' && item.alt_en ? item.alt_en : (item.alt_ar ?? ''));
+
+    /*
+     * Drag-and-drop on the preview, which is where the client thinks about order.
+     *
+     * 🔑 Only the client's OWN slides can move. The rest of the preview is
+     * campaign banners, which live in another table and are ordered by their
+     * event — a drop there could not be expressed, so they are marked with a
+     * padlock rather than silently refusing.
+     *
+     * ⚠️ Native HTML5 drag events rather than a library: this is one short list,
+     * and the up/down buttons stay as the KEYBOARD path, since dragging is
+     * mouse-only and removing them would make reordering pointer-dependent.
+     */
+    const [dragId, setDragId] = useState<string | null>(null);
+    const [order, setOrder] = useState<PreviewItem[] | null>(null);
+    const items = order ?? preview;
+    const mine = (item: PreviewItem) => item.id.startsWith('slide-');
+
+    // Server state wins whenever it arrives, so a reorder that failed — or a
+    // campaign banner appearing — can never leave a stale local order on screen.
+    useEffect(() => setOrder(null), [preview]);
+
+    const drop = (targetId: string) => {
+        if (!dragId || dragId === targetId) return;
+
+        const list = [...items];
+        const from = list.findIndex((x) => x.id === dragId);
+        const to = list.findIndex((x) => x.id === targetId);
+        if (from < 0 || to < 0 || !mine(list[from]) || !mine(list[to])) return;
+
+        const [moved] = list.splice(from, 1);
+        list.splice(to, 0, moved);
+        setOrder(list); // optimistic, so the card stays where it was dropped
+
+        router.post(
+            '/admin/hero/reorder',
+            { ids: list.filter(mine).map((x) => Number(x.id.replace('slide-', ''))) },
+            { preserveScroll: true, onFinish: () => setDragId(null) },
+        );
+    };
 
     return (
         <AdminLayout title={t('admin.hero.title')}>
@@ -190,7 +308,7 @@ export default function HeroIndex({
             <section className={`${CARD} mb-6 p-5`}>
                 <div className="mb-3 flex items-baseline justify-between gap-3">
                     <h2 className="font-medium text-neutral-200">{t('admin.hero.previewTitle')}</h2>
-                    <span className="text-xs text-neutral-500">{t('admin.hero.previewNote')}</span>
+                    <span className="text-xs text-neutral-500">{canManage ? t('admin.hero.dragHint') : t('admin.hero.previewNote')}</span>
                 </div>
 
                 {preview.length === 0 ? (
@@ -199,8 +317,24 @@ export default function HeroIndex({
                     </p>
                 ) : (
                     <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {preview.map((item, i) => (
-                            <li key={item.id} className="overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950">
+                        {items.map((item, i) => (
+                            <li
+                                key={item.id}
+                                draggable={canManage && mine(item)}
+                                onDragStart={() => setDragId(item.id)}
+                                onDragEnd={() => setDragId(null)}
+                                onDragOver={(e) => {
+                                    // Without preventDefault the browser refuses the drop outright.
+                                    if (dragId && mine(item)) e.preventDefault();
+                                }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    drop(item.id);
+                                }}
+                                className={`overflow-hidden rounded-lg border bg-neutral-950 transition-opacity ${
+                                    dragId === item.id ? 'border-brand-gold opacity-40' : 'border-neutral-800'
+                                } ${canManage && mine(item) ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                            >
                                 <div className="relative aspect-[2/1] bg-neutral-900">
                                     {/* A video's poster is shipped in `image`, so one
                                         <img> covers both kinds and the preview never
@@ -212,8 +346,13 @@ export default function HeroIndex({
                                             <Film className="h-6 w-6" />
                                         </div>
                                     )}
-                                    <span className="absolute start-2 top-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white">
+                                    <span className="absolute start-2 top-2 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white">
                                         {i + 1}
+                                        {/* Grip = you can drag this one. Padlock = it belongs to a
+                                            campaign and is ordered by its event, so saying nothing
+                                            would just look like a drop that failed. */}
+                                        {canManage &&
+                                            (mine(item) ? <GripVertical className="h-3 w-3 opacity-70" /> : <Lock className="h-3 w-3 opacity-70" />)}
                                     </span>
                                     {item.kind === 'video' && (
                                         <span className="absolute end-2 top-2 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-xs text-white">
@@ -391,6 +530,17 @@ export default function HeroIndex({
                               file('video', t('admin.hero.video'), 'video/mp4,video/webm', t('admin.hero.videoHint', { n: videoMaxMb })),
                               file('video_poster', t('admin.hero.poster'), 'image/*', t('admin.hero.posterHint')),
                           ]}
+
+                    <HeroCropPreview
+                        src={preview_}
+                        focal={{ x: form.data.focal_x, y: form.data.focal_y }}
+                        onFocal={(x, y) => {
+                            form.setData('focal_x', x);
+                            form.setData('focal_y', y);
+                        }}
+                        t={t}
+                    />
+                    {busy && <p className="text-xs text-neutral-400">{t('admin.hero.readingVideo')}</p>}
 
                     {text('alt_ar', t('admin.hero.altAr'), 'text', t('admin.hero.altHint'))}
                     {text('alt_en', t('admin.hero.altEn'))}

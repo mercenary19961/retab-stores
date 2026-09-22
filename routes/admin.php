@@ -164,6 +164,7 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::middleware('permission:hero.manage')->group(function () {
         // Literal before wildcard, so `hero/mode` can never be read as a slide id.
         Route::post('hero/mode', [HeroController::class, 'updateMode'])->name('hero.mode');
+        Route::post('hero/reorder', [HeroController::class, 'reorderAll'])->name('hero.reorder-all');
         Route::post('hero', [HeroController::class, 'store'])->name('hero.store');
         Route::post('hero/{slide}', [HeroController::class, 'update'])->name('hero.update');
         Route::patch('hero/{slide}/toggle', [HeroController::class, 'toggle'])->name('hero.toggle');

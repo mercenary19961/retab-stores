@@ -28,7 +28,7 @@ class HeroSlide extends Model
     public const KINDS = [self::KIND_IMAGE, self::KIND_VIDEO];
 
     protected $fillable = [
-        'kind', 'image', 'image_mobile', 'video', 'video_poster',
+        'kind', 'image', 'image_mobile', 'video', 'video_poster', 'focal_x', 'focal_y',
         'href', 'alt_ar', 'alt_en',
         'is_active', 'starts_at', 'ends_at', 'sort_order',
     ];
@@ -112,6 +112,12 @@ class HeroSlide extends Model
         return 'live';
     }
 
+    /** `object-position` for the art, e.g. "50% 35%". */
+    public function focalPosition(): string
+    {
+        return ((int) ($this->focal_x ?? 50)).'% '.((int) ($this->focal_y ?? 50)).'%';
+    }
+
     /**
      * The shape the storefront hero consumes. Kept next to the model so the
      * admin preview and the real homepage are fed by ONE definition and cannot
@@ -131,6 +137,9 @@ class HeroSlide extends Model
             // ⚠️ NOT variant-mapped: the variant pipeline only produces WebP
             // stills, so asking for one here would hand the player a 404.
             'video' => $this->isVideo() ? Media::url($this->video) : null,
+            // CSS `object-position`, so the crop keeps whatever the client
+            // clicked rather than whatever happened to be in the middle.
+            'focal' => $this->focalPosition(),
             'href' => $this->href,
             'alt_ar' => $this->alt_ar,
             'alt_en' => $this->alt_en,

@@ -73,6 +73,8 @@ interface HeroBanner {
      * under prefers-reduced-motion.
      */
     video: string | null;
+    /** CSS `object-position`, chosen by the client so the crop keeps the subject. */
+    focal: string;
     href: string | null;
     alt_ar: string | null;
     alt_en: string | null;
@@ -245,6 +247,9 @@ function BannerSlide({
     onEnded?: () => void;
 }) {
     const box = `block aspect-[2/1] w-full object-cover ${phonePoster ? 'max-sm:aspect-[4/5]' : ''}`;
+    // The band is a fixed 2:1 and the art is object-cover, so anything else is
+    // cropped. This is where the client says which part must survive that crop.
+    const focal = { objectPosition: banner.focal || '50% 50%' };
 
     /*
      * 🔴 Under reduced motion a video slide renders its POSTER, not the video.
@@ -271,8 +276,16 @@ function BannerSlide({
             // The poster is what fills the box while the file downloads, which is
             // the difference between a hero and an empty band for the first second.
             poster={banner.image ?? undefined}
-            preload={priority ? 'auto' : 'metadata'}
+            /*
+             * 🔴 `auto`, not `metadata`. A <video> with nothing buffered paints
+             * NOTHING, so with `metadata` the hero was a flat green block for as
+             * long as the file took to arrive — which is exactly what the client
+             * reported and what a throttled reproduction shows. The poster is the
+             * real fix; this makes the gap it has to cover as short as possible.
+             */
+            preload="auto"
             aria-label={alt}
+            style={focal}
             className={box}
         >
             <source src={banner.video ?? undefined} />
@@ -286,6 +299,7 @@ function BannerSlide({
                 loading={priority ? 'eager' : 'lazy'}
                 src={banner.image ?? undefined}
                 alt={alt}
+                style={focal}
                 className={box}
             />
         </picture>

@@ -428,6 +428,83 @@ class HeroSlideTest extends TestCase
         $this->assertSame(['slide-'.$second->id, 'slide-'.$first->id], $order, 'the moved slide did not come first');
     }
 
+    // ---- Focal point + drag-and-drop ordering --------------------------------
+
+    /**
+     * 🔴 The hero is a fixed 2:1 band with `object-cover`, so art that is not 2:1
+     * is CROPPED — centred, which is the wrong guess for most photographs. The
+     * client uploaded an image, saw it cut, and had no way to say which part
+     * mattered. This is that control reaching the storefront.
+     */
+    public function test_the_focal_point_reaches_the_storefront(): void
+    {
+        $this->slide(['focal_x' => 25, 'focal_y' => 80]);
+
+        $this->assertSame('25% 80%', HeroBanners::ownSlides()[0]['focal']);
+    }
+
+    /** Slides saved before the focal point existed keep the centred crop they had. */
+    public function test_a_slide_without_a_focal_point_stays_centred(): void
+    {
+        $this->assertSame('50% 50%', $this->slide()->focalPosition());
+        $this->assertSame('50% 50%', HeroBanners::ownSlides()[0]['focal']);
+    }
+
+    public function test_a_focal_point_outside_the_picture_is_refused(): void
+    {
+        Storage::fake(Media::disk());
+
+        $this->actingAs($this->admin())->post('/admin/hero', [
+            'kind' => 'image',
+            'image' => UploadedFile::fake()->image('a.jpg', 1920, 960),
+            'focal_x' => 140,
+        ])->assertSessionHasErrors('focal_x');
+    }
+
+    /** Drag-and-drop submits a whole new order at once. */
+    public function test_dragging_applies_the_whole_order(): void
+    {
+        $a = $this->slide(['alt_ar' => 'أ']);
+        $b = $this->slide(['alt_ar' => 'ب']);
+        $c = $this->slide(['alt_ar' => 'ج']);
+
+        $this->actingAs($this->admin())
+            ->post('/admin/hero/reorder', ['ids' => [$c->id, $a->id, $b->id]])
+            ->assertRedirect();
+
+        $this->assertSame(
+            ['slide-'.$c->id, 'slide-'.$a->id, 'slide-'.$b->id],
+            collect(HeroBanners::ownSlides())->pluck('id')->all(),
+        );
+    }
+
+    /**
+     * ⚠️ The preview also contains CAMPAIGN banners, which live in another table.
+     * Their ids arriving in the payload must be ignored, not blow up the request.
+     */
+    public function test_reordering_ignores_ids_that_are_not_hero_slides(): void
+    {
+        $a = $this->slide(['alt_ar' => 'أ']);
+
+        $this->actingAs($this->admin())
+            ->post('/admin/hero/reorder', ['ids' => [999999, $a->id]])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(0, $a->fresh()->sort_order);
+    }
+
+    public function test_an_editor_without_hero_manage_cannot_drag(): void
+    {
+        $editor = User::forceCreate([
+            'name' => 'E2', 'email' => 'e2@retab.test', 'password' => bcrypt('x'), 'role' => 'editor',
+            'permissions' => ['hero' => ['view' => true, 'manage' => false]],
+        ]);
+        $a = $this->slide();
+
+        $this->actingAs($editor)->post('/admin/hero/reorder', ['ids' => [$a->id]])->assertForbidden();
+    }
+
     public function test_the_mode_is_stored_through_the_setting(): void
     {
         $this->actingAs($this->admin())
