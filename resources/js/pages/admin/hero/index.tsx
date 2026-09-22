@@ -254,14 +254,19 @@ export default function HeroIndex({
     };
 
     /*
-     * 🔑 CANCEL MEANS CANCEL (client's call). Keeping the draft here was the
-     * original design - "someone who hits Cancel by accident is who this is for" -
-     * and it was wrong: pressing a button labelled Cancel is a deliberate act, and
-     * having the work reappear afterwards reads as the dialog refusing to let go.
+     * 🔑 EVERY DELIBERATE DISMISSAL DISCARDS: Cancel, the ×, Escape and the
+     * backdrop all land here. Only an ACCIDENT keeps the draft, which is what it
+     * was built for: a refresh, a closed tab, a crash.
      *
-     * ⚠️ The ×, Escape and the backdrop deliberately still KEEP the draft. Those
-     * are ambiguous or easily hit by accident, so they stay the forgiving path and
-     * the resume button still covers them.
+     * 🔴 The earlier split (Cancel discards, × keeps) was reported as "cancel
+     * doesn't discard the draft" and the report was fair. Leaving an EDIT via the ×
+     * kept a draft the client never asked to keep; cancelling a NEW slide then
+     * correctly discarded its own draft while the resume button stayed on screen
+     * for the OTHER one. Nothing was broken, but two drafts were live and only one
+     * was ever visible, so the button looked like it had ignored the Cancel.
+     *
+     * One rule is the fix: a draft can now only exist for the thing you were last
+     * working on, and only if you never dismissed it on purpose.
      */
     const cancelDialog = () => {
         draft.clear();
@@ -803,7 +808,8 @@ export default function HeroIndex({
 
             <Modal
                 open={open}
-                onClose={closeDialog}
+                /* The ×, Escape and the backdrop all arrive here, so they discard too. */
+                onClose={cancelDialog}
                 title={editing ? t('admin.hero.editTitle') : t('admin.hero.addTitle')}
                 /* Wide enough for two columns. The artwork and its crop editor are
                    inherently large, and in one narrow column every setting sat

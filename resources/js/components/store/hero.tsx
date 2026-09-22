@@ -618,6 +618,10 @@ export default function StoreHero() {
                                 type="button"
                                 onClick={() => goTo(() => i)}
                                 aria-label={`${t('hero.goToSlide')} ${i + 1}`}
+                                /* ⚠️ Which slide is showing was carried by SIZE and OPACITY
+                                   alone, so a screen reader could reach all the dots and
+                                   never learn which one it was on. */
+                                aria-current={i === active ? 'true' : undefined}
                                 className={`rounded-full bg-white transition-all ${current.kind === 'banner' ? 'max-sm:bg-brand-teal' : ''} ${
                                     i === active ? 'size-3 opacity-90' : 'size-2 opacity-50 hover:opacity-75'
                                 }`}
