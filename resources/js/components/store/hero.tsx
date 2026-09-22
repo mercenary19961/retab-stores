@@ -322,15 +322,30 @@ function BannerSlide({
         </picture>
     );
 
-    // ⚠️ A slide without a link is a plain block, not a <Link href="">. An empty
-    // href resolves to the current page, so the whole hero would look clickable
-    // and do nothing - worse than not being clickable at all.
-    return banner.href ? (
+    /*
+     * ⚠️ A slide without a link is a plain block, not a <Link href="">. An empty
+     * href resolves to the current page, so the whole hero would look clickable
+     * and do nothing - worse than not being clickable at all.
+     *
+     * 🔴 An EXTERNAL address must not go through Inertia's <Link>. That issues an
+     * XHR expecting an Inertia response, so a client who pointed a banner at their
+     * Instagram would get a banner that silently did nothing. The admin field
+     * accepts a full URL, so this case is reachable and has to be handled.
+     */
+    const external = /^(https?:)?\/\//i.test(banner.href ?? '');
+
+    if (!banner.href) {
+        return <div className="block bg-[#01482b]">{media}</div>;
+    }
+
+    return external ? (
+        <a href={banner.href} target="_blank" rel="noopener noreferrer" className="block bg-[#01482b]">
+            {media}
+        </a>
+    ) : (
         <Link href={banner.href} className="block bg-[#01482b]">
             {media}
         </Link>
-    ) : (
-        <div className="block bg-[#01482b]">{media}</div>
     );
 }
 

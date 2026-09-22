@@ -528,95 +528,131 @@ export default function HeroIndex({
                 )}
             </section>
 
-            <Modal open={open} onClose={() => setOpen(false)} title={editing ? t('admin.hero.editTitle') : t('admin.hero.addTitle')}>
-                <div className="grid gap-4">
-                    <div>
-                        <span className="text-sm text-neutral-300">{t('admin.hero.kind')}</span>
-                        <div className="mt-1 flex gap-2">
-                            {(['image', 'video'] as const).map((k) => (
-                                <button
-                                    key={k}
-                                    type="button"
-                                    aria-pressed={form.data.kind === k}
-                                    onClick={() => form.setData('kind', k)}
-                                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                                        form.data.kind === k
-                                            ? 'border-brand-gold bg-brand-teal/20 text-neutral-100'
-                                            : 'border-neutral-700 bg-neutral-950 text-neutral-300'
-                                    }`}
-                                >
-                                    {k === 'video' ? <Film className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
-                                    {t(`admin.hero.kinds.${k}`)}
-                                </button>
-                            ))}
+            <Modal
+                open={open}
+                onClose={() => setOpen(false)}
+                title={editing ? t('admin.hero.editTitle') : t('admin.hero.addTitle')}
+                /* Wide enough for two columns. The artwork and its crop editor are
+                   inherently large, and in one narrow column every setting sat
+                   below a tall preview and had to be scrolled to. */
+                size="xl"
+            >
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+                    {/* LEFT: the artwork, and what will survive the crop. */}
+                    <div className="grid content-start gap-4">
+                        <div>
+                            <span className="text-sm text-neutral-300">{t('admin.hero.kind')}</span>
+                            <div className="mt-1 flex gap-2">
+                                {(['image', 'video'] as const).map((k) => (
+                                    <button
+                                        key={k}
+                                        type="button"
+                                        aria-pressed={form.data.kind === k}
+                                        onClick={() => form.setData('kind', k)}
+                                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                            form.data.kind === k
+                                                ? 'border-brand-gold bg-brand-teal/20 text-neutral-100'
+                                                : 'border-neutral-700 bg-neutral-950 text-neutral-300'
+                                        }`}
+                                    >
+                                        {k === 'video' ? <Film className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
+                                        {t(`admin.hero.kinds.${k}`)}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                            {form.data.kind === 'image'
+                                ? [
+                                      file('image', t('admin.hero.imageDesktop'), 'image/*', t('admin.hero.imageDesktopHint')),
+                                      file('image_mobile', t('admin.hero.imagePhone'), 'image/*', t('admin.hero.imagePhoneHint')),
+                                  ]
+                                : [
+                                      file('video', t('admin.hero.video'), 'video/mp4,video/webm', t('admin.hero.videoHint', { n: videoMaxMb })),
+                                      file('video_poster', t('admin.hero.poster'), 'image/*', t('admin.hero.posterHint')),
+                                  ]}
+                        </div>
+
+                        <HeroCropPreview
+                            src={preview_}
+                            phoneSrc={phonePreview}
+                            focal={{ x: form.data.focal_x, y: form.data.focal_y }}
+                            onFocal={(x, y) => {
+                                form.setData('focal_x', x);
+                                form.setData('focal_y', y);
+                            }}
+                            focalMobile={{ x: form.data.focal_mobile_x, y: form.data.focal_mobile_y }}
+                            onFocalMobile={(x, y) => {
+                                form.setData('focal_mobile_x', x);
+                                form.setData('focal_mobile_y', y);
+                            }}
+                            t={t}
+                        />
+                        {busy && <p className="text-xs text-neutral-400">{t('admin.hero.readingVideo')}</p>}
+                    </div>
+
+                    {/* RIGHT: the settings. Moved out from under the preview at the
+                        client's request - in one column they sat below a tall crop
+                        editor and had to be scrolled to; beside it they are all
+                        visible at once, and the dialog uses its width. */}
+                    <div className="grid content-start gap-4">
+                        <section className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
+                            <h3 className="mb-2 text-xs font-semibold tracking-wide text-neutral-400 uppercase">{t('admin.hero.groupLink')}</h3>
+                            {text('href', t('admin.hero.href'), 'text', t('admin.hero.hrefHint'))}
+                        </section>
+
+                        <section className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
+                            <h3 className="mb-2 text-xs font-semibold tracking-wide text-neutral-400 uppercase">{t('admin.hero.groupWhen')}</h3>
+                            <div className="grid gap-3">
+                                {text('starts_at', t('admin.hero.startsAt'), 'datetime-local')}
+                                {text('ends_at', t('admin.hero.endsAt'), 'datetime-local')}
+                            </div>
+                            <p className="mt-2 text-xs text-neutral-500">{t('admin.hero.whenHint')}</p>
+                        </section>
+
+                        <section className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
+                            <h3 className="mb-2 text-xs font-semibold tracking-wide text-neutral-400 uppercase">{t('admin.hero.groupShow')}</h3>
+                            <div className="grid grid-cols-[6rem_1fr] items-end gap-3">
+                                {text('sort_order', t('admin.hero.order'), 'number')}
+                                <label className="flex items-center gap-2 pb-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.data.is_active}
+                                        onChange={(e) => form.setData('is_active', e.target.checked)}
+                                        className="h-4 w-4 rounded border-neutral-700 bg-neutral-950"
+                                    />
+                                    <span className="text-sm text-neutral-300">{t('admin.hero.showOnStore')}</span>
+                                </label>
+                            </div>
+                        </section>
+
+                        <section className="rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
+                            <h3 className="mb-2 text-xs font-semibold tracking-wide text-neutral-400 uppercase">{t('admin.hero.groupAlt')}</h3>
+                            <div className="grid gap-3">
+                                {text('alt_ar', t('admin.hero.altAr'))}
+                                {text('alt_en', t('admin.hero.altEn'))}
+                            </div>
+                            <p className="mt-2 text-xs text-neutral-500">{t('admin.hero.altHint')}</p>
+                        </section>
+
+                        {/* Every remaining field's error, so a rejection can never be
+                            silent. `is_active` in particular has no visible control of
+                            its own to hang a message under. */}
+                        <div className="empty:hidden">
+                            {form.errors.is_active && <span className="text-xs text-red-400">{form.errors.is_active}</span>}
+                            {form.errors.kind && <span className="text-xs text-red-400">{form.errors.kind}</span>}
                         </div>
                     </div>
+                </div>
 
-                    {form.data.kind === 'image'
-                        ? [
-                              file('image', t('admin.hero.imageDesktop'), 'image/*', t('admin.hero.imageDesktopHint')),
-                              file('image_mobile', t('admin.hero.imagePhone'), 'image/*', t('admin.hero.imagePhoneHint')),
-                          ]
-                        : [
-                              file('video', t('admin.hero.video'), 'video/mp4,video/webm', t('admin.hero.videoHint', { n: videoMaxMb })),
-                              file('video_poster', t('admin.hero.poster'), 'image/*', t('admin.hero.posterHint')),
-                          ]}
-
-                    <HeroCropPreview
-                        src={preview_}
-                        phoneSrc={phonePreview}
-                        focal={{ x: form.data.focal_x, y: form.data.focal_y }}
-                        onFocal={(x, y) => {
-                            form.setData('focal_x', x);
-                            form.setData('focal_y', y);
-                        }}
-                        focalMobile={{ x: form.data.focal_mobile_x, y: form.data.focal_mobile_y }}
-                        onFocalMobile={(x, y) => {
-                            form.setData('focal_mobile_x', x);
-                            form.setData('focal_mobile_y', y);
-                        }}
-                        t={t}
-                    />
-                    {busy && <p className="text-xs text-neutral-400">{t('admin.hero.readingVideo')}</p>}
-
-                    {text('alt_ar', t('admin.hero.altAr'), 'text', t('admin.hero.altHint'))}
-                    {text('alt_en', t('admin.hero.altEn'))}
-                    {text('href', t('admin.hero.href'), 'text', t('admin.hero.hrefHint'))}
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        {text('starts_at', t('admin.hero.startsAt'), 'datetime-local')}
-                        {text('ends_at', t('admin.hero.endsAt'), 'datetime-local')}
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        {text('sort_order', t('admin.hero.order'), 'number')}
-                        <label className="flex items-end gap-2 pb-2">
-                            <input
-                                type="checkbox"
-                                checked={form.data.is_active}
-                                onChange={(e) => form.setData('is_active', e.target.checked)}
-                                className="h-4 w-4 rounded border-neutral-700 bg-neutral-950"
-                            />
-                            <span className="text-sm text-neutral-300">{t('admin.hero.showOnStore')}</span>
-                        </label>
-                    </div>
-
-                    {/* Every remaining field's error, so a rejection can never be
-                        silent. `is_active` in particular has no visible control of
-                        its own to hang a message under. */}
-                    <div className="empty:hidden">
-                        {form.errors.is_active && <span className="text-xs text-red-400">{form.errors.is_active}</span>}
-                        {form.errors.kind && <span className="text-xs text-red-400">{form.errors.kind}</span>}
-                    </div>
-
-                    <div className="flex justify-end gap-2">
-                        <Button variant="secondary" onClick={() => setOpen(false)}>
-                            {t('admin.common.cancel')}
-                        </Button>
-                        <Button onClick={submit} disabled={form.processing}>
-                            {t('admin.hero.save')}
-                        </Button>
-                    </div>
+                <div className="mt-5 flex justify-end gap-2 border-t border-neutral-800 pt-4">
+                    <Button variant="secondary" onClick={() => setOpen(false)}>
+                        {t('admin.common.cancel')}
+                    </Button>
+                    <Button onClick={submit} disabled={form.processing}>
+                        {t('admin.hero.save')}
+                    </Button>
                 </div>
             </Modal>
         </AdminLayout>
