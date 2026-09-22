@@ -40,6 +40,70 @@ function serialisable<T extends object>(data: T): Partial<T> {
     return out as Partial<T>;
 }
 
+/** A comparable snapshot of the values worth persisting. */
+function snapshot<T extends object>(v: T): string {
+    return JSON.stringify(serialisable(v));
+}
+
+/** One piece of unfinished work sitting in this browser. */
+export interface DraftSummary {
+    /** The record it belongs to: `new`, or an id like `7`. */
+    id: string;
+    /** When it was last typed into. */
+    at: number;
+}
+
+/**
+ * What unfinished work is waiting for a given form, e.g. `listDrafts('hero')`.
+ *
+ * 🔑 This exists because a draft that only reappears once you reopen the dialog is
+ * invisible: a refresh closes the modal, the page looks untouched, and the client
+ * reasonably concludes their work is gone. A page needs to be able to ASK whether
+ * anything is waiting, without mounting the form.
+ *
+ * ⚠️ Expired entries are deleted as they are found, so the resume affordance can
+ * never offer something the hook would then silently refuse to restore.
+ */
+export function listDrafts(family: string): DraftSummary[] {
+    const scope = PREFIX + family + '.';
+    const out: DraftSummary[] = [];
+
+    try {
+        // Collected first: removing while iterating by index skips entries.
+        const keys: string[] = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+            const k = window.localStorage.key(i);
+            if (k && k.startsWith(scope)) keys.push(k);
+        }
+
+        for (const k of keys) {
+            try {
+                const parsed = JSON.parse(window.localStorage.getItem(k) ?? '') as { at?: number };
+                if (!parsed?.at || Date.now() - parsed.at > MAX_AGE_MS) {
+                    window.localStorage.removeItem(k);
+                    continue;
+                }
+                out.push({ id: k.slice(scope.length), at: parsed.at });
+            } catch {
+                window.localStorage.removeItem(k); // unreadable, so of no use to anyone
+            }
+        }
+    } catch {
+        /* storage unavailable - behave as though there were no drafts */
+    }
+
+    return out.sort((a, b) => b.at - a.at);
+}
+
+/** Throw one draft away, e.g. after its record turns out to be gone. */
+export function discardDraft(family: string, id: string): void {
+    try {
+        window.localStorage.removeItem(PREFIX + family + '.' + id);
+    } catch {
+        /* storage unavailable - nothing to clean up */
+    }
+}
+
 export function useFormDraft<T extends object>({
     key,
     data,
@@ -55,12 +119,33 @@ export function useFormDraft<T extends object>({
 }): { restored: boolean; dismiss: () => void; clear: () => void } {
     const storageKey = PREFIX + key;
     const [restored, setRestored] = useState(false);
+
+    /*
+     * 🔴 A DRAFT OF AN UNTOUCHED FORM IS WORSE THAN NO DRAFT: it makes the page
+     * offer to resume work nobody did, and it re-appeared the instant "Start over"
+     * blanked the fields, because clearing storage does not stop the save effect
+     * from writing the blanked form straight back.
+     *
+     * So nothing is written until the data actually differs from how the form
+     * opened. `clear()` re-baselines to the current values, which is what makes
+     * discarding and saving stick instead of immediately re-creating a draft.
+     */
+    const baseline = useRef<string | null>(null);
+    /*
+     * ⚠️ Re-baselining inside `clear()` is too EARLY, and that is subtle:
+     * "Start over" clears and then blanks the fields, so baselining against the
+     * values being discarded made the blanking itself look like fresh typing and
+     * wrote the draft straight back. The flag defers it to the next render, by
+     * which time the form holds whatever it was reset to.
+     */
+    const rebase = useRef(false);
     // Restore exactly once per (key, opening). Without this the save effect
     // below would immediately re-trigger a restore and the two would loop.
     const tried = useRef<string | null>(null);
 
     const clear = () => {
         setRestored(false);
+        rebase.current = true;
         try {
             window.localStorage.removeItem(storageKey);
         } catch {
@@ -72,11 +157,16 @@ export function useFormDraft<T extends object>({
     useEffect(() => {
         if (!active) {
             tried.current = null; // so reopening the same record tries again
+            baseline.current = null;
+            rebase.current = false;
 
             return;
         }
         if (tried.current === storageKey) return;
         tried.current = storageKey;
+
+        // How the form looks BEFORE restoring: typing is measured against this.
+        baseline.current = snapshot(data);
 
         try {
             const raw = window.localStorage.getItem(storageKey);
@@ -106,11 +196,24 @@ export function useFormDraft<T extends object>({
     useEffect(() => {
         if (!active) return;
 
+        // Just discarded or just saved: adopt whatever the form now holds as the
+        // new "untouched" state and write nothing this round.
+        if (rebase.current) {
+            rebase.current = false;
+            baseline.current = snapshot(data);
+
+            return;
+        }
+
         // Debounced: this fires on every keystroke, and localStorage writes are
         // synchronous and block the main thread.
         const id = window.setTimeout(() => {
+            const values = snapshot(data);
+            // Nothing typed yet (or just discarded): leave storage alone.
+            if (baseline.current === null || values === baseline.current) return;
+
             try {
-                window.localStorage.setItem(storageKey, JSON.stringify({ at: Date.now(), values: serialisable(data) }));
+                window.localStorage.setItem(storageKey, JSON.stringify({ at: Date.now(), values: JSON.parse(values) }));
             } catch {
                 /* quota or private mode — the form still works, just unsaved */
             }

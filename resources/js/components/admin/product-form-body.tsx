@@ -292,11 +292,14 @@ export default function ProductFormBody({
 
     /* Sits with the image warning, because both say "this form is not as
        complete as it looks" - and a restored draft has no photographs. */
+    /* ⚠️ Its OWN keys, not the hero's. Borrowing a label across two unrelated
+       components is how `hero.cta` silently became a raw string on the homepage
+       when the hero moved its copy (2026-08-19). */
     const draftNotice = draft.restored ? (
         <p className="text-xs text-amber-400">
-            {t('admin.hero.draftRestored')}{' '}
+            {t('admin.products.form.draftRestored')}{' '}
             <button type="button" onClick={draft.dismiss} className="underline">
-                {t('admin.hero.draftDismiss')}
+                {t('admin.products.form.draftDismiss')}
             </button>
         </p>
     ) : null;

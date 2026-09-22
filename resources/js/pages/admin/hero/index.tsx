@@ -5,13 +5,13 @@ import HeroLinkPicker, { type LinkTargets } from '@/components/admin/hero-link-p
 import Modal from '@/components/admin/modal';
 import StatusBadge from '@/components/admin/status-badge';
 import StatusToggle from '@/components/admin/status-toggle';
-import { useFormDraft } from '@/hooks/use-form-draft';
+import { discardDraft, listDrafts, useFormDraft, type DraftSummary } from '@/hooks/use-form-draft';
 import { useAdminT } from '@/i18n/use-admin-t';
 import AdminLayout from '@/layouts/admin-layout';
 import { CARD } from '@/lib/admin-ui';
 import { posterFromVideo } from '@/lib/video-poster';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Film, GalleryHorizontal, GripVertical, Image as ImageIcon, Lock, Pencil, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Film, GalleryHorizontal, GripVertical, Image as ImageIcon, Lock, Pencil, Plus, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Slide {
@@ -149,6 +149,20 @@ export default function HeroIndex({
         active: open,
     });
 
+    /*
+     * 🔴 Unfinished work has to be visible from the PAGE, not only from inside the
+     * dialog. A refresh closes the modal, so the client saw an untouched page and
+     * concluded everything was lost - the draft was there the whole time, with
+     * nothing on screen saying so. This is that missing signal.
+     */
+    const [drafts, setDrafts] = useState<DraftSummary[]>([]);
+    // Read in an effect, never during render: the SSR sidecar has no localStorage.
+    const refreshDrafts = () => setDrafts(listDrafts('hero'));
+    useEffect(refreshDrafts, []);
+    // A save clears its draft and a delete can orphan one, so re-read whenever the
+    // server sends fresh rows rather than trying to remember every path that changes them.
+    useEffect(refreshDrafts, [slides]);
+
     const openFor = (row: Slide | null) => {
         setEditing(row);
         form.setData({
@@ -177,6 +191,42 @@ export default function HeroIndex({
         setPreview_(row ? (row.kind === 'video' ? row.video_poster : row.image_full) : null);
         setPhonePreview(row?.image_mobile_full ?? null);
         setOpen(true);
+    };
+
+    /**
+     * Reopen the dialog on whichever record the draft belongs to; the hook then
+     * puts the typed values back.
+     *
+     * ⚠️ A draft can outlive its slide (edited, then deleted). Opening a dialog for
+     * a row that no longer exists would save a NEW slide carrying the old one's
+     * text, so the draft is thrown away instead and the client told why.
+     */
+    /*
+     * ⚠️ EVERY exit goes through here. Cancel used to call `setOpen(false)`
+     * directly, so a cancelled draft was kept but not OFFERED until the next page
+     * load - the exact invisibility this feature exists to fix.
+     */
+    const closeDialog = () => {
+        setOpen(false);
+        refreshDrafts();
+    };
+
+    const resumeDraft = (d: DraftSummary) => {
+        if (d.id === 'new') {
+            openFor(null);
+
+            return;
+        }
+
+        const row = slides.find((s) => String(s.id) === d.id);
+        if (!row) {
+            discardDraft('hero', d.id);
+            refreshDrafts();
+
+            return;
+        }
+
+        openFor(row);
     };
 
     /**
@@ -254,7 +304,7 @@ export default function HeroIndex({
                 // draft of someone who hit Cancel by accident, which is the very
                 // thing this is for.
                 draft.clear();
-                setOpen(false);
+                closeDialog();
             },
         });
     };
@@ -343,9 +393,28 @@ export default function HeroIndex({
             <div className="mb-4 flex items-start justify-between gap-4">
                 <p className="max-w-2xl text-sm text-neutral-400">{t('admin.hero.intro')}</p>
                 {canManage && (
-                    <Button onClick={() => openFor(null)} icon={Plus}>
-                        {t('admin.hero.add')}
-                    </Button>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                        {drafts.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => resumeDraft(drafts[0])}
+                                /* Amber, matching the in-dialog notice, and deliberately
+                                   quieter than the primary action: it is a recovery, not
+                                   the thing most visitors came to do. */
+                                className="inline-flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20"
+                                title={t('admin.hero.resumeHint')}
+                            >
+                                <RotateCcw className="size-4 shrink-0" />
+                                <span>
+                                    {drafts[0].id === 'new' ? t('admin.hero.resumeNew') : t('admin.hero.resumeEdit')}
+                                    {drafts.length > 1 && ` (${drafts.length})`}
+                                </span>
+                            </button>
+                        )}
+                        <Button onClick={() => openFor(null)} icon={Plus}>
+                            {t('admin.hero.add')}
+                        </Button>
+                    </div>
                 )}
             </div>
 
@@ -549,7 +618,7 @@ export default function HeroIndex({
 
             <Modal
                 open={open}
-                onClose={() => setOpen(false)}
+                onClose={closeDialog}
                 title={editing ? t('admin.hero.editTitle') : t('admin.hero.addTitle')}
                 /* Wide enough for two columns. The artwork and its crop editor are
                    inherently large, and in one narrow column every setting sat
@@ -564,14 +633,25 @@ export default function HeroIndex({
                         {draft.restored && (
                             <p className="text-amber-400">
                                 {t('admin.hero.draftRestored')}{' '}
-                                <button type="button" onClick={draft.dismiss} className="underline">
-                                    {t('admin.hero.draftDismiss')}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        // 🔑 A real discard: throw the draft away AND blank the
+                                        // fields. Merely hiding the notice left the restored text
+                                        // in place, so "start over" did not start over.
+                                        draft.clear();
+                                        openFor(editing);
+                                        refreshDrafts();
+                                    }}
+                                    className="underline"
+                                >
+                                    {t('admin.hero.draftDiscard')}
                                 </button>
                             </p>
                         )}
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="secondary" onClick={() => setOpen(false)}>
+                        <Button variant="secondary" onClick={closeDialog}>
                             {t('admin.common.cancel')}
                         </Button>
                         <Button onClick={submit} disabled={form.processing}>

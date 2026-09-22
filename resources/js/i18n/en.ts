@@ -707,7 +707,10 @@ const en = {
             hrefHint:
                 'Where tapping the banner takes a shopper, e.g. /shop or /shop?category=dates. A full web address works too. Leave it empty and the banner is just a picture.',
             draftRestored: 'We kept what you had typed. Please choose your picture or video again — files cannot be saved.',
-            draftDismiss: 'Got it',
+            draftDiscard: 'Start over',
+            resumeNew: 'Resume unfinished slide',
+            resumeEdit: 'Resume unfinished edit',
+            resumeHint: 'You started this and did not save it. It is kept in this browser for a day.',
             groupLink: 'Where it goes',
             linkKind: 'Tapping the banner opens',
             linkKinds: {
@@ -1627,6 +1630,8 @@ const en = {
                 noImages: 'No images yet.',
                 primary: 'Primary',
                 setPrimary: 'Set primary',
+                draftRestored: 'We kept what you had typed. Please choose your pictures again — files cannot be saved.',
+                draftDismiss: 'Got it',
                 imageRequired: 'A product must have at least one image.',
                 selectImages: 'Add one or more images',
             },
