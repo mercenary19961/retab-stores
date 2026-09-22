@@ -10,11 +10,36 @@
  * already on their machine at that moment, so we can take the frame ourselves and
  * they never have to think about it.
  *
- * Best-effort by design: any failure resolves to null and the caller carries on
- * without a poster, exactly as before. A missing poster must never block a save.
+ * 🔑 It reports WHY it failed, and the caller needs that distinction:
+ *   - `decode` / `error` / `timeout` with no dimensions means this browser cannot
+ *     play the file at all, so the crop editor must not try to render it either;
+ *   - `canvas` means the video is fine and only the still could not be taken.
+ * Collapsing those into a bare null is what left the client staring at two black
+ * boxes with no way to tell a broken upload from a browser limitation.
  */
-export async function posterFromVideo(file: File, seconds = 0.1): Promise<File | null> {
-    if (typeof document === 'undefined') return null;
+
+export interface PosterResult {
+    /** The captured still, or null if one could not be taken. */
+    poster: File | null;
+    /** null on success, otherwise a short machine-readable cause. */
+    reason: 'error' | 'timeout' | 'canvas' | null;
+    /** 0 when metadata never arrived, i.e. the browser could not open the file. */
+    width: number;
+    height: number;
+    /** The element's own MediaError code, when it reported one. */
+    mediaError: number | null;
+}
+
+export async function posterFromVideo(file: File, seconds = 0.1): Promise<PosterResult> {
+    const fail = (reason: PosterResult['reason'], width = 0, height = 0, mediaError: number | null = null): PosterResult => ({
+        poster: null,
+        reason,
+        width,
+        height,
+        mediaError,
+    });
+
+    if (typeof document === 'undefined') return fail('error');
 
     const url = URL.createObjectURL(file);
 
@@ -26,18 +51,18 @@ export async function posterFromVideo(file: File, seconds = 0.1): Promise<File |
         video.playsInline = true;
         video.src = url;
 
-        const frame = await new Promise<Blob | null>((resolve) => {
+        const outcome = await new Promise<PosterResult>((resolve) => {
             // ⚠️ A hard ceiling: a corrupt or unsupported file can leave every
             // event unfired, and without this the save button would hang forever
             // on a promise that never settles.
-            const bail = window.setTimeout(() => resolve(null), 8000);
+            const bail = window.setTimeout(() => resolve(fail('timeout', video.videoWidth, video.videoHeight, video.error?.code ?? null)), 8000);
 
-            const done = (blob: Blob | null) => {
+            const done = (result: PosterResult) => {
                 window.clearTimeout(bail);
-                resolve(blob);
+                resolve(result);
             };
 
-            video.onerror = () => done(null);
+            video.onerror = () => done(fail('error', video.videoWidth, video.videoHeight, video.error?.code ?? null));
 
             video.onloadeddata = () => {
                 // Seek a fraction in: frame 0 of a fade-in is often pure black,
@@ -46,28 +71,44 @@ export async function posterFromVideo(file: File, seconds = 0.1): Promise<File |
             };
 
             video.onseeked = () => {
+                const w = video.videoWidth;
+                const h = video.videoHeight;
+
                 try {
                     const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    if (!canvas.width || !canvas.height) return done(null);
+                    canvas.width = w;
+                    canvas.height = h;
+                    if (!w || !h) return done(fail('canvas', w, h));
 
                     const ctx = canvas.getContext('2d');
-                    if (!ctx) return done(null);
+                    if (!ctx) return done(fail('canvas', w, h));
 
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob((blob) => done(blob), 'image/jpeg', 0.82);
+                    ctx.drawImage(video, 0, 0, w, h);
+                    canvas.toBlob(
+                        (blob) =>
+                            done(
+                                blob
+                                    ? {
+                                          poster: new File([blob], 'poster.jpg', { type: 'image/jpeg' }),
+                                          reason: null,
+                                          width: w,
+                                          height: h,
+                                          mediaError: null,
+                                      }
+                                    : fail('canvas', w, h),
+                            ),
+                        'image/jpeg',
+                        0.82,
+                    );
                 } catch {
-                    done(null);
+                    done(fail('canvas', w, h));
                 }
             };
         });
 
-        if (!frame) return null;
-
-        return new File([frame], 'poster.jpg', { type: 'image/jpeg' });
+        return outcome;
     } catch {
-        return null;
+        return fail('error');
     } finally {
         URL.revokeObjectURL(url);
     }

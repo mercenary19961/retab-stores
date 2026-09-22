@@ -675,6 +675,8 @@ const en = {
             recommendedPhone: 'phones {{w}} x {{h}}',
             yours: 'Yours: {{w}} x {{h}}',
             willCrop: 'this will be cropped to fit, so set the point below',
+            videoUnplayable:
+                'This browser cannot play this video file, so it cannot be shown here. Choose a first frame picture above and it will be used for the preview instead. Shoppers on other devices may still see the video, but an MP4 saved as H.264 is the safest choice.',
             posterFailed:
                 'We could not read a first frame from this video. It will still play, but please choose a first frame above so shoppers do not see a blank banner while it loads.',
             readingVideo: 'Taking the first frame of your video to use while it loads...',

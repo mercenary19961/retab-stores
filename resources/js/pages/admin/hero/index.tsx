@@ -137,6 +137,16 @@ export default function HeroIndex({
     const [previewVideo, setPreviewVideo] = useState(false);
     /** The grab failed, so the storefront needs a first frame supplied by hand. */
     const [posterFailed, setPosterFailed] = useState(false);
+    /*
+     * 🔴 This browser cannot open the chosen video AT ALL (no metadata, so not
+     * merely no frame). Client-reported: two black crop boxes both claiming the
+     * art "fits exactly", which is what the box says when it has no dimensions.
+     *
+     * When this is true the editor must stop trying to render the video and use
+     * the first-frame picture instead - which is precisely what the client had
+     * already supplied by hand, and watched be ignored.
+     */
+    const [videoUnplayable, setVideoUnplayable] = useState(false);
 
     // ⚠️ Object URLs are leaked until revoked, and this dialog can be opened
     // dozens of times in a session while choosing artwork.
@@ -205,6 +215,7 @@ export default function HeroIndex({
         setPreview_(row ? (row.kind === 'video' ? (row.video ?? row.video_poster) : row.image_full) : null);
         setPreviewVideo(row?.kind === 'video' && !!row.video);
         setPosterFailed(false);
+        setVideoUnplayable(false);
         setPhonePreview(row?.image_mobile_full ?? null);
         setOpen(true);
     };
@@ -286,17 +297,62 @@ export default function HeroIndex({
         // frame grab, which can take seconds on a large video and can fail outright.
         setPreview_(URL.createObjectURL(f));
         setPreviewVideo(true);
+        setVideoUnplayable(false);
 
         // The poster still matters, but for the STOREFRONT, not for this editor:
         // a posterless hero video paints nothing while it buffers.
         setBusy(true);
         try {
-            const poster = await posterFromVideo(f);
-            if (poster) form.setData('video_poster', poster);
-            else setPosterFailed(true);
+            const result = await posterFromVideo(f);
+
+            if (result.poster) {
+                form.setData('video_poster', result.poster);
+
+                return;
+            }
+
+            setPosterFailed(true);
+
+            // ⚠️ NO DIMENSIONS means metadata never arrived, i.e. this browser
+            // cannot open the file - so the crop boxes would stay black however
+            // long we waited. Anything else means the video plays and only the
+            // still could not be taken, which is cosmetic.
+            if (!result.width || !result.height) {
+                setVideoUnplayable(true);
+                setPreviewVideo(false);
+                // Fall back to a first frame if one is already attached; otherwise
+                // choosePoster() picks it up the moment the client supplies one.
+                setPreview_(form.data.video_poster instanceof File ? URL.createObjectURL(form.data.video_poster) : null);
+            }
+
+            // Left for diagnosis: the client's browser is the only place this
+            // reproduces, so the cause has to be visible from their console.
+            console.warn('[hero] could not read a frame from this video', {
+                reason: result.reason,
+                mediaError: result.mediaError,
+                width: result.width,
+                height: result.height,
+                type: f.type,
+                size: f.size,
+            });
         } finally {
             setBusy(false);
         }
+    };
+
+    /**
+     * The first-frame picture.
+     *
+     * 🔑 When the video cannot be rendered here, this becomes the crop preview.
+     * The client supplied exactly this image for exactly that reason and it was
+     * ignored, because the preview was hard-wired to the video.
+     */
+    const choosePoster = (f: File | null) => {
+        form.setData('video_poster', f);
+        if (!videoUnplayable) return;
+
+        setPreview_(f ? URL.createObjectURL(f) : null);
+        setPreviewVideo(false);
     };
 
     /*
@@ -363,7 +419,9 @@ export default function HeroIndex({
                     if (name === 'image') chooseImage(f);
                     else if (name === 'image_mobile') choosePhoneImage(f);
                     else if (name === 'video') chooseVideo(f);
-                    else form.setData(name, f);
+                    // All four are handled, so there is no fallback branch left:
+                    // `name` narrows to never and tsc rejects a setData on it.
+                    else choosePoster(f);
                 }}
                 className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-300 outline-none file:mr-3 file:rounded file:border-0 file:bg-neutral-800 file:px-3 file:py-1 file:text-neutral-200"
             />
@@ -744,7 +802,14 @@ export default function HeroIndex({
                         {busy && <p className="text-xs text-neutral-400">{t('admin.hero.readingVideo')}</p>}
                         {/* ⚠️ Said nothing at all before, so a failed grab was
                             indistinguishable from a broken upload. */}
-                        {posterFailed && !busy && <p className="text-xs text-amber-400">{t('admin.hero.posterFailed')}</p>}
+                        {posterFailed && !busy && (
+                            <p className="text-xs text-amber-400">
+                                {/* Two different problems, two different sentences: "no still
+                                    could be taken" is cosmetic, "this browser cannot play the
+                                    file" needs the client to act. */}
+                                {t(videoUnplayable ? 'admin.hero.videoUnplayable' : 'admin.hero.posterFailed')}
+                            </p>
+                        )}
                     </div>
 
                     {/* RIGHT: the settings. Moved out from under the preview at the
