@@ -317,6 +317,9 @@ Route::middleware(['auth', 'staff', 'admin.locale'])->prefix('admin')->name('adm
     Route::middleware('permission:shipping.manage')->group(function () {
         Route::post('shipping/refresh', [ShippingController::class, 'refresh'])->name('shipping.refresh');
         Route::patch('shipping/{carrier}/toggle', [ShippingController::class, 'toggle'])->name('shipping.toggle');
+        // Ordering only, but still behind `manage`: the pin is stored on the carrier
+        // and every admin sees the same order, so it is not one person's view setting.
+        Route::patch('shipping/{carrier}/favourite', [ShippingController::class, 'favourite'])->name('shipping.favourite');
         Route::put('shipping/{carrier}', [ShippingController::class, 'update'])->name('shipping.update');
     });
 

@@ -106,6 +106,30 @@ class ShippingController extends Controller
             : 'messages.admin.carrier_disabled', ['name' => $carrier->name]));
     }
 
+    /**
+     * Pin or unpin a carrier so it sorts to the top of the portal.
+     *
+     * 🔑 Ordering only — it deliberately touches nothing the quote path reads. The
+     * account lists sixteen carriers of which the store uses two or three, so this
+     * is about finding SMSA quickly, not about whether SMSA may carry a parcel.
+     * That stays entirely with the enable switch, which is why there is no guard
+     * here to match `lastAvailableCarrier`: no arrangement of favourites can leave
+     * an order unshippable.
+     *
+     * ⚠️ Not change-logged, unlike toggle() and update(). Those record a decision
+     * someone may later have to answer for ("who turned SMSA off?"); this records
+     * only that someone tidied their own screen, and logging it would bury the
+     * entries that matter under noise.
+     */
+    public function favourite(ShippingCarrier $carrier): RedirectResponse
+    {
+        $carrier->update(['is_favourite' => ! $carrier->is_favourite]);
+
+        return back()->with('success', __($carrier->is_favourite
+            ? 'messages.admin.carrier_favourited'
+            : 'messages.admin.carrier_unfavourited', ['name' => $carrier->name]));
+    }
+
     public function update(Request $request, ShippingCarrier $carrier, ChangeLogService $changeLog): RedirectResponse
     {
         $data = $request->validate(self::FIELDS);

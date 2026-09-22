@@ -25,12 +25,15 @@ import {
     PlugZap,
     RefreshCw,
     Search,
+    Star,
     Truck,
     Warehouse,
     X,
     Zap,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+
+import { sortCarriers } from './sort';
 
 interface Service {
     id: number | null;
@@ -54,6 +57,7 @@ interface Carrier {
     name: string;
     name_ar: string | null;
     is_enabled: boolean;
+    is_favourite: boolean;
     website_url: string | null;
     support_phone: string | null;
     support_email: string | null;
@@ -112,11 +116,6 @@ function deliveryDays(raw: string | null): number | null {
     const numbers = raw.match(/\d+/g);
 
     return numbers ? Math.max(...numbers.map(Number)) : null;
-}
-
-/** Cheapest price across a carrier's services, or Infinity so it sorts last. */
-function priceOf(carrier: Carrier): number {
-    return carrier.cheapest ?? Infinity;
 }
 
 /**
@@ -189,6 +188,7 @@ export default function ShippingIndex({
     const counts = useMemo(
         () => ({
             all: carriers.length,
+            pinned: carriers.filter((c) => c.is_favourite).length,
             available: carriers.filter((c) => c.available).length,
             off: carriers.filter((c) => !c.is_enabled).length,
             // What can actually carry a parcel right now: OTO is offering it AND we
@@ -198,14 +198,20 @@ export default function ShippingIndex({
         [carriers],
     );
 
-    /** Current filter + search, cheapest first. Drives the grid AND the rail. */
+    /**
+     * Current filter + search, in reading order. Drives the grid AND the rail, so
+     * the two can never disagree about what is on the page or in what order.
+     */
     const visible = useMemo(() => {
         const q = query.trim().toLowerCase();
 
-        return carriers
-            .filter((c) => (filter === 'available' ? c.available : filter === 'off' ? !c.is_enabled : true))
-            .filter((c) => !q || prettyName(c.name).toLowerCase().includes(q) || (c.name_ar ?? '').includes(q))
-            .sort((a, b) => priceOf(a) - priceOf(b));
+        return sortCarriers(
+            carriers
+                .filter((c) =>
+                    filter === 'available' ? c.available : filter === 'off' ? !c.is_enabled : filter === 'pinned' ? c.is_favourite : true,
+                )
+                .filter((c) => !q || prettyName(c.name).toLowerCase().includes(q) || (c.name_ar ?? '').includes(q)),
+        );
     }, [carriers, filter, query]);
 
     // 🔑 Derived, not stored. If the filter changes and the open carrier drops out
@@ -213,7 +219,15 @@ export default function ShippingIndex({
     // is no effect to keep in sync and no way to be left reading a hidden carrier.
     const current = visible.find((c) => c.key === selectedKey) ?? null;
 
-    const cheapest = visible.find((c) => c.cheapest !== null) ?? null;
+    // 🔴 Scanned for the minimum, NOT read off the front of the list. The list is
+    // no longer price-sorted — pinned carriers lead it — so taking the first
+    // priced row would report whichever courier someone happened to pin as the
+    // cheapest one, on the strip whose entire job is answering that question.
+    const cheapest = useMemo(() => {
+        const priced = visible.filter((c) => c.cheapest !== null);
+
+        return priced.length ? priced.reduce((a, b) => ((b.cheapest as number) < (a.cheapest as number) ? b : a)) : null;
+    }, [visible]);
     const fastest = useMemo(() => {
         const rated = visible
             .map((c) => ({
@@ -346,6 +360,9 @@ export default function ShippingIndex({
                     onChange={setFilter}
                     options={[
                         { value: null, label: t('admin.shipping.filters.all'), count: counts.all },
+                        // Only offered once something is pinned: a chip reading "Pinned 0"
+                        // advertises an empty view and is the first thing anyone clicks.
+                        ...(counts.pinned > 0 ? [{ value: 'pinned', label: t('admin.shipping.filters.pinned'), count: counts.pinned }] : []),
                         { value: 'available', label: t('admin.shipping.filters.available'), count: counts.available },
                         { value: 'off', label: t('admin.shipping.filters.off'), count: counts.off },
                     ]}
@@ -448,6 +465,9 @@ export default function ShippingIndex({
                             >
                                 <CarrierLogo carrier={carrier} logo={logoFor(carrier)} className="h-6 w-6 text-[9px]" />
                                 <span className="min-w-0 flex-1 truncate">{prettyName(carrier.name)}</span>
+                                {/* Marker only, never a control: the rail row is itself a
+                                    button, and a button inside a button is invalid HTML. */}
+                                {carrier.is_favourite && <Star className="fill-brand-gold text-brand-gold h-3 w-3 shrink-0" aria-hidden="true" />}
                                 <span className="font-mono text-xs text-neutral-400 tabular-nums" dir="ltr">
                                     {carrier.cheapest === null ? '—' : carrier.cheapest.toFixed(2)}
                                 </span>
@@ -490,6 +510,69 @@ function CarrierLogo({ carrier, logo, className = 'h-10 w-10 text-xs' }: { carri
         <span className={`${className} grid shrink-0 place-items-center rounded-lg bg-neutral-800 font-mono font-semibold text-neutral-400`}>
             {initials || <Package className="h-4 w-4" />}
         </span>
+    );
+}
+
+/**
+ * Pin a carrier to the top of the list.
+ *
+ * ⚠️ Deliberately NOT a StatusToggle like the switch beside it. That control is
+ * styled as a status — something the reader is meant to READ — and this is a
+ * personal shortcut with no bearing on whether a parcel can ship. Making them
+ * look alike would put "I use this one a lot" and "this courier may carry
+ * orders" in the same visual language, which is the one confusion this page is
+ * built to avoid.
+ *
+ * Without `shipping.manage` it degrades to a plain marker: a view-only editor
+ * still needs to see which couriers the store works with, just not change it.
+ */
+function FavouriteButton({ carrier, manage, className = '' }: { carrier: Carrier; manage: boolean; className?: string }) {
+    const { t } = useAdminT();
+    const [busy, setBusy] = useState(false);
+    const label = carrier.is_favourite ? t('admin.shipping.unpin') : t('admin.shipping.pin');
+
+    const star = (
+        <Star
+            className={`h-4 w-4 ${carrier.is_favourite ? 'fill-brand-gold text-brand-gold' : 'text-neutral-500'}`}
+            // The fill alone carries the state, and a fill is a colour — so the
+            // label says it too rather than leaving it to anyone who cannot see
+            // the difference between a filled and a hollow star.
+            aria-hidden="true"
+        />
+    );
+
+    if (!manage) {
+        return carrier.is_favourite ? (
+            <span className={`inline-flex ${className}`} title={t('admin.shipping.pinned')} aria-label={t('admin.shipping.pinned')}>
+                {star}
+            </span>
+        ) : null;
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={(e) => {
+                // Sits inside the card's own click handler, which would otherwise
+                // open the carrier in the same press that pinned it.
+                e.stopPropagation();
+                if (busy) return;
+                setBusy(true);
+                router.patch(
+                    `/admin/shipping/${carrier.id}/favourite`,
+                    {},
+                    { preserveScroll: true, preserveState: true, onFinish: () => setBusy(false) },
+                );
+            }}
+            aria-pressed={carrier.is_favourite}
+            aria-label={label}
+            title={label}
+            className={`focus-visible:ring-brand-gold/50 -m-1 inline-flex rounded p-1 transition hover:opacity-75 focus:outline-none focus-visible:ring-2 active:scale-95 ${
+                busy ? 'opacity-60' : ''
+            } ${className}`}
+        >
+            {star}
+        </button>
     );
 }
 
@@ -566,6 +649,7 @@ function CarrierCard({
                     </button>
                     {eta && <span className="block truncate text-xs text-neutral-500">{eta}</span>}
                 </div>
+                <FavouriteButton carrier={carrier} manage={manage} />
             </div>
 
             <p className="mt-3 flex items-baseline gap-1.5 font-mono text-xl text-neutral-100 tabular-nums" dir="ltr">
@@ -632,6 +716,7 @@ function CarrierDetail({
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-2.5">
                         <EnableControl carrier={carrier} manage={manage} />
+                        <FavouriteButton carrier={carrier} manage={manage} />
                         <span className={`text-xs ${carrier.available ? 'text-neutral-500' : 'text-amber-400'}`}>
                             {carrier.available ? t('admin.shipping.availableNow') : t('admin.shipping.notOffered')}
                         </span>

@@ -896,6 +896,10 @@ const en = {
             lastSeen: 'Last offered on {{when}}',
             neverSeen: 'OTO has not offered this carrier since it was added.',
 
+            pinned: 'Pinned',
+            pin: 'Pin to the top of the list',
+            unpin: 'Remove from the top of the list',
+
             filterPlaceholder: 'Search carriers',
             collectFrom: 'Couriers collect from',
             multiplePickups: 'More than one pickup location: OTO chooses which courier collects from. Pin one in OTO to be sure.',
@@ -924,6 +928,7 @@ const en = {
             empty: 'No carriers to show. Use Refresh from OTO to load the ones on your account.',
             filters: {
                 all: 'All carriers',
+                pinned: 'Pinned',
                 available: 'Available now',
                 off: 'Switched off',
             },

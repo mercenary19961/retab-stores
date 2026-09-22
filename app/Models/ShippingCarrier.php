@@ -40,6 +40,7 @@ class ShippingCarrier extends Model
         'name',
         'name_ar',
         'is_enabled',
+        'is_favourite',
         'website_url',
         'support_phone',
         'support_email',
@@ -53,6 +54,7 @@ class ShippingCarrier extends Model
 
     protected $casts = [
         'is_enabled' => 'boolean',
+        'is_favourite' => 'boolean',
         'last_seen_at' => 'datetime',
     ];
 

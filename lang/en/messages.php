@@ -195,6 +195,8 @@ return [
         'carrier_enabled' => ':name is on. It can now be chosen when shipping an order.',
         'carrier_disabled' => ':name is off. It will no longer be offered or auto-selected when shipping.',
         'carrier_last_enabled' => 'This is the only carrier still available, so switching it off would leave no way to ship an order. Turn another one on first.',
+        'carrier_favourited' => ':name is pinned to the top of the list.',
+        'carrier_unfavourited' => ':name is no longer pinned.',
         'carrier_saved' => 'Saved the details for :name.',
         // Same shape as carrier_last_enabled: refuse here rather than let checkout
         // become unpayable with nothing pointing back at this save.

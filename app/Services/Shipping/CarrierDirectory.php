@@ -105,6 +105,18 @@ class CarrierDirectory
         }
 
         $carriers = ShippingCarrier::query()
+            // A carrier OTO has never once offered has nothing to put on a card:
+            // no price, no delivery time, no services. DHL is the only such row —
+            // seeded off, never listed on this account — and it read as a dead
+            // tile saying "— SAR".
+            //
+            // 🔑 The ROW is kept, not deleted, and the difference is load-bearing:
+            // this register is what implements the recorded "GCC only, no Aramex,
+            // no DHL" decision, and ShippingCarrier::disabledKeys fails OPEN, so
+            // deleting the row would quietly un-ban DHL. Hidden here, banned there.
+            // If OTO ever does start offering it, sync() stamps last_seen_at and
+            // the card appears by itself — switched off, at the end of the list.
+            ->whereNotNull('last_seen_at')
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
@@ -118,6 +130,9 @@ class CarrierDirectory
                     'name' => $carrier->name,
                     'name_ar' => $carrier->name_ar,
                     'is_enabled' => $carrier->is_enabled,
+                    // Ordering only. Never consulted by the quote path: a pinned
+                    // carrier that is switched off must stay unshippable.
+                    'is_favourite' => $carrier->is_favourite,
                     'website_url' => $carrier->website_url,
                     'support_phone' => $carrier->support_phone,
                     'support_email' => $carrier->support_email,

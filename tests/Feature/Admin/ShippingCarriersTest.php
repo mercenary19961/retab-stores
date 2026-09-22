@@ -267,9 +267,20 @@ class ShippingCarriersTest extends TestCase
     /**
      * OTO being unreachable must surface as data, not an exception: the switches
      * and the support phone numbers are exactly what someone needs at that moment.
+     *
+     * Asserted on a carrier OTO has offered before, because that is the real
+     * claim — the page keeps working for the couriers the store actually uses,
+     * with the contact details it saved for them.
      */
     public function test_the_portal_still_renders_when_oto_is_unreachable(): void
     {
+        ShippingCarrier::create([
+            'key' => 'smsa',
+            'name' => 'SMSA Express',
+            'support_phone' => '+966920000000',
+            'last_seen_at' => now()->subHour(),
+        ]);
+
         $this->fakeGateway(throws: new \RuntimeException('OTO refreshToken failed: 401'));
 
         $this->actingAs($this->admin())
@@ -278,9 +289,12 @@ class ShippingCarriersTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('admin/shipping/index')
                 ->where('error', 'OTO refreshToken failed: 401')
-                // The seeded exclusions still list, so the page is usable.
-                ->has('carriers', 2)
-                ->where('carriers.0.available', false));
+                ->has('carriers', 1)
+                ->where('carriers.0.name', 'SMSA Express')
+                // Unavailable, because OTO could not be asked — but the number a
+                // human needs at that exact moment is right there.
+                ->where('carriers.0.available', false)
+                ->where('carriers.0.support_phone', '+966920000000'));
     }
 
     /** The rate-check fallback carries no per-service detail, and says so. */
@@ -461,5 +475,137 @@ class ShippingCarriersTest extends TestCase
         $editor = $this->editor(['shipping' => ['view' => false, 'manage' => false]]);
 
         $this->actingAs($editor)->get('/admin/shipping')->assertForbidden();
+    }
+
+    // ---------------------------------------------------------------------
+    // A carrier OTO has never offered is hidden — but is NOT un-banned.
+    // ---------------------------------------------------------------------
+
+    /**
+     * DHL is seeded off and has never once been listed on this account, so its
+     * card carried no price, no delivery time and no services: a dead tile
+     * reading "— SAR". Same for any other row OTO has never offered.
+     */
+    public function test_a_carrier_oto_has_never_offered_is_hidden_from_the_portal(): void
+    {
+        $this->fakeGateway([$this->service('SMSA', 23.0)]);
+
+        $this->actingAs($this->admin())
+            ->get('/admin/shipping')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                // Aramex and DHL are both seeded by the migration; only the one
+                // OTO actually listed is on the page.
+                ->has('carriers', 1)
+                ->where('carriers.0.name', 'SMSA Express'));
+    }
+
+    /**
+     * 🔴 The guard that makes hiding DHL safe rather than a regression.
+     *
+     * The register is what implements the recorded "GCC only, no Aramex, no DHL"
+     * decision, and disabledKeys() fails OPEN — so DELETING the row would quietly
+     * re-admit DHL to every rate quote. Hidden on the page, still banned in the
+     * quote path. If these two ever diverge, this is the test that says so.
+     */
+    public function test_hiding_dhl_from_the_portal_does_not_un_ban_it(): void
+    {
+        $this->fakeGateway([$this->service('SMSA', 23.0)]);
+        $this->actingAs($this->admin())->get('/admin/shipping')->assertOk();
+
+        $this->assertArrayHasKey('dhl', ShippingCarrier::disabledKeys());
+
+        Cache::flush();
+        $options = $this->gatewayOfferingRates([
+            $this->rate(1, 'DHL Express', 5.0),   // cheapest, and still banned
+            $this->rate(2, 'SMSA', 23.0),
+        ])->getDeliveryOptions($this->order());
+
+        $this->assertSame(['SMSA'], array_map(fn ($o) => $o->carrier, $options));
+    }
+
+    /**
+     * The row is kept rather than deleted precisely so this works: the moment OTO
+     * starts offering a hidden carrier, sync() stamps it and the card appears by
+     * itself — switched off, because that is what the register says.
+     */
+    public function test_a_hidden_carrier_reappears_once_oto_offers_it(): void
+    {
+        $this->fakeGateway([$this->service('DHL Express', 40.0)]);
+
+        $this->actingAs($this->admin())
+            ->get('/admin/shipping')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('carriers', 1)
+                ->where('carriers.0.key', 'dhl')
+                ->where('carriers.0.available', true)
+                ->where('carriers.0.is_enabled', false));
+    }
+
+    // ---------------------------------------------------------------------
+    // Pinning: ordering only, never a shipping decision.
+    // ---------------------------------------------------------------------
+
+    public function test_a_carrier_can_be_pinned_and_unpinned(): void
+    {
+        $this->fakeGateway([$this->service('SMSA', 23.0)]);
+        $carrier = ShippingCarrier::create(['key' => 'smsa', 'name' => 'SMSA Express', 'last_seen_at' => now()]);
+
+        $this->actingAs($this->admin())->patch("/admin/shipping/{$carrier->id}/favourite");
+        $this->assertTrue($carrier->fresh()->is_favourite);
+
+        $this->actingAs($this->admin())->patch("/admin/shipping/{$carrier->id}/favourite");
+        $this->assertFalse($carrier->fresh()->is_favourite);
+    }
+
+    /**
+     * 🔴 Pinning must not be a back door around the enable switch. It reorders the
+     * page and nothing else, so a pinned-but-disabled carrier is still refused by
+     * the quote path — which is the one place the difference would cost money.
+     */
+    public function test_pinning_a_disabled_carrier_does_not_make_it_shippable(): void
+    {
+        $carrier = ShippingCarrier::create([
+            'key' => 'naqel', 'name' => 'Naqel Express', 'is_enabled' => false, 'last_seen_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin())->patch("/admin/shipping/{$carrier->id}/favourite");
+        $this->assertTrue($carrier->fresh()->is_favourite);
+
+        Cache::flush();
+        $options = $this->gatewayOfferingRates([
+            $this->rate(11, 'Naqel Express', 5.0),
+            $this->rate(22, 'SMSA Express', 23.0),
+        ])->getDeliveryOptions($this->order());
+
+        $this->assertSame(['SMSA Express'], array_map(fn ($o) => $o->carrier, $options));
+    }
+
+    /** The flag reaches the page, which is what the ordering is built from. */
+    public function test_the_portal_ships_the_pinned_flag(): void
+    {
+        $this->fakeGateway([$this->service('SMSA', 23.0)]);
+        ShippingCarrier::create(['key' => 'smsa', 'name' => 'SMSA Express', 'is_favourite' => true, 'last_seen_at' => now()]);
+
+        $this->actingAs($this->admin())
+            ->get('/admin/shipping')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('carriers.0.is_favourite', true));
+    }
+
+    /**
+     * Pinning is stored on the carrier and every admin sees the same order, so it
+     * is not one person's view setting — it sits behind `manage` with the switch.
+     */
+    public function test_pinning_requires_the_manage_permission(): void
+    {
+        $this->fakeGateway([$this->service('SMSA', 23.0)]);
+        $carrier = ShippingCarrier::create(['key' => 'smsa', 'name' => 'SMSA Express', 'last_seen_at' => now()]);
+
+        $viewOnly = $this->editor(['shipping' => ['view' => true, 'manage' => false]]);
+        $this->actingAs($viewOnly)->patch("/admin/shipping/{$carrier->id}/favourite")->assertForbidden();
+
+        $this->assertFalse($carrier->fresh()->is_favourite);
     }
 }
