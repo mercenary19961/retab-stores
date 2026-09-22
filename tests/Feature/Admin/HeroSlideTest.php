@@ -519,6 +519,57 @@ class HeroSlideTest extends TestCase
         ])->assertSessionHasErrors('focal_x');
     }
 
+    /**
+     * 🔴 Phone art is a DIFFERENT FILE, so it needs its own focal point. The
+     * point chosen on a wide desktop banner says nothing about where a 9:16
+     * social export should sit, and sharing one would crop the phone art by an
+     * instruction that was never about it.
+     */
+    public function test_the_phone_art_carries_its_own_focal_point(): void
+    {
+        $this->slide([
+            'image_mobile' => 'hero/phone.jpg',
+            'focal_x' => 20, 'focal_y' => 30,
+            'focal_mobile_x' => 70, 'focal_mobile_y' => 96,
+        ]);
+
+        $payload = HeroBanners::ownSlides()[0];
+
+        $this->assertSame('20% 30%', $payload['focal']);
+        $this->assertSame('70% 96%', $payload['focal_mobile']);
+    }
+
+    public function test_a_slide_without_a_mobile_focal_point_stays_centred(): void
+    {
+        $this->assertSame('50% 50%', $this->slide()->focalMobilePosition());
+    }
+
+    public function test_a_mobile_focal_point_outside_the_picture_is_refused(): void
+    {
+        Storage::fake(Media::disk());
+
+        $this->actingAs($this->admin())->post('/admin/hero', [
+            'kind' => 'image',
+            'image' => UploadedFile::fake()->image('a.jpg', 1920, 960),
+            'focal_mobile_y' => 255,
+        ])->assertSessionHasErrors('focal_mobile_y');
+    }
+
+    /**
+     * ⚠️ Campaign banners come from another table and carry no focal point of
+     * their own, but the storefront reads the key unconditionally — a missing one
+     * would be `undefined` in the payload and render as no object-position.
+     */
+    public function test_campaign_banners_still_carry_both_focal_keys(): void
+    {
+        $this->runningCampaign();
+
+        $banner = HeroBanners::campaignBanners()[0];
+
+        $this->assertSame('50% 50%', $banner['focal']);
+        $this->assertSame('50% 50%', $banner['focal_mobile']);
+    }
+
     /** Drag-and-drop submits a whole new order at once. */
     public function test_dragging_applies_the_whole_order(): void
     {

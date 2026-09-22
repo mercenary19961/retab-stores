@@ -73,8 +73,10 @@ interface HeroBanner {
      * under prefers-reduced-motion.
      */
     video: string | null;
-    /** CSS `object-position`, chosen by the client so the crop keeps the subject. */
+    /** CSS `object-position` for the desktop art, chosen so the crop keeps the subject. */
     focal: string;
+    /** The same for the phone art, which is a different file and needs its own. */
+    focal_mobile: string;
     href: string | null;
     alt_ar: string | null;
     alt_en: string | null;
@@ -246,10 +248,25 @@ function BannerSlide({
     reducedMotion: boolean;
     onEnded?: () => void;
 }) {
-    const box = `block aspect-[2/1] w-full object-cover ${phonePoster ? 'max-sm:aspect-[4/5]' : ''}`;
-    // The band is a fixed 2:1 and the art is object-cover, so anything else is
-    // cropped. This is where the client says which part must survive that crop.
-    const focal = { objectPosition: banner.focal || '50% 50%' };
+    const box =
+        'block aspect-[2/1] w-full object-cover [object-position:var(--focal)] ' +
+        // Only when phone art is actually in play does the phone point apply;
+        // otherwise the phone is showing the DESKTOP file and must keep using
+        // the point that was chosen against it.
+        (phonePoster ? 'max-sm:aspect-[4/5] max-sm:[object-position:var(--focal-m)] ' : '');
+    /*
+     * The band is a fixed 2:1 (4:5 on phones) and the art is object-cover, so
+     * anything else is cropped. This is where the client says which part survives.
+     *
+     * 🔑 Delivered as two CUSTOM PROPERTIES rather than a plain objectPosition,
+     * because desktop and phone use different FILES and therefore need different
+     * points — and one inline `object-position` cannot vary by breakpoint. The
+     * utilities below read whichever applies.
+     */
+    const focal = {
+        '--focal': banner.focal || '50% 50%',
+        '--focal-m': banner.focal_mobile || banner.focal || '50% 50%',
+    } as React.CSSProperties;
 
     /*
      * 🔴 Under reduced motion a video slide renders its POSTER, not the video.

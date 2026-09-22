@@ -18,10 +18,13 @@ interface Slide {
     image: string | null;
     image_full: string | null;
     image_mobile: string | null;
+    image_mobile_full: string | null;
     video: string | null;
     video_poster: string | null;
     focal_x: number;
     focal_y: number;
+    focal_mobile_x: number;
+    focal_mobile_y: number;
     href: string | null;
     alt_ar: string | null;
     alt_en: string | null;
@@ -80,6 +83,8 @@ export default function HeroIndex({
         is_active: boolean;
         focal_x: number;
         focal_y: number;
+        focal_mobile_x: number;
+        focal_mobile_y: number;
         starts_at: string;
         ends_at: string;
         sort_order: number;
@@ -95,6 +100,8 @@ export default function HeroIndex({
         is_active: true,
         focal_x: 50,
         focal_y: 50,
+        focal_mobile_x: 50,
+        focal_mobile_y: 50,
         starts_at: '',
         ends_at: '',
         sort_order: 0,
@@ -107,6 +114,12 @@ export default function HeroIndex({
      * whole complaint.
      */
     const [preview_, setPreview_] = useState<string | null>(null);
+    /*
+     * 🔴 The phone file needs its OWN preview URL. Without one the phone panel
+     * fell back to the desktop file, so a client who uploaded phone art watched
+     * it be ignored — which is exactly what was reported.
+     */
+    const [phonePreview, setPhonePreview] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
 
     // ⚠️ Object URLs are leaked until revoked, and this dialog can be opened
@@ -116,6 +129,12 @@ export default function HeroIndex({
 
         return () => URL.revokeObjectURL(preview_);
     }, [preview_]);
+
+    useEffect(() => {
+        if (!phonePreview?.startsWith('blob:')) return;
+
+        return () => URL.revokeObjectURL(phonePreview);
+    }, [phonePreview]);
 
     const openFor = (row: Slide | null) => {
         setEditing(row);
@@ -133,6 +152,8 @@ export default function HeroIndex({
             is_active: row?.is_active ?? true,
             focal_x: row?.focal_x ?? 50,
             focal_y: row?.focal_y ?? 50,
+            focal_mobile_x: row?.focal_mobile_x ?? 50,
+            focal_mobile_y: row?.focal_mobile_y ?? 50,
             starts_at: toInput(row?.starts_at ?? null),
             ends_at: toInput(row?.ends_at ?? null),
             sort_order: row?.sort_order ?? 0,
@@ -141,6 +162,7 @@ export default function HeroIndex({
         // Editing: show the art that is already stored, so the focal point can be
         // adjusted without re-uploading anything.
         setPreview_(row ? (row.kind === 'video' ? row.video_poster : row.image_full) : null);
+        setPhonePreview(row?.image_mobile_full ?? null);
         setOpen(true);
     };
 
@@ -150,6 +172,11 @@ export default function HeroIndex({
     const chooseImage = (f: File | null) => {
         form.setData('image', f);
         setPreview_(f ? URL.createObjectURL(f) : null);
+    };
+
+    const choosePhoneImage = (f: File | null) => {
+        form.setData('image_mobile', f);
+        setPhonePreview(f ? URL.createObjectURL(f) : null);
     };
 
     /**
@@ -202,6 +229,8 @@ export default function HeroIndex({
             is_active: data.is_active ? 1 : 0,
             focal_x: Math.round(data.focal_x),
             focal_y: Math.round(data.focal_y),
+            focal_mobile_x: Math.round(data.focal_mobile_x),
+            focal_mobile_y: Math.round(data.focal_mobile_y),
         }));
 
         form.post(editing ? `/admin/hero/${editing.id}` : '/admin/hero', {
@@ -235,6 +264,7 @@ export default function HeroIndex({
                 onChange={(e) => {
                     const f = e.target.files?.[0] ?? null;
                     if (name === 'image') chooseImage(f);
+                    else if (name === 'image_mobile') choosePhoneImage(f);
                     else if (name === 'video') chooseVideo(f);
                     else form.setData(name, f);
                 }}
@@ -534,10 +564,16 @@ export default function HeroIndex({
 
                     <HeroCropPreview
                         src={preview_}
+                        phoneSrc={phonePreview}
                         focal={{ x: form.data.focal_x, y: form.data.focal_y }}
                         onFocal={(x, y) => {
                             form.setData('focal_x', x);
                             form.setData('focal_y', y);
+                        }}
+                        focalMobile={{ x: form.data.focal_mobile_x, y: form.data.focal_mobile_y }}
+                        onFocalMobile={(x, y) => {
+                            form.setData('focal_mobile_x', x);
+                            form.setData('focal_mobile_y', y);
                         }}
                         t={t}
                     />

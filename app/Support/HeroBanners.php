@@ -119,6 +119,7 @@ class HeroBanners
                 'video' => null,
                 // Campaign art is designed to the band, so it is never re-centred.
                 'focal' => '50% 50%',
+                'focal_mobile' => '50% 50%',
                 'href' => $b->product ? "/products/{$b->product->slug}" : "/shop?event={$b->store_event_id}",
                 'alt_ar' => $b->alt_ar ?: ($b->product?->name_ar ?: $b->event->name_ar),
                 'alt_en' => $b->alt_en ?: ($b->product?->name_en ?: $b->event->name_en),

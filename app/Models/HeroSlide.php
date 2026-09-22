@@ -31,7 +31,7 @@ class HeroSlide extends Model
     public const KINDS = [self::KIND_IMAGE, self::KIND_VIDEO];
 
     protected $fillable = [
-        'kind', 'image', 'image_mobile', 'video', 'video_poster', 'focal_x', 'focal_y',
+        'kind', 'image', 'image_mobile', 'video', 'video_poster', 'focal_x', 'focal_y', 'focal_mobile_x', 'focal_mobile_y',
         'href', 'alt_ar', 'alt_en',
         'is_active', 'starts_at', 'ends_at', 'sort_order',
     ];
@@ -115,10 +115,22 @@ class HeroSlide extends Model
         return 'live';
     }
 
-    /** `object-position` for the art, e.g. "50% 35%". */
+    /** `object-position` for the desktop art, e.g. "50% 35%". */
     public function focalPosition(): string
     {
         return ((int) ($this->focal_x ?? 50)).'% '.((int) ($this->focal_y ?? 50)).'%';
+    }
+
+    /**
+     * `object-position` for the phone art.
+     *
+     * ⚠️ Its own value, not the desktop one: phone art is a DIFFERENT file (very
+     * often a 9:16 social export), so the point chosen on the wide artwork says
+     * nothing useful about where this one should sit.
+     */
+    public function focalMobilePosition(): string
+    {
+        return ((int) ($this->focal_mobile_x ?? 50)).'% '.((int) ($this->focal_mobile_y ?? 50)).'%';
     }
 
     /**
@@ -143,6 +155,7 @@ class HeroSlide extends Model
             // CSS `object-position`, so the crop keeps whatever the client
             // clicked rather than whatever happened to be in the middle.
             'focal' => $this->focalPosition(),
+            'focal_mobile' => $this->focalMobilePosition(),
             'href' => $this->href,
             'alt_ar' => $this->alt_ar,
             'alt_en' => $this->alt_en,

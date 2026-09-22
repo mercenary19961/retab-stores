@@ -78,6 +78,8 @@ class HeroController extends Controller
             // Where the 2:1 crop centres, as a percentage of the artwork.
             'focal_x' => ['nullable', 'integer', 'min:0', 'max:100'],
             'focal_y' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'focal_mobile_x' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'focal_mobile_y' => ['nullable', 'integer', 'min:0', 'max:100'],
             'starts_at' => ['nullable', 'date'],
             // 🔑 An end before the start is a slide that can never show, with
             // nothing on the page to explain why. Same guard as announcements.
@@ -100,8 +102,11 @@ class HeroController extends Controller
                     // Full-size, for the crop preview: the `card` variant is 500px
                     // and would be judged for sharpness it was never meant to have.
                     'image_full' => Media::url($s->image),
+                    'image_mobile_full' => Media::url($s->image_mobile),
                     'focal_x' => (int) $s->focal_x,
                     'focal_y' => (int) $s->focal_y,
+                    'focal_mobile_x' => (int) $s->focal_mobile_x,
+                    'focal_mobile_y' => (int) $s->focal_mobile_y,
                     'href' => $s->href,
                     'alt_ar' => $s->alt_ar,
                     'alt_en' => $s->alt_en,
@@ -351,6 +356,8 @@ class HeroController extends Controller
             // focal point existed keeps the centred crop it already had.
             'focal_x' => (int) ($data['focal_x'] ?? 50),
             'focal_y' => (int) ($data['focal_y'] ?? 50),
+            'focal_mobile_x' => (int) ($data['focal_mobile_x'] ?? 50),
+            'focal_mobile_y' => (int) ($data['focal_mobile_y'] ?? 50),
             'starts_at' => $data['starts_at'] ?? null,
             'ends_at' => $data['ends_at'] ?? null,
             'sort_order' => (int) ($data['sort_order'] ?? 0),
