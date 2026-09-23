@@ -254,6 +254,32 @@ input[type='search']::-webkit-search-decoration {
 }
 
 /*
+ * ⚠️ Browsers draw their own up/down stepper inside `input[type="number"]`, and
+ * like the search ✕ above it cannot be restyled — it is painted in the OS/UA
+ * palette, which on the admin's dark panel is a pale grey that fights everything
+ * around it. In the top bar's shipping-fee field it also sits directly against
+ * the save and cancel icons, so three different control idioms end up touching.
+ *
+ * 🔑 Opt-in per field rather than global: inside a roomy form the native stepper
+ * is conventional and fine, and silently removing it everywhere would change five
+ * other admin screens nobody complained about. Add the class where the control is
+ * genuinely in the way, and supply your own buttons when you do — the field keeps
+ * native ArrowUp/ArrowDown stepping either way, so nothing is lost for keyboards.
+ */
+.no-native-spinner::-webkit-outer-spin-button,
+.no-native-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+/* Firefox draws its own, and only honours this on the input itself. */
+.no-native-spinner {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/*
  * Storefront scrollbar — slim brand-gold thumb on a transparent track. Opt in per
  * scroll region with the `brand-scrollbar` class (e.g. the search suggestions).
  */

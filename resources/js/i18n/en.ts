@@ -800,6 +800,8 @@ const en = {
             states: { live: 'Showing now', scheduled: 'Scheduled', ended: 'Ended', off: 'Switched off' },
         },
         shippingFee: {
+            increase: 'Increase by one',
+            decrease: 'Decrease by one',
             label: 'Flat shipping fee',
             edit: 'Flat shipping fee. Click to change what customers pay',
             readOnly: 'Flat shipping fee (you do not have permission to change it)',

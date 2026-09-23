@@ -1,6 +1,6 @@
 import { useAdminT } from '@/i18n/use-admin-t';
 import { router, usePage } from '@inertiajs/react';
-import { Check, Truck, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Truck, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface ShippingFeeProp {
@@ -70,6 +70,20 @@ export default function ShippingFeeBadge() {
         );
     };
 
+    /**
+     * Nudge the fee by one riyal.
+     *
+     * ⚠️ Reads the CURRENT value rather than tracking a number in state: the field
+     * is free text while it is being edited, so it can legitimately be empty or
+     * mid-typing. Falling back to the saved fee means the first click on a blank
+     * field steps from the real number instead of from zero.
+     */
+    const step = (delta: number) => {
+        const from = value.trim() === '' || Number.isNaN(Number(value)) ? shippingFee.amount : Number(value);
+
+        setValue(String(Math.max(0, from + delta)));
+    };
+
     if (editing) {
         return (
             <span className="flex items-center gap-1 rounded-lg border border-neutral-700 bg-neutral-950 px-2 py-1">
@@ -89,8 +103,34 @@ export default function ShippingFeeBadge() {
                         if (e.key === 'Escape') setEditing(false);
                     }}
                     aria-label={t('admin.shippingFee.label')}
-                    className="w-16 bg-transparent text-sm text-white outline-none"
+                    className="no-native-spinner w-12 bg-transparent text-sm text-white outline-none"
                 />
+                {/* Replaces the browser's own stepper, which is painted in the UA
+                    palette and cannot be restyled — pale grey against a dark bar,
+                    jammed against the save and cancel icons.
+                    ⚠️ tabIndex -1 and preventDefault on mousedown: these are a
+                    mouse convenience only. Keeping focus in the field is what lets
+                    Enter and Escape keep working after a click, and the native
+                    ArrowUp/ArrowDown stepping is untouched for keyboards. */}
+                <span className="flex flex-col leading-none">
+                    {[
+                        { icon: ChevronUp, delta: 1, label: t('admin.shippingFee.increase') },
+                        { icon: ChevronDown, delta: -1, label: t('admin.shippingFee.decrease') },
+                    ].map(({ icon: Icon, delta, label }) => (
+                        <button
+                            key={delta}
+                            type="button"
+                            tabIndex={-1}
+                            disabled={saving}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => step(delta)}
+                            aria-label={label}
+                            className="text-neutral-500 transition-colors hover:text-white disabled:opacity-40"
+                        >
+                            <Icon className="h-3 w-3" />
+                        </button>
+                    ))}
+                </span>
                 <button
                     type="button"
                     onClick={save}
