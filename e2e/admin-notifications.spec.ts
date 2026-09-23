@@ -23,6 +23,10 @@ async function placeOrder(page: Page): Promise<string> {
     await page.goto('/checkout');
     // Phone first: checkout is stepped, and nothing below the identity block is
     // in the DOM until the customer can be reached. See checkout.spec.ts.
+    // 🔑 EMAIL first now, not the phone. While WhatsApp is unconfigured, email is
+    // the only channel that reaches a customer, so checkout requires an address
+    // and the identity gate opens on the email rather than on a phone alone.
+    await page.getByTestId('customer_email').fill('e2e@example.com');
     await page.getByTestId('customer_phone').fill('0512345678');
     await expect(page.getByTestId('customer_name')).toBeVisible();
     await page.getByTestId('customer_name').fill('Bell Buyer');

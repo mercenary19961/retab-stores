@@ -539,6 +539,7 @@ const ar = {
         customerInfo: 'بيانات العميل',
         name: 'الاسم',
         phone: 'رقم الجوال',
+        email: 'البريد الإلكتروني',
         emailOptional: 'البريد الإلكتروني (اختياري)',
         shippingAddress: 'عنوان الشحن',
         identity: {

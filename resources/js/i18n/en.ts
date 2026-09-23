@@ -517,6 +517,7 @@ const en = {
         customerInfo: 'Customer details',
         name: 'Name',
         phone: 'Mobile number',
+        email: 'Email',
         emailOptional: 'Email (optional)',
         shippingAddress: 'Shipping address',
         identity: {

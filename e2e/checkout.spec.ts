@@ -17,6 +17,10 @@ test('guest can place a bank-transfer order', async ({ page }) => {
     // 🔑 Phone FIRST. Checkout is stepped: nothing below the identity block exists
     // in the DOM until we have a way to reach the customer, so filling the name
     // before the phone would be typing into a field that has not been rendered.
+    // 🔑 EMAIL first now, not the phone. While WhatsApp is unconfigured, email is
+    // the only channel that reaches a customer, so checkout requires an address
+    // and the identity gate opens on the email rather than on a phone alone.
+    await page.getByTestId('customer_email').fill('e2e@example.com');
     await page.getByTestId('customer_phone').fill('0512345678');
 
     // The rest appears once identified. Waiting on the name field is the assertion

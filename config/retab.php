@@ -53,4 +53,32 @@ return [
     |
     */
     'indexable' => filter_var(env('SITE_INDEXABLE', true), FILTER_VALIDATE_BOOLEAN),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Require an email address at checkout
+    |--------------------------------------------------------------------------
+    |
+    | 🔴 Email is currently the ONLY channel that reaches a customer. WhatsApp is
+    | built and wired but not configured in production (no token, no registered
+    | number), so every WhatsApp message resolves to the log driver and is
+    | written to a file. With `customer_email` optional — which it is by design,
+    | because the identity model allows a phone-only account — a customer who
+    | checks out without one receives NOTHING: no receipt, no confirmation, no
+    | tracking, no word when their order cannot be filled and they are refunded.
+    |
+    | Requiring an address closes that hole without touching the identity model:
+    | an account can still exist with only a phone, it just cannot place an order
+    | we have no way of talking to.
+    |
+    | ⚠️ This is a STOPGAP, and the flag exists to make undoing it one variable
+    | rather than a code change. Once WhatsApp is live, set
+    | REQUIRE_CUSTOMER_EMAIL=false to restore phone-only checkout — or leave it
+    | on, if email turns out to be the better receipt channel anyway.
+    |
+    | filter_var for the same reason as `indexable`: "0" / "no" / "off" must all
+    | work, because a typo here decides whether a customer can be reached at all.
+    |
+    */
+    'require_customer_email' => filter_var(env('REQUIRE_CUSTOMER_EMAIL', true), FILTER_VALIDATE_BOOLEAN),
 ];

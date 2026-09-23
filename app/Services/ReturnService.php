@@ -33,6 +33,7 @@ class ReturnService
         protected PaymentService $payments,
         protected TamaraService $tamara,
         protected WhatsAppService $whatsapp,
+        protected CustomerMailer $mailer,
     ) {}
 
     /**
@@ -128,6 +129,7 @@ class ReturnService
         ]);
 
         $this->whatsapp->notifyReturnUpdate($return);
+        $this->mailer->returnUpdate($return);
 
         return $return;
     }
@@ -145,6 +147,7 @@ class ReturnService
         ]);
 
         $this->whatsapp->notifyReturnUpdate($return);
+        $this->mailer->returnUpdate($return);
 
         return $return;
     }
@@ -163,6 +166,7 @@ class ReturnService
         ]);
 
         $this->whatsapp->notifyReturnUpdate($return);
+        $this->mailer->returnUpdate($return);
 
         return $return;
     }
@@ -196,6 +200,7 @@ class ReturnService
         ]);
 
         $this->whatsapp->notifyReturnUpdate($return);
+        $this->mailer->returnUpdate($return);
 
         return $return;
     }

@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Jobs\SendReviewReminder;
 use App\Models\Order;
 use App\Models\OrderActivity;
+use App\Services\CustomerMailer;
 use App\Services\ReviewRewardService;
 use Illuminate\Support\Facades\Log;
 
@@ -189,6 +190,16 @@ class ShippingService
 
             $order->forceFill($attributes)->save();
             OrderActivity::logStatusChange($order, $old, $mapped->value, null);
+
+            // Tell the customer it arrived. 🔑 Not a courtesy: delivery starts the
+            // 3-day window in which a damaged order can be returned, and that
+            // window runs from `delivered_at` whether or not they were told it
+            // had begun. Resolved from the container rather than injected because
+            // this service is constructed with a gateway in tests that know
+            // nothing about mail.
+            if ($mapped === OrderStatus::Delivered) {
+                app(CustomerMailer::class)->orderDelivered($order);
+            }
 
             // Delivered → queue the "write a review, get a discount" WhatsApp nudge
             // for ~1 day later. The job re-checks eligibility at send time; we only

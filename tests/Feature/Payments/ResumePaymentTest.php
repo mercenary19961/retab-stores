@@ -31,6 +31,7 @@ class ResumePaymentTest extends TestCase
             'order_number' => 'RTB-RESUME-1',
             'customer_name' => 'Test Customer',
             'customer_phone' => '+966500000000',
+            'customer_email' => 'zaid@example.com',
             'shipping_address' => ['country' => 'SA', 'city' => 'Riyadh'],
             'status' => OrderStatus::PendingPayment,
             'payment_status' => PaymentStatus::Pending,
@@ -203,6 +204,7 @@ class ResumePaymentTest extends TestCase
         $this->post('/checkout', [
             'customer_name' => 'Test Customer',
             'customer_phone' => '+966500000002',
+            'customer_email' => 'zaid@example.com',
             'country' => 'SA',
             'city' => 'Riyadh',
             'payment_method' => 'card',

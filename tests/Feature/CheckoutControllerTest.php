@@ -48,6 +48,7 @@ class CheckoutControllerTest extends TestCase
         $response = $this->post('/checkout', [
             'customer_name' => 'Zaid',
             'customer_phone' => '+966500000000',
+            'customer_email' => 'zaid@example.com',
             'country' => 'SA',
             'city' => 'Riyadh',
             'payment_method' => 'bank_transfer',
@@ -76,6 +77,7 @@ class CheckoutControllerTest extends TestCase
         $this->post('/checkout', [
             'customer_name' => 'Zaid',
             'customer_phone' => '+966500000000',
+            'customer_email' => 'zaid@example.com',
             'country' => 'SA',
             'city' => 'Riyadh',
             'payment_method' => 'bank_transfer',
@@ -127,6 +129,7 @@ class CheckoutControllerTest extends TestCase
         $this->post('/checkout', [
             'customer_name' => 'Zaid',
             'customer_phone' => '+966500000000',
+            'customer_email' => 'zaid@example.com',
             'country' => 'SA',
             'city' => 'Riyadh',
             'payment_method' => 'card',
@@ -146,6 +149,7 @@ class CheckoutControllerTest extends TestCase
         $this->post('/checkout', [
             'customer_name' => 'Zaid',
             'customer_phone' => '+966500000000',
+            'customer_email' => 'zaid@example.com',
             'country' => 'SA',
             'city' => 'Riyadh',
             'payment_method' => 'bank_transfer',
@@ -254,6 +258,7 @@ class CheckoutControllerTest extends TestCase
         $this->post('/checkout', [
             'customer_name' => 'Zaid',
             'customer_phone' => '0512345678',
+            'customer_email' => 'zaid@example.com',
             'country' => 'SA',
             'city' => 'Riyadh',
             'district' => 'Al Malqa',

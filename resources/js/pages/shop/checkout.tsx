@@ -84,6 +84,7 @@ export default function Checkout({
     countries,
     appliedCoupon,
     paymentMethods,
+    emailRequired = false,
     savedAddresses = [],
 }: {
     items: Item[];
@@ -92,6 +93,7 @@ export default function Checkout({
     countries: string[];
     appliedCoupon?: string | null;
     paymentMethods: string[];
+    emailRequired?: boolean;
     savedAddresses?: SavedAddress[];
 }) {
     const { auth } = usePage<SharedData>().props;
@@ -166,7 +168,13 @@ export default function Checkout({
      * moment someone mistypes a digit, then hiding it again, is worse than
      * showing it a keystroke early. The server validates properly on submit.
      */
-    const identified = Boolean(user) || data.customer_phone.trim().length >= 6 || data.customer_email.includes('@');
+    const contactable = data.customer_phone.trim().length >= 6 || data.customer_email.includes('@');
+
+    // ⚠️ When an email is required, a phone alone no longer opens the rest of the
+    // form: revealing it and then refusing the submit for a field they were told
+    // was optional is the failure this gate exists to avoid. A signed-in customer
+    // with an address on file already satisfies it.
+    const identified = emailRequired ? data.customer_email.includes('@') || Boolean(user?.email) : Boolean(user) || contactable;
 
     // Which saved address is selected, or null while typing a new one.
     const [addressId, setAddressId] = useState<number | null>(initialAddress?.id ?? null);
@@ -254,7 +262,12 @@ export default function Checkout({
                                         onChange={(v) => setData('customer_phone', v)}
                                         error={errors.customer_phone}
                                     />
-                                    {field('customer_email', t('checkout.emailOptional'), false, 'email')}
+                                    {field(
+                                        'customer_email',
+                                        emailRequired ? t('checkout.email') : t('checkout.emailOptional'),
+                                        emailRequired,
+                                        'email',
+                                    )}
                                 </div>
                             </>
                         )}

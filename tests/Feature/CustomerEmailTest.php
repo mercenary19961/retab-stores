@@ -5,15 +5,22 @@ namespace Tests\Feature;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
+use App\Enums\ReturnStatus;
 use App\Mail\OrderConfirmedMail;
+use App\Mail\OrderDeliveredMail;
 use App\Mail\OrderPlacedMail;
+use App\Mail\OrderUnavailableMail;
+use App\Mail\ReturnUpdateMail;
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\OrderReturn;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CheckoutService;
 use App\Services\CustomerMailer;
+use App\Services\ReturnService;
+use App\Services\Shipping\ShippingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -126,8 +133,17 @@ class CustomerEmailTest extends TestCase
      * `customer_email` is nullable by design (phone-only accounts and guest
      * checkout only require a phone) — those customers are reached over WhatsApp.
      */
+    /**
+     * ⚠️ Runs with the require-email flag OFF, deliberately. Checkout now demands
+     * an address while email is the only channel that reaches a customer — but
+     * `orders.customer_email` is still nullable by design (the identity model
+     * allows a phone-only account), so the mailer's no-op has to keep working for
+     * the day that flag is turned back off. Testing it any other way would leave
+     * the phone-only path uncovered the moment WhatsApp goes live.
+     */
     public function test_no_email_is_queued_when_the_customer_gave_no_address(): void
     {
+        config(['retab.require_customer_email' => false]);
         Mail::fake();
         $this->seedCart();
 
@@ -189,6 +205,59 @@ class CustomerEmailTest extends TestCase
 
         (new OrderPlacedMail($this->makeOrder(['locale' => 'ar', 'order_number' => 'RTB-5678'])))
             ->assertHasSubject('استلمنا طلبك: سكري (RTB-5678)');
+    }
+
+    /**
+     * The new emails follow the same rule, and the return one is worth pinning
+     * separately: its subject is built by an overridden envelope(), so it does
+     * not inherit the base class's behaviour for free.
+     *
+     * ⚠️ `assertHasSubject` again, never `envelope()` — the ambient locale is
+     * deliberately set to the WRONG language here, which is exactly the
+     * condition the queue worker renders in.
+     */
+    public function test_the_new_emails_follow_the_orders_locale_too(): void
+    {
+        app()->setLocale('en');
+
+        $order = $this->makeOrder(['locale' => 'ar', 'order_number' => 'RTB-AR-1']);
+
+        (new OrderUnavailableMail($order))->assertHasSubject('بخصوص طلبك: سكري (RTB-AR-1)');
+        (new OrderDeliveredMail($order))->assertHasSubject('تم توصيل طلبك: سكري (RTB-AR-1)');
+
+        $return = OrderReturn::create([
+            'order_id' => $order->id,
+            'status' => ReturnStatus::Approved,
+            'reason' => 'Damaged',
+        ]);
+
+        (new ReturnUpdateMail($return))->assertHasSubject('طلب الإرجاع الخاص بك: تمت الموافقة (RTB-AR-1)');
+    }
+
+    /**
+     * Rendering is its own assertion: a Blade typo or a missing view variable
+     * only surfaces here, not in the queue assertions above. Both locales,
+     * because the templates branch on direction.
+     */
+    public function test_the_new_templates_render_in_both_locales(): void
+    {
+        foreach (['ar', 'en'] as $locale) {
+            $order = $this->makeOrder(['locale' => $locale, 'order_number' => 'RTB-R-'.strtoupper($locale)]);
+            $return = OrderReturn::create([
+                'order_id' => $order->id,
+                'status' => ReturnStatus::Refunded,
+                'reason' => 'Damaged',
+            ]);
+
+            foreach ([new OrderUnavailableMail($order), new OrderDeliveredMail($order), new ReturnUpdateMail($return)] as $mail) {
+                $html = $mail->render();
+
+                $this->assertStringContainsString($locale === 'ar' ? 'dir="rtl"' : 'dir="ltr"', $html);
+                // A missing key renders as the key itself, which no other
+                // assertion here would notice.
+                $this->assertDoesNotMatchRegularExpression('/emails\.[a-z_.]+/', $html, class_basename($mail)." [{$locale}]");
+            }
+        }
     }
 
     private function addItem(Order $order, string $nameAr, string $nameEn, float $lineTotal): void
@@ -313,5 +382,189 @@ class CustomerEmailTest extends TestCase
 
         $this->assertTrue(app(CustomerMailer::class)->orderPlaced($order));
         Mail::assertQueued(OrderPlacedMail::class, fn ($mail) => $mail->hasTo('account@example.com'));
+    }
+
+    // ---------------------------------------------------------------------
+    // The gaps that existed while WhatsApp is the only channel carrying them.
+    // ---------------------------------------------------------------------
+
+    /**
+     * 🔴 The worst of the gaps. Until now this was WhatsApp-only, and WhatsApp is
+     * unconfigured in production — so a customer whose order could not be filled
+     * was refunded with no explanation on any channel at all.
+     */
+    public function test_marking_an_order_unavailable_emails_the_customer(): void
+    {
+        Mail::fake();
+        $order = $this->makeOrder();
+        $admin = User::forceCreate([
+            'name' => 'Admin', 'email' => 'a'.uniqid().'@test.com',
+            'password' => bcrypt('x'), 'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin)->post("/admin/orders/{$order->order_number}/unavailable", ['note' => 'Out of stock']);
+
+        Mail::assertQueued(OrderUnavailableMail::class, fn ($mail) => $mail->hasTo('zaid@example.com'));
+    }
+
+    /**
+     * ⚠️ The note staff type is APPENDED TO `admin_notes` — the same field they
+     * keep their own running commentary in. It must never reach the customer.
+     */
+    public function test_the_unavailable_email_never_leaks_internal_staff_notes(): void
+    {
+        $order = $this->makeOrder();
+        $order->forceFill(['admin_notes' => 'Customer is difficult, low priority'])->save();
+
+        $html = (new OrderUnavailableMail($order->refresh()))->render();
+
+        $this->assertStringNotContainsString('Customer is difficult', $html);
+    }
+
+    /** The refund sentence has to match how they actually paid. */
+    public function test_the_unavailable_email_explains_the_right_refund_route(): void
+    {
+        $card = $this->makeOrder(['payment_method' => PaymentMethod::Card]);
+        $this->assertStringContainsString(
+            __('emails.unavailable.refund_card', [], 'ar'),
+            (new OrderUnavailableMail($card))->render(),
+        );
+
+        $transfer = $this->makeOrder(['payment_method' => PaymentMethod::BankTransfer]);
+        $this->assertStringContainsString(
+            __('emails.unavailable.refund_transfer', [], 'ar'),
+            (new OrderUnavailableMail($transfer))->render(),
+        );
+    }
+
+    /**
+     * 🔑 Delivery opens the 3-day return window, and it runs from `delivered_at`
+     * whether or not the customer was told. This email is what turns the policy
+     * from a trap into a promise — and it must quote the SAME number the
+     * eligibility check will apply.
+     */
+    public function test_the_delivered_email_states_the_real_return_window(): void
+    {
+        $order = $this->makeOrder(['status' => OrderStatus::Shipped]);
+
+        $html = (new OrderDeliveredMail($order))->render();
+
+        $this->assertStringContainsString(
+            __('emails.delivered.returns_intro', ['days' => ReturnService::WINDOW_DAYS], 'ar'),
+            $html,
+        );
+    }
+
+    /**
+     * 🔑 Driven through the real status-update path the OTO webhook calls, not by
+     * rendering the mailable: the point is that DELIVERY reaches the mailer.
+     * Nothing else in the system told the customer their order had arrived.
+     */
+    public function test_delivery_emails_the_customer(): void
+    {
+        Mail::fake();
+        $order = $this->makeOrder(['status' => OrderStatus::Shipped]);
+
+        app(ShippingService::class)->applyStatusUpdate($order->order_number, 'delivered');
+
+        $this->assertNotNull($order->refresh()->delivered_at, 'delivery must stamp the return window');
+        Mail::assertQueued(OrderDeliveredMail::class, fn ($mail) => $mail->hasTo('zaid@example.com'));
+    }
+
+    /**
+     * All four return touchpoints were WhatsApp-only: a customer could send
+     * photos of a damaged order and hear nothing through the whole process.
+     */
+    public function test_a_return_update_emails_the_customer(): void
+    {
+        Mail::fake();
+        $order = $this->makeOrder(['status' => OrderStatus::Delivered]);
+        $order->forceFill(['delivered_at' => now()])->save();
+
+        $return = OrderReturn::create([
+            'order_id' => $order->id,
+            'user_id' => null,
+            'status' => ReturnStatus::Requested,
+            'reason' => 'Damaged on arrival',
+        ]);
+
+        // 🔴 Driven through the REAL ReturnService, not by calling the mailer
+        // directly. The thing under test is that the return flow reaches the
+        // mailer at all — a test that invokes CustomerMailer itself would pass
+        // just as happily with the call site deleted, which is exactly the
+        // failure being guarded against.
+        app(ReturnService::class)->approve($return, null);
+
+        Mail::assertQueued(ReturnUpdateMail::class, fn ($mail) => $mail->hasTo('zaid@example.com'));
+    }
+
+    /**
+     * 🔑 The subject names the STATUS, not the items. Several of these arrive for
+     * one order as the request moves through its states, and four identical
+     * "…: سكري" subjects would be unreadable — Gmail would fold them into one.
+     */
+    public function test_return_update_subjects_differ_by_status(): void
+    {
+        $order = $this->makeOrder();
+        $subjects = [];
+
+        foreach ([ReturnStatus::Requested, ReturnStatus::Approved, ReturnStatus::Refunded] as $status) {
+            $return = OrderReturn::create([
+                'order_id' => $order->id,
+                'status' => $status,
+                'reason' => 'Damaged',
+            ]);
+            $subjects[] = (new ReturnUpdateMail($return))->envelope()->subject;
+        }
+
+        $this->assertCount(3, array_unique($subjects), 'each return state needs its own subject');
+        foreach ($subjects as $subject) {
+            $this->assertStringContainsString($order->order_number, $subject);
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Email is mandatory while it is the only channel that reaches anyone.
+    // ---------------------------------------------------------------------
+
+    /**
+     * 🔴 Without an address the customer gets NOTHING — no receipt, no
+     * confirmation, no tracking, and no word when the order cannot be filled.
+     * Refusing the order is better than taking money we cannot acknowledge.
+     */
+    public function test_checkout_requires_an_email_while_it_is_the_only_channel(): void
+    {
+        $this->seedCart();
+
+        $this->post('/checkout', [
+            'customer_name' => 'Zaid',
+            'customer_phone' => '+966500000000',
+            'country' => 'SA',
+            'city' => 'Riyadh',
+            'payment_method' => 'bank_transfer',
+        ])->assertSessionHasErrors('customer_email');
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    /**
+     * ⚠️ And it stays a STOPGAP: one env var restores phone-only checkout once
+     * WhatsApp can carry these messages. A flag nobody can turn off is just a
+     * hardcoded rule with extra steps.
+     */
+    public function test_phone_only_checkout_returns_when_the_flag_is_off(): void
+    {
+        config(['retab.require_customer_email' => false]);
+        $this->seedCart();
+
+        $this->post('/checkout', [
+            'customer_name' => 'Zaid',
+            'customer_phone' => '+966500000000',
+            'country' => 'SA',
+            'city' => 'Riyadh',
+            'payment_method' => 'bank_transfer',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseCount('orders', 1);
     }
 }

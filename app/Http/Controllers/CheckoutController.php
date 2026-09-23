@@ -78,6 +78,12 @@ class CheckoutController
             // The page renders from this rather than a hardcoded list, so switching
             // a gateway off removes it from checkout without a deploy.
             'paymentMethods' => PaymentMethod::enabledValues(),
+            // Whether the email field is required, so the form's label and its
+            // validation always agree. Shipped rather than hardcoded in the page
+            // for the same reason paymentMethods is: the flag can change without
+            // a deploy, and a form that says "optional" while the server refuses
+            // the submit is the worst version of this.
+            'emailRequired' => (bool) config('retab.require_customer_email'),
             // Addresses this customer has saved before, newest-default first, so a
             // returning shopper picks instead of retyping. Empty for guests.
             'savedAddresses' => $request->user()
@@ -108,7 +114,15 @@ class CheckoutController
 
         $data = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
-            'customer_email' => ['nullable', 'email', 'max:255'],
+            // 🔴 Required while email is the only channel that actually reaches a
+            // customer — WhatsApp is unconfigured in production, so an order placed
+            // without an address gets no receipt, no confirmation, no tracking and
+            // no word when it cannot be filled. Behind a flag so restoring
+            // phone-only checkout is one env var once WhatsApp is live.
+            'customer_email' => [
+                config('retab.require_customer_email') ? 'required' : 'nullable',
+                'email', 'max:255',
+            ],
             'customer_phone' => ['required', 'string', 'max:20', new Phone],
             // How they get it. Everything address-shaped below is required only
             // for delivery — a collection order has nowhere to ship to, so asking

@@ -3,10 +3,14 @@
 namespace App\Services;
 
 use App\Mail\OrderConfirmedMail;
+use App\Mail\OrderDeliveredMail;
 use App\Mail\OrderMail;
 use App\Mail\OrderPlacedMail;
 use App\Mail\OrderShippedMail;
+use App\Mail\OrderUnavailableMail;
+use App\Mail\ReturnUpdateMail;
 use App\Models\Order;
+use App\Models\OrderReturn;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -42,6 +46,42 @@ class CustomerMailer
     public function orderShipped(Order $order): bool
     {
         return $this->send($order, new OrderShippedMail($order));
+    }
+
+    /**
+     * The stock check failed and the order is being refunded.
+     *
+     * 🔴 The one customer email that must not be missed: the refund itself
+     * arrives from the gateway days later with no explanation attached, so
+     * without this the customer only sees money moving and an order that
+     * stopped existing.
+     */
+    public function orderUnavailable(Order $order): bool
+    {
+        return $this->send($order, new OrderUnavailableMail($order));
+    }
+
+    /** The carrier reported delivery — which is when the return window opens. */
+    public function orderDelivered(Order $order): bool
+    {
+        return $this->send($order, new OrderDeliveredMail($order));
+    }
+
+    /**
+     * A return moved to a new state.
+     *
+     * ⚠️ Guards on the RETURN'S OWN ORDER, not on an order passed in, so the
+     * address and the language always come from the order the return belongs to.
+     */
+    public function returnUpdate(OrderReturn $return): bool
+    {
+        $return->loadMissing('order');
+
+        if (! $return->order) {
+            return false;
+        }
+
+        return $this->send($return->order, new ReturnUpdateMail($return));
     }
 
     /**

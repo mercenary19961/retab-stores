@@ -135,4 +135,42 @@ return [
         'action' => 'Confirm deletion',
         'note' => 'This link works once and expires in :minutes minutes. If you did not ask for this, do not open it, and change the owner password.',
     ],
+
+    'unavailable' => [
+        'subject' => 'About your order: :items',
+        'heading' => 'We could not complete your order',
+        'intro' => 'We are sorry. After checking our stock we were not able to fulfil this order, so we have cancelled it.',
+        'refund_heading' => 'Your money is on its way back',
+        'refund_card' => 'The amount has been refunded to the card you paid with. Banks usually take 5 to 10 working days to show it.',
+        'refund_tamara' => 'Your Tamara instalment plan has been cancelled, so there is nothing further to pay.',
+        'refund_transfer' => 'We will transfer the amount back to you. Please reply to this email with your IBAN if we do not already have it.',
+        'sorry' => 'We would still like to serve you. Get in touch and we will suggest something similar, or let you know when this is back in stock.',
+    ],
+    'delivered' => [
+        'subject' => 'Your order has been delivered: :items',
+        'heading' => 'Your order has been delivered',
+        'intro' => 'Your order has arrived. We hope you enjoy it.',
+        'returns_heading' => 'If something is wrong',
+        'returns_intro' => 'Please check your order. If anything arrived damaged or faulty, tell us within :days days of delivery and we will put it right.',
+    ],
+    'return_update' => [
+        'subject' => 'Your return request: :status',
+        'heading' => 'Your return request has been updated',
+        'intro' => 'Here is the latest on the return you filed for this order.',
+        'status_label' => 'Status',
+        'statuses' => [
+            'requested' => 'Received',
+            'approved' => 'Approved',
+            'rejected' => 'Not approved',
+            'exchanged' => 'Exchanged',
+            'refunded' => 'Refunded',
+        ],
+        'notes' => [
+            'requested' => 'We have received your request and our team is reviewing the photos you sent. We will be in touch shortly.',
+            'approved' => 'We have approved your return. We will contact you to arrange collecting the items and completing the exchange or refund.',
+            'rejected' => 'After reviewing it, we were not able to approve this return. Reply to this email if you would like us to look again.',
+            'exchanged' => 'Your exchange is being arranged. We will send the replacement shortly.',
+            'refunded' => 'Your refund has been issued. Banks usually take 5 to 10 working days to show it on your statement.',
+        ],
+    ],
 ];

@@ -372,6 +372,7 @@ class OrderController extends Controller
         }
 
         $this->whatsapp->notifyOrderUnavailable($order);
+        $this->mailer->orderUnavailable($order);
 
         return back()->with('success', __('messages.admin.order_unavailable'));
     }
