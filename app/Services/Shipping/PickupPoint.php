@@ -17,14 +17,39 @@ namespace App\Services\Shipping;
  * either place is precisely how the two would come to disagree about the same
  * service.
  *
- * ⚠️ Deliberately an OR of the flag and the name, not "trust the flag, fall back
- * to the name". The two failure directions are not symmetric: a false positive
- * only costs the store a cheap option it can still choose by hand, while a false
- * negative silently strands a customer. And OTO's structured flag is absent
- * entirely from the rate-check payload, where the service name is all there is.
+ * 🔴 THE FIELD TO READ IS `deliveryType`, NOT `pickupDropoff`, and getting that
+ * backwards was a live bug. OTO's `pickupDropoff` is a STRING enum describing the
+ * FIRST mile — whether the courier collects from the MERCHANT for free or the
+ * merchant must drop off at the courier's branch — and it was being read as
+ * `(bool)`. Its four values are `freePickup`, `dropoffOnly`, `freePickupDropoff`
+ * and `lockerDropOff`; every one of them is a truthy string, so EVERY carrier was
+ * flagged as a pickup point. preferredOption() then found no door delivery at
+ * all, fell through to its cheapest-overall fallback, and picked the 13.92 SMSA
+ * counter — the exact failure this class exists to prevent.
+ *
+ * ⚠️ Deliberately still an OR of the structured field and the name, not "trust
+ * the field, fall back to the name". The two failure directions are not
+ * symmetric: a false positive only costs the store a cheap option it can still
+ * choose by hand, while a false negative silently strands a customer. And
+ * `deliveryType` is only confirmed present in the rate-check payload — the richer
+ * getDeliveryOptions endpoint is plan-gated and unavailable on this account, so
+ * on that path the service name may be all there is.
  */
 class PickupPoint
 {
+    /**
+     * `deliveryType` values that mean the CUSTOMER collects.
+     *
+     * Read off a live rate-check response, not from documentation: the full set
+     * observed is `toCustomerDoorstep` (16 of 20 rows), `pickupByCustomer` (the
+     * three PUDO services) and `locker` (Redbox). Compared with punctuation and
+     * case stripped, so a future `pickup_by_customer` still matches.
+     *
+     * ⚠️ Anything unrecognised falls through to the name check rather than being
+     * treated as door delivery, which is the safe direction.
+     */
+    private const COLLECTION_TYPES = ['pickupbycustomer', 'locker'];
+
     /**
      * Phrases that unambiguously mean "the customer collects it".
      *
@@ -36,12 +61,12 @@ class PickupPoint
     private const HINTS = ['pudo', 'pickup point', 'pick up point', 'drop off point', 'locker'];
 
     /**
-     * @param  bool|null  $flag  OTO's own `pickupDropoff`, when the payload carries it.
+     * @param  string|null  $deliveryType  OTO's `deliveryType`, when the payload carries it.
      * @param  string|null  ...$names  Service and carrier names, in any order.
      */
-    public static function detect(?bool $flag, ?string ...$names): bool
+    public static function detect(?string $deliveryType, ?string ...$names): bool
     {
-        if ($flag === true) {
+        if (in_array(self::normalise($deliveryType), self::COLLECTION_TYPES, true)) {
             return true;
         }
 
@@ -67,5 +92,11 @@ class PickupPoint
         }
 
         return false;
+    }
+
+    /** Lowercased with every separator removed, so casing and style cannot matter. */
+    private static function normalise(?string $value): string
+    {
+        return preg_replace('/[^a-z0-9]+/', '', strtolower((string) $value)) ?? '';
     }
 }

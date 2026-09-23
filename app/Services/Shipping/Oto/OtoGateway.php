@@ -126,7 +126,12 @@ class OtoGateway implements ShippingGateway
                 raw: $row,
                 service: $service,
                 pickupDropoff: PickupPoint::detect(
-                    isset($row['pickupDropoff']) ? (bool) $row['pickupDropoff'] : null,
+                    // 🔴 `deliveryType`, NOT `pickupDropoff`. The latter is a string
+                    // enum about the FIRST mile (does the courier collect from our
+                    // shop, or must we drop off at theirs) and was being read as a
+                    // bool — every one of its four values is truthy, so every
+                    // carrier was flagged a pickup point. See PickupPoint.
+                    $row['deliveryType'] ?? null,
                     $service,
                     $carrier,
                 ),
@@ -312,7 +317,12 @@ class OtoGateway implements ShippingGateway
                 // so the badge in the portal and the option skipped by the
                 // automatic pick can never describe different services.
                 pickupDropoff: PickupPoint::detect(
-                    isset($row['pickupDropoff']) ? (bool) $row['pickupDropoff'] : null,
+                    // 🔴 `deliveryType`, NOT `pickupDropoff`. The latter is a string
+                    // enum about the FIRST mile (does the courier collect from our
+                    // shop, or must we drop off at theirs) and was being read as a
+                    // bool — every one of its four values is truthy, so every
+                    // carrier was flagged a pickup point. See PickupPoint.
+                    $row['deliveryType'] ?? null,
                     $row['deliveryOptionName'] ?? null,
                     (string) $carrier,
                 ),
